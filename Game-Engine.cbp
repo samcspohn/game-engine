@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Game-Engine" />
+		<Option pch_mode="2" />
+		<Option compiler="clang" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Game-Engine" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="clang" />
+				<Compiler>
+					<Add option="-O4" />
+					<Add option="-w" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Game-Engine" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="clang" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Weverything" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="Component.h" />
+		<Unit filename="Input.h" />
+		<Unit filename="Mesh.h" />
+		<Unit filename="Model.h" />
+		<Unit filename="Shader.h" />
+		<Unit filename="Shaderinclude.h" />
+		<Unit filename="Transform.h" />
+		<Unit filename="array_heap.h" />
+		<Unit filename="concurrency.h" />
+		<Unit filename="config.txt" />
+		<Unit filename="fast_list.h" />
+		<Unit filename="gameEngine.h" />
+		<Unit filename="game_engine.h" />
+		<Unit filename="game_engine_components.h" />
+		<Unit filename="game_object.h" />
+		<Unit filename="gpu_vector.h" />
+		<Unit filename="gpu_vector.h.gch" />
+		<Unit filename="include.h" />
+		<Unit filename="log.txt" />
+		<Unit filename="main.cpp" />
+		<Unit filename="main.exec" />
+		<Unit filename="makefile" />
+		<Unit filename="plf_list.h" />
+		<Unit filename="rendering.h" />
+		<Unit filename="res/images/container2.png" />
+		<Unit filename="res/images/container2_specular.png" />
+		<Unit filename="res/images/image1.jpg" />
+		<Unit filename="res/images/image2.png" />
+		<Unit filename="res/models/Crate/Crate1.3ds" />
+		<Unit filename="res/models/Crate/Crate1.blend" />
+		<Unit filename="res/models/Crate/Crate1.mtl" />
+		<Unit filename="res/models/Crate/CrateImage1.JPG" />
+		<Unit filename="res/models/Crate/CrateImage2.JPG" />
+		<Unit filename="res/models/Crate/crate_1.jpg" />
+		<Unit filename="res/models/cube/Crate1.mtl" />
+		<Unit filename="res/models/cube/container2.png" />
+		<Unit filename="res/models/cube/container2_specular.png" />
+		<Unit filename="res/models/cube/crate_1.jpg" />
+		<Unit filename="res/models/cube/cube.mtl" />
+		<Unit filename="res/models/cube/cube.obj" />
+		<Unit filename="res/models/nanosuit/LICENSE.txt" />
+		<Unit filename="res/models/nanosuit/arm_dif.png" />
+		<Unit filename="res/models/nanosuit/arm_showroom_ddn.png" />
+		<Unit filename="res/models/nanosuit/arm_showroom_spec.png" />
+		<Unit filename="res/models/nanosuit/body_dif.png" />
+		<Unit filename="res/models/nanosuit/body_showroom_ddn.png" />
+		<Unit filename="res/models/nanosuit/body_showroom_spec.png" />
+		<Unit filename="res/models/nanosuit/glass_ddn.png" />
+		<Unit filename="res/models/nanosuit/glass_dif.png" />
+		<Unit filename="res/models/nanosuit/hand_dif.png" />
+		<Unit filename="res/models/nanosuit/hand_showroom_ddn.png" />
+		<Unit filename="res/models/nanosuit/hand_showroom_spec.png" />
+		<Unit filename="res/models/nanosuit/helmet_diff.png" />
+		<Unit filename="res/models/nanosuit/helmet_showroom_ddn.png" />
+		<Unit filename="res/models/nanosuit/helmet_showroom_spec.png" />
+		<Unit filename="res/models/nanosuit/leg_dif.png" />
+		<Unit filename="res/models/nanosuit/leg_showroom_ddn.png" />
+		<Unit filename="res/models/nanosuit/leg_showroom_spec.png" />
+		<Unit filename="res/models/nanosuit/nanosuit.blend" />
+		<Unit filename="res/models/nanosuit/nanosuit.mtl" />
+		<Unit filename="res/models/nanosuit/nanosuit.obj" />
+		<Unit filename="res/shaders/directional_shadow_map.frag" />
+		<Unit filename="res/shaders/directional_shadow_map.vert" />
+		<Unit filename="res/shaders/lamp.frag" />
+		<Unit filename="res/shaders/lamp.vert" />
+		<Unit filename="res/shaders/light.glsl" />
+		<Unit filename="res/shaders/mat.comp" />
+		<Unit filename="res/shaders/model.frag" />
+		<Unit filename="res/shaders/model.vert" />
+		<Unit filename="res/shaders/modelv.vert" />
+		<Unit filename="res/shaders/octree.comp" />
+		<Unit filename="res/shaders/omni_shadow_map.frag" />
+		<Unit filename="res/shaders/omni_shadow_map.geom" />
+		<Unit filename="res/shaders/omni_shadow_map.vert" />
+		<Unit filename="res/shaders/utils.glsl" />
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
