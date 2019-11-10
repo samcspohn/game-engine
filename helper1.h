@@ -100,9 +100,24 @@ void waitFor(atomic<bool>& cond) {
 	while (!cond)
 		this_thread::sleep_for(1ns);
 }
+static unsigned long x=123456789, y=362436069, z=521288629;
+
+unsigned long xorshf96(void) {          //period 2^96-1
+unsigned long t;
+    x ^= x << 16;
+    x ^= x >> 5;
+    x ^= x << 1;
+
+   t = x;
+   x = y;
+   y = z;
+   z = t ^ x ^ y;
+
+  return z;
+}
 
 float randf() {
-	return abs((float)(rand() * 19235467) / (float)INT_MAX);
+	return (float)xorshf96() / (float)ULONG_MAX;
 }
 int _min(int a, int b) {
 	if (a < b)
