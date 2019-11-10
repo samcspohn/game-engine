@@ -408,6 +408,8 @@ void init(){
 
     root = new Transform(0);
 	rootGameObject = new game_object(root);
+    for(int i = 0; i < concurrency::numThreads; i++)
+    rootGameObject->addComponent<copyBuffers>();
 }
 
 void run(){
@@ -419,12 +421,15 @@ void run(){
     for(int i = 0; i < concurrency::numThreads; i++)
         workers.push_back(new thread(componentUpdateThread,i));
 
+    componentStorageBase* copyWorkers;
     while (!glfwWindowShouldClose(window))
     {
         // scripting
 		for (auto& j : allcomponents) {
-//			if (j.first == typeid(prepRenderStorage).hash_code())
-//				continue;
+			if (j.first == typeid(copyBuffers).hash_code()){
+                copyWorkers = j.second;
+				continue;
+			}
 			lockUpdate();
 			for (int i = 0; i < concurrency::numThreads; ++i)
 				updateWork[i].push(updateJob(j.second));
@@ -432,36 +437,60 @@ void run(){
 			this_thread::sleep_for(1ns);
 		}
 		enqueRenderJob(updateInfo);
-		lockUpdate();
-        cleanup();
+
 
         while (!renderDone.load())
 			this_thread::sleep_for(1ns);
 
+        lockUpdate();
         stopWatch.start();
-        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
-        auto _i = GPU_TRANSFORMS->storage->begin();
-        for(auto& i : TRANSFORMS.data){
-            *_i = i;
-            ++_i;
+        cleanup();
+        appendStat("clean up", stopWatch.stop());
+
+        stopWatch.start();
+		while (TRANSFORMS.density() < 0.99) { // shift
+            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
+            if (GO_T_refs[loc]->getRenderer() != 0)
+                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
         }
 
+
+        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
         GPU_RENDERERS->storage->resize(gpu_renderers.size());
-        auto __i = GPU_RENDERERS->storage->begin();
-        for(auto& i : gpu_renderers.data){
-            *__i = i;
-            ++__i;
-        }
         for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
             for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
                 j->second->_ids->storage->resize(j->second->ids.data.size());
-                memcpy(j->second->_ids->storage->data(), j->second->ids.data.data(),j->second->ids.data.size() * sizeof(GLuint));
             }
         }
-        appendStat("copy data", stopWatch.stop());
-        unlockUpdate();
-		// rendering
+        appendStat("prepare memory", stopWatch.stop());
 
+        for (int i = 0; i < concurrency::numThreads; ++i)
+            updateWork[i].push(updateJob(copyWorkers));
+        unlockUpdate();
+//        lockUpdate();
+
+//        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
+//        auto _i = GPU_TRANSFORMS->storage->begin();
+//        for(auto& i : TRANSFORMS.data){
+//            *_i = i;
+//            ++_i;
+//        }
+//
+//        GPU_RENDERERS->storage->resize(gpu_renderers.size());
+//        auto __i = GPU_RENDERERS->storage->begin();
+//        for(auto& i : gpu_renderers.data){
+//            *__i = i;
+//            ++__i;
+//        }
+//        for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
+//            for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
+//                j->second->_ids->storage->resize(j->second->ids.data.size());
+//                memcpy(j->second->_ids->storage->data(), j->second->ids.data.data(),j->second->ids.data.size() * sizeof(GLuint));
+//            }
+//        }
+
+		// rendering
+        stopWatch.start();
 		renderJob rj;
         rj.type = renderNum::render;
 		rj.val1 = GPU_RENDERERS->size();
@@ -475,11 +504,11 @@ void run(){
 		renderLock.lock();
 		renderWork.push(rj);
 		renderLock.unlock();
+		appendStat("rendering", stopWatch.stop());
 
-
-
-
+//        unlockUpdate();
     }
+
 	log("end of program");
 	renderJob rj;
 	rj.type = rquit;

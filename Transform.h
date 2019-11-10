@@ -163,7 +163,7 @@ public:
 	void setRotation(glm::quat r) {
 		_T->rotation = r;
 	}
-	set<Transform*>& getChildren() {
+	plf::list<Transform*>& getChildren() {
 		return children;
 	}
 	Transform* getParent() {
@@ -185,7 +185,8 @@ public:
 //			get_T(_T->childrenEnd).nextSibling = _Tval;
 //		}
 //		_T->childrenEnd = _Tval;
-		this->children.insert(transform);
+		this->children.push_back(transform);
+		transform->childId = (--this->children.end());
 	}
 	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle) {
 		glm::vec3 ax = r * axis;
@@ -197,7 +198,7 @@ public:
 	}
 
 	void _destroy() {
-		transformMutex.lock();
+//		transformMutex.lock();
 		orphan();
 		if (enabled) {
 			GO_T_refs[_T] = 0;
@@ -208,7 +209,7 @@ public:
 			STATIC_TRANSFORMS._delete(_T);
 		}
 
-		transformMutex.unlock();
+//		transformMutex.unlock();
 		if (enabled)
 			--transforms_enabled;
 		delete this;
@@ -341,7 +342,8 @@ public:
 private:
 	bool enabled = true;
 	Transform * parent;
-	set<Transform*> children = set<Transform*>();
+	plf::list<Transform*> children;
+	plf::list<Transform*>::iterator childId;
 
 	friend void destroyRoot(Transform * t);
 	~Transform() {	}
@@ -375,7 +377,7 @@ private:
 //		_T->nextSibling = _T->prevSibling = -1;
 //		_T->parent = 0;
 
-		this->parent->children.erase(this);
+		this->parent->children.erase(childId);
 		this->parent = 0;
 	}
 	void scaleChild(glm::vec3 pos, glm::vec3 scale) {

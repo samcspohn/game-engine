@@ -23,13 +23,17 @@ public:
 class cube_sc : public component {
 public:
 	glm::vec3 dir;
+	glm::vec3 rot;
 	cube_sc() {}
 	void onStart() {
 		dir = randomSphere();
+		rot = randomSphere();
 	}
 	void update() {
 		transform->translate(dir * Time.deltaTime * 10.f);
+		transform->rotate(rot, Time.deltaTime * 100.f);
 		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 10000.f / numCubes * Time.deltaTime) {
+//		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 0.01f) {
 			numCubes.fetch_add(-1);
 			transform->gameObject->destroy();
 		}
@@ -63,6 +67,10 @@ int main(void)
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
 //	waitForRenderQueue();
+
+
+    for(int i = 0; i < 10; i++)
+        cout << randf() << endl;
 
 	player = new game_object();
 	player->addComponent<player_sc>();

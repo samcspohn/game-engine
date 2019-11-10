@@ -115,51 +115,47 @@ public:
 	COPY(_camera);
 private:
 };
-//
-//vector<int> renderCounts = vector<int>(concurrency::numThreads);
-//class prepRenderStorage : public component {
-//	void update() {
-//		int numt = concurrency::numThreads;
-//		if (getThreadID() < numt) {
-//
-//			//transforms
-//			size_t from = TRANSFORMS.size() / _DEQUE_BLOCK_SIZE / numt * getThreadID();
-//			size_t to = (getThreadID() != numt - 1 ?
-//				TRANSFORMS.size() / _DEQUE_BLOCK_SIZE / numt * (getThreadID() + 1) :
-//				TRANSFORMS.data.data.size());
-//			while (from < to) {
-//				memcpy(&(GPU_TRANSFORMS->storage->at(from * _DEQUE_BLOCK_SIZE)), TRANSFORMS.data.data[from].data(), sizeof(_transform) * _DEQUE_BLOCK_SIZE);
-//				from++;
-//			}
-//
-//
-//			from = gpu_renderers.size() / numt * getThreadID();
-//			to = (getThreadID() != numt - 1 ?
-//				gpu_renderers.size() / numt :
-//				gpu_renderers.size() - from);
-//			memcpy(&(GPU_RENDERERS->storage->at(from)), &(gpu_renderers.data[from]), sizeof(__renderer) * to);
-//
-//
-//			for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
-//				for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
-//
-//					from = j->second->ids.size() / numt * getThreadID();
-//					to = (getThreadID() != numt - 1 ?
-//						j->second->ids.size() / numt :
-//						j->second->ids.size() - from);
-//					if(to > 0)
-//						memcpy(&(j->second->_ids->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
-//				}
-//			}
-//
-//		}
+
+vector<int> renderCounts = vector<int>(concurrency::numThreads);
+class copyBuffers : public component {
+	void update() {
+		int numt = concurrency::numThreads;
+		if (getThreadID() < numt) {
+            {
+                deque<_transform>::iterator from = TRANSFORMS.data.begin() + TRANSFORMS.size() / concurrency::numThreads * getThreadID();
+                deque<_transform>::iterator to = TRANSFORMS.data.begin() + (getThreadID() != concurrency::numThreads - 1 ?
+                                                TRANSFORMS.size() / concurrency::numThreads * (getThreadID() + 1) :
+                                                TRANSFORMS.size());
+                int itr = TRANSFORMS.size() / concurrency::numThreads * getThreadID();
+                while(from != to)
+                GPU_TRANSFORMS->storage->at(itr++) = *from++;
+            }
+
+            {
+                size_t from = gpu_renderers.size() / numt * getThreadID();
+                size_t to = (getThreadID() != numt - 1 ?
+                    gpu_renderers.size() / numt :
+                    gpu_renderers.size() - from);
+                memcpy(&(GPU_RENDERERS->storage->at(from)), &(gpu_renderers.data[from]), sizeof(__renderer) * to);
+            }
+
+
+			for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
+				for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
+
+					size_t from = j->second->ids.size() / numt * getThreadID();
+					size_t to = (getThreadID() != numt - 1 ?
+						j->second->ids.size() / numt :
+						j->second->ids.size() - from);
+					if(to > 0)
+						memcpy(&(j->second->_ids->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
+				}
+			}
+
+		}
 //		renderCounts[getThreadID()]++;
-//		//deque<_transform>::iterator from = TRANSFORMS.data.begin() + TRANSFORMS.size() / concurrency::numThreads * getThreadID();
-//		//deque<_transform>::iterator to = TRANSFORMS.data.begin() + (getThreadID() != concurrency::numThreads - 1 ? TRANSFORMS.size() / concurrency::numThreads * (getThreadID() + 1) : TRANSFORMS.size());
-//		//int itr = TRANSFORMS.size() / concurrency::numThreads * getThreadID();
-//		//while(from != to)
-//		//	GPU_TRANSFORMS->storage->at(itr++) = *from++;
-//	}
-//	UPDATE(prepRenderStorage, update);
-//	COPY(prepRenderStorage);
-//};
+
+	}
+	UPDATE(copyBuffers, update);
+	COPY(copyBuffers);
+};

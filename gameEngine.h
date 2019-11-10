@@ -474,7 +474,7 @@ GLuint game_engine::init() {
 	root = new Transform(0);
 	rootGameObject = new game_object(root);
 	for(int i = 0; i < concurrency::numThreads; i++)
-		rootGameObject->addComponent<prepRenderStorage>();
+		rootGameObject->addComponent<copyBuffers>();
 	return 0;
 }
 
@@ -545,7 +545,7 @@ void game_engine::run() {
 	{
 		//transformArray.lock();
 		for (auto& j : allcomponents) {
-			if (j.first == typeid(prepRenderStorage).hash_code())
+			if (j.first == typeid(copyBuffers).hash_code())
 				continue;
 			lockUpdate();
 			for (int i = 0; i < concurrency::numThreads; ++i)
@@ -565,7 +565,7 @@ void game_engine::run() {
 		GPU_TRANSFORMS->storage->resize((TRANSFORMS.size() / _DEQUE_BLOCK_SIZE + 1) * _DEQUE_BLOCK_SIZE);
 		lockUpdate();
 		for (int i = 0; i < concurrency::numThreads; ++i)
-			updateWork[i].push(updateJob(allcomponents.at(typeid(prepRenderStorage).hash_code())));
+			updateWork[i].push(updateJob(allcomponents.at(typeid(copyBuffers).hash_code())));
 		unlockUpdate();
 		this_thread::sleep_for(1ns);
 
