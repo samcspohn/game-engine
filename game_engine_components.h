@@ -159,3 +159,12 @@ class copyBuffers : public component {
 	UPDATE(copyBuffers, update);
 	COPY(copyBuffers);
 };
+
+atomic<int> barrierCounter;
+class barrier : public component{
+    void update() {
+        barrierCounter.fetch_add(1);
+    }
+    UPDATE(barrier,update);
+    COPY(barrier);
+};

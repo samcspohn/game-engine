@@ -359,31 +359,11 @@ void cleanup(){
     toRemove.clear();
     toDestroy.clear();
 }
-void componentUpdateThread(int index) {
-    timer stopWatch;
-	while (true) {
-        updateLocks[index].lock();
-		if (updateWork[index].size() > 0) {
-			updateJob uj = updateWork[index].front(); updateWork[index].pop();
-			if (uj.componentStorage == 0)
-				break;
-            if(index == 0)
-                stopWatch.start();
-			ComponentsUpdate(uj.componentStorage, index);
-			if(index == 0)
-                appendStat(uj.componentStorage->name, stopWatch.stop());
-		}
-        updateLocks[index].unlock();
-        this_thread::sleep_for(0ns);
-	}
-
-}
-
 //void componentUpdateThread(int index) {
 //    timer stopWatch;
 //	while (true) {
+//        updateLocks[index].lock();
 //		if (updateWork[index].size() > 0) {
-//            updateLocks[index].lock();
 //			updateJob uj = updateWork[index].front(); updateWork[index].pop();
 //			if (uj.componentStorage == 0)
 //				break;
@@ -392,13 +372,31 @@ void componentUpdateThread(int index) {
 //			ComponentsUpdate(uj.componentStorage, index);
 //			if(index == 0)
 //                appendStat(uj.componentStorage->name, stopWatch.stop());
-//			updateLocks[index].unlock();
 //		}
-//		else {
-//			this_thread::sleep_for(0ns);
-//		}
+//        updateLocks[index].unlock();
+//        this_thread::sleep_for(0ns);
 //	}
+//
 //}
+
+void componentUpdateThread(int index) {
+    timer stopWatch;
+	while (true) {
+		if (updateWork[index].size() > 0) {
+            updateLocks[index].lock();
+			updateJob uj = updateWork[index].front(); updateWork[index].pop();
+			if (uj.componentStorage == 0)
+				break;
+            if(index == 0)
+                stopWatch.start();
+			ComponentsUpdate(uj.componentStorage, index);
+			if(index == 0)
+                appendStat(uj.componentStorage->name, stopWatch.stop());
+			updateLocks[index].unlock();
+		}
+        this_thread::sleep_for(1ns);
+	}
+}
 void init(){
     renderThreadReady.exchange(false);
 	renderThread = new thread(renderThreadFunc);
@@ -408,8 +406,10 @@ void init(){
 
     root = new Transform(0);
 	rootGameObject = new game_object(root);
-    for(int i = 0; i < concurrency::numThreads; i++)
-    rootGameObject->addComponent<copyBuffers>();
+    for(int i = 0; i < concurrency::numThreads; i++){
+        rootGameObject->addComponent<barrier>();
+        rootGameObject->addComponent<copyBuffers>();
+    }
 }
 
 void run(){
@@ -422,27 +422,42 @@ void run(){
         workers.push_back(new thread(componentUpdateThread,i));
 
     componentStorageBase* copyWorkers;
+    componentStorageBase* barriers;
+    for (auto& j : allcomponents) {
+        if (j.first == typeid(copyBuffers).hash_code()){
+            copyWorkers = j.second;
+            continue;
+        }
+        if (j.first == typeid(barrier).hash_code()){
+            barriers = j.second;
+            continue;
+        }
+    }
     while (!glfwWindowShouldClose(window))
     {
         // scripting
 		for (auto& j : allcomponents) {
-			if (j.first == typeid(copyBuffers).hash_code()){
-                copyWorkers = j.second;
+			if (j.first == typeid(copyBuffers).hash_code())
 				continue;
-			}
+            if (j.first == typeid(barriers).hash_code())
+				continue;
 			lockUpdate();
 			for (int i = 0; i < concurrency::numThreads; ++i)
 				updateWork[i].push(updateJob(j.second));
 			unlockUpdate();
-			this_thread::sleep_for(1ns);
+			this_thread::sleep_for(8ns);
 		}
 		enqueRenderJob(updateInfo);
 
-
-        while (!renderDone.load())
-			this_thread::sleep_for(1ns);
-
         lockUpdate();
+        for (int i = 0; i < concurrency::numThreads; ++i){
+            updateWork[i].push(updateJob(barriers));
+        }
+        unlockUpdate();
+        while(barrierCounter < concurrency::numThreads)
+            this_thread::sleep_for(1ns);
+        barrierCounter = 0;
+
         stopWatch.start();
         cleanup();
         appendStat("clean up", stopWatch.stop());
@@ -464,30 +479,15 @@ void run(){
         }
         appendStat("prepare memory", stopWatch.stop());
 
-        for (int i = 0; i < concurrency::numThreads; ++i)
+        lockUpdate();
+        for (int i = 0; i < concurrency::numThreads; ++i){
             updateWork[i].push(updateJob(copyWorkers));
+            updateWork[i].push(updateJob(barriers));
+        }
         unlockUpdate();
-//        lockUpdate();
-
-//        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
-//        auto _i = GPU_TRANSFORMS->storage->begin();
-//        for(auto& i : TRANSFORMS.data){
-//            *_i = i;
-//            ++_i;
-//        }
-//
-//        GPU_RENDERERS->storage->resize(gpu_renderers.size());
-//        auto __i = GPU_RENDERERS->storage->begin();
-//        for(auto& i : gpu_renderers.data){
-//            *__i = i;
-//            ++__i;
-//        }
-//        for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
-//            for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
-//                j->second->_ids->storage->resize(j->second->ids.data.size());
-//                memcpy(j->second->_ids->storage->data(), j->second->ids.data.data(),j->second->ids.data.size() * sizeof(GLuint));
-//            }
-//        }
+        while(barrierCounter < concurrency::numThreads)
+            this_thread::sleep_for(1ns);
+        barrierCounter = 0;
 
 		// rendering
         stopWatch.start();

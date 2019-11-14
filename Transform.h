@@ -29,6 +29,15 @@ struct _transform {
 	GLint childrenEnd = -1;
 	GLint prevSibling = -1;
 	GLint nextSibling = -1;
+	void translate(glm::vec3 translation) {
+		position += rotation * translation;
+	}
+	void rotate(glm::vec3 axis, float radians) {
+		rotation = glm::rotate(rotation, radians, axis);
+//		for (Transform* a : children)
+//			a->rotateChild(axis, position, rotation, radians);
+//		rotation = normalize(rotation);
+	}
 };
 array_heap<_transform> TRANSFORMS = array_heap<_transform>();
 array_heap<_transform> STATIC_TRANSFORMS = array_heap<_transform>();
@@ -113,9 +122,7 @@ public:
 		return (glm::translate(_T->position) * glm::scale(_T->scale))* glm::toMat4(_T->rotation);
 
 	}
-
 	void translate(glm::vec3 translation) {
-		translation *= _T->scale;
 		_T->position += _T->rotation * translation;
 		for (auto a : children)
 			a->translate(translation, _T->rotation);
@@ -149,13 +156,11 @@ public:
 		this->scale(scale / _T->scale);
 	}
 
-	void rotate(glm::vec3 axis, float degress) {
-		//axis = glm::normalize(rotation * axis);
-		degress = glm::radians(degress);
-		_T->rotation = glm::rotate(_T->rotation, degress, axis);
+    void rotate(glm::vec3 axis, float radians) {
+		_T->rotation = glm::rotate(_T->rotation, radians, axis);
 		for (Transform* a : children)
-			a->rotateChild(axis, _T->position, _T->rotation, degress);
-		_T->rotation = normalize(_T->rotation);
+			a->rotateChild(axis, _T->position, _T->rotation, radians);
+//		_T->rotation = normalize(_T->rotation);
 	}
 	glm::quat getRotation() {
 		return _T->rotation;

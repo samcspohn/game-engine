@@ -10,9 +10,9 @@ game_object* proto = nullptr;
 class player_sc :public component {
 public:
 	void update() {
-		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.2f);
-		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.2f);
-		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.deltaTime * -100.f);
+		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.02f);
+		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.02f);
+		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.deltaTime * -1.f);
 		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * 30.0f);
 		 cout << "\rcubes: " << numCubes << " \tfps: " << 1.f / Time.unscaledSmoothDeltaTime << "                  ";
 
@@ -24,14 +24,16 @@ class cube_sc : public component {
 public:
 	glm::vec3 dir;
 	glm::vec3 rot;
+	array_heap<_transform>::ref T;
 	cube_sc() {}
 	void onStart() {
 		dir = randomSphere();
 		rot = randomSphere();
+		T = transform->_T;
 	}
 	void update() {
 		transform->translate(dir * Time.deltaTime * 10.f);
-		transform->rotate(rot, Time.deltaTime * 100.f);
+		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 10000.f / numCubes * Time.deltaTime) {
 //		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 0.01f) {
 			numCubes.fetch_add(-1);
@@ -68,10 +70,6 @@ int main(void)
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
 //	waitForRenderQueue();
 
-
-    for(int i = 0; i < 10; i++)
-        cout << randf() << endl;
-
 	player = new game_object();
 	player->addComponent<player_sc>();
 	player->addComponent<moreCUBES>();
@@ -97,7 +95,6 @@ int main(void)
 	}
 	auto nanosuitMan = new game_object(*CUBE);
 	nanosuitMan->getComponent<_renderer>()->set(modelShader, nanoSuitModel);
-	cout << "here" << endl;
 
     run();
 
