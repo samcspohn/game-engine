@@ -106,7 +106,7 @@ struct shaderVariable {
 		type = 15;
 		m3p = _m3;
 	}
-	
+
 	void data() {
 		switch (this->type) {
 
@@ -130,7 +130,6 @@ public:
 	// Constructor generates the shader on the fly
 
 	Shader(const string computePath) {
-		log("compute shader");
 
 		this->computeFile = computePath;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
@@ -236,7 +235,6 @@ public:
 	}
 	void _Shader(const string computePath)
 	{
-		log("compute shader loading");
 		vector<GLuint> shaders;
 		shaders.push_back(loadFile(computeFile, GL_COMPUTE_SHADER));
 		compileShader(shaders);

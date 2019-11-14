@@ -12,8 +12,8 @@
 				<Option type="1" />
 				<Option compiler="clang" />
 				<Compiler>
-					<Add option="-O4" />
 					<Add option="-w" />
+					<Add option="-g" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -23,6 +23,7 @@
 				<Option compiler="clang" />
 				<Compiler>
 					<Add option="-O4" />
+					<Add option="-w" />
 				</Compiler>
 			</Target>
 		</Build>
@@ -30,6 +31,19 @@
 			<Add option="-Weverything" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Linker>
+			<Add library="GL" />
+			<Add library="GLU" />
+			<Add library="GLEW" />
+			<Add library="glfw" />
+			<Add library="X11" />
+			<Add library="Xxf86vm" />
+			<Add library="Xrandr" />
+			<Add library="pthread" />
+			<Add library="Xi" />
+			<Add library="SOIL" />
+			<Add library="assimp" />
+		</Linker>
 		<Unit filename="Component.h" />
 		<Unit filename="Input.h" />
 		<Unit filename="Mesh.h" />
@@ -40,7 +54,9 @@
 		<Unit filename="array_heap.h" />
 		<Unit filename="concurrency.h" />
 		<Unit filename="config.txt" />
+		<Unit filename="event.h" />
 		<Unit filename="fast_list.h" />
+		<Unit filename="fast_mutex.h" />
 		<Unit filename="gameEngine.h" />
 		<Unit filename="game_engine.h" />
 		<Unit filename="game_engine_components.h" />
@@ -48,10 +64,12 @@
 		<Unit filename="gpu_vector.h" />
 		<Unit filename="gpu_vector.h.gch" />
 		<Unit filename="include.h" />
+		<Unit filename="listThing.h" />
 		<Unit filename="log.txt" />
 		<Unit filename="main.cpp" />
 		<Unit filename="main.exec" />
 		<Unit filename="makefile" />
+		<Unit filename="plf_colony.h" />
 		<Unit filename="plf_list.h" />
 		<Unit filename="rendering.h" />
 		<Unit filename="res/images/container2.png" />
