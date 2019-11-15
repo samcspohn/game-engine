@@ -118,7 +118,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 
 }
-
+bool eventsPollDone;
 void updateInfo() {
 	Input.resetKeyDowns();
 	mouseFrameBegin();
@@ -132,6 +132,7 @@ void updateInfo() {
 	Time.timeBuffer.add(Time.unscaledDeltaTime);
 	lastFrame = currentFrame;
 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
+	eventsPollDone = true;
 }
 void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view);
 
@@ -153,7 +154,7 @@ void renderThreadFunc() {
 	window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetWindowSizeCallback(window, window_size_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -229,13 +230,14 @@ void renderThreadFunc() {
 			renderLock.lock();
 			renderJob rj = renderWork.front(); renderWork.pop();
 			switch (rj.type) {
-			case doFunc:
+			case doFunc://    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 				rj.work();
 				renderLock.unlock();
 				break;
 			case renderNum::render:
 			{
-
+                updateInfo();
 				//gpuDataLock.lock();
 				GPU_TRANSFORMS->bufferData();//array_heap
 
@@ -349,6 +351,9 @@ void cleanup(){
     for(auto& i : toRemove){
         i->erase();
     }
+    for(auto& i : allcomponents){
+        i.second->rebalance();
+    }
     removeLock.unlock();
     destroyLock.lock();
     for(auto& i : toDestroy){
@@ -433,8 +438,16 @@ void run(){
             continue;
         }
     }
+    eventsPollDone = true;
     while (!glfwWindowShouldClose(window))
     {
+
+
+        while(!eventsPollDone){
+            this_thread::sleep_for(1ns);
+        }
+        eventsPollDone = false;
+
         // scripting
 		for (auto& j : allcomponents) {
 			if (j.first == typeid(copyBuffers).hash_code())
@@ -447,27 +460,29 @@ void run(){
 			unlockUpdate();
 			this_thread::sleep_for(8ns);
 		}
-		enqueRenderJob(updateInfo);
+//		enqueRenderJob(updateInfo);
+//
+//
+//		//barrier
+//        lockUpdate();
+//        for (int i = 0; i < concurrency::numThreads; ++i){
+//            updateWork[i].push(updateJob(barriers));
+//        }
+//        unlockUpdate();
+//        while(barrierCounter < concurrency::numThreads)
+//            this_thread::sleep_for(1ns);
+//        barrierCounter = 0;
+//        // wait for barrier
 
         lockUpdate();
-        for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(barriers));
-        }
-        unlockUpdate();
-        while(barrierCounter < concurrency::numThreads)
-            this_thread::sleep_for(1ns);
-        barrierCounter = 0;
 
+		cleanup();
         stopWatch.start();
-        cleanup();
-        appendStat("clean up", stopWatch.stop());
-
-        stopWatch.start();
-		while (TRANSFORMS.density() < 0.99) { // shift
-            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
-            if (GO_T_refs[loc]->getRenderer() != 0)
-                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
-        }
+//		while (TRANSFORMS.density() < 0.99) { // shift
+//            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
+//            if (GO_T_refs[loc]->getRenderer() != 0)
+//                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
+//        }
 
 
         GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
@@ -479,7 +494,6 @@ void run(){
         }
         appendStat("prepare memory", stopWatch.stop());
 
-        lockUpdate();
         for (int i = 0; i < concurrency::numThreads; ++i){
             updateWork[i].push(updateJob(copyWorkers));
             updateWork[i].push(updateJob(barriers));

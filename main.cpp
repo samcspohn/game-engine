@@ -10,8 +10,8 @@ game_object* proto = nullptr;
 class player_sc :public component {
 public:
 	void update() {
-		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.02f);
-		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.02f);
+		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.01f);
+		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.deltaTime * -1.f);
 		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * 30.0f);
 		 cout << "\rcubes: " << numCubes << " \tfps: " << 1.f / Time.unscaledSmoothDeltaTime << "                  ";
@@ -34,7 +34,7 @@ public:
 	void update() {
 		transform->translate(dir * Time.deltaTime * 10.f);
 		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
-		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 10000.f / numCubes * Time.deltaTime) {
+		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 30000.f / numCubes * Time.deltaTime) {
 //		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 0.01f) {
 			numCubes.fetch_add(-1);
 			transform->gameObject->destroy();
@@ -92,6 +92,8 @@ int main(void)
 	for (int i = 0; i < n; i++) {
 		 go = new game_object(*go);
 		go->transform->translate(randomSphere() * 20.f);
+		if(i % (n / 100) == 0)
+            cout << "\r       " << "\r" << (float)i / (float)n;
 	}
 	auto nanosuitMan = new game_object(*CUBE);
 	nanosuitMan->getComponent<_renderer>()->set(modelShader, nanoSuitModel);
