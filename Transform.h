@@ -80,6 +80,7 @@ public:
 		GO_T_refs[_T] = gameObject;
 		transformMutex.unlock();
 		parent = 0;
+		root->Adopt(this);
 	}
 	Transform(game_object* g) {
 		this->gameObject = g;
@@ -160,7 +161,7 @@ public:
 		_T->rotation = glm::rotate(_T->rotation, radians, axis);
 		for (Transform* a : children)
 			a->rotateChild(axis, _T->position, _T->rotation, radians);
-//		_T->rotation = normalize(_T->rotation);
+		_T->rotation = normalize(_T->rotation);
 	}
 	glm::quat getRotation() {
 		return _T->rotation;
@@ -168,13 +169,15 @@ public:
 	void setRotation(glm::quat r) {
 		_T->rotation = r;
 	}
-	plf::list<Transform*>& getChildren() {
+	list<Transform*>& getChildren() {
 		return children;
 	}
 	Transform* getParent() {
 		return parent;
 	}
 	void Adopt(Transform * transform) {
+	    if(transform->parent == this)
+            return;
 		// if(children.find(transform) != children.end())
 		// 	return;
 		transform->orphan();
@@ -347,8 +350,8 @@ public:
 private:
 	bool enabled = true;
 	Transform * parent;
-	plf::list<Transform*> children;
-	plf::list<Transform*>::iterator childId;
+	list<Transform*> children;
+	list<Transform*>::iterator childId;
 
 	friend void destroyRoot(Transform * t);
 	~Transform() {	}
