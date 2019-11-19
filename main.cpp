@@ -52,7 +52,7 @@ public:
 			float r = rof * Time.deltaTime;
 			for (int i = 0; i < r; i++) {
 				game_object* go = new game_object(*proto);
-				go->getComponent<cube_sc>()->dir = transform->forward() * 2.f + randomSphere() * 0.6f;
+//				go->getComponent<cube_sc>()->dir = transform->forward() * 2.f + randomSphere() * 0.6f;
 				go->transform->setPosition(transform->getPosition() + transform->forward() * 5.f - transform->up() * 2.5f);
 				numCubes.fetch_add(1);
 
@@ -90,10 +90,10 @@ int main(void)
 
 	game_object* go = new game_object(*CUBE);
 	for (int i = 0; i < n; i++) {
-		 go = new game_object(*go);
+        go = new game_object(*go);
 		go->transform->translate(randomSphere() * 20.f);
 		if(i % (n / 100) == 0)
-            cout << "\r       " << "\r" << (float)i / (float)n;
+            cout << "\r" << (float)i / (float)n << "    " << flush;
 	}
 	auto nanosuitMan = new game_object(*CUBE);
 	nanosuitMan->getComponent<_renderer>()->set(modelShader, nanoSuitModel);

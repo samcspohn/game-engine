@@ -33,6 +33,7 @@ class _camera : public component
 {
 public:
 	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
+	_camera(){};
 	~_camera();
 	GLfloat fov;
 	GLfloat nearPlane;
@@ -165,6 +166,21 @@ class barrier : public component{
     void update() {
         barrierCounter.fetch_add(1);
     }
+//    void _update(int index, unsigned int _start, unsigned int _end){
+//        listThing2<barrier>::node* i = COMPONENT_LIST(barrier)->data[_start];
+//        bool isEnd = _end >= COMPONENT_LIST(barrier)->data.accessor.size();
+//        if(isEnd)
+//            listThing2<barrier>::node* end = COMPONENT_LIST(barrier)->data[_end - 1];
+//        else
+//            listThing2<barrier>::node* end = COMPONENT_LIST(barrier)->data[_end];
+//        for (i; i != end; i = i->next) {
+//            i->value.threadID = index;
+//            i->value.update();  }
+//        if(isEnd){
+//            end->value.threadID = index;
+//            end->value.update();
+//        }
+//    }
     UPDATE(barrier,update);
     COPY(barrier);
 };
