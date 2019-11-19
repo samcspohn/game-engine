@@ -204,10 +204,10 @@ public:
 
 	}
 	_renderer(const _renderer& other) {
-		if (other.meta != 0) {
+//		if (other.meta != 0) {
 			shader = other.shader;
 			model = other.model;
-		}
+//		}
 	}
 	~_renderer() {
 		if (meta != 0) {

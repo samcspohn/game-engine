@@ -4,7 +4,7 @@
 #include <atomic>
 
 
-#define LIST_THING_STORAGE list
+#define LIST_THING_STORAGE plf::list
 template<typename t>
 class listThing {
 public:
@@ -41,21 +41,21 @@ public:
     void rebalance(){
         float dist = (float)data.size() / (float)bookmarks.size();
         bool isNotBalanced = true;
-        while(isNotBalanced){
-            isNotBalanced = false;
-            for(int i = bookmarks.size() - 1; i > 0; --i){
-                if(bookmarks[i].count > bookmarks[i - 1].count){
-                    ++bookmarks[i].it;
-                    --bookmarks[i].count;
-                    ++bookmarks[i - 1].count;
-                    isNotBalanced = true;
-                }
-                if(bookmarks[i].count < bookmarks[i - 1].count - 1){
-                    --bookmarks[i].it;
-                    ++bookmarks[i].count;
-                    --bookmarks[i - 1].count;
-                    isNotBalanced = true;
-                }
+
+        for(int i = bookmarks.size() - 1; i > 0; --i){
+            int to = bookmarks[i].count - (int)dist;
+            for(int j = 0; j < to;j++){
+                ++bookmarks[i].it;
+                --bookmarks[i].count;
+                ++bookmarks[i - 1].count;
+            }
+        }
+        for(int i = 0; i < bookmarks.size() - 1; ++i){
+            int to = bookmarks[i].count - (int)dist;
+            for(int j = 0; j < to;j++){
+                --bookmarks[i + 1].it;
+                --bookmarks[i].count;
+                ++bookmarks[i + 1].count;
             }
         }
     }
@@ -89,19 +89,31 @@ public:
         typename LIST_THING_STORAGE<t>::iterator d = data.erase(itr->it); // get iterator after erased
         typename LIST_THING_STORAGE<elem>::iterator i = itr;
         // repair itrs surrounding erased element;
-        --d; //go back one
-        --i; i->it = d; // set id itr to new itr
-        ++d;
-        ++i;++i; i->it = d;
+//        --d; //go back one
+//        --i; i->it = d; // set id itr to new itr
+//        ++d;
+//        ++i;++i; i->it = d;//good / done
 
         delete itr->ref;
-        if(itr->id == bookmarks[bookmarkIndex].it->id)
-            bookmarks[bookmarkIndex].it = ids.erase(itr);
-        else
-            ids.erase(itr);
-        i->ref->it = i;//update reference
+        size_t id = itr->id;
+        i = ids.erase(itr);
+
+
         --i;
+        if(bookmarkIndex > 0 && i->id == bookmarks[bookmarkIndex - 1].it->id)
+            bookmarks[bookmarkIndex].it = i;
         i->ref->it = i;
 
+
+        ++i;
+        if(id == bookmarks[bookmarkIndex].it->id){ // questionable
+            bookmarks[bookmarkIndex].it = i;
+            for(int j = bookmarkIndex + 1; j < concurrency::numThreads && bookmarks[j].it->id == id; ++j)
+                bookmarks[j].it = i;
+        }
+        for(int j = bookmarkIndex + 1; j < concurrency::numThreads && bookmarks[j].it->id == i->id; ++j){
+            bookmarks[j].it = i;
+        }
+        i->ref->it = i;//update reference
     }
 };

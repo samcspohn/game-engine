@@ -154,7 +154,7 @@ void renderThreadFunc() {
 	window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetWindowSizeCallback(window, window_size_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -351,9 +351,6 @@ void cleanup(){
     for(auto& i : toRemove){
         i->erase();
     }
-    for(auto& i : allcomponents){
-        i.second->rebalance();
-    }
     removeLock.unlock();
     destroyLock.lock();
     for(auto& i : toDestroy){
@@ -439,6 +436,7 @@ void run(){
         }
     }
     eventsPollDone = true;
+    cleanup();
     while (!glfwWindowShouldClose(window))
     {
 
@@ -447,6 +445,7 @@ void run(){
             this_thread::sleep_for(1ns);
         }
         eventsPollDone = false;
+        barrierCounter = 0;
 
         // scripting
 		for (auto& j : allcomponents) {
@@ -454,12 +453,14 @@ void run(){
 				continue;
             if (j.first == typeid(barriers).hash_code())
 				continue;
+            componentStorageBase* cb = j.second;
 			lockUpdate();
 			for (int i = 0; i < concurrency::numThreads; ++i)
 				updateWork[i].push(updateJob(j.second));
 			unlockUpdate();
 			this_thread::sleep_for(8ns);
 		}
+//		barrierCounter = 0;
 //		enqueRenderJob(updateInfo);
 //
 //
