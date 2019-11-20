@@ -64,7 +64,7 @@ class listThing2{
 //        node* n;
 //    };
     unsigned int extent = 0;
-    std::map<unsigned int, node*> accessor;
+    boost::container::flat_map<unsigned int, node*> accessor;
     std::set<unsigned int> avail;
     std::deque<listThing2<t>::node> data;
     listThing2(){

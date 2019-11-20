@@ -139,6 +139,10 @@ void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view);
 glm::mat4 getProjection() {
 	return glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, (GLfloat).1f, (GLfloat)1e32f);
 }
+
+
+mutex gpuDataLock;
+
 void renderThreadFunc() {
 
 	glfwInit();
@@ -238,11 +242,10 @@ void renderThreadFunc() {
 			case renderNum::render:
 			{
                 updateInfo();
-				//gpuDataLock.lock();
+				gpuDataLock.lock();
 				GPU_TRANSFORMS->bufferData();//array_heap
 
 				GPU_RENDERERS->bufferData();
-				//gpuDataLock.unlock();
 				GPU_MATRIXES->tryRealloc(GPU_MATRIXES_IDS.size());
 
 				GLuint matPView = glGetUniformLocation(matProgram.Program, "view");
@@ -275,6 +278,7 @@ void renderThreadFunc() {
 				glDispatchCompute(GPU_RENDERERS->size() / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
+				gpuDataLock.unlock();
 
 				//buffer renderer ids
 				 for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
@@ -447,6 +451,10 @@ void run(){
         eventsPollDone = false;
         barrierCounter = 0;
 
+        lockUpdate();
+
+
+        unlockUpdate();
         // scripting
 		for (auto& j : allcomponents) {
 			if (j.first == typeid(copyBuffers).hash_code())
@@ -454,6 +462,7 @@ void run(){
             if (j.first == typeid(barriers).hash_code())
 				continue;
             componentStorageBase* cb = j.second;
+            cb->reset();
 			lockUpdate();
 			for (int i = 0; i < concurrency::numThreads; ++i)
 				updateWork[i].push(updateJob(j.second));
@@ -464,27 +473,28 @@ void run(){
 //		enqueRenderJob(updateInfo);
 //
 //
-//		//barrier
-//        lockUpdate();
-//        for (int i = 0; i < concurrency::numThreads; ++i){
-//            updateWork[i].push(updateJob(barriers));
-//        }
-//        unlockUpdate();
-//        while(barrierCounter < concurrency::numThreads)
-//            this_thread::sleep_for(1ns);
-//        barrierCounter = 0;
-//        // wait for barrier
+		//barrier
+        lockUpdate();
+        for (int i = 0; i < concurrency::numThreads; ++i){
+            updateWork[i].push(updateJob(barriers));
+        }
+        unlockUpdate();
+        while(barrierCounter < concurrency::numThreads)
+            this_thread::sleep_for(1ns);
+        barrierCounter = 0;
+        // wait for barrier
 
         lockUpdate();
+        gpuDataLock.lock();
 
-		cleanup();
-        stopWatch.start();
-//		while (TRANSFORMS.density() < 0.99) { // shift
+        cleanup();
+//        while (TRANSFORMS.density() < 0.99) { // shift
 //            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
 //            if (GO_T_refs[loc]->getRenderer() != 0)
 //                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
 //        }
 
+        stopWatch.start();
 
         GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
         GPU_RENDERERS->storage->resize(gpu_renderers.size());
@@ -495,6 +505,8 @@ void run(){
         }
         appendStat("prepare memory", stopWatch.stop());
 
+        copyWorkers->reset();
+        barriers->reset();
         for (int i = 0; i < concurrency::numThreads; ++i){
             updateWork[i].push(updateJob(copyWorkers));
             updateWork[i].push(updateJob(barriers));
@@ -503,6 +515,7 @@ void run(){
         while(barrierCounter < concurrency::numThreads)
             this_thread::sleep_for(1ns);
         barrierCounter = 0;
+        gpuDataLock.unlock();
 
 		// rendering
         stopWatch.start();
@@ -553,6 +566,7 @@ void run(){
 
 void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view) {
 
+    float farplane = 1e32f;
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	glCullFace(GL_BACK);
 	for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
@@ -561,7 +575,7 @@ void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view) {
 		for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
 			glUseProgram(currShader->Program);
 			glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
-			glUniform1f(glGetUniformLocation(currShader->Program, "farPlane"), 1e32f);
+			glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farplane + 1));
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
 
