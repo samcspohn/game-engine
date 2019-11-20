@@ -24,7 +24,7 @@ layout(std430, binding = 3) buffer _m_buffs{
 	matrix matrixes[];
 };
 layout(std430,binding = 4) buffer _ids{
-	uint ids[]; 
+	uint ids[];
 };
 
 
@@ -36,14 +36,14 @@ out vec4 DirLightSpacePos;
 out float logz;
 out vec4 col;
 
-uniform float farPlane;
+//uniform float farPlane;
 //uniform mat4 dirLightTransform;
 uniform mat4 proj;
 uniform mat4 view;
 uniform mat4 vRot;
 
 //const float C = 1;
-const float FC = 2.0 / log2(1e32f + 1);
+uniform float FC;
 
 vec4 logVert(vec4 in_) {
 	in_.z = log2(max(1e-6,1.0 + in_.w))*FC - 1.0f;

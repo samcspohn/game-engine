@@ -59,7 +59,7 @@ in float logz;
 uniform vec3 viewPos;
 uniform Material material;
 uniform sampler2D directionalShadowMap;
-uniform float farPlane;
+//uniform float farPlane;
 uniform OmniShadowMap omniShadowMap;
 //uniform PointLight light;
 
@@ -102,9 +102,9 @@ float CalcDirectionalShadowFactor(DirLight light)
 
 	shadow /= 9.0;
 	if(projCoords.z > 1.0 || projCoords.z < 0 || projCoords.x > 1 || projCoords.x < 0 || projCoords.y > 1 || projCoords.y < 0)
-		shadow = 0.0;	
+		shadow = 0.0;
 //	else shadow = 1;
-	
+
 //	return projCoords.x;
 	return 1 - shadow;
 }
@@ -166,19 +166,19 @@ vec3 getDirLight(DirLight light, vec3 normal,vec3 viewDir,vec3 color, vec3 specC
 }
 vec3 getpointLight(PointLight light, vec3 normal, vec3 viewDir,vec3 color, vec3 specColor){
 	vec3 lightDir = normalize(light.position - FragPos);
-	return (getAmbient(light.ambient,color) + getDiffuse(light.diffuse,lightDir,normal,color) + getSpecular(light.specular,lightDir,normal,viewDir,color,specColor)) 
+	return (getAmbient(light.ambient,color) + getDiffuse(light.diffuse,lightDir,normal,color) + getSpecular(light.specular,lightDir,normal,viewDir,color,specColor))
 	* getAttenuation(light.position,light.constant,light.linear,light.quadratic) * calcOmniShadowFactor(light);
 }
 vec3 getSpotLight(SpotLight light, vec3 normal,vec3 viewDir,vec3 color, vec3 specColor){
 	vec3 lightDir = normalize(light.position - FragPos);
-	return (getAmbient(light.ambient,color) + getDiffuse(light.diffuse,lightDir,normal,color) + getSpecular(light.specular,lightDir,normal,viewDir,color,specColor)) 
+	return (getAmbient(light.ambient,color) + getDiffuse(light.diffuse,lightDir,normal,color) + getSpecular(light.specular,lightDir,normal,viewDir,color,specColor))
 	* getAttenuation(light.position,light.constant,light.linear,light.quadratic)
 	* getIntensity(lightDir,light.direction,light.cutoff,light.outerCutOff);
 }
 
 
 
-const float FC = 2.0 / log2(farPlane + 1);
+uniform float FC;
 void main()
 {
 // debug / fun shaders

@@ -36,7 +36,7 @@ public:
 
 	template<class t>
 	t * addComponent() {
-		compInfo<t> ci = addComponentToAll(t());
+		compInfo<t> ci = addComponentToAll(new t());
 		t* ret = ci.compPtr;
 		components[ret] = ci.CompItr;
 		((component*)ret)->transform = this->transform;
@@ -46,7 +46,7 @@ public:
 	}
 
 	template<class t>
-	t* addComponent(const t& c) {
+	t* addComponent(t* c) {
 		compInfo<t> ci = addComponentToAll(c);
 		t* ret = ci.compPtr;
 		components[ret] = ci.CompItr;
@@ -59,6 +59,14 @@ public:
 	template<class t>
 	void removeComponent(t* c) {
 		removeLock.lock();
+		toRemove.push_back(components.at(c));
+		removeLock.unlock();
+		components.erase(c);
+	}
+    template<class t>
+	void removeComponent() {
+		removeLock.lock();
+		component* c = getComponent<t>();
 		toRemove.push_back(components.at(c));
 		removeLock.unlock();
 		components.erase(c);
