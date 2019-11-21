@@ -4,72 +4,94 @@
 #include "Component.h"
 #include <set>
 #include "plf_list.h"
+#include "fast_list.h"
 using namespace std;
 
 mutex removeLock;
-plf::list<compItr*> toRemove;
+std::set<compItr*> toRemove;
 mutex destroyLock;
-std::list<Transform*> toDestroy;
+std::set<Transform*> toDestroy;
 
 class _renderer;
 class game_object {
 
-	map<component*, compItr*> components;
+	map<ull, compItr*> components;
 	~game_object() { };
 	//friend component;
-	component* renderer = 0;
+	typename fast_list_deque<_renderer>::iterator renderer = 0;
 	friend _renderer;
 public:
 
 	_renderer* getRenderer() {
-		return (_renderer*)renderer;
+		return (_renderer*)&*renderer;
 	}
 	template<typename t>
-	t* getComponent() {
+    typename fast_list_deque<t>::iterator getComponent() {
 		ull hash = typeid(t).hash_code();
 		for (auto& i : components)
-			if (i.second->hash == hash)
-				return (t*)i.first;
-		return 0;
+			if (i.second->hash == hash){
+                return dynamic_cast<compItr_<t>*>(i.second)->get();
+//				return ((compItr_<t>*)i.second)->get();
+			}
+        throw;
+//		return 0;
 	}
 
 
 	template<class t>
-	t * addComponent() {
-		compInfo<t> ci = addComponentToAll(new t());
-		t* ret = ci.compPtr;
-		components[ret] = ci.CompItr;
-		((component*)ret)->transform = this->transform;
-		((component*)ret)->transform->gameObject = this;
-		ci.compPtr->onStart();
+	typename fast_list_deque<t>::iterator addComponent() {
+		compInfo<t> ci = addComponentToAll(t());
+		typename fast_list_deque<t>::iterator ret = ci.compPtr;
+		components[typeid(t).hash_code()] = ci.CompItr;
+		((component*)&(*ret))->transform = this->transform;
+		((component*)&(*ret))->transform->gameObject = this;
+		((component*)&(*ret))->onStart();
 		return ret;
 	}
 
 	template<class t>
-	t* addComponent(t* c) {
+	typename fast_list_deque<t>::iterator addComponent(const t& c) {
 		compInfo<t> ci = addComponentToAll(c);
-		t* ret = ci.compPtr;
-		components[ret] = ci.CompItr;
-		((component*)ret)->transform = this->transform;
-		((component*)ret)->transform->gameObject = this;
-		ci.compPtr->onStart();
+		typename fast_list_deque<t>::iterator ret = ci.compPtr;
+		components[typeid(t).hash_code()] = ci.CompItr;
+		((component*)&(*ret))->transform = this->transform;
+		((component*)&(*ret))->transform->gameObject = this;
+		((component*)&(*ret))->onStart();
 		return ret;
 	}
 
 	template<class t>
-	void removeComponent(t* c) {
+	void removeComponent(typename fast_list_deque<t>::iterator c) {
 		removeLock.lock();
-		toRemove.push_back(components.at(c));
+		if(toRemove.find(components.at(typeid(t).hash_code())) != toRemove.end()){
+            cout << "already removed" << endl;
+            throw;
+		}
+		toRemove.insert(components.at(typeid(t).hash_code()));
 		removeLock.unlock();
-		components.erase(c);
+		components.erase(typeid(t).hash_code());
+	}
+    void removeComponent(ull h) {
+		removeLock.lock();
+		if(toRemove.find(components.at(h)) != toRemove.end()){
+            cout << "already removed" << endl;
+            throw;
+		}
+		toRemove.insert(components.at(h));
+		removeLock.unlock();
+		components.erase(h);
 	}
     template<class t>
 	void removeComponent() {
 		removeLock.lock();
-		component* c = getComponent<t>();
-		toRemove.push_back(components.at(c));
+		typename fast_list_deque<t>::iterator c = getComponent<t>();
+		if(toRemove.find(components.at(typeid(t).hash_code())) != toRemove.end()){
+            cout << "already removed" << endl;
+            throw;
+		}
+		toRemove.insert(components.at(typeid(t).hash_code()));
 		removeLock.unlock();
-		components.erase(c);
+		components.erase(typeid(t).hash_code());
 	}
 
 	void destroy() {
@@ -77,7 +99,11 @@ public:
 		while (components.size() > 0) {
 			removeComponent(components.begin()->first);
 		}
-		toDestroy.push_back(transform);
+		if(toDestroy.find(transform) != toDestroy.end()){
+            cout << "already destroyed" << endl;
+            throw;
+		}
+		toDestroy.insert(transform);
 		destroyLock.unlock();
 		for(auto& i : transform->getChildren()){
             i->gameObject->destroy();
@@ -96,7 +122,7 @@ public:
 		this->transform = new Transform(*g.transform, this);
 		g.transform->getParent()->Adopt(this->transform);
 		for (auto& i : g.components) {
-			i.first->_copy(this);
+			i.second->getComponent()->_copy(this);
 		}
 	}
 
