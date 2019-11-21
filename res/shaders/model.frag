@@ -161,8 +161,8 @@ float getIntensity(vec3 lightDir,vec3 lightsDir, float cutoff, float outerCutOff
 
 
 vec3 getDirLight(DirLight light, vec3 normal,vec3 viewDir,vec3 color, vec3 specColor){
-	return getAmbient(light.ambient,color) + (getDiffuse(light.diffuse,light.direction,normal,color) + getSpecular(light.specular,light.direction,normal,viewDir,color,specColor))
-	* CalcDirectionalShadowFactor(light);
+	return getAmbient(light.ambient,color) + (getDiffuse(light.diffuse,light.direction,normal,color) + getSpecular(light.specular,light.direction,normal,viewDir,color,specColor));
+//	* CalcDirectionalShadowFactor(light);
 }
 vec3 getpointLight(PointLight light, vec3 normal, vec3 viewDir,vec3 color, vec3 specColor){
 	vec3 lightDir = normalize(light.position - FragPos);
@@ -195,9 +195,18 @@ void main()
 	}
 	vec3 norm = normalize(Normal);
 	vec3 viewDir = normalize(viewPos - FragPos);
-//	color.rgb += vec3(0,0,getDirLight(dirlights[0],norm,viewDir,diffuseColor,specColor).b);
+	DirLight dl;
+    dl.direction = vec3(1.f);
+	dl.ambient = vec3(0.2f);
+	dl.diffuse = vec3(0.5f);
+	dl.specular = vec3(0.01f);
 
-	color.rgb = diffuseColor;
+//	color.rgb += vec3(0,0,getDirLight(dirlights[0],norm,viewDir,diffuseColor,specColor).b);
+	color.rgb += getDirLight(dl,norm,viewDir,diffuseColor,specColor);
+
+//	color.rgb = diffuseColor;
+
+
 //	for(int i = 0; i < numDLights; i++)
 //		color += vec4(getDirLight(dirlights[i],norm,viewDir,diffuseColor,specColor),0.0f);
 //	for(int i = 0; i < numPLights; i++)
