@@ -215,13 +215,13 @@ public:
 		t* operator->()const {
 			return &itr->fl->data.at(itr->index);
 		}
-		operator unsigned int() {
-			return this->itr->index;
-		}
+//		operator unsigned int() {
+//			return this->itr->index;
+//		}
 		t& data() {
 			return itr->fl->data[itr->index];
 		}
-		t operator *(){
+		t& operator *(){
             return itr->fl->data[itr->index];
 		}
 		iterator() {};

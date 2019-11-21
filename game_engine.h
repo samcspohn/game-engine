@@ -29,8 +29,9 @@ using namespace std;
 
 struct updateJob {
 	componentStorageBase* componentStorage;
+	int size;
 	updateJob() {}
-	updateJob(componentStorageBase* csb) : componentStorage(csb) {}
+	updateJob(componentStorageBase* csb, int _size) : componentStorage(csb), size(_size) {}
 };
 
 GLFWwindow* window;
@@ -388,18 +389,18 @@ void cleanup(){
 void componentUpdateThread(int index) {
     timer stopWatch;
 	while (true) {
+        updateLocks[index].lock();
 		if (updateWork[index].size() > 0) {
-            updateLocks[index].lock();
 			updateJob uj = updateWork[index].front(); updateWork[index].pop();
 			if (uj.componentStorage == 0)
 				break;
             if(index == 0)
                 stopWatch.start();
-			ComponentsUpdate(uj.componentStorage, index);
+			ComponentsUpdate(uj.componentStorage, index, uj.size);
 			if(index == 0)
                 appendStat(uj.componentStorage->name, stopWatch.stop());
-			updateLocks[index].unlock();
 		}
+        updateLocks[index].unlock();
         this_thread::sleep_for(1ns);
 	}
 }
@@ -420,8 +421,6 @@ void init(){
 
 void run(){
     timer stopWatch;
-/* Loop until the user closes the window */
-
 
     vector<thread*> workers;
     for(int i = 0; i < concurrency::numThreads; i++)
@@ -462,10 +461,11 @@ void run(){
             if (j.first == typeid(barriers).hash_code())
 				continue;
             componentStorageBase* cb = j.second;
-            cb->reset();
+            int s = cb->size();
 			lockUpdate();
+			cleanup();
 			for (int i = 0; i < concurrency::numThreads; ++i)
-				updateWork[i].push(updateJob(j.second));
+				updateWork[i].push(updateJob(j.second, s));
 			unlockUpdate();
 			this_thread::sleep_for(8ns);
 		}
@@ -476,7 +476,7 @@ void run(){
 		//barrier
         lockUpdate();
         for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(barriers));
+            updateWork[i].push(updateJob(barriers, concurrency::numThreads));
         }
         unlockUpdate();
         while(barrierCounter < concurrency::numThreads)
@@ -488,11 +488,11 @@ void run(){
         gpuDataLock.lock();
 
         cleanup();
-//        while (TRANSFORMS.density() < 0.99) { // shift
-//            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
-//            if (GO_T_refs[loc]->getRenderer() != 0)
-//                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
-//        }
+        while (TRANSFORMS.density() < 0.99) { // shift
+            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
+            if (GO_T_refs[loc]->getRenderer() != 0)
+                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
+        }
 
         stopWatch.start();
 
@@ -505,11 +505,9 @@ void run(){
         }
         appendStat("prepare memory", stopWatch.stop());
 
-        copyWorkers->reset();
-        barriers->reset();
         for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(copyWorkers));
-            updateWork[i].push(updateJob(barriers));
+            updateWork[i].push(updateJob(copyWorkers, concurrency::numThreads));
+            updateWork[i].push(updateJob(barriers, concurrency::numThreads));
         }
         unlockUpdate();
         while(barrierCounter < concurrency::numThreads)
@@ -546,7 +544,7 @@ void run(){
 	renderLock.unlock();
 
      for(int i = 0; i < concurrency::numThreads; i++){
-        updateWork[i].push(updateJob(0));
+        updateWork[i].push(updateJob(0,0));
         workers[i]->join();
      }
 

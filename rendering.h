@@ -171,7 +171,7 @@ public:
 		if (shader.s == 0 || model.m == 0)
 			return;
 		set(shader, model);
-		transform->gameObject->renderer = this;
+		transform->gameObject->renderer = transform->gameObject->getComponent<_renderer>();
 	}
 	_renderer() {}
 
@@ -209,8 +209,8 @@ public:
 			model = other.model;
 //		}
 	}
-	~_renderer() {
-		if (meta != 0) {
+	void onDestroy(){
+        if (meta != 0) {
 			rendererLock.lock();
 			meta->ids.erase(idLoc);
 			GPU_MATRIXES_IDS._delete(matrixLoc);
@@ -218,6 +218,8 @@ public:
 			rendererLock.unlock();
 		}
 	}
+//	~_renderer() {
+//	}
 
 	void updateTransformLoc(int loc) {
 		_Rloc->transform = loc;

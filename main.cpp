@@ -49,7 +49,7 @@ public:
 	void update() {
 		transform->translate(dir * Time.deltaTime * 10.f);
 		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
-		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 30000.f / numCubes * Time.deltaTime) {
+		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 60000.f / numCubes * Time.deltaTime) {
 //		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 0.01f) {
 			numCubes.fetch_add(-1);
 			transform->gameObject->destroy();
@@ -64,10 +64,10 @@ class nbody : public component{
     glm::vec3 vel;
 
     void update(){
-        deque<nbody*>& v = COMPONENT_LIST(nbody)->data.data;
+        deque<nbody>& v = COMPONENT_LIST(nbody)->data.data;
         glm::vec3 acc{0};
         for(auto& i : v){
-            glm::vec3 dir = i->transform->getPosition() - transform->getPosition();
+            glm::vec3 dir = i.transform->getPosition() - transform->getPosition();
             float r = glm::length2(dir) - 0.5f;
             if(r < -0.1f || r > 5000.f)
                 continue;
@@ -134,7 +134,8 @@ int main(void)
 	}
 	auto nanosuitMan = new game_object(*CUBE);
 	nanosuitMan->getComponent<_renderer>()->set(modelShader, nanoSuitModel);
-	nanosuitMan->removeComponent(nanosuitMan->getComponent<cube_sc>());
+	component_ref(cube_sc) it = nanosuitMan->getComponent<cube_sc>();
+	nanosuitMan->removeComponent<cube_sc>(it);
 	nanosuitMan->transform->move(glm::vec3(-10.f));
 
 	game_object* proto2 = new game_object(*CUBE);

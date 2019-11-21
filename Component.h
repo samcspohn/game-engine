@@ -12,27 +12,36 @@
 
 #define ull unsigned long long
 
+class component;
 struct compItr {
 	ull hash;
 	virtual void erase() {};
+    virtual component* getComponent(){};
 };
 
 template<typename t>
 struct compItr_ : public compItr {
-    typename fast_list_deque<t*>::iterator id;
-	fast_list_deque<t*>* l;
+    typename fast_list_deque<t>::iterator id;
+	fast_list_deque<t>* l;
 	void erase() {
-	    delete *id;
+//	    delete *id;
+        (&(id.data()))->onDestroy();
 		l->erase(id);
 		delete this;
 	}
-	compItr_(typename fast_list_deque<t*>::iterator _id, fast_list_deque<t*>* _l) : id(_id), l(_l) {}
+	typename fast_list_deque<t>::iterator get(){
+        return id;
+	}
+	component* getComponent(){
+	    return (component*)&(*id);
+	}
+	compItr_(typename fast_list_deque<t>::iterator _id, fast_list_deque<t>* _l) : id(_id), l(_l) {}
 	compItr_() {}
 };
 
 template<typename t>
 struct compInfo {
-	t* compPtr;
+	typename fast_list_deque<t>::iterator compPtr;
 	compItr* CompItr;
 };
 
@@ -40,8 +49,8 @@ class componentStorageBase {
 public:
 	string name;
 
-	virtual void update(int index) {}
-	virtual void reset(){};
+	virtual void update(int index, int size) {}
+	virtual int size(){};
 };
 
 class game_object;
@@ -50,7 +59,7 @@ class component {
 public:
 	int threadID;
 	virtual void onStart() {}
-
+    virtual void onDestroy() {}
 
 	virtual void _update(int index, unsigned int _start, unsigned int _end) {};
 	virtual void _copy(game_object* go) = 0;
@@ -67,19 +76,21 @@ public:
 template<typename t>
 class componentStorage : public componentStorageBase {
 public:
-	fast_list_deque<t*> data;
+	fast_list_deque<t> data;
 
 	componentStorage() {
 //		data = listThing2<t>();
 	}
-	void reset(){}
-	void update(int index) {
+	int size(){
+        return data.size();
+	}
+	void update(int index, int size) {
 //	    if(data.accessor.size() / concurrency::numThreads * (index+1) - data.accessor.size() / concurrency::numThreads * index > 0){
-            unsigned int _start = (unsigned int)(data.data.size() / concurrency::numThreads * index);
-            unsigned int _end = (unsigned int)(data.data.size() / concurrency::numThreads * (index + 1));
+            unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
+            unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
             if(index == concurrency::numThreads - 1)
-                _end = data.data.size();
-            ((component*)data.data.front())->_update(index, _start, _end);
+                _end = size;
+            ((component*)&(data.data.front()))->_update(index, _start, _end);
 //	    }
 	}
 };
@@ -88,7 +99,7 @@ std::map<ull, componentStorageBase*> allcomponents;
 
 std::mutex componentLock;
 template<typename t>
-inline compInfo<t> addComponentToAll(t* c) {
+inline compInfo<t> addComponentToAll(const t& c) {
 
 	componentLock.lock();
 	ull hash = typeid(t).hash_code();
@@ -98,10 +109,10 @@ inline compInfo<t> addComponentToAll(t* c) {
 		allcomponents[hash]->name = typeid(t).name();
 	}
 	componentStorage<t>* compStorage = static_cast<componentStorage<t>*>(allcomponents[hash]);
-	typename fast_list_deque<t*>::iterator id = compStorage->data.push_back(c);
+	typename fast_list_deque<t>::iterator id = compStorage->data.push_back(c);
 
 	compInfo<t> ret;
-	ret.compPtr = (compStorage->data.data[id]);
+	ret.compPtr = id;
 	ret.CompItr = new compItr_<t>(id, &compStorage->data);
 	ret.CompItr->hash = hash;
 	componentLock.unlock();
@@ -109,14 +120,14 @@ inline compInfo<t> addComponentToAll(t* c) {
 }
 
 
-void ComponentsUpdate(componentStorageBase* csbase, int i) {
-	csbase->update(i);
+void ComponentsUpdate(componentStorageBase* csbase, int i, int size) {
+	csbase->update(i, size);
 }
 
 #define COMPONENT_LIST(x) static_cast<componentStorage<x>*>(allcomponents[typeid(x).hash_code()])
 
 #define COPY(component_type) void _copy(game_object* go){ \
-	go->addComponent(new component_type(*this)); \
+	go->addComponent(component_type(*this)); \
 }
 //#define UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
 //    listThing2<component_type>::node* i = COMPONENT_LIST(component_type)->data[_start];\
@@ -130,7 +141,9 @@ void ComponentsUpdate(componentStorageBase* csbase, int i) {
 //    if(isEnd){ end->value.threadID = index; end->value.update_function(); }\
 // }
 #define UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
-    deque<component_type*>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start;\
-    deque<component_type*>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end;\
-    for (i; i != end; ++i) { (*i)->threadID = index; (*i)->update_function();  }\
+    deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start;\
+    deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end;\
+    for (i; i != end; ++i) { (*i).threadID = index; (*i).update_function();  }\
 }
+
+#define component_ref(x) typename fast_list_deque<x>::iterator
