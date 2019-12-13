@@ -396,3 +396,7 @@ private:
 	}
 
 };
+
+bool compareTransform(Transform* t1, Transform* t2){
+    return t1->_T < t2->_T;
+}

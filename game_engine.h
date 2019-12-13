@@ -21,17 +21,22 @@
 #include "game_object.h"
 #include "rendering.h"
 #include "game_engine_components.h"
+#include "physics.h"
+
 
 using namespace glm;
 using namespace std;
 
 
-
+enum update_type{
+    update,lateupdate
+};
 struct updateJob {
 	componentStorageBase* componentStorage;
 	int size;
+	update_type ut;
 	updateJob() {}
-	updateJob(componentStorageBase* csb, int _size) : componentStorage(csb), size(_size) {}
+	updateJob(componentStorageBase* csb, update_type _ut, int _size) : componentStorage(csb), size(_size), ut(_ut) {}
 };
 
 GLFWwindow* window;
@@ -243,6 +248,7 @@ void renderThreadFunc() {
 			case renderNum::render:
 			{
                 updateInfo();
+
 				gpuDataLock.lock();
 				GPU_TRANSFORMS->bufferData();//array_heap
 
@@ -386,6 +392,10 @@ void cleanup(){
 //
 //}
 
+vector<size_t> threadCounters = vector<size_t>(concurrency::numThreads,0);
+
+atomic<bool> makeOctree(false);
+
 void componentUpdateThread(int index) {
     timer stopWatch;
 	while (true) {
@@ -396,7 +406,18 @@ void componentUpdateThread(int index) {
 				break;
             if(index == 0)
                 stopWatch.start();
-			ComponentsUpdate(uj.componentStorage, index, uj.size);
+
+            switch(uj.ut){
+                case update_type::update:
+                    ComponentsUpdate(uj.componentStorage, index, uj.size);
+                    break;
+                case update_type::lateupdate:
+                    ComponentsLateUpdate(uj.componentStorage,index,uj.size);
+                    break;
+                default:
+                    break;
+            }
+            threadCounters[index]++;
 			if(index == 0)
                 appendStat(uj.componentStorage->name, stopWatch.stop());
 		}
@@ -419,6 +440,25 @@ void init(){
     }
 }
 
+void waitForBarrier(){
+    while(barrierCounter.load() < concurrency::numThreads)
+                this_thread::sleep_for(1ns);
+    barrierCounter.store(0);
+}
+
+void syncThreads(){
+    bool isSynced = false;
+    while(!isSynced){
+        isSynced = true;
+        size_t currCount = threadCounters[0];
+        for(int i = 1; i < concurrency::numThreads; ++i){
+            if(threadCounters[i] != currCount){
+                isSynced = false;
+            }
+        }
+        this_thread::sleep_for(1ns);
+    }
+}
 void run(){
     timer stopWatch;
 
@@ -428,6 +468,7 @@ void run(){
 
     componentStorageBase* copyWorkers;
     componentStorageBase* barriers;
+    componentStorageBase* colliders;
     for (auto& j : allcomponents) {
         if (j.first == typeid(copyBuffers).hash_code()){
             copyWorkers = j.second;
@@ -437,12 +478,31 @@ void run(){
             barriers = j.second;
             continue;
         }
+        if(j.first == typeid(collider).hash_code()){
+            colliders = j.second;
+            continue;
+        }
     }
     eventsPollDone = true;
     cleanup();
+
+    for (int i = 0; i < concurrency::numThreads; ++i){
+        updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
+    }
+    unlockUpdate();
+    waitForBarrier();
+
+
+
+    leaves.clear();
+	octree2 = &nodes.front();
+	octree2->clear();
+	octree2->id = 0;
+	numNodes = 1;
+
+
     while (!glfwWindowShouldClose(window))
     {
-
 
         while(!eventsPollDone){
             this_thread::sleep_for(1ns);
@@ -452,9 +512,40 @@ void run(){
 
         lockUpdate();
 
+        syncThreads();
+        size_t currCount = threadCounters[0];
+        for(int i = 1; i < concurrency::numThreads; ++i){
+            if(threadCounters[i] != currCount){
+//                cout << "component type: " << cb->name << endl;
+                cout << "threads out of sync" << endl;
+                cout << "baseline: " << currCount << endl;
+                cout << "offender: " << threadCounters[i] << endl;
+                cout << "thread id: " << i << endl;
+                throw;
+            }
+        }
+
+
+
+        leaves.clear();
+		octree2->clear();
+		octree2 = &nodes.front();
+		octree2->id = 0;
+		numNodes = 1;
+		nodes[0]._parent = -1;
+//
+//        deque<collider>::iterator i = COMPONENT_LIST(collider)->data.data.begin();
+//        deque<collider>::iterator end = COMPONENT_LIST(collider)->data.data.end();
+//        for (i; i != end; ++i) {
+////            (*i).threadID = 0;
+//            (*i).update();
+//        }
 
         unlockUpdate();
+
+
         // scripting
+        // UPDATE
 		for (auto& j : allcomponents) {
 			if (j.first == typeid(copyBuffers).hash_code())
 				continue;
@@ -462,26 +553,44 @@ void run(){
 				continue;
             componentStorageBase* cb = j.second;
             int s = cb->size();
+
 			lockUpdate();
 			cleanup();
-			for (int i = 0; i < concurrency::numThreads; ++i)
-				updateWork[i].push(updateJob(j.second, s));
+			for (int i = 0; i < concurrency::numThreads; ++i){
+				updateWork[i].push(updateJob(j.second,update_type::update, s));
+                updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
+			}
 			unlockUpdate();
-			this_thread::sleep_for(8ns);
+			waitForBarrier();
+			syncThreads();
 		}
-//		barrierCounter = 0;
-//		enqueRenderJob(updateInfo);
-//
-//
+		// LATE UPDATE
+        for (auto& j : allcomponents) {
+			if (j.first == typeid(copyBuffers).hash_code())
+				continue;
+            if (j.first == typeid(barriers).hash_code())
+				continue;
+            componentStorageBase* cb = j.second;
+            int s = cb->size();
+
+			lockUpdate();
+			cleanup();
+			for (int i = 0; i < concurrency::numThreads; ++i){
+				updateWork[i].push(updateJob(j.second,update_type::lateupdate, s));
+                updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
+			}
+			unlockUpdate();
+			waitForBarrier();
+			syncThreads();
+		}
 		//barrier
         lockUpdate();
         for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(barriers, concurrency::numThreads));
+            updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
         }
         unlockUpdate();
-        while(barrierCounter < concurrency::numThreads)
-            this_thread::sleep_for(1ns);
-        barrierCounter = 0;
+        waitForBarrier();
+        syncThreads();
         // wait for barrier
 
         lockUpdate();
@@ -493,8 +602,12 @@ void run(){
             if (GO_T_refs[loc]->getRenderer() != 0)
                 GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
         }
-
         stopWatch.start();
+//        for(auto& j : allcomponents){
+//            if (j.first == typeid(copyBuffers).hash_code() || j.first == typeid(barriers).hash_code())
+//				continue;
+//            j.second->sort();
+//        }
 
         GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
         GPU_RENDERERS->storage->resize(gpu_renderers.size());
@@ -506,17 +619,16 @@ void run(){
         appendStat("prepare memory", stopWatch.stop());
 
         for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(copyWorkers, concurrency::numThreads));
-            updateWork[i].push(updateJob(barriers, concurrency::numThreads));
+            updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads));
+            updateWork[i].push(updateJob(barriers, update_type::update, concurrency::numThreads));
         }
         unlockUpdate();
-        while(barrierCounter < concurrency::numThreads)
-            this_thread::sleep_for(1ns);
-        barrierCounter = 0;
+        waitForBarrier();
+        syncThreads();
         gpuDataLock.unlock();
 
 		// rendering
-        stopWatch.start();
+//        stopWatch.start();
 		renderJob rj;
         rj.type = renderNum::render;
 		rj.val1 = GPU_RENDERERS->size();
@@ -530,7 +642,7 @@ void run(){
 		renderLock.lock();
 		renderWork.push(rj);
 		renderLock.unlock();
-		appendStat("rendering", stopWatch.stop());
+//		appendStat("rendering", stopWatch.stop());
 
 //        unlockUpdate();
     }
@@ -544,7 +656,7 @@ void run(){
 	renderLock.unlock();
 
      for(int i = 0; i < concurrency::numThreads; i++){
-        updateWork[i].push(updateJob(0,0));
+        updateWork[i].push(updateJob(0,update_type::update,0));
         workers[i]->join();
      }
 
