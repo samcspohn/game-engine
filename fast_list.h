@@ -4,9 +4,12 @@
 #include<deque>
 #include<set>
 #include <map>
-
+#include <algorithm>
+#include "Component.h"
 using namespace std;
 
+template<typename t>
+class componentStorage;
 
 template<typename t>
 class fast_list {
@@ -206,6 +209,9 @@ public:
 	deque<_itr*> iterators;
 	struct iterator {
 	public:
+	    bool isNull(){
+            return itr == nullptr;
+	    }
 		bool operator==(const size_t& rhs) {
 			return *itr == rhs;
 		}
@@ -215,9 +221,6 @@ public:
 		t* operator->()const {
 			return &itr->fl->data.at(itr->index);
 		}
-//		operator unsigned int() {
-//			return this->itr->index;
-//		}
 		t& data() {
 			return itr->fl->data[itr->index];
 		}
@@ -228,9 +231,7 @@ public:
 		iterator(_itr* i) {
 			itr = i;
 		}
-		//iterator(const _itr& other) {  };
 		_itr* itr = nullptr;
-		//size_t _Ptr;
 	};
 
 	iterator back() {
@@ -278,6 +279,8 @@ public:
 		iterators.back()->it = itr.itr->it;// int
 		iterators[itr.itr->it] = iterators.back();//this pointer = back pointer
 		iterators.erase(--(iterators.end()));
+
+//        swap(itr.itr->index, data.size() - 1);
 		data.pop_back();
 		delete itr.itr;
 
@@ -291,7 +294,6 @@ public:
 		data.clear();
 	}
 
-
 	void swap(unsigned int l, unsigned int r) {
 		_itr* itl = iterators[l];
 		_itr* itr = iterators[r];
@@ -302,14 +304,15 @@ public:
 		unsigned int temp = itl->index;
 		itl->index = itr->index;
 		itr->index = temp;
-		t tempt = (*data)[l];
-		(*data)[l] = (*data)[r];
-		(*data)[r] = tempt;
+		t tempt = std::move(data[l]);
+		data[l] = std::move(data[r]);
+		data[r] = std::move(tempt);
 	}
 
 	~fast_list_deque() {
 		for (typename deque<_itr*>::iterator i = iterators.begin(); i != iterators.end(); i++)
 			delete * i;
 	}
-
+//	friend class componentStorage;
+//    friend void sort();
 };

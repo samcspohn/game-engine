@@ -5,6 +5,7 @@
 #include <set>
 #include "plf_list.h"
 #include "fast_list.h"
+//#include "physics.h"
 using namespace std;
 
 mutex removeLock;
@@ -13,6 +14,7 @@ mutex destroyLock;
 std::set<Transform*> toDestroy;
 
 class _renderer;
+
 class game_object {
 
 	map<ull, compItr*> components;
@@ -33,7 +35,7 @@ public:
                 return dynamic_cast<compItr_<t>*>(i.second)->get();
 //				return ((compItr_<t>*)i.second)->get();
 			}
-        throw;
+        return typename fast_list_deque<t>::iterator();
 //		return 0;
 	}
 
@@ -41,11 +43,12 @@ public:
 	template<class t>
 	typename fast_list_deque<t>::iterator addComponent() {
 		compInfo<t> ci = addComponentToAll(t());
-		typename fast_list_deque<t>::iterator ret = ci.compPtr;
+		component_ref(t) ret = ci.compPtr;
 		components[typeid(t).hash_code()] = ci.CompItr;
 		((component*)&(*ret))->transform = this->transform;
 		((component*)&(*ret))->transform->gameObject = this;
 		((component*)&(*ret))->onStart();
+
 		return ret;
 	}
 

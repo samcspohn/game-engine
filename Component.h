@@ -11,8 +11,11 @@
 #include "fast_list.h"
 
 #define ull unsigned long long
-
+class game_object;
+class Transform;
 class component;
+bool compareTransform(Transform* t1, Transform* t2);
+
 struct compItr {
 	ull hash;
 	virtual void erase() {};
@@ -50,11 +53,12 @@ public:
 	string name;
 
 	virtual void update(int index, int size) {}
+	virtual void lateUpdate(int index, int size){}
 	virtual int size(){};
+	virtual void sort(){};
 };
 
-class game_object;
-class Transform;
+
 class component {
 public:
 	int threadID;
@@ -62,6 +66,7 @@ public:
     virtual void onDestroy() {}
 
 	virtual void _update(int index, unsigned int _start, unsigned int _end) {};
+	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end) {};
 	virtual void _copy(game_object* go) = 0;
 	Transform* transform;
 	int getThreadID() {
@@ -84,14 +89,33 @@ public:
 	int size(){
         return data.size();
 	}
+
+	void sort(){
+	    float unsorted = 0;
+        while(unsorted > 0){
+            unsorted = 0;
+            for(unsigned int i = 0; i < data.data.size() - 1; ++i){
+                if(compareTransform(((component*)&data.data[i])->transform, ((component*)&data.data[i + 1])->transform)){
+                    data.swap(i, i + 1);
+                    unsorted += 1;
+                }
+            }
+        }
+
+	}
 	void update(int index, int size) {
-//	    if(data.accessor.size() / concurrency::numThreads * (index+1) - data.accessor.size() / concurrency::numThreads * index > 0){
-            unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
-            unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
-            if(index == concurrency::numThreads - 1)
-                _end = size;
-            ((component*)&(data.data.front()))->_update(index, _start, _end);
-//	    }
+        unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
+        unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
+        if(index == concurrency::numThreads - 1)
+            _end = size;
+        ((component*)&(data.data.front()))->_update(index, _start, _end);
+	}
+    void lateUpdate(int index, int size) {
+        unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
+        unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
+        if(index == concurrency::numThreads - 1)
+            _end = size;
+        ((component*)&(data.data.front()))->_lateUpdate(index, _start, _end);
 	}
 };
 
@@ -124,6 +148,10 @@ void ComponentsUpdate(componentStorageBase* csbase, int i, int size) {
 	csbase->update(i, size);
 }
 
+void ComponentsLateUpdate(componentStorageBase* csbase, int i, int size) {
+	csbase->lateUpdate(i, size);
+}
+
 #define COMPONENT_LIST(x) static_cast<componentStorage<x>*>(allcomponents[typeid(x).hash_code()])
 
 #define COPY(component_type) void _copy(game_object* go){ \
@@ -145,5 +173,15 @@ void ComponentsUpdate(componentStorageBase* csbase, int i, int size) {
     deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end;\
     for (i; i != end; ++i) { (*i).threadID = index; (*i).update_function();  }\
 }
+#define LATE_UPDATE(component_type, late_update_function) void _lateUpdate(int index, unsigned int _start, unsigned int _end){ \
+    deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start;\
+    deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end;\
+    for (i; i != end; ++i) { (*i).threadID = index; (*i).late_update_function();  }\
+}
 
+
+//#define UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
+//    vector<component_type>& d = COMPONENT_LIST(component_type)->data.data;\
+//    for (int i = index; i < _end; i += concurrency::numThreads) { d[i].threadID = index; d[i].update_function();  }\
+//}
 #define component_ref(x) typename fast_list_deque<x>::iterator

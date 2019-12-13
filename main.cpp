@@ -37,20 +37,20 @@ public:
 };
 class cube_sc : public component {
 public:
-	glm::vec3 dir;
+//	glm::vec3 dir;
+    component_ref(rigidBody) rb;
 	glm::vec3 rot;
-	array_heap<_transform>::ref T;
 	cube_sc() {}
 	void onStart() {
-		dir = randomSphere();
 		rot = randomSphere();
-		T = transform->_T;
+		rb = transform->gameObject->getComponent<rigidBody>();
+		rb->setVelocity(randomSphere() * .5f);
+//		rb->setVelocity(glm::normalize(-transform->getPosition()));
 	}
 	void update() {
-		transform->translate(dir * Time.deltaTime * 10.f);
-		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
+//		transform->translate(dir * Time.deltaTime * 10.f);
+//		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 60000.f / numCubes * Time.deltaTime) {
-//		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 0.01f) {
 			numCubes.fetch_add(-1);
 			transform->gameObject->destroy();
 		}
@@ -61,20 +61,30 @@ public:
 
 class nbody : public component{
 
-    glm::vec3 vel;
+//    glm::vec3 vel;
+    component_ref(rigidBody) rb;
+//
+    void onStart(){
+        rb = transform->gameObject->getComponent<rigidBody>();
 
+    }
     void update(){
         deque<nbody>& v = COMPONENT_LIST(nbody)->data.data;
-        glm::vec3 acc{0};
+        glm::vec3 acc(0);
+//        cout << v.size();
         for(auto& i : v){
             glm::vec3 dir = i.transform->getPosition() - transform->getPosition();
-            float r = glm::length2(dir) - 0.5f;
-            if(r < -0.1f || r > 5000.f)
+            float r = glm::length2(dir);
+            if(r < 0.1f || r > 5000.f)
                 continue;
+            if(!vecIsNan(dir))
             acc += 10.f * glm::normalize(dir) / r;
         }
-        vel += acc * Time.deltaTime;
-        transform->move(vel * Time.deltaTime);
+        if(vecIsNan(acc * Time.deltaTime)){
+            acc = glm::vec3(0);
+        }
+        rb->setVelocity(rb->getVelocity() + acc * Time.deltaTime);
+//        transform->move(vel * Time.deltaTime);
     }
     UPDATE(nbody, update);
 	COPY(nbody);
@@ -119,6 +129,8 @@ int main(void)
 
 	game_object* CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
+	CUBE->addComponent<rigidBody>();
+	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	//gameObjects.front()->addComponent<mvpSolver>();
@@ -128,7 +140,7 @@ int main(void)
 	game_object* go = new game_object(*CUBE);
 	for (int i = 0; i < n; i++) {
         go = new game_object(*go);
-		go->transform->translate(randomSphere() * 20.f);
+		go->transform->translate(randomSphere() * 5.f);
 		if(i % (n / 100) == 0)
             cout << "\r" << (float)i / (float)n << "    " << flush;
 	}
