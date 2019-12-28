@@ -55,6 +55,9 @@ public:
 	vector<_itr*> iterators;
 	struct iterator {
 	public:
+        bool isNull(){
+            return itr == nullptr;
+	    }
 		bool operator==(const size_t& rhs) {
 			return *itr == rhs;
 		}
@@ -70,7 +73,7 @@ public:
 		t& data() {
 			return itr->fl->data[itr->index];
 		}
-		t operator *(){
+		t& operator *(){
             return itr->fl->data[itr->index];
 		}
 		iterator() {};
@@ -151,9 +154,9 @@ public:
 		unsigned int temp = itl->index;
 		itl->index = itr->index;
 		itr->index = temp;
-		t tempt = (*data)[l];
-		(*data)[l] = (*data)[r];
-		(*data)[r] = tempt;
+		t tempt = std::move(data[l]);
+		data[l] = std::move(data[r]);
+		data[r] = std::move(tempt);
 	}
 
 	~fast_list() {

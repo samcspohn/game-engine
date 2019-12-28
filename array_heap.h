@@ -1,7 +1,7 @@
 #pragma once
-#include <deque>
+#include <vector>
 #include <set>
-#include <deque>
+#include <vector>
 #include <array>
 #include <vector>
 using namespace std;
@@ -31,8 +31,8 @@ public:
 	};
 	friend array_heap::ref;
 	t& operator[](unsigned int i) {
-		if (i >= extent)
-			throw -10;//"out of bounds";
+//		if (i >= extent)
+//			throw -10;//"out of bounds";
 		//if(!valid[i])
 		//	throw exception("invalid");
 		return data.at(i);
@@ -81,7 +81,7 @@ public:
 	unsigned int size() {
 		return extent;
 	}
-	deque<t> data = deque<t>();
+	vector<t> data = vector<t>();
 private:
 	set<uint32_t> avail = set<uint32_t> ();
 	uint32_t extent = 0;
@@ -91,20 +91,20 @@ private:
 #else
 
 
-#define _DEQUE_BLOCK_SIZE 1024
+#define _vector_BLOCK_SIZE 1024
 template<typename t>
-class _deque {
+class _vector {
 public:
-	deque<vector<t> > data = deque<vector<t> >();
+	vector<vector<t> > data = vector<vector<t> >();
 	size_t _size = 0;
-	_deque() {
+	_vector() {
 		data.push_back(vector<t>());
-		data.back().reserve(_DEQUE_BLOCK_SIZE);
+		data.back().reserve(_vector_BLOCK_SIZE);
 	}
 	inline void push_back(const t& a) {
-		if (_size == data.size() * _DEQUE_BLOCK_SIZE) {
+		if (_size == data.size() * _vector_BLOCK_SIZE) {
 			data.push_back(vector<t>());
-			data.back().reserve(_DEQUE_BLOCK_SIZE);
+			data.back().reserve(_vector_BLOCK_SIZE);
 		}
 		data.back().push_back(a);
 		++_size;
@@ -113,15 +113,15 @@ public:
 		return _size;
 	}
 	inline t& operator[](size_t i) {
-		return data[i / _DEQUE_BLOCK_SIZE][i % _DEQUE_BLOCK_SIZE];
+		return data[i / _vector_BLOCK_SIZE][i % _vector_BLOCK_SIZE];
 	}
 	inline t& at(size_t i) {
-		return (t&)data.at(i / _DEQUE_BLOCK_SIZE).at(i % _DEQUE_BLOCK_SIZE);
+		return (t&)data.at(i / _vector_BLOCK_SIZE).at(i % _vector_BLOCK_SIZE);
 	}
 	inline void resize(size_t size) {
-		data.resize(size / _DEQUE_BLOCK_SIZE + 1);
-		data.back().reserve(_DEQUE_BLOCK_SIZE);
-		data.back().resize(size % _DEQUE_BLOCK_SIZE);
+		data.resize(size / _vector_BLOCK_SIZE + 1);
+		data.back().reserve(_vector_BLOCK_SIZE);
+		data.back().resize(size % _vector_BLOCK_SIZE);
 		//size_t m = BLOCK_SIZE - size % BLOCK_SIZE;
 		//for(int i = 0;)
 		_size = size;
@@ -206,7 +206,7 @@ public:
 	unsigned int size() {
 		return extent;
 	}
-	_deque<t> data = _deque<t>();
+	_vector<t> data = _vector<t>();
 private:
 	set<uint32_t> avail = set<uint32_t>();
 	uint32_t extent;

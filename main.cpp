@@ -10,12 +10,18 @@ game_object* proto = nullptr;
 class player_sc :public component {
     bool cursorReleased = false;
     float speed = 30.f;
+    component_ref(rigidBody) rb;
 public:
+    void onStart(){
+        rb = transform->gameObject->getComponent<rigidBody>();
+    }
 	void update() {
 		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.01f);
 		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.deltaTime * -1.f);
-		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+
+        rb->setVelocity(((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D))  * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT))  * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward()) * speed);
+//		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
 		 cout << "\rcubes: " << numCubes << " \tfps: " << 1.f / Time.unscaledSmoothDeltaTime << "                  ";
 
 		 if(Input.getKeyDown(GLFW_KEY_R)){
@@ -23,6 +29,13 @@ public:
 		 }
 		 else if(Input.getKeyDown(GLFW_KEY_F)){
             speed /= 2;
+		 }
+		 if(Input.getKeyDown(GLFW_KEY_P)){
+            Time.timeScale *= 2;
+		 }else if(Input.getKeyDown(GLFW_KEY_L)){
+            Time.timeScale /= 2;
+		 }else if(Input.getKeyDown(GLFW_KEY_M)){
+            Time.timeScale = 1;
 		 }
 //
 //		 if(Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased){
@@ -43,6 +56,7 @@ public:
 	cube_sc() {}
 	void onStart() {
 		rot = randomSphere();
+//		dir = randomSphere() * .5f;
 		rb = transform->gameObject->getComponent<rigidBody>();
 		rb->setVelocity(randomSphere() * .5f);
 //		rb->setVelocity(glm::normalize(-transform->getPosition()));
@@ -118,8 +132,10 @@ int main(void)
 //	waitForRenderQueue();
 
 	player = new game_object();
-	player->addComponent<player_sc>();
 	player->addComponent<moreCUBES>();
+	player->addComponent<collider>();
+	player->addComponent<rigidBody>();
+	player->addComponent<player_sc>();
 
     ifstream config("config.txt");
     int n;
