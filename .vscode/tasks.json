@@ -1,0 +1,24 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "command": "clang++",
+            "args": ["main.cpp", "-std=c++11", "-g", "-fpermissive", "-w", "-std=c++17", "-lGL", "-lGLU",
+                 "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
+                 "-lXi", "-lSOIL", "-lassimp"
+                ],
+        }
+    ]
+}

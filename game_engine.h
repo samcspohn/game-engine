@@ -449,6 +449,7 @@ void waitForBarrier(){
 }
 
 void syncThreads(){
+	return;
     bool isSynced = false;
     while(!isSynced){
         isSynced = true;
@@ -456,6 +457,7 @@ void syncThreads(){
         for(int i = 1; i < concurrency::numThreads; ++i){
             if(threadCounters[i] != currCount){
                 isSynced = false;
+				break;
             }
         }
         this_thread::sleep_for(1ns);
@@ -515,17 +517,17 @@ void run(){
         lockUpdate();
 
         syncThreads();
-        size_t currCount = threadCounters[0];
-        for(int i = 1; i < concurrency::numThreads; ++i){
-            if(threadCounters[i] != currCount){
-//                cout << "component type: " << cb->name << endl;
-                cout << "threads out of sync" << endl;
-                cout << "baseline: " << currCount << endl;
-                cout << "offender: " << threadCounters[i] << endl;
-                cout << "thread id: " << i << endl;
-                throw;
-            }
-        }
+//         size_t currCount = threadCounters[0];
+//         for(int i = 1; i < concurrency::numThreads; ++i){
+//             if(threadCounters[i] != currCount){
+// //                cout << "component type: " << cb->name << endl;
+//                 cout << "threads out of sync" << endl;
+//                 cout << "baseline: " << currCount << endl;
+//                 cout << "offender: " << threadCounters[i] << endl;
+//                 cout << "thread id: " << i << endl;
+//                 throw;
+//             }
+//         }
 
 
 
