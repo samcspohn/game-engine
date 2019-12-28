@@ -1,5 +1,4 @@
 #pragma once
-#include <boost/container/flat_map.hpp>
 #include <set>
 #include <deque>
 #include <map>
@@ -64,7 +63,7 @@ class listThing2{
 //        node* n;
 //    };
     unsigned int extent = 0;
-    boost::container::flat_map<unsigned int, node*> accessor;
+    map<unsigned int, node*> accessor;
     std::set<unsigned int> avail;
     std::deque<listThing2<t>::node> data;
     listThing2(){
