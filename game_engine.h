@@ -224,8 +224,8 @@ void renderThreadFunc() {
 	GPU_RENDERERS->ownStorage();
 	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
 	GPU_TRANSFORMS = new gpu_vector<_transform>();
-	GPU_TRANSFORMS->ownStorage();
-
+//	GPU_TRANSFORMS->ownStorage();
+    GPU_TRANSFORMS->storage = &TRANSFORMS.data;
 	// log("here");
 	// ids->init();
 
@@ -418,8 +418,10 @@ void componentUpdateThread(int index) {
                     break;
             }
             threadCounters[index]++;
-			if(index == 0)
-                appendStat(uj.componentStorage->name, stopWatch.stop());
+			if(index == 0 && uj.ut == update_type::update)
+                appendStat(uj.componentStorage->name + "--update", stopWatch.stop());
+            else if(index == 0 && uj.ut == update_type::lateupdate)
+                appendStat(uj.componentStorage->name + "--late_update", stopWatch.stop());
 		}
         updateLocks[index].unlock();
         this_thread::sleep_for(1ns);
@@ -533,17 +535,10 @@ void run(){
 		octree2->id = 0;
 		numNodes = 1;
 		nodes[0]._parent = -1;
-//
-//        deque<collider>::iterator i = COMPONENT_LIST(collider)->data.data.begin();
-//        deque<collider>::iterator end = COMPONENT_LIST(collider)->data.data.end();
-//        for (i; i != end; ++i) {
-////            (*i).threadID = 0;
-//            (*i).update();
-//        }
 
         unlockUpdate();
 
-
+        gpuDataLock.lock();
         // scripting
         // UPDATE
 		for (auto& j : allcomponents) {
@@ -594,7 +589,7 @@ void run(){
         // wait for barrier
 
         lockUpdate();
-        gpuDataLock.lock();
+
 
         cleanup();
         while (TRANSFORMS.density() < 0.99) { // shift
@@ -603,13 +598,13 @@ void run(){
                 GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
         }
         stopWatch.start();
-//        for(auto& j : allcomponents){
-//            if (j.first == typeid(copyBuffers).hash_code() || j.first == typeid(barriers).hash_code())
-//				continue;
-//            j.second->sort();
-//        }
+        for(auto& j : allcomponents){
+            if (j.first == typeid(copyBuffers).hash_code() || j.first == typeid(barriers).hash_code())
+				continue;
+            j.second->sort();
+        }
 
-        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
+//        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
         GPU_RENDERERS->storage->resize(gpu_renderers.size());
         for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
             for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {

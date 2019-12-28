@@ -122,15 +122,15 @@ class copyBuffers : public component {
 	void update() {
 		int numt = concurrency::numThreads;
 		if (getThreadID() < numt) {
-            {
-                deque<_transform>::iterator from = TRANSFORMS.data.begin() + TRANSFORMS.size() / concurrency::numThreads * getThreadID();
-                deque<_transform>::iterator to = TRANSFORMS.data.begin() + (getThreadID() != concurrency::numThreads - 1 ?
-                                                TRANSFORMS.size() / concurrency::numThreads * (getThreadID() + 1) :
-                                                TRANSFORMS.size());
-                int itr = TRANSFORMS.size() / concurrency::numThreads * getThreadID();
-                while(from != to)
-                GPU_TRANSFORMS->storage->at(itr++) = *from++;
-            }
+//            {
+//                vector<_transform>::iterator from = TRANSFORMS.data.begin() + TRANSFORMS.size() / concurrency::numThreads * getThreadID();
+//                vector<_transform>::iterator to = TRANSFORMS.data.begin() + (getThreadID() != concurrency::numThreads - 1 ?
+//                                                TRANSFORMS.size() / concurrency::numThreads * (getThreadID() + 1) :
+//                                                TRANSFORMS.size());
+//                int itr = TRANSFORMS.size() / concurrency::numThreads * getThreadID();
+//                while(from != to)
+//                GPU_TRANSFORMS->storage->at(itr++) = *from++;
+//            }
 
             {
                 size_t from = gpu_renderers.size() / numt * getThreadID();

@@ -17,7 +17,7 @@
 using namespace std;
 
 
-const int maxObj = 32;
+const int maxObj = 128;
 const int maxDepth = 100;
 
 atomic<int> rbId;
@@ -120,14 +120,14 @@ public:
 	void update() {
 		*currVel = *vel;
 		transform->move(*vel * Time.deltaTime);
-		if (vel == &vel1) {
-			vel = &vel2;
-			currVel = &vel1;
-		}
-		else {
-			vel = &vel1;
-			currVel = &vel2;
-		}
+//		if (vel == &vel1) {
+//			vel = &vel2;
+//			currVel = &vel1;
+//		}
+//		else {
+//			vel = &vel1;
+//			currVel = &vel2;
+//		}
 		//vel *= 1 - damping * Time.deltaTime;
 	}
 	UPDATE(rigidBody,update);
@@ -243,10 +243,11 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
 			b.rb->setVelocity(a.rb->getVelocity());
 			a.rb->setVelocity(bvel);*/
 
-			*a.rb->vel = (*b.rb->currVel + glm::vec3(x, y, z) * 2.f) / a.rb->mass * b.rb->mass;
-			*b.rb->vel = (*a.rb->currVel + glm::vec3(x, y, z) * 2.f) / b.rb->mass * a.rb->mass;
-			((component*)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio));
-			((component*)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio);
+            glm::vec3 aCurr = *a.rb->vel;
+			*a.rb->vel += *b.rb->vel + glm::vec3(x, y, z) - *a.rb->vel;// * 2.f) / a.rb->mass * b.rb->mass;
+			*b.rb->vel += aCurr - glm::vec3(x, y, z) - *b.rb->vel;// * 2.f) / b.rb->mass * a.rb->mass;
+			((component*)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio) / 2.f);
+			((component*)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio / 2.f);
 		}
 		else if (!b.rb.isNull() && a.rb.isNull()) {
 			//*b.rb->vel = glm::vec3(0);
@@ -265,7 +266,7 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
 
 atomic<int> octree2Size(0);
 struct treenode;
-vector<treenode> nodes(100000);
+vector<treenode> nodes(1000000);
 atomic<int> numNodes;
 //mutex nodeLock;
 fast_list<treenode*> leaves;
