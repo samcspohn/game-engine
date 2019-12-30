@@ -15,7 +15,7 @@
                 "clear": true
             },
             "command": "clang++",
-            "args": ["main.cpp", "-std=c++11", "-g", "-fpermissive", "-w", "-std=c++17", "-lGL", "-lGLU",
+            "args": ["main.cpp", "-std=c++11", "-g", "-fpermissive", "-w", "-O4", "-std=c++17", "-lGL", "-lGLU",
                  "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
                  "-lXi", "-lSOIL", "-lassimp"
                 ],
