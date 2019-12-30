@@ -17,7 +17,7 @@
 using namespace std;
 
 
-const int maxObj = 128;
+const int maxObj = 32;
 const int maxDepth = 100;
 
 atomic<int> rbId;
@@ -229,6 +229,27 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
 			else
 				y = 0;
 		}
+
+		// float x,y,z;
+		// if(a.a.c.x < b.a.c.x)
+		// 	x = aMax.x - bMin.x;
+		// else
+		// 	x = aMin.x - bMax.x;
+
+		// if(a.a.c.y < b.a.c.y)
+		// 	y = aMax.y - bMin.y;
+		// else
+		// 	y = aMin.y - bMax.y;
+
+		// if(a.a.c.z < b.a.c.z)
+		// 	z = aMax.z - bMin.z;
+		// else
+		// 	z = aMin.z - bMax.z;
+
+		// x = -x;
+		// y = -y;
+		// z = -z;
+		
 		if (!a.rb.isNull() && !b.rb.isNull()) {
 			if (b.rb->mass == 0 || a.rb->mass == 0)
 				return;
