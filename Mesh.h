@@ -109,7 +109,15 @@ public:
             glBindTexture( GL_TEXTURE_2D, 0 );
         }
     }
-    GLuint VAO, VBO, EBO;
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+    void reloadMesh(){
+        renderLock.lock();
+		renderJob rj;
+		rj.type = doFunc;
+		rj.work = [&]() { this->setupMesh(); };
+		renderWork.push(rj);
+		renderLock.unlock();
+    }
 private:
     /*  Render data  */
     
@@ -119,9 +127,11 @@ private:
     {
 
         // Create buffers/arrays
-        glGenVertexArrays( 1, &this->VAO );
-        glGenBuffers( 1, &this->VBO );
-        glGenBuffers( 1, &this->EBO );
+        if(this->VAO == 0){
+            glGenVertexArrays( 1, &this->VAO );
+            glGenBuffers( 1, &this->VBO );
+            glGenBuffers( 1, &this->EBO );
+        }
         
         glBindVertexArray( this->VAO );
         // Load data into vertex buffers

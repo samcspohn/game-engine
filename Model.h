@@ -59,8 +59,8 @@ public:
         }
     }
 	int numVerts=0;
-private:
     vector<Mesh> meshes;
+private:
     /*  Model Data  */
     string directory;
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
@@ -188,7 +188,7 @@ private:
             vector<Texture> specularMaps = this->loadMaterialTextures( material, aiTextureType_SPECULAR, "texture_specular" );
             textures.insert( textures.end( ), specularMaps.begin( ), specularMaps.end( ) );
 
-			// 2. normal maps
+			// 3. normal maps
 			vector<Texture> normalMaps = this->loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 			textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         }
