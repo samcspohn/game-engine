@@ -249,7 +249,13 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
 		// x = -x;
 		// y = -y;
 		// z = -z;
-		
+		glm::vec3 r = glm::normalize(a.a.c - b.a.c);
+		r *= glm::length(a.a.c - b.a.c) - (a.a.r.x + b.a.r.x);
+		r /= Time.deltaTime;
+		r /= 2;
+		if(vecIsNan(r))
+			r = glm::vec3();
+
 		if (!a.rb.isNull() && !b.rb.isNull()) {
 			if (b.rb->mass == 0 || a.rb->mass == 0)
 				return;
@@ -265,10 +271,10 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
 			a.rb->setVelocity(bvel);*/
 
             glm::vec3 aCurr = *a.rb->vel;
-			*a.rb->vel += *b.rb->vel + glm::vec3(x, y, z) - *a.rb->vel;// * 2.f) / a.rb->mass * b.rb->mass;
-			*b.rb->vel += aCurr - glm::vec3(x, y, z) - *b.rb->vel;// * 2.f) / b.rb->mass * a.rb->mass;
-			((component*)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio) / 2.f);
-			((component*)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio / 2.f);
+			*a.rb->vel += *b.rb->vel - aCurr + glm::vec3(x, y, z) * 2.f;// * 2.f) / a.rb->mass * b.rb->mass;
+			*b.rb->vel += aCurr - *b.rb->vel - glm::vec3(x, y, z)* 2.f;// * 2.f) / b.rb->mass * a.rb->mass;
+			((component*)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio));
+			((component*)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio);
 		}
 		else if (!b.rb.isNull() && a.rb.isNull()) {
 			//*b.rb->vel = glm::vec3(0);

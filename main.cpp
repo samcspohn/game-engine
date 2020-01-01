@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
+#include "terrain.h"
 atomic<int> numCubes(0);
 game_object* proto = nullptr;
 
@@ -129,6 +129,7 @@ int main(void)
     _shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
+	_model terrainModel("res/models/terrain/terrain.obj");
 //	waitForRenderQueue();
 
 	player = new game_object();
@@ -136,6 +137,15 @@ int main(void)
 	player->addComponent<collider>();
 	player->addComponent<rigidBody>();
 	player->addComponent<player_sc>();
+	game_object* ground = new game_object();
+	auto r = ground->addComponent<_renderer>();
+	r->set(modelShader,terrainModel);
+	auto t = ground->addComponent<terrain>();
+	t->r = r;
+	t->width = t->depth = 1024;
+	ground->transform->translate(glm::vec3(-5120,-100,-5120));
+	// auto t = ground->getComponent<terrain>();
+	// t->generate(100,100);
 
     ifstream config("config.txt");
     int n;

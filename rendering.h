@@ -167,6 +167,10 @@ class _renderer : public component {
 
 
 public:
+	_model getModel(){
+		return model;
+	}
+
 	void onStart() {
 		if (shader.s == 0 || model.m == 0)
 			return;
