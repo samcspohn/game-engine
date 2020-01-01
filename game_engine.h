@@ -683,6 +683,7 @@ void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view) {
 			glUseProgram(currShader->Program);
 			glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
 			glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farplane + 1));
+			glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1,glm::value_ptr(mainCamPos));
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
 

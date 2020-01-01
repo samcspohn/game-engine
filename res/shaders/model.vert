@@ -36,12 +36,6 @@ out vec4 DirLightSpacePos;
 out float logz;
 out vec4 col;
 
-//uniform float farPlane;
-//uniform mat4 dirLightTransform;
-uniform mat4 proj;
-uniform mat4 view;
-uniform mat4 vRot;
-
 //const float C = 1;
 uniform float FC;
 
