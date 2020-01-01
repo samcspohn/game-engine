@@ -199,7 +199,7 @@ void main()
     dl.direction = vec3(1.f);
 	dl.ambient = vec3(0.2f);
 	dl.diffuse = vec3(0.5f);
-	dl.specular = vec3(0.01f);
+	dl.specular = vec3(1.f);
 
 //	color.rgb += vec3(0,0,getDirLight(dirlights[0],norm,viewDir,diffuseColor,specColor).b);
 	color.rgb += getDirLight(dl,norm,viewDir,diffuseColor,specColor);

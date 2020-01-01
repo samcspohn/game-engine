@@ -13,7 +13,7 @@ public:
         _model model = r->getModel();
         if(!generated && model.m != 0 && model.m->model->ready)
             generate(width,depth);
-            
+        // model.m->model->meshes[0].reloadMesh();
     }
     UPDATE(terrain,update);
     int xz(int x, int z){
