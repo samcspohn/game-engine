@@ -2,16 +2,26 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "terrain.h"
+
+using namespace glm;
 atomic<int> numCubes(0);
 game_object* proto = nullptr;
 
-
+game_object* ground;
 class player_sc :public component {
     bool cursorReleased = false;
-    float speed = 30.f;
+    float speed = 10.f;
     component_ref(rigidBody) rb;
+	bool flying = true;
+	bool jumped = false; // do not fly and jump in same frame
+	bool colliding = false;
 public:
+	component_ref(terrain) t;
+
+	void onCollision(game_object* collidee){
+		colliding = true;
+	}
+
     void onStart(){
         rb = transform->gameObject->getComponent<rigidBody>();
     }
@@ -20,7 +30,9 @@ public:
 		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.deltaTime * -1.f);
 
-        rb->setVelocity(((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D))  * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT))  * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward()) * speed);
+		glm::vec3 currVel = rb->getVelocity();
+		// rb->setVelocity(currVel + ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT))  * transform->up() * 10.f + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward()) * speed);
+
 //		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
 		 cout << "\rcubes: " << numCubes << " \tfps: " << 1.f / Time.unscaledSmoothDeltaTime << "                  ";
 		 if(Input.getKeyDown(GLFW_KEY_R)){
@@ -36,6 +48,50 @@ public:
 		 }else if(Input.getKeyDown(GLFW_KEY_M)){
             Time.timeScale = 1;
 		 }
+
+		
+		float h = t->getHeight(transform->getPosition().x,transform->getPosition().z);
+		if(transform->getPosition().y - 1.05f <= h || colliding){ // if grounded
+			flying = false;
+			jumped = false;
+			vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
+			 + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward());
+			if(inputVel.x != 0 || inputVel.z != 0)
+				inputVel = normalize(inputVel);
+
+        	rb->setVelocity(currVel + inputVel * speed);
+			glm::vec3 vel = rb->getVelocity();
+			rb->setVelocity(glm::vec3(vel.x,0,vel.z) * 0.5f);
+			if(Input.getKeyDown(GLFW_KEY_SPACE)){ // jump
+				jumped = true;
+				rb->setVelocity(vec3(vel.x * .5f, .5f * speed,vel.z * .5f));
+			}
+			if(h == -INFINITY){
+				jumped = true;
+				return;
+			}
+			glm::vec3 currPos = transform->getPosition();
+			// currPos.y = h + .99f;
+			// transform->setPosition(currPos);
+		}
+		if(transform->getPosition().y - 1.05f > h){
+			if(Input.getKeyDown(GLFW_KEY_SPACE) && jumped){ // pressing jump while airborne begins flight
+				flying = true;
+			}
+			if(flying){ // if flying dont apply gravity
+				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
+				 + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT))  * transform->up()
+				  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward());
+				if(inputVel.x != 0 || inputVel.z != 0)
+					inputVel = normalize(inputVel);
+				rb->setVelocity(currVel + inputVel * speed * 5.f);
+				glm::vec3 vel = rb->getVelocity();
+				rb->setVelocity(glm::vec3(vel.x,vel.y,vel.z) * 0.3f);
+			}else{ // else apply gravity
+				rb->setVelocity(rb->getVelocity() + glm::vec3(0,-9.81f,0) * Time.deltaTime);
+			}
+		}
+		colliding = false;
 //
 //		 if(Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased){
 //            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -124,7 +180,9 @@ public:
 };
 int main(void)
 {
+	// hideMouse = false;
     init();
+	_shader particleShader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
     _shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
@@ -133,31 +191,47 @@ int main(void)
 
 	player = new game_object();
 	player->addComponent<moreCUBES>();
-	player->addComponent<collider>();
+	// player->addComponent<collider>();
 	player->addComponent<rigidBody>();
 	player->addComponent<player_sc>();
-	game_object* ground = new game_object();
+
+	ground = new game_object();
+
+	ground->transform->scale(vec3(10));
 	auto r = ground->addComponent<_renderer>();
 	r->set(modelShader,terrainModel);
 	auto t = ground->addComponent<terrain>();
 	t->r = r;
 	t->width = t->depth = 1024;
-	ground->transform->translate(glm::vec3(-5120,-100,-5120));
-	// auto t = ground->getComponent<terrain>();
-	// t->generate(100,100);
+	ground->transform->translate(glm::vec3(-5120,-1950,-5120));
 
+
+
+	player->getComponent<player_sc>()->t = t;
     ifstream config("config.txt");
     int n;
     config >> n;
 	numCubes = n;
 	srand(100);
 
+
+
+	emitter_prototype_ emitterProto = createNamedEmitter("emitter1");
+	emitterProto->emission_rate = 10.f;
+	emitterProto->lifetime = 10.f;
+	emitterProto->color = vec4(1,0,0,0.5f);
+	emitterProto->velocity = vec3(0,-1,-2.f);
+
+
 	game_object* CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>();
-	CUBE->addComponent<collider>();
+	// CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
+	auto pe2 = CUBE->addComponent<particle_emitter>();
+	pe2->prototype = emitterProto;
+
 	//gameObjects.front()->addComponent<mvpSolver>();
 
 	proto = CUBE;
@@ -174,6 +248,13 @@ int main(void)
 	component_ref(cube_sc) it = nanosuitMan->getComponent<cube_sc>();
 	nanosuitMan->removeComponent<cube_sc>(it);
 	nanosuitMan->transform->move(glm::vec3(-10.f));
+
+
+
+	auto pe = nanosuitMan->addComponent<particle_emitter>();
+	pe->prototype = emitterProto;
+
+
 
 	game_object* proto2 = new game_object(*CUBE);
 	proto2->removeComponent<cube_sc>();

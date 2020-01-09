@@ -82,6 +82,10 @@ struct _shaderMeta {
 		name = vertex + fragment;
 		shader = new Shader(vertex, fragment);
 	}
+	_shaderMeta( string vertex, string geom,string fragment) {
+		name = vertex + geom + fragment;
+		shader = new Shader(vertex, geom, fragment);
+	}
 	~_shaderMeta() {
 		delete shader;
 	}
@@ -105,6 +109,16 @@ public:
 		else {
 			shaderManager.shaders[vertex + fragment] = new _shaderMeta(vertex, fragment);
 			s = shaderManager.shaders[vertex + fragment];
+		}
+	}
+	_shader(string vertex, string geom,  string fragment) {
+		auto ms = shaderManager.shaders.find(vertex + geom + fragment);
+		if (ms != shaderManager.shaders.end()) {
+			s = ms->second;
+		}
+		else {
+			shaderManager.shaders[geom + vertex + fragment] = new _shaderMeta(vertex, geom, fragment);
+			s = shaderManager.shaders[geom + vertex + fragment];
 		}
 	}
 	_shaderMeta* s = 0;

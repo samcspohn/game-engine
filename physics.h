@@ -14,6 +14,7 @@
 #include <array>
 #include "Input.h"
 #include <math.h>
+#include "terrain.h"
 using namespace std;
 
 
@@ -288,6 +289,7 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
 			//*a.rb->vel += glm::vec3(x, y, z) * 2.f;
 			((component*)a.c)->transform->move(glm::vec3(x, y, z));
 		}
+		// for(auto& i : a.c->transform->gameObject)
 	}
 }
 
@@ -535,6 +537,17 @@ public:
 
 		int colCount = 0;
 		octree2->query(cd.a, cd, colCount);
+		for(auto& i : terrains){
+			float h = i.second->getHeight(cd.a.c.x,cd.a.c.z);
+			if((cd.a.c - cd.a.r).y < h){
+				if(!rb.isNull()){
+					rb->vel->y = rb->vel->y >= 0 ? rb->vel->y : -rb->vel->y;
+					glm::vec3 p = transform->getPosition();
+					transform->setPosition(glm::vec3(p.x,h + cd.a.r.y,p.z));
+				}
+			}
+		}
+
 	}
 	UPDATE(collider,update);
 	LATE_UPDATE(collider,lateUpdate);
