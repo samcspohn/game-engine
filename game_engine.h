@@ -22,7 +22,7 @@
 #include "rendering.h"
 #include "game_engine_components.h"
 #include "physics.h"
-
+#include "particles.h"
 
 using namespace glm;
 using namespace std;
@@ -44,6 +44,7 @@ GLdouble lastFrame = 0;
 Shader* shadowShader;
 Shader* OmniShadowShader;
 
+bool hideMouse = true;
 atomic<bool> renderDone(false);
 atomic<bool> renderThreadReady(false);
 game_object* player;
@@ -164,7 +165,8 @@ void renderThreadFunc() {
 	window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	if(hideMouse)
+    	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetWindowSizeCallback(window, window_size_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -195,15 +197,15 @@ void renderThreadFunc() {
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	glEnable(GLEW_ARB_compute_shader);
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH32F_STENCIL8);
 	glEnable(GL_DEPTH_CLAMP);
 
-
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	
 
 
 	Shader matProgram("res/shaders/mat.comp");
@@ -229,7 +231,8 @@ void renderThreadFunc() {
 	// log("here");
 	// ids->init();
 
-
+	initParticles();
+	particle_renderer.init();
 
 	renderDone.store(true);
 	proj = glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 1.f, 1e10f);
@@ -241,9 +244,9 @@ void renderThreadFunc() {
 			renderJob rj = renderWork.front(); renderWork.pop();
 			switch (rj.type) {
 			case doFunc://    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				renderLock.unlock();
 
 				rj.work();
-				renderLock.unlock();
 				break;
 			case renderNum::render:
 			{
@@ -287,6 +290,9 @@ void renderThreadFunc() {
 
 				gpuDataLock.unlock();
 
+
+				updateParticles();
+
 				//buffer renderer ids
 				 for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
 				 	for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++)
@@ -300,7 +306,18 @@ void renderThreadFunc() {
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
+
+				glEnable(GL_CULL_FACE);
+				glDepthMask(GL_TRUE);
 				cam_render(rj.rot, rj.proj, rj.view);
+
+
+				
+				glDisable(GL_CULL_FACE);
+				glDepthMask(GL_FALSE);
+				particle_renderer.drawParticles(rj.view,rj.rot,rj.proj);
+				glDepthMask(GL_TRUE);
+
 				glfwSwapBuffers(window);
 
 				//renderDone.store(true);
@@ -594,17 +611,17 @@ void run(){
 
 
         cleanup();
-        while (TRANSFORMS.density() < 0.99) { // shift
-            int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
-            if (GO_T_refs[loc]->getRenderer() != 0)
-                GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
-        }
-        stopWatch.start();
-        for(auto& j : allcomponents){
-            if (j.first == typeid(copyBuffers).hash_code() || j.first == typeid(barriers).hash_code())
-				continue;
-            j.second->sort();
-        }
+        // while (TRANSFORMS.density() < 0.99) { // shift
+        //     int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
+        //     if (GO_T_refs[loc]->getRenderer() != 0)
+        //         GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
+        // }
+        // stopWatch.start();
+        // for(auto& j : allcomponents){
+        //     if (j.first == typeid(copyBuffers).hash_code() || j.first == typeid(barriers).hash_code())
+		// 		continue;
+        //     j.second->sort();
+        // }
 
 //        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
         GPU_RENDERERS->storage->resize(gpu_renderers.size());

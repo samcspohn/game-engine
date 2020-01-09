@@ -54,6 +54,7 @@ public:
 
 	virtual void update(int index, int size) {}
 	virtual void lateUpdate(int index, int size){}
+	virtual void onCollision(game_object* collidee){}
 	virtual int size(){};
 	virtual void sort(){};
 };

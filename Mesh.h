@@ -42,9 +42,17 @@ public:
 	vector<glm::vec3> normals;
     vector<GLuint> indices;
     vector<Texture> textures;
-    
+    bool ready = false;
     /*  Functions  */
     // Constructor
+    Mesh(){
+        renderLock.lock();
+		renderJob rj;
+		rj.type = doFunc;
+		rj.work = [&]() { this->setupMesh(); };
+		renderWork.push(rj);
+		renderLock.unlock();
+    }
     Mesh( vector<glm::vec3> _vertices, vector<glm::vec2> _uvs, vector<glm::vec3> _normals,vector<GLuint> indices, vector<Texture> textures )
     {
         this->vertices = _vertices;
@@ -54,6 +62,13 @@ public:
         this->textures = textures;
         
         // Now that we have all the required data, set the vertex buffers and its attribute pointers.
+        // renderLock.lock();
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { this->setupMesh(); };
+		// renderWork.push(rj);
+		// renderLock.unlock();
+        // enqueRenderJob(this->setupMesh);
         this->setupMesh( );
     }
     
@@ -170,6 +185,7 @@ private:
         glBufferData( GL_ELEMENT_ARRAY_BUFFER, this->indices.size( ) * sizeof( GLuint ), &this->indices[0], GL_STATIC_DRAW );
         
         glBindVertexArray( 0 );
+        ready = true;
     }
 };
 

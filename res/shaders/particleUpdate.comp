@@ -1,0 +1,154 @@
+#version 430 core
+
+#extension GL_ARB_compute_shader : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
+
+#define MAX_PARTICLES 1000
+struct _transform {
+	vec3 position; int id;
+	vec3 scale; int parent;
+	vec4 rotation;
+	int childrenBegin;
+	int childrenEnd;
+	int prevSibling;
+	int nextSibling;
+};
+struct particle{
+    vec3 position;
+    uint emitter;
+    vec3 scale;
+    uint emitter_prototype;
+    vec4 rotation;
+
+    vec3 velocity;
+    int p1;
+
+    float life;
+    uint next;
+    uint prev;
+    float p;
+};
+struct emitter_prototype{
+    float emission_rate;
+    float lifetime;
+    float rotation_rate;
+    int id;
+    vec4 color;
+    vec3 velocity;
+    int maxCount;
+};
+struct emitter{
+    uint transform;
+    uint emitter_prototype;
+    float emission;
+    int count;
+};
+layout(std430,binding = 0) buffer t{_transform transforms[];};
+layout(std430,binding = 2) buffer p{particle particles[];};
+layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
+layout(std430,binding = 4) buffer e{emitter emitters[];};
+layout(std430,binding = 5) buffer l{uint live[];};
+layout(std430,binding = 6) buffer d{uint dead[];};
+layout(std430,binding = 7) buffer td{uint toDestroy[];};
+layout(std430,binding = 1) buffer ac{uint atomicCounters[];};
+layout(std430,binding = 8) buffer s{uint stage[];};
+const uint liveParticles = 0;
+const uint destroyCounter = 1;
+uniform uint count;
+uniform float deltaTime;
+
+mat4 translate(mat4 m, vec3 translation){
+		mat4 t = {{1,0,0,translation.x},
+		{0,1,0,translation.y,},
+		{0,0,1,translation.z}
+		,{0,0,0,1}};
+		return m * transpose(t);
+}
+mat4 scale(mat4 m, vec3 scale){
+	mat4 s = {{scale.x,0,0,0}, {0,scale.y,0,0},{0,0,scale.z,0},{0,0,0,1}};
+	return m * transpose(s);
+}
+
+mat4 rotate(mat4 m, vec4 q){
+	mat4 r1 = {{q.w,q.z,-q.y,q.x},{-q.z,q.w,q.x,q.y},{q.y,-q.x,q.w,q.z},{-q.x,-q.y,-q.z,q.w}};
+	mat4 r2 = {{q.w,q.z,-q.y,-q.x},{-q.z,q.w,q.x,-q.y},{q.y,-q.x,q.w,-q.z},{q.x,q.y,q.z,q.w}};
+	return m * r1 * r2;
+}
+
+mat4 identity(){
+	mat4 i = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
+	return i;
+}
+
+
+void begin(uint thread_id){
+    // live[0] = 1;
+    
+    emitter e = emitters[thread_id];
+    uint emission = uint(e.emission);
+    uint new_particles_start = atomicAdd(atomicCounters[liveParticles],emission);
+    uint end = new_particles_start + emission;
+    
+    for(uint i = new_particles_start; i < end; ++i){
+        uint x = dead[i];
+        live[i] = x;
+        particles[x].position = transforms[e.transform].position;
+        particles[x].rotation = transforms[e.transform].rotation;
+        particles[x].scale = transforms[e.transform].scale;
+        particles[x].life = 1.f;
+        particles[x].emitter = thread_id;
+        particles[x].emitter_prototype = e.emitter_prototype;
+        particles[x].velocity = vec3(rotate(identity(),particles[x].rotation) * vec4(prototypes[e.emitter_prototype].velocity,1));
+    }
+}
+
+void update(uint id){
+
+    particle p = particles[live[id]];
+    p.position += p.velocity * deltaTime;
+    p.life -= deltaTime / prototypes[p.emitter_prototype].lifetime;
+    if(p.life < 0)
+    {
+        uint index = atomicAdd(atomicCounters[destroyCounter],1);
+        toDestroy[index] = id;
+    }
+    particles[live[id]] = p;
+}
+
+void cleanup(uint thread_id){
+
+    uint liveMoved = atomicAdd(atomicCounters[liveParticles],-1);
+    uint toDestroyIndex = atomicAdd(atomicCounters[destroyCounter],-1);
+    // live[toDestroy[thread_id]] = particles[liveMoved];
+    dead[liveMoved - 1] = live[toDestroy[toDestroyIndex - 1]];
+    live[toDestroy[toDestroyIndex - 1]] = live[liveMoved - 1];
+}
+
+layout( local_size_x = 64,  local_size_y = 1, local_size_z = 1) in;
+void main () {
+    uint gid = gl_GlobalInvocationID.x;
+    atomicCounters[2] = stage[0];
+    if(gid < count){
+    //     for(uint i = 0; i < 10; ++i){
+    //     live[i] = 10;
+    // }
+        if(stage[0] == 0)
+        begin(gid);
+        if(stage[0] == 1)
+        update(gid);
+        if(stage[0] == 2)
+        cleanup(gid);
+    }
+    // switch(stage){
+    //     case 0:
+    //         begin(gid);
+    //         break;
+    //     case 1:
+    //         update(gid);
+    //         break;
+    //     case 2:
+    //         cleanup(gid);
+    //         break;
+    // }
+
+}
