@@ -21,7 +21,7 @@ struct particle{
     vec4 rotation;
 
     vec3 velocity;
-    int p1;
+    int live;
 
     float life;
     uint next;
@@ -91,7 +91,7 @@ void begin(uint thread_id){
     
     for(uint i = new_particles_start; i < end; ++i){
         uint x = dead[i];
-        live[i] = x;
+        // live[i] = x;
         particles[x].position = transforms[e.transform].position;
         particles[x].rotation = transforms[e.transform].rotation;
         particles[x].scale = transforms[e.transform].scale;
@@ -99,46 +99,55 @@ void begin(uint thread_id){
         particles[x].emitter = thread_id;
         particles[x].emitter_prototype = e.emitter_prototype;
         particles[x].velocity = vec3(rotate(identity(),particles[x].rotation) * vec4(prototypes[e.emitter_prototype].velocity,1));
+        particles[x].live = 1;
     }
 }
 
 void update(uint id){
 
-    particle p = particles[live[id]];
+    if(particles[id].live == 1){
+
+    particle p = particles[id];
     p.position += p.velocity * deltaTime;
     p.life -= deltaTime / prototypes[p.emitter_prototype].lifetime;
     if(p.life < 0)
     {
-        uint index = atomicAdd(atomicCounters[destroyCounter],1);
-        toDestroy[index] = id;
+        uint index = atomicAdd(atomicCounters[liveParticles],-1);
+        dead[index - 1] = id;
+        p.live = 0;
     }
-    particles[live[id]] = p;
+    particles[id] = p;
+    }
 }
 
-void cleanup(uint thread_id){
+// void cleanup(uint thread_id){
 
-    uint liveMoved = atomicAdd(atomicCounters[liveParticles],-1);
-    uint toDestroyIndex = atomicAdd(atomicCounters[destroyCounter],-1);
-    // live[toDestroy[thread_id]] = particles[liveMoved];
-    dead[liveMoved - 1] = live[toDestroy[toDestroyIndex - 1]];
-    live[toDestroy[toDestroyIndex - 1]] = live[liveMoved - 1];
-}
+//     uint liveMoved = atomicAdd(atomicCounters[liveParticles],-1);
+//     uint toDestroyIndex = atomicAdd(atomicCounters[destroyCounter],-1);
+//     // live[toDestroy[thread_id]] = particles[liveMoved];
+//     dead[liveMoved - 1] = live[toDestroy[toDestroyIndex - 1]];
+//     live[toDestroy[toDestroyIndex - 1]] = live[liveMoved - 1];
+// }
 
 layout( local_size_x = 64,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
-    atomicCounters[2] = stage[0];
-    if(gid < count){
+    // atomicCounters[2] = stage[0];
+    // if(gid < count){
     //     for(uint i = 0; i < 10; ++i){
     //     live[i] = 10;
     // }
-        if(stage[0] == 0)
-        begin(gid);
-        if(stage[0] == 1)
+        if(gid < count) // only emitters
+            begin(gid);
+        barrier();
+        if(gid < 1024 * 1024 *16)
         update(gid);
-        if(stage[0] == 2)
-        cleanup(gid);
-    }
+        // barrier();
+        // atomicCounters[2] = atomicCounters[destroyCounter];
+        // barrier();
+        // if(gid < atomicCounters[2])
+        // cleanup(gid);
+    // }
     // switch(stage){
     //     case 0:
     //         begin(gid);

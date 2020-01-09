@@ -10,7 +10,7 @@ struct particle{
     vec4 rotation;
 
     vec3 velocity;
-    int p1;
+    int live;
 
     float life;
     uint next;

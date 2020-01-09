@@ -201,6 +201,7 @@ void main()
 	dl.diffuse = vec3(0.5f);
 	dl.specular = vec3(1.f);
 
+	color = vec4(0);
 //	color.rgb += vec3(0,0,getDirLight(dirlights[0],norm,viewDir,diffuseColor,specColor).b);
 	color.rgb += getDirLight(dl,norm,viewDir,diffuseColor,specColor);
 

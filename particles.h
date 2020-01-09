@@ -6,7 +6,7 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_PARTICLES 10000000
+#define MAX_PARTICLES 1024 * 1024 * 16
 struct particle{
     vec3 position;
     GLuint emitter;
@@ -17,7 +17,7 @@ struct particle{
     quat rotation;
 
     vec3 velocity;
-    GLint p1;
+    GLint active;
 
     float life;
     GLuint next;
@@ -162,26 +162,26 @@ void updateParticles(){
     stageVec.storage->at(0) = 0;stageVec.bufferData();
     glUniform1fv(glGetUniformLocation(particleProgram.Program,"deltaTime"),1, &Time.deltaTime);
     glUniform1ui(glGetUniformLocation(particleProgram.Program,"count"),emitters.size());
-    glDispatchCompute(emitters.size() / 64 + 1, 1, 1);
+    glDispatchCompute(MAX_PARTICLES / 64 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER,atomicCounters.bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * atomicCounters.size(), atomicCounters.storage->data());
 
-    // stage 1 -- update particle simulation
-    stageVec.storage->at(0) = 1;stageVec.bufferData();
-    glUniform1ui(glGetUniformLocation(particleProgram.Program,"count"),atomicCounters.storage->at(particleCounters::liveParticles));
-    glDispatchCompute(atomicCounters.storage->at(particleCounters::liveParticles) / 64 + 1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    // // stage 1 -- update particle simulation
+    // stageVec.storage->at(0) = 1;stageVec.bufferData();
+    // glUniform1ui(glGetUniformLocation(particleProgram.Program,"count"),atomicCounters.storage->at(particleCounters::liveParticles));
+    // glDispatchCompute(atomicCounters.storage->at(particleCounters::liveParticles) / 64 + 1, 1, 1);
+    // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER,atomicCounters.bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * atomicCounters.size(), atomicCounters.storage->data());
+    // glBindBuffer(GL_SHADER_STORAGE_BUFFER,atomicCounters.bufferId);
+    // glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * atomicCounters.size(), atomicCounters.storage->data());
 
-    // stage 2 -- clean up inactive particles
-    stageVec.storage->at(0) = 2;stageVec.bufferData();
-    glUniform1ui(glGetUniformLocation(particleProgram.Program,"count"),atomicCounters.storage->at(particleCounters::destroyCounter));
-    glDispatchCompute(atomicCounters.storage->at(particleCounters::destroyCounter) / 64 + 1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    // // stage 2 -- clean up inactive particles
+    // stageVec.storage->at(0) = 2;stageVec.bufferData();
+    // glUniform1ui(glGetUniformLocation(particleProgram.Program,"count"),atomicCounters.storage->at(particleCounters::destroyCounter));
+    // glDispatchCompute(atomicCounters.storage->at(particleCounters::destroyCounter) / 64 + 1, 1, 1);
+    // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
 
     //get data back -- debug info
@@ -237,7 +237,7 @@ public:
         // glEnableVertexAttribArray(0);
 		// glVertexAttribIPointer(0, 1,  GL_UNSIGNED_INT, sizeof(GLuint),0);
         // cout << atomicCounters.storage->at(particleCounters::liveParticles) << endl;
-        glDrawArrays(GL_POINTS,0,atomicCounters.storage->at(particleCounters::liveParticles));   
+        glDrawArrays(GL_POINTS,0,MAX_PARTICLES);   
 
         // glBindBuffer(GL_SHADER_STORAGE_BUFFER,atomicCounters.bufferId);
         // glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * atomicCounters.size(), atomicCounters.storage->data());
