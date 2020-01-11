@@ -53,7 +53,7 @@ public:
         z -= transform->getPosition().z;
         x /= transform->getScale().x;
         z /= transform->getScale().z;
-        if(x > width - 1 ||z > width - 1 || x < 0 || z < 0)
+        if(x > width - 2.f || z > width - 2.f || x < 0.f || z < 0.f)
             return -INFINITY;
         // return 1.f;
 

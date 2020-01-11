@@ -280,6 +280,7 @@ void renderThreadFunc() {
 
 				mainCamPos = player->transform->getPosition();
 				MainCamForward = player->transform->forward();
+				mainCamUp = player->transform->up();
 				glUniform3f(matCamPos, mainCamPos.x, mainCamPos.y, mainCamPos.z);
 				glUniform3f(matCamForward, MainCamForward.x, MainCamForward.y, MainCamForward.z);
 
@@ -325,17 +326,21 @@ void renderThreadFunc() {
 			renderLock.unlock();
 			break;
 			case rquit:
+				
+				while(gpu_buffers.size() > 0){
+					(gpu_buffers.begin()->second)->deleteBuffer();
+				}
 
-				delete GPU_MATRIXES;
-				delete GPU_RENDERERS;
-				delete GPU_TRANSFORMS;
+				// delete GPU_MATRIXES;
+				// delete GPU_RENDERERS;
+				// delete GPU_TRANSFORMS;
 //				delete GPU_TRANSFORM_IDS;
 
-				 for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
-				 	for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
-				 		delete j->second->_ids;
-				 	}
-				 }
+				//  for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
+				//  	for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
+				//  		delete j->second->_ids;
+				//  	}
+				//  }
 
 				renderThreadReady.exchange(false);
 			    glfwTerminate();

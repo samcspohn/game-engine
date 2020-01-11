@@ -22,13 +22,15 @@ struct emitter_prototype{
     int id;
     vec4 color;
     vec3 velocity;
-    int maxCount;
+    int live;
+    vec3 scale;
+    int p;
 };
 struct emitter{
     uint transform;
     uint emitter_prototype;
     float emission;
-    int count;
+    int live;
 };
 
 mat4 translate(mat4 m, vec3 translation){
@@ -63,7 +65,7 @@ uniform mat4 view;
 uniform mat4 vRot;
 uniform mat4 projection;
 uniform float FC;
-
+uniform float aspectRatio;
 out vec3 FragPos;
 out float logz;
 out vec4 col;
@@ -72,55 +74,56 @@ out vec4 col;
 layout (points) in;
 layout (triangle_strip, max_vertices=4) out;
 
-in VS_OUT {
-    uint index;
-} gs_in[]; 
+// in VS_OUT{
+// 	uint index;
+// }gs_in[];
 // out vec4 VertPos;
+in uint index_[];
 
 void main(){
+    uint index = index_[0];
+    if(particles[index].live == 1){
 
-        if(particles[gs_in[0].index].live == 1){
+        // top left
+        vec3 position = particles[index].position;
+        mat4 model = translate(identity(),particles[index].position) * scale(identity(),particles[index].scale) * rotate(identity(),particles[index].rotation);
+        mat4 mvp = projection * vRot * view * model;
+        // top left
 
-            // top left
-            vec3 position = particles[gs_in[0].index].position;
-            mat4 model = translate(identity(),particles[gs_in[0].index].position) * scale(identity(),particles[gs_in[0].index].scale) * rotate(identity(),particles[gs_in[0].index].rotation);
-            mat4 mvp = projection * vRot * view * model;
-            // top left
+        gl_Position = mvp * vec4(-.5f,.5f,0,1);
+        logz = 1.0 + gl_Position.w;
+        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // TexCoord = texCoord;
+        FragPos = vec3(model * vec4(-.5f,.5f,0,1.0f));
+        col = prototypes[particles[index].emitter_prototype].color;
+        EmitVertex();
 
-            gl_Position = mvp * vRot * vec4(vec3(-.5f,.5f,0),1);
-            logz = 1.0 + gl_Position.w;
-            gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-            // TexCoord = texCoord;
-            FragPos = vec3(model * vRot * vec4(vec3(-.5f,.5f,0),1.0f));
-            col = prototypes[particles[gs_in[0].index].emitter_prototype].color;
-            EmitVertex();
+        // top right
+        gl_Position = mvp * vec4(.5f,.5f,0,1);
+        logz = 1.0 + gl_Position.w;
+        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // TexCoord = texCoord;
+        FragPos = vec3(model * vec4(.5f,.5f,0,1.0f));
+        col = prototypes[particles[index].emitter_prototype].color;
+        EmitVertex();
 
-            // top right
-        gl_Position = mvp * vRot * vec4(vec3(.5f,.5f,0),1);
-            logz = 1.0 + gl_Position.w;
-            gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-            // TexCoord = texCoord;
-            FragPos = vec3(model * vRot * vec4(vec3(.5f,.5f,0),1.0f));
-            col = prototypes[particles[gs_in[0].index].emitter_prototype].color;
-            EmitVertex();
+        // bottom left
+        gl_Position = mvp * vec4(-.5f,-.5f,0,1);
+        logz = 1.0 + gl_Position.w;
+        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // TexCoord = texCoord;
+        FragPos = vec3(model * vec4(-.5f,-.5f,0,1.0f));
+        col = prototypes[particles[index].emitter_prototype].color;
+        EmitVertex();
 
-            // bottom left
-            gl_Position = mvp * vRot * vec4(vec3(-.5f,-.5f,0),1);
-            logz = 1.0 + gl_Position.w;
-            gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-            // TexCoord = texCoord;
-            FragPos = vec3(model * vRot * vec4(vec3(-.5f,-.5f,0),1.0f));
-            col = prototypes[particles[gs_in[0].index].emitter_prototype].color;
-            EmitVertex();
-
-            // bottom right
-            gl_Position = mvp * vRot * vec4(vec3(.5f,-.5f,0),1);
-            logz = 1.0 + gl_Position.w;
-            gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-            // TexCoord = texCoord;
-            FragPos = vec3(model * vRot * vec4(vec3(.5f,-.5f,0),1.0f));
-            col = prototypes[particles[gs_in[0].index].emitter_prototype].color;
-            EmitVertex();
-            EndPrimitive();
-        }
+        // bottom right
+        gl_Position = mvp * vec4(.5f,-.5f,0,1);
+        logz = 1.0 + gl_Position.w;
+        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // TexCoord = texCoord;
+        FragPos = vec3(model * vec4(vec3(.5f,-.5f,0),1.0f));
+        col = prototypes[particles[index].emitter_prototype].color;
+        EmitVertex();
+        EndPrimitive();
+    }
 }

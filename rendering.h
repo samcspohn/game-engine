@@ -155,9 +155,7 @@ struct renderingMeta {
 		_ids->storage = &ids.data;
 	}
 	~renderingMeta() {
-		if (_ids != 0) {
-			delete _ids;
-		}
+
 	}
 
 };

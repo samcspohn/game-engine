@@ -17,12 +17,25 @@
 #include <atomic>
 #include <algorithm>
 #include "helper1.h"
+#include <map>
+
 using namespace std;
 
+class gpu_vector_base{
+	protected:
+	static atomic<int> idGenerator;
+	public:
+	virtual void deleteBuffer() = 0;
+};
+atomic<int> gpu_vector_base::idGenerator = 0;
+map<int,gpu_vector_base*> gpu_buffers;
+
 template<typename t>
-class gpu_vector {
+class gpu_vector : public gpu_vector_base{
 public:
 	gpu_vector() {
+		id = this->gpu_vector_base::idGenerator.fetch_add(1);
+		gpu_buffers.insert(std::pair(id,this));
 	}
 	void init() {
 		renderLock.lock();
@@ -47,11 +60,22 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		inited = true;
 	}
-	~gpu_vector() {
-		glDeleteBuffers(1, &bufferId);
-		if (ownsStorage)
-			delete storage;
+
+	void bindData(uint index){
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferId);
 	}
+	void retrieveData(){
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+    	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * size(), storage->data());
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
+	void deleteBuffer(){
+		gpu_buffers.erase(id);
+		delete this;
+	}
+
+	int id;
 	bool inited = false;
 	mutex lock;
 	GLint maxSize = 1;
@@ -107,14 +131,24 @@ public:
 	}
 
 private:
+	~gpu_vector() {
+		glDeleteBuffers(1, &bufferId);
+		if (ownsStorage)
+			delete storage;
+	}
 	bool ownsStorage = false;
 };
 
 
 template<typename t>
-class gpu_vector_proxy {
+class gpu_vector_proxy : public gpu_vector_base{
+		~gpu_vector_proxy() {
+		glDeleteBuffers(1, &bufferId);
+	}
 public:
 	gpu_vector_proxy() {
+		id = this->gpu_vector_base::idGenerator.fetch_add(1);
+		gpu_buffers.insert(std::pair(id,this));
 	}
 	void init() {
 		renderLock.lock();
@@ -133,9 +167,15 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		inited = true;
 	}
-	~gpu_vector_proxy() {
-		glDeleteBuffers(1, &bufferId);
+	void bindData(uint index){
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferId);
 	}
+
+	void deleteBuffer(){
+		gpu_buffers.erase(id);
+		delete this;
+	}
+	int id;
 	bool inited = false;
 	mutex lock;
 	GLint maxSize = 1;
