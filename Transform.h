@@ -19,6 +19,7 @@ glm::vec3 vec3forward(0, 0, 1);
 glm::vec3 vec3up(0, 1, 0);
 glm::vec3 vec3right(1, 0, 0);
 glm::vec3 mainCamPos;
+glm::vec3 mainCamUp;
 glm::vec3 MainCamForward;
 
 struct _transform {
@@ -301,51 +302,6 @@ public:
 	//		transformMutex.unlock();
 	//	}
 	//}
-
-	int shift() {
-		//transformMutex.lock();
-
-		_transform t = _T.data();
-
-		auto a = TRANSFORMS._new();
-		GO_T_refs[a] = gameObject;
-		a.data() = t;
-		//parent
-		//parent children begin
-//		if (_T->parent >= 0 && TRANSFORMS[_T->parent].childrenBegin == _T)
-//			TRANSFORMS[_T->parent].childrenBegin = a;
-//		else if (_T->parent < -1 && STATIC_TRANSFORMS[-(_T->parent - 2)].childrenBegin == _T)
-//			STATIC_TRANSFORMS[-(_T->parent) - 2].childrenBegin = a;
-//		//parent children end
-//		if (_T->parent >= 0 && TRANSFORMS[_T->parent].childrenEnd == _T)
-//			TRANSFORMS[_T->parent].childrenEnd = a;
-//		else if (_T->parent < -1 && STATIC_TRANSFORMS[-(_T->parent - 2)].childrenEnd == _T)
-//			STATIC_TRANSFORMS[-(_T->parent) - 2].childrenEnd = a;
-//
-//
-//		// siblings
-//		//prevsibling
-//		if (_T->prevSibling >= 0)
-//			TRANSFORMS[_T->prevSibling].nextSibling = a;
-//		else if (_T->prevSibling < -1)
-//			STATIC_TRANSFORMS[-(_T->prevSibling) - 2].nextSibling = a;
-//		//nextsibling
-//		if (_T->nextSibling >= 0)
-//			TRANSFORMS[_T->nextSibling].prevSibling = a;
-//		else if (_T->nextSibling < -1)
-//			STATIC_TRANSFORMS[-(_T->nextSibling) - 2].prevSibling = a;
-//
-//		//children
-//		for (int i = _T->childrenBegin; i != -1; i = get_T(i).nextSibling)
-//			(i >= 0 ? TRANSFORMS[i] : STATIC_TRANSFORMS[-i - 2]).parent = a;
-
-		GO_T_refs[_T] = 0;
-		TRANSFORMS._delete(_T);
-
-		_T = a;
-		//transformMutex.unlock();
-		return _T;
-	}
 
 private:
 	bool enabled = true;
