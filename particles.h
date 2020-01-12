@@ -6,7 +6,7 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_PARTICLES 1024 * 1024
+#define MAX_PARTICLES 1024 * 1024 * 16
 struct particle{
     vec3 position;
     GLuint emitter;
@@ -44,7 +44,7 @@ struct emitter_prototype{
     vec3 velocity;
     int active;
     vec3 scale;
-    int p;
+    int billboard;
 };
 
 array_heap<emitter_prototype> emitter_prototypes_;
@@ -55,6 +55,9 @@ map<string,typename array_heap<emitter_prototype>::ref> emitter_prototypes;
 class emitter_prototype_{
     typename array_heap<emitter_prototype>::ref emitterPrototype;
 public:
+    uint getId(){
+        return emitterPrototype.index;
+    }
     emitter_prototype* operator->() {
         return &emitterPrototype.data();
     }
@@ -96,6 +99,7 @@ public:
     void lateUpdate(){
         emitter->emission -= (float)(int)emitter->emission;
         emitter->emission += prototype->emission_rate * Time.deltaTime;
+        emitter->emitter_prototype = prototype.getId();
         // num_particles += (int)emitter->emission;
         // emitter->transform = transform->_T.index;
     }

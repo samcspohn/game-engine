@@ -222,15 +222,16 @@ int main(void)
 	emitter_prototype_ emitterProto = createNamedEmitter("emitter1");
 	emitterProto->emission_rate = 10.f;
 	emitterProto->lifetime = 10.f;
-	emitterProto->color = vec4(.3,0.8,1,0.5f);
-	emitterProto->velocity = vec3(0.1f);
+	emitterProto->color = vec4(1,.1,0,0.5f);
+	emitterProto->velocity = vec3(0.5f);
 	emitterProto->scale = vec3(1.5f);
+	emitterProto->billboard = 1;
 
 
 	game_object* CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>();
-	CUBE->addComponent<collider>();
+	// CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
@@ -254,15 +255,18 @@ int main(void)
 	nanosuitMan->transform->move(glm::vec3(-10.f));
 
 
-
+	emitter_prototype_ ep2 = createNamedEmitter("emitter2");
+	*ep2 = *emitterProto;
+	ep2->billboard = 0;
 	auto pe = nanosuitMan->addComponent<particle_emitter>();
-	pe->prototype = emitterProto;
+	pe->prototype = ep2;
 
 
 
 	game_object* proto2 = new game_object(*CUBE);
 	proto2->removeComponent<cube_sc>();
-	proto2->removeComponent<particle_emitter>();
+	proto2->getComponent<particle_emitter>()->prototype = ep2;
+	// proto2->removeComponent<particle_emitter>();
 	proto2->transform->setScale(glm::vec3(10.f));
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
 	for(int i = 0; i < 15; ++i){
