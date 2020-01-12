@@ -37,7 +37,7 @@ struct emitter_prototype{
     vec3 velocity;
     int live;
     vec3 scale;
-    int p;
+    int billboard;
 };
 struct emitter{
     uint transform;
@@ -172,9 +172,13 @@ void begin(uint thread_id){
         
         for(uint i = new_particles_start; i < end; ++i){
             uint x = dead[i];
-            // live[i] = x;
             particles[x].position = transforms[e.transform].position;
-            particles[x].rotation = transforms[e.transform].rotation;
+            particles[x].rotation = normalize(vec4(gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 3) - 0.5f,
+            gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 4) - 0.5f,
+            gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 5) - 0.5f,
+            gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 6) - 0.5f
+            ));
+            // particles[x].rotation  = transforms[e.transform].rotation;
             particles[x].scale = transforms[e.transform].scale * prototypes[e.emitter_prototype].scale;
             particles[x].life = 1.f;
             particles[x].emitter = thread_id;
@@ -182,7 +186,8 @@ void begin(uint thread_id){
             vec3 random = vec3(
             gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time) - 0.5f,
             gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 1) - 0.5f,
-            gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 2)) - 0.5f;
+            gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 2) - 0.5f);
+            // vec3 random = vec3(noise(thread_id * time), noise(thread_id * (time + 1)),noise(thread_id * (time + 2)));
             // prototypes[e.emitter_prototype].velocity
             particles[x].velocity = vec3(rotate(identity(),particles[x].rotation) * vec4(random * prototypes[e.emitter_prototype].velocity * transforms[e.transform].scale,1));
             particles[x].live = 1;
@@ -194,11 +199,12 @@ void update(uint id){
 
     if(particles[id].live == 1){
         particle p = particles[id];
+        emitter_prototype proto = prototypes[p.emitter_prototype];
         p.position += p.velocity * deltaTime;
         p.life -= deltaTime / prototypes[p.emitter_prototype].lifetime;
 
-        vec3 dir = cameraPosition - p.position;
-        p.rotation = lookAt(dir,cameraUp);
+        if(proto.billboard == 1)
+            p.rotation = lookAt(cameraPosition - p.position,cameraUp);
         if(p.life < 0)
         {
             uint index = atomicAdd(atomicCounters[liveParticles],-1);

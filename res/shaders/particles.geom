@@ -24,7 +24,7 @@ struct emitter_prototype{
     vec3 velocity;
     int live;
     vec3 scale;
-    int p;
+    int billboard;
 };
 struct emitter{
     uint transform;
@@ -80,6 +80,18 @@ layout (triangle_strip, max_vertices=4) out;
 // out vec4 VertPos;
 in uint index_[];
 
+
+void createVert(vec3 point, mat4 mvp, mat4 model){
+        gl_Position = mvp * vec4(point,1);
+        logz = 1.0 + gl_Position.w;
+        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // TexCoord = texCoord;
+        FragPos = vec3(model * vec4(point,1.0f));
+        col = prototypes[particles[index_[0]].emitter_prototype].color;
+        EmitVertex();
+
+}
+
 void main(){
     uint index = index_[0];
     if(particles[index].live == 1){
@@ -88,42 +100,47 @@ void main(){
         vec3 position = particles[index].position;
         mat4 model = translate(identity(),particles[index].position) * scale(identity(),particles[index].scale) * rotate(identity(),particles[index].rotation);
         mat4 mvp = projection * vRot * view * model;
+
+
+        createVert(vec3(-.5f,.5f,0),mvp,model);
+        createVert(vec3(.5f,.5f,0),mvp,model);
+        createVert(vec3(-.5f,-.5f,0),mvp,model);
+        createVert(vec3(.5f,-.5f,0),mvp,model);
         // top left
+        // gl_Position = mvp * vec4(-.5f,.5f,0,1);
+        // logz = 1.0 + gl_Position.w;
+        // gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // // TexCoord = texCoord;
+        // FragPos = vec3(model * vec4(-.5f,.5f,0,1.0f));
+        // col = prototypes[particles[index].emitter_prototype].color;
+        // EmitVertex();
 
-        gl_Position = mvp * vec4(-.5f,.5f,0,1);
-        logz = 1.0 + gl_Position.w;
-        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-        // TexCoord = texCoord;
-        FragPos = vec3(model * vec4(-.5f,.5f,0,1.0f));
-        col = prototypes[particles[index].emitter_prototype].color;
-        EmitVertex();
+        // // top right
+        // gl_Position = mvp * vec4(.5f,.5f,0,1);
+        // logz = 1.0 + gl_Position.w;
+        // gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // // TexCoord = texCoord;
+        // FragPos = vec3(model * vec4(.5f,.5f,0,1.0f));
+        // col = prototypes[particles[index].emitter_prototype].color;
+        // EmitVertex();
 
-        // top right
-        gl_Position = mvp * vec4(.5f,.5f,0,1);
-        logz = 1.0 + gl_Position.w;
-        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-        // TexCoord = texCoord;
-        FragPos = vec3(model * vec4(.5f,.5f,0,1.0f));
-        col = prototypes[particles[index].emitter_prototype].color;
-        EmitVertex();
+        // // bottom left
+        // gl_Position = mvp * vec4(-.5f,-.5f,0,1);
+        // logz = 1.0 + gl_Position.w;
+        // gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // // TexCoord = texCoord;
+        // FragPos = vec3(model * vec4(-.5f,-.5f,0,1.0f));
+        // col = prototypes[particles[index].emitter_prototype].color;
+        // EmitVertex();
 
-        // bottom left
-        gl_Position = mvp * vec4(-.5f,-.5f,0,1);
-        logz = 1.0 + gl_Position.w;
-        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-        // TexCoord = texCoord;
-        FragPos = vec3(model * vec4(-.5f,-.5f,0,1.0f));
-        col = prototypes[particles[index].emitter_prototype].color;
-        EmitVertex();
-
-        // bottom right
-        gl_Position = mvp * vec4(.5f,-.5f,0,1);
-        logz = 1.0 + gl_Position.w;
-        gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
-        // TexCoord = texCoord;
-        FragPos = vec3(model * vec4(vec3(.5f,-.5f,0),1.0f));
-        col = prototypes[particles[index].emitter_prototype].color;
-        EmitVertex();
+        // // bottom right
+        // gl_Position = mvp * vec4(.5f,-.5f,0,1);
+        // logz = 1.0 + gl_Position.w;
+        // gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+        // // TexCoord = texCoord;
+        // FragPos = vec3(model * vec4(vec3(.5f,-.5f,0),1.0f));
+        // col = prototypes[particles[index].emitter_prototype].color;
+        // EmitVertex();
         EndPrimitive();
     }
 }
