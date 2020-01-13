@@ -168,9 +168,10 @@ void begin(uint thread_id){
 
         uint emission = uint(e.emission);
         uint new_particles_start = atomicAdd(atomicCounters[liveParticles],emission);
+        atomicMin(atomicCounters[liveParticles],max_particles);
         uint end = new_particles_start + emission;
         
-        for(uint i = new_particles_start; i < end; ++i){
+        for(uint i = new_particles_start; i < end && i < max_particles; ++i){
             uint x = dead[i];
             particles[x].position = transforms[e.transform].position;
             particles[x].rotation = normalize(vec4(gold_noise(vec2(thread_id % max_particles, thread_id / max_particles),time + 3) - 0.5f,

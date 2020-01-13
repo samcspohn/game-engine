@@ -183,7 +183,7 @@ void updateParticles(){
     glUniform1ui(glGetUniformLocation(particleProgram.Program,"stage"),0);
     glUniform1ui(glGetUniformLocation(particleProgram.Program,"count"),emitters.size());
     glDispatchCompute(emitters.size() / 64 + 1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program,"stage"),1);
     glDispatchCompute(MAX_PARTICLES / 64 + 1, 1, 1);
@@ -191,7 +191,7 @@ void updateParticles(){
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER,atomicCounters->bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * atomicCounters->size(), atomicCounters->storage->data());
-
+    glFlush();
     //get data back -- debug info
     // glBindBuffer(GL_SHADER_STORAGE_BUFFER,rng->bufferId);
     // glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * rng->size(), rng->storage->data());
