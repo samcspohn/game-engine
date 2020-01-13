@@ -88,6 +88,7 @@ void createVert(vec3 point, mat4 mvp, mat4 model){
         // TexCoord = texCoord;
         FragPos = vec3(model * vec4(point,1.0f));
         col = prototypes[particles[index_[0]].emitter_prototype].color;
+        col.a *= particles[index_[0]].life;
         EmitVertex();
 
 }

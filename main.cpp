@@ -231,7 +231,7 @@ int main(void)
 	game_object* CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>();
-	// CUBE->addComponent<collider>();
+	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
