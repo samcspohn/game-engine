@@ -13,7 +13,6 @@ struct _transform {
 	int prevSibling;
 	int nextSibling;
 };
-
 struct particle{
     vec3 position;
     uint emitter;
@@ -43,8 +42,8 @@ struct emitter_prototype{
     vec3 scale;
     int billboard;
 
-    vec3 p;
     int trail;
+    vec3 p;
 };
 struct emitter{
     uint transform;
@@ -52,14 +51,13 @@ struct emitter{
     float emission;
     int live;
 
-    vec3 p;
     int last_particle;
+    vec3 p;
 };
 layout(std430,binding = 0) buffer t{_transform transforms[];};
 layout(std430,binding = 2) buffer p{particle particles[];};
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 4) buffer e{emitter emitters[];};
-layout(std430,binding = 7) buffer elp{int emitters_last_particle[];};
 layout(std430,binding = 5) buffer r{uint rng[];};
 layout(std430,binding = 6) buffer d{uint dead[];};
 layout(std430,binding = 1) buffer ac{uint atomicCounters[];};
@@ -174,11 +172,11 @@ void begin(uint thread_id){
             // set trail
             if(ep.trail == 1){
                 if(e.last_particle != -1){
-                    particles[emitters_last_particle[thread_id]].next = int(x);
+                    particles[e.last_particle].next = int(x);
                 }
                 p.next = -int(thread_id) - 2;
-                p.prev = emitters_last_particle[thread_id];
-                emitters_last_particle[thread_id] = int(x);
+                p.prev = e.last_particle;
+                e.last_particle = int(x);
             }
 
             p.live = 1;

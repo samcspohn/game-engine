@@ -220,13 +220,22 @@ int main(void)
 
 
 	emitter_prototype_ emitterProto = createNamedEmitter("emitter1");
-	emitterProto->emission_rate = 10.f;
-	emitterProto->lifetime = 10.f;
-	emitterProto->color = vec4(1,.1,0,0.5f);
-	emitterProto->velocity = vec3(0.5f);
+	emitterProto->emission_rate = 2.f;
+	emitterProto->lifetime = 2.f;
+	emitterProto->color = vec4(1,1,0.1f,0.8f);
+	emitterProto->velocity = vec3(1.f);
 	emitterProto->scale = vec3(1.5f);
 	emitterProto->billboard = 1;
+	emitterProto->trail = 1;
 
+	emitter_prototype_ emitterProto3 = createNamedEmitter("emitter3");
+	*emitterProto3 = *emitterProto;
+	emitterProto3->emission_rate = 10.f;
+	emitterProto3->trail = 0;
+	emitterProto3->scale = vec3(3);
+	emitterProto3->velocity = vec3(2.f);
+	emitterProto3->color = vec4(0.5f);
+	emitterProto3->lifetime = 10;
 
 	game_object* CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
@@ -236,6 +245,8 @@ int main(void)
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
 	pe2->prototype = emitterProto;
+	auto pe3 = CUBE->addComponent<particle_emitter>();
+	pe3->prototype = emitterProto3;
 
 	//gameObjects.front()->addComponent<mvpSolver>();
 
@@ -258,6 +269,7 @@ int main(void)
 	emitter_prototype_ ep2 = createNamedEmitter("emitter2");
 	*ep2 = *emitterProto;
 	ep2->billboard = 0;
+	ep2->trail = 0;
 	auto pe = nanosuitMan->addComponent<particle_emitter>();
 	pe->prototype = ep2;
 

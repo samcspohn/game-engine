@@ -4,6 +4,8 @@
         "*.ipp": "cpp",
         "deque": "cpp",
         "string": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "array": "cpp",
+        "string_view": "cpp"
     }
 }

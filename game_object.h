@@ -16,8 +16,8 @@ std::set<Transform*> toDestroy;
 class _renderer;
 
 class game_object {
-
-	map<ull, compItr*> components;
+	
+	multimap<ull, compItr*> components;
 	~game_object() { };
 	//friend component;
 	typename fast_list_deque<_renderer>::iterator renderer = 0;
@@ -44,7 +44,7 @@ public:
 	typename fast_list_deque<t>::iterator addComponent() {
 		compInfo<t> ci = addComponentToAll(t());
 		component_ref(t) ret = ci.compPtr;
-		components[typeid(t).hash_code()] = ci.CompItr;
+		components.insert(std::make_pair(typeid(t).hash_code(),ci.CompItr));
 		((component*)&(*ret))->transform = this->transform;
 		((component*)&(*ret))->transform->gameObject = this;
 		((component*)&(*ret))->onStart();
@@ -56,7 +56,7 @@ public:
 	typename fast_list_deque<t>::iterator addComponent(const t& c) {
 		compInfo<t> ci = addComponentToAll(c);
 		typename fast_list_deque<t>::iterator ret = ci.compPtr;
-		components[typeid(t).hash_code()] = ci.CompItr;
+		components.insert(std::make_pair(typeid(t).hash_code(),ci.CompItr));
 		((component*)&(*ret))->transform = this->transform;
 		((component*)&(*ret))->transform->gameObject = this;
 		((component*)&(*ret))->onStart();
@@ -66,21 +66,21 @@ public:
 	template<class t>
 	void removeComponent(typename fast_list_deque<t>::iterator c) {
 		removeLock.lock();
-		if(toRemove.find(components.at(typeid(t).hash_code())) != toRemove.end()){
+		if(toRemove.find(components.find(typeid(t).hash_code())->second) != toRemove.end()){
             cout << "already removed" << endl;
             throw;
 		}
-		toRemove.insert(components.at(typeid(t).hash_code()));
+		toRemove.insert(components.find(typeid(t).hash_code())->second);
 		removeLock.unlock();
 		components.erase(typeid(t).hash_code());
 	}
     void removeComponent(ull h) {
 		removeLock.lock();
-		if(toRemove.find(components.at(h)) != toRemove.end()){
+		if(toRemove.find(components.find(h)->second) != toRemove.end()){
             cout << "already removed" << endl;
             throw;
 		}
-		toRemove.insert(components.at(h));
+		toRemove.insert(components.find(h)->second);
 		removeLock.unlock();
 		components.erase(h);
 	}
@@ -88,11 +88,11 @@ public:
 	void removeComponent() {
 		removeLock.lock();
 		typename fast_list_deque<t>::iterator c = getComponent<t>();
-		if(toRemove.find(components.at(typeid(t).hash_code())) != toRemove.end()){
+		if(toRemove.find(components.find(typeid(t).hash_code())->second) != toRemove.end()){
             cout << "already removed" << endl;
             throw;
 		}
-		toRemove.insert(components.at(typeid(t).hash_code()));
+		toRemove.insert(components.find(typeid(t).hash_code())->second);
 		removeLock.unlock();
 		components.erase(typeid(t).hash_code());
 	}
