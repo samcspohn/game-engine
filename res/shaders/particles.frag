@@ -1,7 +1,7 @@
 #version 430 core
- #extension GL_ARB_conservative_depth : enable
+// #extension GL_ARB_conservative_depth : enable
 
-layout(depth_less) out float gl_FragDepth;
+// layout(depth_less) out float gl_FragDepth;
 
 uniform float FC;
 
