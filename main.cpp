@@ -37,7 +37,7 @@ public:
 //		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
 		//  cout << "\rcubes: " << numCubes << " \tfps: " << 1.f / Time.unscaledSmoothDeltaTime << "                  ";
 		if(framecount++ > 1)
-			cout << "\rcubes: " << numCubes << " particles: " << atomicCounters->storage->at(particleCounters::liveParticles) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
+			// cout << "\rcubes: " << numCubes << " particles: " << atomicCounters->storage->at(particleCounters::liveParticles) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
 		 if(Input.getKeyDown(GLFW_KEY_R)){
             speed *= 2;
 		 }
