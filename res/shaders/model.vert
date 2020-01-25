@@ -43,23 +43,6 @@ vec4 logVert(vec4 in_) {
 	in_.z = log2(max(1e-6,1.0 + in_.w))*FC - 1.0f;
 	return in_;
 }
-mat4 translate(mat4 m, vec3 translation){
-		mat4 t = {{1,0,0,translation.x},
-		{0,1,0,translation.y,},
-		{0,0,1,translation.z}
-		,{0,0,0,1}};
-		return m * transpose(t);
-}
-mat4 scale(mat4 m, vec3 scale){
-	mat4 s = {{scale.x,0,0,0}, {0,scale.y,0,0},{0,0,scale.z,0},{0,0,0,1}};
-	return m * transpose(s);
-}
-
-mat4 rotate(mat4 m, vec4 q){
-	mat4 r1 = {{q.w,q.z,-q.y,q.x},{-q.z,q.w,q.x,q.y},{q.y,-q.x,q.w,q.z},{-q.x,-q.y,-q.z,q.w}};
-	mat4 r2 = {{q.w,q.z,-q.y,-q.x},{-q.z,q.w,q.x,-q.y},{q.y,-q.x,q.w,-q.z},{q.x,q.y,q.z,q.w}};
-	return m * r1 * r2;
-}
 
 
 void main()

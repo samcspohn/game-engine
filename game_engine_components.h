@@ -18,7 +18,7 @@
 using namespace std;
 
 
-const GLint WIDTH = 1920 / 2, HEIGHT = 1080 / 2;
+const GLint WIDTH = 768, HEIGHT = 432;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 typedef glm::vec4 plane;

@@ -220,7 +220,7 @@ int main(void)
 
 
 	emitter_prototype_ emitterProto = createNamedEmitter("emitter1");
-	emitterProto->emission_rate = 2.f;
+	emitterProto->emission_rate = 3.f;
 	emitterProto->lifetime = 2.f;
 	emitterProto->color = vec4(1,1,0.1f,0.8f);
 	emitterProto->velocity = vec3(1.f);
@@ -230,19 +230,19 @@ int main(void)
 
 	emitter_prototype_ emitterProto3 = createNamedEmitter("emitter3");
 	*emitterProto3 = *emitterProto;
-	emitterProto3->emission_rate = 10.f;
+	emitterProto3->emission_rate = 5.f;
+	emitterProto3->lifetime = 10;
 	emitterProto3->trail = 0;
 	emitterProto3->scale = vec3(3);
 	emitterProto3->velocity = vec3(2.f);
 	emitterProto3->color = vec4(0.5f);
-	emitterProto3->lifetime = 10;
 
 	game_object* CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>();
 	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
-	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
+	// CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
 	pe2->prototype = emitterProto;
 	auto pe3 = CUBE->addComponent<particle_emitter>();
@@ -255,7 +255,7 @@ int main(void)
 	game_object* go = new game_object(*CUBE);
 	for (int i = 0; i < n; i++) {
         go = new game_object(*go);
-		go->transform->translate(randomSphere() * 5.f);
+		go->transform->translate(randomSphere() * 3.f);
 		if(i % (n / 100) == 0)
             cout << "\r" << (float)i / (float)n << "    " << flush;
 	}
@@ -270,15 +270,25 @@ int main(void)
 	*ep2 = *emitterProto;
 	ep2->billboard = 0;
 	ep2->trail = 0;
+	ep2->emission_rate = 5.0f;
+	ep2->lifetime = 7.f;
+	ep2->velocity = vec3(1);
+	ep2->color = vec4(1,.4,0,0.5);
 	auto pe = nanosuitMan->addComponent<particle_emitter>();
 	pe->prototype = ep2;
 
 
 
-	game_object* proto2 = new game_object(*CUBE);
+	game_object* proto2 = new game_object();
+	proto2->addComponent<_renderer>();
+	proto2->addComponent<rigidBody>();
+	proto2->addComponent<collider>();
+	proto2->addComponent<cube_sc>();
+	proto2->getComponent<_renderer>()->set(modelShader, cubeModel);
+	proto2->addComponent<particle_emitter>();
 	proto2->removeComponent<cube_sc>();
-	proto2->getComponent<particle_emitter>()->prototype = ep2;
 	// proto2->removeComponent<particle_emitter>();
+	proto2->getComponent<particle_emitter>()->prototype = ep2;
 	proto2->transform->setScale(glm::vec3(10.f));
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
 	for(int i = 0; i < 15; ++i){

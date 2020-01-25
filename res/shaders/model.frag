@@ -50,6 +50,8 @@ struct OmniShadowMap{
 	float farPlane;
 };
 
+uniform float screenHeight;
+uniform float screenWidth;
 in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
@@ -75,6 +77,7 @@ layout(std430, binding = 2) buffer slights {
 int numSLights;
 	SpotLight spotlights[];
 };
+
 
 out vec4 color;
 
