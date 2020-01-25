@@ -212,14 +212,14 @@ void updateParticles()
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), emitters.size());
     glDispatchCompute(emitters.size() / 192 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-    glFlush();
+    // glFlush();
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(MAX_PARTICLES / 192 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-    glFlush();
+    // glFlush();
 
-    atomicCounters->retrieveData();
+    // atomicCounters->retrieveData();
     // glBindBuffer(GL_SHADER_STORAGE_BUFFER,atomicCounters->bufferId);
     // glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * atomicCounters->size(), atomicCounters->storage->data());
 
@@ -337,8 +337,8 @@ public:
 
 
         // glFlush();
-        atomics->retrieveData();
         // data1->retrieveData();
+        atomics->retrieveData();
 
 
         // vector<d>& inter = *data1->storage;
@@ -447,6 +447,6 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
-        glFlush();
+        // glFlush();
     }
 } particle_renderer;
