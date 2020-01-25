@@ -181,7 +181,7 @@ public:
 
 		GLuint shader;
 		GLint success;
-		GLchar infoLog[512];
+		GLchar infoLog[4096];
 		// Vertex Shader
 		shader = glCreateShader(ShaderType);
 		glShaderSource(shader, 1, &vShaderCode, NULL);
@@ -190,7 +190,7 @@ public:
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 		if (!success)
 		{
-			glGetShaderInfoLog(shader, 512, NULL, infoLog);
+			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
 			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
 		}
 		return shader;
@@ -199,7 +199,7 @@ public:
 
 	void compileShader(vector<GLuint>& shaders) {
 		GLint success;
-		GLchar infoLog[512];
+		GLchar infoLog[4096];
 		// Shader Program
 		this->Program = glCreateProgram();
 		for(auto &s : shaders)
@@ -210,7 +210,7 @@ public:
 		glGetProgramiv(this->Program, GL_LINK_STATUS, &success);
 		if (!success)
 		{
-			glGetProgramInfoLog(this->Program, 512, NULL, infoLog);
+			glGetProgramInfoLog(this->Program, 4096, NULL, infoLog);
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 		}
 		// Delete the shaders as they're linked into our program now and no longer necessery

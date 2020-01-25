@@ -293,6 +293,7 @@ void renderThreadFunc() {
 
 
 				updateParticles();
+				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view);
 
 				//buffer renderer ids
 				 for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
@@ -706,7 +707,8 @@ void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view) {
 			glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
 			glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farplane + 1));
 			glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1,glm::value_ptr(mainCamPos));
-
+       	 	glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
+       	 	glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
 
 			j->second->m.m->model->Draw(*currShader, j->second->ids.size());

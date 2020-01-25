@@ -274,8 +274,14 @@ void rigidBody::collide(colDat& a, colDat& b, int& colCount) {
             glm::vec3 aCurr = *a.rb->vel;
 			*a.rb->vel += *b.rb->vel - aCurr + glm::vec3(x, y, z) * 2.f;// * 2.f) / a.rb->mass * b.rb->mass;
 			*b.rb->vel += aCurr - *b.rb->vel - glm::vec3(x, y, z)* 2.f;// * 2.f) / b.rb->mass * a.rb->mass;
-			((component*)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio));
-			((component*)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio);
+
+			if(a.a.c == b.a.c){
+				((component*)a.c)->transform->move(length(glm::vec3(x, y, z)) * randomSphere() * (1 - mRatio));
+				((component*)b.c)->transform->move(-length(glm::vec3(x, y, z)) * randomSphere() * mRatio);	
+			}else{
+				((component*)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio));
+				((component*)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio);
+			}
 		}
 		else if (!b.rb.isNull() && a.rb.isNull()) {
 			//*b.rb->vel = glm::vec3(0);
