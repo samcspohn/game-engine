@@ -14,6 +14,7 @@
 #include "Model.h"
 #include "Shader.h"
 #include <thread>
+
 #include "gpu_vector.h"
 #include "Input.h"
 #include <atomic>
@@ -27,64 +28,73 @@
 using namespace glm;
 using namespace std;
 
-
-enum update_type{
-    update,lateupdate
+enum update_type
+{
+	update,
+	lateupdate
 };
-struct updateJob {
-	componentStorageBase* componentStorage;
+struct updateJob
+{
+	componentStorageBase *componentStorage;
 	int size;
 	update_type ut;
+	barrier *_barrier;
 	updateJob() {}
-	updateJob(componentStorageBase* csb, update_type _ut, int _size) : componentStorage(csb), size(_size), ut(_ut) {}
+	updateJob(componentStorageBase *csb, update_type _ut, int _size, barrier *b) : componentStorage(csb), size(_size), ut(_ut), _barrier(b) {}
 };
 
-GLFWwindow* window;
+GLFWwindow *window;
 GLdouble lastFrame = 0;
-Shader* shadowShader;
-Shader* OmniShadowShader;
+Shader *shadowShader;
+Shader *OmniShadowShader;
 
 bool hideMouse = true;
 atomic<bool> renderDone(false);
 atomic<bool> renderThreadReady(false);
-game_object* player;
+game_object *player;
 glm::mat4 proj;
-thread* renderThread;
+thread *renderThread;
 bool recieveMouse = true;
 map<string, rolling_buffer> componentStats;
 vector<mutex> updateLocks(concurrency::numThreads);
-vector<queue<updateJob> > updateWork(concurrency::numThreads);
+vector<queue<updateJob>> updateWork(concurrency::numThreads);
 
+componentStorageBase *copyWorkers;
 
 /////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 
-
-void window_close_callback(GLFWwindow* window)
+void window_close_callback(GLFWwindow *window)
 {
 	//if (!time_to_close)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
-void mouseFrameBegin() {
+void mouseFrameBegin()
+{
 	Input.Mouse.xOffset = Input.Mouse.yOffset = Input.Mouse.mouseScroll = 0;
-
 }
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button >= 0 && button < 1024) {
-		if (action == GLFW_PRESS) {
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+{
+	if (button >= 0 && button < 1024)
+	{
+		if (action == GLFW_PRESS)
+		{
 			Input.Mouse.mouseButtons[button] = true;
 		}
-		else if (action == GLFW_RELEASE) {
+		else if (action == GLFW_RELEASE)
+		{
 			Input.Mouse.mouseButtons[button] = false;
 		}
 	}
 }
 
-
-void MouseCallback(GLFWwindow *window, double xPos, double yPos) {
-	if (recieveMouse) {
-		if (Input.Mouse.firstMouse) {
+void MouseCallback(GLFWwindow *window, double xPos, double yPos)
+{
+	if (recieveMouse)
+	{
+		if (Input.Mouse.firstMouse)
+		{
 			Input.Mouse.lastX = xPos;
 			Input.Mouse.lastY = yPos;
 			Input.Mouse.firstMouse = false;
@@ -98,35 +108,40 @@ void MouseCallback(GLFWwindow *window, double xPos, double yPos) {
 	}
 	//camera.ProcessMouseMovement(xOffset, yOffset);
 }
-void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mode) {
+void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
+{
 
-	if (key >= 0 && key < 1024) {
-		if (action == GLFW_PRESS) {
+	if (key >= 0 && key < 1024)
+	{
+		if (action == GLFW_PRESS)
+		{
 			Input.keys[key] = true;
 			Input.keyDowns[key] = true;
 		}
-		else if (action == GLFW_RELEASE) {
+		else if (action == GLFW_RELEASE)
+		{
 			Input.keys[key] = false;
 		}
 	}
 }
-void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
+void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
+{
 	Input.Mouse.mouseScroll = yOffset;
 	//camera.ProcessMouseScroll(yOffset);
 }
-void window_size_callback(GLFWwindow* window, int width, int height)
+void window_size_callback(GLFWwindow *window, int width, int height)
 {
 	glfwSetWindowSize(window, width, height);
 }
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	SCREEN_WIDTH = width;
 	SCREEN_HEIGHT = height;
 	glViewport(0, 0, width, height);
-
 }
 bool eventsPollDone;
-void updateInfo() {
+void updateInfo()
+{
 	Input.resetKeyDowns();
 	mouseFrameBegin();
 	glfwPollEvents();
@@ -143,17 +158,28 @@ void updateInfo() {
 }
 void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view);
 
-glm::mat4 getProjection() {
+glm::mat4 getProjection()
+{
 	return glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, (GLfloat).1f, (GLfloat)1e32f);
 }
-
-
+void appendStat(string name, float dtime)
+{
+	auto a = componentStats.find(name);
+	if (a != componentStats.end())
+		a->second.add(dtime);
+	else
+	{
+		componentStats[name] = rolling_buffer(200);
+		componentStats[name].add(dtime);
+	}
+}
 mutex gpuDataLock;
 
-void renderThreadFunc() {
+void renderThreadFunc()
+{
 
 	glfwInit();
-	
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -164,8 +190,8 @@ void renderThreadFunc() {
 	window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-	if(hideMouse)
-    	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	if (hideMouse)
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetWindowSizeCallback(window, window_size_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -177,7 +203,8 @@ void renderThreadFunc() {
 
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	if (window == nullptr) {
+	if (window == nullptr)
+	{
 		cout << "failed to create GLFW window" << endl;
 		glfwTerminate();
 
@@ -188,7 +215,8 @@ void renderThreadFunc() {
 	glfwSwapInterval(0);
 	//glewExperimental = GL_TRUE;
 
-	if (glewInit() != GLEW_OK) {
+	if (glewInit() != GLEW_OK)
+	{
 		cout << "failed to initialize GLEW" << endl;
 
 		throw EXIT_FAILURE;
@@ -205,55 +233,55 @@ void renderThreadFunc() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	
-
-
 	Shader matProgram("res/shaders/mat.comp");
-
 
 	GLint max_buffers;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
 	cout << max_buffers << endl;
 
-
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
-
-
 
 	renderThreadReady.exchange(true);
 	GPU_RENDERERS = new gpu_vector<__renderer>();
 	GPU_RENDERERS->ownStorage();
 	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
 	GPU_TRANSFORMS = new gpu_vector<_transform>();
-//	GPU_TRANSFORMS->ownStorage();
-    GPU_TRANSFORMS->storage = &TRANSFORMS.data;
+	//	GPU_TRANSFORMS->ownStorage();
+	GPU_TRANSFORMS->storage = &TRANSFORMS.data;
 	// log("here");
 	// ids->init();
 
 	initParticles();
 	particle_renderer.init();
 
+	timer stopWatch;
+
 	renderDone.store(true);
-	proj = glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 1.f, 1e10f);
-	while (true) {
-    	// log("render loop");
+	::proj = glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 1.f, 1e10f);
+	while (true)
+	{
+		// log("render loop");
 		// log(to_string(renderWork.size()));
-		if (renderWork.size() > 0) {
+		if (renderWork.size() > 0)
+		{
 			renderLock.lock();
-			renderJob rj = renderWork.front(); renderWork.pop();
-			switch (rj.type) {
-			case doFunc://    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			renderJob rj = renderWork.front();
+			renderWork.pop();
+			switch (rj.type)
+			{
+			case doFunc: //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				renderLock.unlock();
 
 				rj.work();
 				break;
 			case renderNum::render:
 			{
-                updateInfo();
+				stopWatch.start();
+				updateInfo();
 
 				gpuDataLock.lock();
-				GPU_TRANSFORMS->bufferData();//array_heap
+				GPU_TRANSFORMS->bufferData(); //array_heap
 
 				GPU_RENDERERS->bufferData();
 				GPU_MATRIXES->tryRealloc(GPU_MATRIXES_IDS.size());
@@ -274,9 +302,7 @@ void renderThreadFunc() {
 
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, GPU_RENDERERS->bufferId);
-				//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, GPU_TRANSFORM_IDS->bufferId);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
-
 
 				mainCamPos = player->transform->getPosition();
 				MainCamForward = player->transform->forward();
@@ -291,18 +317,16 @@ void renderThreadFunc() {
 
 				gpuDataLock.unlock();
 
-
 				updateParticles();
 				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view);
 
 				//buffer renderer ids
-				 for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-				 	for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++)
-				 		j->second->_ids->bufferData();
-//				ids->bufferData();
+				for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+					for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
+						j->second->_ids->bufferData();
+				//				ids->bufferData();
 
 				renderDone.store(true);
-
 
 				glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -313,38 +337,38 @@ void renderThreadFunc() {
 				glDepthMask(GL_TRUE);
 				cam_render(rj.rot, rj.proj, rj.view);
 
-
-				
 				glDisable(GL_CULL_FACE);
 				glDepthMask(GL_FALSE);
-				particle_renderer.drawParticles(rj.view,rj.rot,rj.proj);
+				particle_renderer.drawParticles(rj.view, rj.rot, rj.proj);
 				glDepthMask(GL_TRUE);
 
 				glfwSwapBuffers(window);
-
+				glFlush();
+				appendStat("render", stopWatch.stop());
 				//renderDone.store(true);
 			}
-			renderLock.unlock();
-			break;
+				renderLock.unlock();
+				break;
 			case rquit:
-				
-				while(gpu_buffers.size() > 0){
+
+				while (gpu_buffers.size() > 0)
+				{
 					(gpu_buffers.begin()->second)->deleteBuffer();
 				}
 
 				// delete GPU_MATRIXES;
 				// delete GPU_RENDERERS;
 				// delete GPU_TRANSFORMS;
-//				delete GPU_TRANSFORM_IDS;
+				//				delete GPU_TRANSFORM_IDS;
 
 				//  for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
 				//  	for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
 				//  		delete j->second->_ids;
 				//  	}
 				//  }
-
+				glFlush();
 				renderThreadReady.exchange(false);
-			    glfwTerminate();
+				glfwTerminate();
 
 				renderLock.unlock();
 				return;
@@ -352,48 +376,47 @@ void renderThreadFunc() {
 				break;
 			}
 		}
-		else {
+		else
+		{
 			this_thread::sleep_for(0ns);
 		}
-
 	}
 }
 
 
-
-void appendStat(string name, float dtime) {
-	auto a = componentStats.find(name);
-	if (a != componentStats.end())
-		a->second.add(dtime);
-	else {
-		componentStats[name] = rolling_buffer(200);
-		componentStats[name].add(dtime);
-	}
-}
 // scripting
+mutex antiBullshitDevice;
 
-void lockUpdate() {
-	for (auto& i : updateLocks)
+void lockUpdate()
+{
+	for (auto &i : updateLocks)
 		i.lock();
 }
-void unlockUpdate() {
-	for (auto& i : updateLocks)
+void unlockUpdate()
+{
+	for (auto &i : updateLocks)
 		i.unlock();
 }
-void cleanup(){
-    removeLock.lock();
-    for(auto& i : toRemove){
-        i->erase();
-    }
-    removeLock.unlock();
-    destroyLock.lock();
-    for(auto& i : toDestroy){
-        i->gameObject->_destroy();
-        i->_destroy();
-    }
-    destroyLock.unlock();
-    toRemove.clear();
-    toDestroy.clear();
+void cleanup()
+{
+	// antiBullshitDevice.lock();
+	removeLock.lock();
+	for (auto &i : toRemove)
+	{
+		i->erase();
+	}
+	toRemove.clear();
+	removeLock.unlock();
+
+	destroyLock.lock();
+	for (auto &i : toDestroy)
+	{
+		i->gameObject->_destroy();
+		i->_destroy();
+	}
+	toDestroy.clear();
+	destroyLock.unlock();
+	// antiBullshitDevice.unlock();
 }
 //void componentUpdateThread(int index) {
 //    timer stopWatch;
@@ -415,257 +438,267 @@ void cleanup(){
 //
 //}
 
-vector<size_t> threadCounters = vector<size_t>(concurrency::numThreads,0);
+vector<size_t> threadCounters = vector<size_t>(concurrency::numThreads, 0);
 
 atomic<bool> makeOctree(false);
+// barrier _barrier;
 
-void componentUpdateThread(int index) {
-    timer stopWatch;
-	while (true) {
-        updateLocks[index].lock();
-		if (updateWork[index].size() > 0) {
-			updateJob uj = updateWork[index].front(); updateWork[index].pop();
+void componentUpdateThread(int index)
+{
+	timer stopWatch;
+	while (true)
+	{
+		updateLocks[index].lock();
+		if (updateWork[index].size() != 0)
+		{
+			updateJob uj = updateWork[index].front();
 			if (uj.componentStorage == 0)
 				break;
-            if(index == 0)
-                stopWatch.start();
+			if (index == 0)
+				stopWatch.start();
 
-            switch(uj.ut){
-                case update_type::update:
-                    ComponentsUpdate(uj.componentStorage, index, uj.size);
-                    break;
-                case update_type::lateupdate:
-                    ComponentsLateUpdate(uj.componentStorage,index,uj.size);
-                    break;
-                default:
-                    break;
-            }
-            threadCounters[index]++;
-			if(index == 0 && uj.ut == update_type::update)
-                appendStat(uj.componentStorage->name + "--update", stopWatch.stop());
-            else if(index == 0 && uj.ut == update_type::lateupdate)
-                appendStat(uj.componentStorage->name + "--late_update", stopWatch.stop());
+			if (uj.ut == update_type::update)
+			{
+				ComponentsUpdate(uj.componentStorage, index, uj.size);
+			}
+			else if (uj.ut == update_type::lateupdate)
+			{
+				ComponentsLateUpdate(uj.componentStorage, index, uj.size);
+			}
+
+			threadCounters[index]++;
+			if (index == 0 && uj.ut == update_type::update)
+				appendStat(uj.componentStorage->name + "--update", stopWatch.stop());
+			else if (index == 0 && uj.ut == update_type::lateupdate)
+				appendStat(uj.componentStorage->name + "--late_update", stopWatch.stop());
+			updateWork[index].pop();
+
+			// _barrier.wait();
+			// uj.barrier->wait();
 		}
-        updateLocks[index].unlock();
-        this_thread::sleep_for(1ns);
+		updateLocks[index].unlock();
+		this_thread::sleep_for(1ns);
 	}
 }
-void init(){
-    renderThreadReady.exchange(false);
+void init()
+{
+	renderThreadReady.exchange(false);
 	renderThread = new thread(renderThreadFunc);
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
 
-    root = new Transform(0);
+	root = new Transform(0);
 	rootGameObject = new game_object(root);
-    for(int i = 0; i < concurrency::numThreads; i++){
-        rootGameObject->addComponent<barrier>();
-        rootGameObject->addComponent<copyBuffers>();
-    }
+	for (int i = 0; i < concurrency::numThreads; i++)
+	{
+		rootGameObject->addComponent<copyBuffers>();
+	}
+	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
+	gameEngineComponents.erase(copyWorkers);
 }
-
-void waitForBarrier(){
-    while(barrierCounter.load() < concurrency::numThreads)
-                this_thread::sleep_for(1ns);
-    barrierCounter.store(0);
-}
-
-void syncThreads(){
+void syncThreads()
+{
 	return;
-    bool isSynced = false;
-    while(!isSynced){
-        isSynced = true;
-        size_t currCount = threadCounters[0];
-        for(int i = 1; i < concurrency::numThreads; ++i){
-            if(threadCounters[i] != currCount){
-                isSynced = false;
+	bool isSynced = false;
+	while (!isSynced)
+	{
+		isSynced = true;
+		size_t currCount = threadCounters[0];
+		for (int i = 1; i < concurrency::numThreads; ++i)
+		{
+			if (threadCounters[i] != currCount)
+			{
+				isSynced = false;
 				break;
-            }
-        }
-        this_thread::sleep_for(1ns);
-    }
+			}
+		}
+		this_thread::sleep_for(1ns);
+	}
 }
-void run(){
-    timer stopWatch;
 
-    vector<thread*> workers;
-    for(int i = 0; i < concurrency::numThreads; i++)
-        workers.push_back(new thread(componentUpdateThread,i));
+void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
+{
+	// UPDATE
+	for (auto &j : ssb)
+	{
+		componentStorageBase *cb = j;
+		int s = cb->size();
 
-    componentStorageBase* copyWorkers;
-    componentStorageBase* barriers;
-    componentStorageBase* colliders;
-    for (auto& j : allcomponents) {
-        if (j.first == typeid(copyBuffers).hash_code()){
-            copyWorkers = j.second;
-            continue;
-        }
-        if (j.first == typeid(barrier).hash_code()){
-            barriers = j.second;
-            continue;
-        }
-        if(j.first == typeid(collider).hash_code()){
-            colliders = j.second;
-            continue;
-        }
-    }
-    eventsPollDone = true;
-    cleanup();
+		// if(j->name == "8collider")
+		// 	continue;
 
-    for (int i = 0; i < concurrency::numThreads; ++i){
-        updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
-    }
-    unlockUpdate();
-    waitForBarrier();
+		lockUpdate();
+		if(doCleanUp)
+			cleanup();
+		for (int i = 0; i < concurrency::numThreads; ++i)
+		{
+			updateWork[i].push(updateJob(j, update_type::update, s, 0));
+		}
+		unlockUpdate();
+		this_thread::sleep_for(1ns);
+	}
+	// LATE UPDATE
+	for (auto &j : ssb)
+	{
+		componentStorageBase *cb = j;
+		int s = cb->size();
 
+		lockUpdate();
+		if(doCleanUp)
+			cleanup();
+		for (int i = 0; i < concurrency::numThreads; ++i)
+		{
+			updateWork[i].push(updateJob(j, update_type::lateupdate, s, 0));
+		}
+		unlockUpdate();
+		this_thread::sleep_for(1ns);
+	}
+	lockUpdate();
+	if(doCleanUp)
+		cleanup();
+	unlockUpdate();
+}
 
+void run()
+{
+	timer stopWatch;
 
-    leaves.clear();
+	vector<thread *> workers;
+	for (int i = 0; i < concurrency::numThreads; i++)
+		workers.push_back(new thread(componentUpdateThread, i));
+
+	componentStorageBase *colliders;
+	for (auto &j : allcomponents)
+	{
+		if (j.first == typeid(copyBuffers).hash_code())
+		{
+			copyWorkers = j.second;
+			continue;
+		}
+		if (j.first == typeid(collider).hash_code())
+		{
+			colliders = j.second;
+			continue;
+		}
+	}
+	eventsPollDone = true;
+	unlockUpdate();
+
+	leaves.clear();
 	octree2 = &nodes.front();
 	octree2->clear();
 	octree2->id = 0;
 	numNodes = 1;
 
+	while (!glfwWindowShouldClose(window))
+	{
+		
+		while (!eventsPollDone)
+		{
+			this_thread::sleep_for(1ns);
+		}
+		eventsPollDone = false;
 
-    while (!glfwWindowShouldClose(window))
-    {
+		stopWatch.start();
+		gpuDataLock.lock();
+		appendStat("wait for render", stopWatch.stop());
 
-        while(!eventsPollDone){
-            this_thread::sleep_for(1ns);
-        }
-        eventsPollDone = false;
-        barrierCounter = 0;
-
-        lockUpdate();
-
-        syncThreads();
-//         size_t currCount = threadCounters[0];
-//         for(int i = 1; i < concurrency::numThreads; ++i){
-//             if(threadCounters[i] != currCount){
-// //                cout << "component type: " << cb->name << endl;
-//                 cout << "threads out of sync" << endl;
-//                 cout << "baseline: " << currCount << endl;
-//                 cout << "offender: " << threadCounters[i] << endl;
-//                 cout << "thread id: " << i << endl;
-//                 throw;
-//             }
-//         }
-
-
-
-        leaves.clear();
+		// scripting
+		doLoopIteration(gameComponents);
+		
+		lockUpdate();
+		leaves.clear();
 		octree2->clear();
 		octree2 = &nodes.front();
 		octree2->id = 0;
 		numNodes = 1;
-		nodes[0]._parent = -1;
+		nodes[0].parent = -1;
+		cleanup();
+		unlockUpdate();
 
-        unlockUpdate();
-
-        gpuDataLock.lock();
-        // scripting
-        // UPDATE
-		for (auto& j : allcomponents) {
-			if (j.first == typeid(copyBuffers).hash_code())
-				continue;
-            if (j.first == typeid(barriers).hash_code())
-				continue;
-            componentStorageBase* cb = j.second;
-            int s = cb->size();
-
+		bool working = true;
+		while(working){
+			working = false;
 			lockUpdate();
-			cleanup();
-			for (int i = 0; i < concurrency::numThreads; ++i){
-				updateWork[i].push(updateJob(j.second,update_type::update, s));
-                updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
+			for(auto i : updateWork){
+				if(i.size() > 0){
+					working = true;
+					break;
+				}
 			}
 			unlockUpdate();
-			waitForBarrier();
-			syncThreads();
+			this_thread::sleep_for(1ns);
 		}
-		// LATE UPDATE
-        for (auto& j : allcomponents) {
-			if (j.first == typeid(copyBuffers).hash_code())
-				continue;
-            if (j.first == typeid(barriers).hash_code())
-				continue;
-            componentStorageBase* cb = j.second;
-            int s = cb->size();
+		cleanup();
 
+		// stopWatch.start();
+		// allcomponents[typeid(collider).hash_code()]->update();
+		// appendStat(allcomponents[typeid(collider).hash_code()]->name + "--update", stopWatch.stop());
+		// antiBullshitDevice.lock();
+		doLoopIteration(gameEngineComponents, false);
+		// antiBullshitDevice.unlock();
+
+		// wait for barrier
+
+		lockUpdate();
+
+		cleanup();
+
+		GPU_RENDERERS->storage->resize(gpu_renderers.size());
+		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+		{
+			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
+			{
+				j->second->_ids->storage->resize(j->second->ids.data.size());
+			}
+		}
+		appendStat("prepare memory", stopWatch.stop());
+
+		for (int i = 0; i < concurrency::numThreads; ++i)
+		{
+			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
+		}
+		unlockUpdate();
+
+		// this_thread::sleep_for(2ns);
+
+		working = true;
+		while(working){
+			working = false;
 			lockUpdate();
-			cleanup();
-			for (int i = 0; i < concurrency::numThreads; ++i){
-				updateWork[i].push(updateJob(j.second,update_type::lateupdate, s));
-                updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
+			for(auto i : updateWork){
+				if(i.size() > 0){
+					working = true;
+					break;
+				}
 			}
 			unlockUpdate();
-			waitForBarrier();
-			syncThreads();
+			this_thread::sleep_for(1ns);
+
 		}
-		//barrier
-        lockUpdate();
-        for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(barriers,update_type::update, concurrency::numThreads));
-        }
-        unlockUpdate();
-        waitForBarrier();
-        syncThreads();
-        // wait for barrier
-
-        lockUpdate();
-
-
-        cleanup();
-        // while (TRANSFORMS.density() < 0.99) { // shift
-        //     int loc = GO_T_refs[TRANSFORMS.size() - 1]->transform->shift();
-        //     if (GO_T_refs[loc]->getRenderer() != 0)
-        //         GO_T_refs[loc]->getRenderer()->updateTransformLoc(loc);
-        // }
-        // stopWatch.start();
-        // for(auto& j : allcomponents){
-        //     if (j.first == typeid(copyBuffers).hash_code() || j.first == typeid(barriers).hash_code())
-		// 		continue;
-        //     j.second->sort();
-        // }
-
-//        GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
-        GPU_RENDERERS->storage->resize(gpu_renderers.size());
-        for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
-            for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
-                j->second->_ids->storage->resize(j->second->ids.data.size());
-            }
-        }
-        appendStat("prepare memory", stopWatch.stop());
-
-        for (int i = 0; i < concurrency::numThreads; ++i){
-            updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads));
-            updateWork[i].push(updateJob(barriers, update_type::update, concurrency::numThreads));
-        }
-        unlockUpdate();
-        waitForBarrier();
-        syncThreads();
-        gpuDataLock.unlock();
+		// syncThreads();
+		gpuDataLock.unlock();
 
 		// rendering
-//        stopWatch.start();
+		//        stopWatch.start();
 		renderJob rj;
-        rj.type = renderNum::render;
+		rj.work = [&]{return;};
+		rj.type = renderNum::render;
 		rj.val1 = GPU_RENDERERS->size();
-		rj.proj = proj;//((_camera*)(cameras->front()))->getProjection();
-		rj.rot = glm::lookAt(vec3(0,0,0),player->transform->forward(),player->transform->up());//glm::toMat4(glm::inverse(player->transform->getRotation()));// ((_camera*)(cameras->front()))->getRotationMatrix();
-		rj.view = glm::translate(-player->transform->getPosition());// ((_camera*)(cameras->front()))->GetViewMatrix();
-
+		rj.proj = ::proj;																			//((_camera*)(cameras->front()))->getProjection();
+		rj.rot = glm::lookAt(vec3(0, 0, 0), player->transform->forward(), player->transform->up()); //glm::toMat4(glm::inverse(player->transform->getRotation()));// ((_camera*)(cameras->front()))->getRotationMatrix();
+		rj.view = glm::translate(-player->transform->getPosition());								// ((_camera*)(cameras->front()))->GetViewMatrix();
 
 		renderDone.store(false);
 
 		renderLock.lock();
 		renderWork.push(rj);
 		renderLock.unlock();
-//		appendStat("rendering", stopWatch.stop());
+		//		appendStat("rendering", stopWatch.stop());
 
-//        unlockUpdate();
-    }
+		//        unlockUpdate();
+	}
 
 	log("end of program");
 	renderJob rj;
@@ -675,44 +708,49 @@ void run(){
 	renderWork.push(rj);
 	renderLock.unlock();
 
-     for(int i = 0; i < concurrency::numThreads; i++){
-        updateWork[i].push(updateJob(0,update_type::update,0));
-        workers[i]->join();
-     }
-
+	for (int i = 0; i < concurrency::numThreads; i++)
+	{
+		updateWork[i].push(updateJob(0, update_type::update, 0, 0));
+		workers[i]->join();
+	}
+	// endBarrier.wait();
+	// for (int i = 0; i < concurrency::numThreads; i++)
+	// {
+	// }
 
 	while (renderThreadReady.load())
-        this_thread::sleep_for(1ms);
+		this_thread::sleep_for(1ms);
 
-
-    cout << endl;
+	cout << endl;
 	componentStats.erase("");
-	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i) {
+	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
+	{
 		cout << i->first << " : " << i->second.getAverageValue() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
 }
 
+void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view)
+{
 
-void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view) {
-
-    float farplane = 1e32f;
+	float farplane = 1e32f;
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	glCullFace(GL_BACK);
-	for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
-		Shader* currShader = i->second.begin()->second->s.s->shader;
+	for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+	{
+		Shader *currShader = i->second.begin()->second->s.s->shader;
 		currShader->Use();
-		for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
+		for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
+		{
 			glUseProgram(currShader->Program);
 			glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
 			glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farplane + 1));
-			glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1,glm::value_ptr(mainCamPos));
-       	 	glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
-       	 	glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
+			glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1, glm::value_ptr(mainCamPos));
+			glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
+			glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
 
 			j->second->m.m->model->Draw(*currShader, j->second->ids.size());
 		}
 	}
 }
-

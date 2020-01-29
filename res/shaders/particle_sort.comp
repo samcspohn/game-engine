@@ -1,13 +1,15 @@
 #version 430 core
-
 #include "particle.glsl"
 
 struct d{
     uint key;
     uint id;
 };
-
-
+#define WG_SIZE 128
+#define N_GROUPS 16
+#define BUCK (1 << RADIX)
+#define RADIX 4
+#define _local_size_x 64
 layout(std430,binding = 0) buffer c{uint counts[];}; //5? long
 layout(std430,binding = 1) buffer o{uint offsets[];}; //5? long
 layout(std430,binding = 2) buffer d_{d data1[];};
@@ -18,9 +20,302 @@ layout(std430,binding = 5) buffer a{uint atomics[];};
 uniform int stage;
 uniform mat4 vp;
 uniform uint count;
-
+// uniform mat4 frustum;
 uniform uint numElements;
 uniform uint breadth;
+
+//////////////////////////////////////////////////
+
+layout(std430,binding = 6) buffer d_in{d input[];};
+layout(std430,binding = 7) buffer d_out{d _output[];};
+layout(std430,binding = 8) buffer blk_sum{uint block_sums[];};
+layout(std430,binding = 9) buffer d_s{uint scan[];};
+layout(std430,binding = 10) buffer d_h{uint histo[];};
+
+shared uint local_histo[BUCK*WG_SIZE];
+shared uint local_scan[BUCK*WG_SIZE];
+
+uniform int nkeys;
+uniform int pass;
+
+
+
+
+void radix2(){
+
+    // __kernel void count(const __global int* input,__global int* _output,__local int* local_histo,const int pass,const int nkeys)
+    if(stage == 0)
+    {
+        uint g_id = gl_GlobalInvocationID.x;
+        uint l_id = gl_LocalInvocationID.x;
+        uint l_size = _local_size_x;    
+
+        uint group_id = gl_WorkGroupID.x;
+        uint n_groups = gl_NumWorkGroups.x; 
+        
+        //Set the buckets of each item to 0
+        uint i;
+        for(i = 0; i < BUCK; i++) {
+            local_histo[i * l_size + l_id] = 0;
+        }
+
+        memoryBarrierShared();
+
+        //Calculate elements to process per item
+        uint size = (nkeys / n_groups) / l_size;
+        //Calculate where to start on the global array
+        uint start = g_id * size;
+        
+        for(i = 0; i < size; i++) {
+            uint key = input[i + start].key;
+            //Extract the corresponding radix of the key
+            key = ((key >> (pass * RADIX)) & (BUCK - 1));
+            //Count the ocurrences in the corresponding bucket
+            local_histo[key * l_size + l_id]++;
+        }
+
+        memoryBarrierShared();
+
+        for(i = 0; i < BUCK; i++) {
+            //"from" references the local buckets
+            uint from = i * l_size + l_id;
+            //"to" maps to the global buckets
+            uint to = i * n_groups + group_id;
+            //Map the local data to its global position
+            histo[l_size * to + l_id] = local_histo[from];
+        }
+    }
+
+    /** SCAN KERNEL **/
+    // __kernel void scan(__global int* input, __global int* _output,__local int* local_scan,__global int* block_sum)
+    if(stage == 1)
+    {
+        uint g_id = gl_GlobalInvocationID.x;
+        uint l_id = gl_LocalInvocationID.x;
+        uint l_size = _local_size_x;    
+
+        uint group_id = gl_WorkGroupID.x;
+        uint n_groups = gl_NumWorkGroups.x; 
+
+        //Store data from global to local memory to operate
+        local_scan[2 * l_id] = scan[2 * g_id];
+        local_scan[2 * l_id + 1] = scan[2 * g_id + 1];
+
+        //UP SWEEP
+        uint d, offset = 1;
+        for(d = l_size; d > 0; d >>= 1){
+            memoryBarrierShared();
+            if(l_id < d) {
+                uint a = offset * (2 * l_id + 1) - 1;
+                uint b = offset * (2 * l_id + 2) - 1;
+                local_scan[b] += local_scan[a];
+            }
+            offset *= 2;
+        }
+        
+        if (l_id == 0) {
+            //Store the full sum on last item
+                block_sums[group_id] = local_scan[l_size * 2 - 1];
+            //Clear the last element
+            local_scan[l_size * 2 - 1] = 0;
+        }
+
+        //DOWN SWEEP
+        for(d = 1; d < (l_size*2); d *= 2) {
+            offset >>= 1;
+            memoryBarrierShared();
+            if(l_id < d) {
+                uint a = offset * (2 * l_id + 1) - 1;
+                uint b = offset * (2 * l_id + 2) - 1;
+                uint tmp = local_scan[a];
+                local_scan[a] = local_scan[b];
+                local_scan[b] += tmp;
+            }
+        }
+        memoryBarrierShared();
+
+        //Write results from Local to Global memory
+        scan[2 * g_id]     = local_scan[2 * l_id];
+        scan[2 * g_id + 1] = local_scan[2 * l_id + 1];
+    }
+
+    /** BLOCK SUM KERNEL **/
+    // __kernel void block_sum(__global int* input, __global int* _output,__local int* local_scan,__global int* block_sum)
+ if(stage == 11)
+    {
+        uint g_id = gl_GlobalInvocationID.x;
+        uint l_id = gl_LocalInvocationID.x;
+        uint l_size = _local_size_x;    
+
+        uint group_id = gl_WorkGroupID.x;
+        uint n_groups = gl_NumWorkGroups.x; 
+
+        //Store data from global to local memory to operate
+        local_scan[2 * l_id] = block_sums[2 * g_id];
+        local_scan[2 * l_id + 1] = block_sums[2 * g_id + 1];
+
+        //UP SWEEP
+        uint d, offset = 1;
+        for(d = l_size; d > 0; d >>= 1){
+            memoryBarrierShared();
+            if(l_id < d) {
+                uint a = offset * (2 * l_id + 1) - 1;
+                uint b = offset * (2 * l_id + 2) - 1;
+                local_scan[b] += local_scan[a];
+            }
+            offset *= 2;
+        }
+        
+        if (l_id == 0) {
+            // //Store the full sum on last item
+            // if(block_sum != NULL){
+            //     block_sum[group_id] = local_scan[l_size * 2 - 1];
+            // }
+
+            //Clear the last element
+            local_scan[l_size * 2 - 1] = 0;
+        }
+
+        //DOWN SWEEP
+        for(d = 1; d < (l_size*2); d *= 2) {
+            offset >>= 1;
+            memoryBarrierShared();
+            if(l_id < d) {
+                uint a = offset * (2 * l_id + 1) - 1;
+                uint b = offset * (2 * l_id + 2) - 1;
+                uint tmp = local_scan[a];
+                local_scan[a] = local_scan[b];
+                local_scan[b] += tmp;
+            }
+        }
+        memoryBarrierShared();
+
+        //Write results from Local to Global memory
+        block_sums[2 * g_id]     = local_scan[2 * l_id];
+        block_sums[2 * g_id + 1] = local_scan[2 * l_id + 1];
+    }
+
+    /** COALESCE KERNEL **/
+    // __kernel void coalesce(__global int* scan, __global int* block_sums)
+    if(stage == 2)
+    {
+
+        uint g_id = gl_GlobalInvocationID.x;
+        uint group_id = gl_WorkGroupID.x;
+
+        uint b = block_sums[group_id];
+
+        //TODO: Probar pasar a memoria local
+        scan[2 * g_id] += b;
+        scan[2 * g_id + 1] += b;
+
+    }
+
+
+
+    /** REORDER KERNEL **/
+    // __kernel void reorder(__global int* array, __global int* histo, __global int* _output, const int pass, const int nkeys, __local int* local_histo)
+    if(stage == 3)
+    {
+        uint g_id = gl_GlobalInvocationID.x;
+        uint l_id = gl_LocalInvocationID.x;
+        uint l_size = _local_size_x;    
+
+        uint group_id = gl_WorkGroupID.x;
+        uint n_groups = gl_NumWorkGroups.x; 
+
+        //Bring histo to local memory
+        uint i;
+        for(i = 0; i < BUCK; i++){
+            uint to = i * n_groups + group_id;
+            local_histo[i * l_size + l_id] = 
+                histo[l_size * to + l_id];
+        }
+        
+        memoryBarrierShared();
+
+        //Write to global memory in order
+        uint size = (nkeys / n_groups) / l_size;
+        uint start = g_id * size;
+
+        for(i = 0; i < size; i++){
+            d item = input[i + start];
+            uint key = (item.key >> (pass * RADIX)) & (BUCK - 1);
+            uint pos = local_histo[key * l_size + l_id];
+            local_histo[key * l_size + l_id]++;
+
+            _output[pos] = item;
+        }
+        
+    }
+
+
+    // /** CHECK ORDER KERNELS **/
+
+    // // __kernel void parallelcmp(const __global int* input, __global int* _output, const int nkeys)
+    // if(stage == 4)
+    // {
+    //     uint g_id = gl_GlobalInvocationID.x;
+    //     uint l_size = _local_size_x;    
+    //     uint n_groups = gl_NumWorkGroups.x; 
+        
+    //     //Calculate elements to process per item
+    //     int size = (nkeys / n_groups) / l_size;
+    //     //Calculate where to start on the global array
+    //     int start = g_id * size;
+
+    //     //Set the _output to 0
+    //     int i;
+    //     for(i = 0; i < size; i++) {
+    //         _output[i + start] = 0;
+    //     }
+
+    //     memoryBarrierShared();
+
+    //     for(i = 0; i < size; i++) {
+    //         if (g_id == 0 && i == 0) {
+    //             ;
+    //         }
+    //         else if (input[i + start] < input[i + start - 1])
+    //             _output[i + start] = 1;
+    //     }
+    //     memoryBarrierShared();
+    // }
+
+    // // __kernel void reduce(__global int* input, __global int* _output, const int nkeys)
+    // if(stage == 5)
+    // {
+    //     uint g_id = gl_GlobalInvocationID.x;
+    //     uint l_id = gl_LocalInvocationID.x;
+    //     uint l_size = _local_size_x;    
+
+    //     uint group_id = gl_WorkGroupID.x;
+    //     uint n_groups = gl_NumWorkGroups.x; 
+
+    //     //UP SWEEP
+    //     int d, offset = 1;
+    //     for(d = l_size; d > 0; d >>= 1){
+    //         memoryBarrierShared();
+    //         if(l_id < d) {
+    //             int a = offset * (2 * l_id + 1) - 1;
+    //             int b = offset * (2 * l_id + 2) - 1;
+    //             input[b] += input[a];
+    //         }
+    //         offset *= 2;
+    //     }
+        
+    //     memoryBarrierShared();
+    //     if(g_id == 0)
+    //         _output[0] = input[nkeys - 1];
+    // }
+
+}
+
+
+
+
+
+
 
 void merge(uint id){
     uint start = id * breadth;
@@ -36,46 +331,27 @@ void merge(uint id){
         secondStart = end;
     uint second = secondStart;
 
-    if(stage % 2 == 0){
-        while(dst < end && first < secondStart && second < end){
-            if(data1[first].key > data1[second].key){
-                data2[dst] = data1[first];
-                first++;
-            }else{
-                data2[dst] = data1[second];
-                second++;
-            }
-            dst++;
-        }
-        for(;first < secondStart;first++){
+    while(dst < end && first < secondStart && second < end){
+        if(data1[first].key > data1[second].key){
             data2[dst] = data1[first];
-            dst++;
-        }
-        for(;second < end;second++){
+            first++;
+        }else{
             data2[dst] = data1[second];
-            dst++;
+            second++;
         }
-    }else{
-        while(dst < end && first < secondStart && second < end){
-            if(data2[first].key > data2[second].key){
-                data1[dst] = data2[first];
-                first++;
-            }else{
-                data1[dst] = data2[second];
-                second++;
-            }
-            dst++;
-        }
-        for(;first < secondStart;first++){
-            data1[dst] = data2[first];
-            dst++;
-        }
-        for(;second < end;second++){
-            data1[dst] = data2[second];
-            dst++;
-        }
+        dst++;
     }
-
+    for(;first < secondStart;first++){
+        data2[dst] = data1[first];
+        dst++;
+    }
+    for(;second < end;second++){
+        data2[dst] = data1[second];
+        dst++;
+    }
+    for(uint i = start; i < end;i++){
+        data1[i] = data2[i];
+    }
 }
 
 
@@ -132,33 +408,4 @@ void main () {
         // merge(gid);
     }
 
-    // // first pass
-    // else if(stage == 0){
-    //     index = data1[gid].key & 0x0000ffff;
-    //     atomicAdd(counts[index],1);
-    // }
-    // else if(gid == 0 && stage == 1){
-    //     offsets[0] = 0;
-    //     for(int i = 1; i < 65536; i++){
-    //         offsets[i] = offsets[i - 1] + counts[i - 1];
-    //     }
-    // }else if(stage == 2){
-    //     index = data1[gid].key & 0x0000ffff;
-    //     data2[atomicAdd(offsets[index],1)] = data1[gid];
-    // }
-
-    // // second pass
-    // else if(stage == 3){
-    //     index = data2[gid].key >> 16;
-    //     atomicAdd(counts[index],1);
-    // }
-    // else if(gid == 0 && stage == 4){
-    //     offsets[0] = 0;
-    //     for(int i = 1; i < 65536; i++){
-    //         offsets[i] = offsets[i - 1] + counts[i - 1];
-    //     }
-    // }else if(stage == 5){
-    //     index = data2[gid].key >> 16;
-    //     data1[atomics[0] - atomicAdd(offsets[index],1)] = data2[gid];
-    // }
 }

@@ -8,6 +8,14 @@
         "array": "cpp",
         "string_view": "cpp",
         "iostream": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "typeinfo": "cpp",
+        "ostream": "cpp",
+        "*.tcc": "cpp",
+        "optional": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "thread": "cpp",
+        "atomic": "cpp"
     }
 }

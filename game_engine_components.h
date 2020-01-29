@@ -21,8 +21,28 @@ using namespace std;
 const GLint WIDTH = 768, HEIGHT = 432;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
+class barrier{
+	mutex m;
+	atomic<size_t> count;
+	atomic<size_t> objective;
+	public:
+	void reset(size_t num){
+		m.lock();
+		objective.fetch_add(num);
+		m.unlock();
+	}
+	void wait(){
+		m.lock();
+		count.fetch_add(1);
+		m.unlock();
+		while(objective.load() != count.load()){
+			this_thread::sleep_for(1ns);
+		}
+	}
+};
+
 typedef glm::vec4 plane;
-struct frustum {
+struct _frustum {
 	plane top;
 	plane left;
 	plane right;
@@ -40,7 +60,7 @@ public:
 	GLfloat farPlane;
 	bool lockFrustum = false;
 	bool inited = false;
-	::frustum f;
+	_frustum f;
 	int order() {
 		return 1 - 2;
 	}
@@ -93,7 +113,7 @@ public:
 	//		MainCamForward = transform->forward();
 	//	}
 	//}
-	::frustum getFrustum() {
+	_frustum getFrustum() {
 		glm::mat4 m = getProjection() * getRotationMatrix() * GetViewMatrix();
 		f.left = plane(m[0][3] + m[0][0],
 			m[1][3] + m[1][0],
@@ -119,6 +139,9 @@ private:
 
 vector<int> renderCounts = vector<int>(concurrency::numThreads);
 class copyBuffers : public component {
+	bool _registerEngineComponent(){ 
+		return true;
+	}
 	void update() {
 		int numt = concurrency::numThreads;
 		if (getThreadID() < numt) {
@@ -159,13 +182,4 @@ class copyBuffers : public component {
 	}
 	UPDATE(copyBuffers, update);
 	COPY(copyBuffers);
-};
-
-atomic<int> barrierCounter;
-class barrier : public component{
-    void update() {
-        barrierCounter.fetch_add(1);
-    }
-    UPDATE(barrier,update);
-    COPY(barrier);
 };

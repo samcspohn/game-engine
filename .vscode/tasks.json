@@ -16,11 +16,11 @@
             },
             "command": "clang++",
             "args": ["main.cpp", "-g", "-fpermissive", "-w", 
-                "-O3",
-                 "-std=c++17",
-                 "-lGL", "-lGLU",
-                 "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
-                 "-lXi", "-lSOIL", "-lassimp"
+                // "-O3",
+                "-std=c++17",
+                "-lGL", "-lGLU",
+                "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
+                "-lXi", "-lSOIL", "-lassimp"
                 ],
         }
     ]
