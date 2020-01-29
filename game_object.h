@@ -9,133 +9,199 @@
 using namespace std;
 
 mutex removeLock;
-std::set<compItr*> toRemove;
+std::set<compItr *> toRemove;
 mutex destroyLock;
-std::set<Transform*> toDestroy;
+std::set<Transform *> toDestroy;
 
 class _renderer;
 
-class game_object {
-	
-	multimap<ull, compItr*> components;
-	~game_object() { };
+class game_object
+{
+
+	map<component *, compItr *> components;
+	~game_object() { destroyed = false; };
+	bool destroyed = false;
 	//friend component;
-	typename fast_list_deque<_renderer>::iterator renderer = 0;
+	_renderer *renderer = 0;
 	friend _renderer;
+
 public:
-
-	_renderer* getRenderer() {
-		return (_renderer*)&*renderer;
+	_renderer *getRenderer()
+	{
+		return (_renderer *)&*renderer;
 	}
-	template<typename t>
-    typename fast_list_deque<t>::iterator getComponent() {
+	template <typename t>
+	t *getComponent()
+	{
 		ull hash = typeid(t).hash_code();
-		for (auto& i : components)
-			if (i.second->hash == hash){
-                return dynamic_cast<compItr_<t>*>(i.second)->get();
-//				return ((compItr_<t>*)i.second)->get();
+		for (auto &i : components)
+			if (i.second->hash == hash)
+			{
+				return (t *)i.first;
 			}
-        return typename fast_list_deque<t>::iterator();
-//		return 0;
+		return 0;
 	}
 
+	void collide(game_object *go)
+	{
+		for (auto &i : components)
+		{
+			i.first->onCollision(go);
+		}
+	}
 
-	template<class t>
-	typename fast_list_deque<t>::iterator addComponent() {
+	template <class t>
+	t *addComponent()
+	{
 		compInfo<t> ci = addComponentToAll(t());
-		component_ref(t) ret = ci.compPtr;
-		components.insert(std::make_pair(typeid(t).hash_code(),ci.CompItr));
-		((component*)&(*ret))->transform = this->transform;
-		((component*)&(*ret))->transform->gameObject = this;
-		((component*)&(*ret))->onStart();
+		t *ret = (t *)ci.compPtr;
+		ci.CompItr->goComponents = &this->components;
+		components.insert(std::make_pair(ret, ci.CompItr));
+		ret->transform = this->transform;
+		ret->transform->gameObject = this;
+		ret->onStart();
 
 		return ret;
 	}
 
-	template<class t>
-	typename fast_list_deque<t>::iterator addComponent(const t& c) {
+	template <class t>
+	t *addComponent(const t &c)
+	{
 		compInfo<t> ci = addComponentToAll(c);
-		typename fast_list_deque<t>::iterator ret = ci.compPtr;
-		components.insert(std::make_pair(typeid(t).hash_code(),ci.CompItr));
-		((component*)&(*ret))->transform = this->transform;
-		((component*)&(*ret))->transform->gameObject = this;
-		((component*)&(*ret))->onStart();
+		t *ret = (t *)ci.compPtr;
+		ci.CompItr->goComponents = &this->components;
+		components.insert(std::make_pair(ret, ci.CompItr));
+		ret->transform = this->transform;
+		ret->transform->gameObject = this;
+		ret->onStart();
+
 		return ret;
 	}
 
-	template<class t>
-	void removeComponent(typename fast_list_deque<t>::iterator c) {
-		removeLock.lock();
-		if(toRemove.find(components.find(typeid(t).hash_code())->second) != toRemove.end()){
-            cout << "already removed" << endl;
-            throw;
-		}
-		toRemove.insert(components.find(typeid(t).hash_code())->second);
-		removeLock.unlock();
-		components.erase(typeid(t).hash_code());
+	template <class t>
+	t *dupComponent(const t &c)
+	{
+		compInfo<t> ci = addComponentToAll(c);
+		t *ret = (t *)ci.compPtr;
+		ci.CompItr->goComponents = &this->components;
+		components.insert(std::make_pair(ret, ci.CompItr));
+		ret->transform = this->transform;
+		ret->transform->gameObject = this;
+		return ret;
 	}
-    void removeComponent(ull h) {
+	template <class t>
+	void removeComponent(t *c)
+	{
 		removeLock.lock();
-		if(toRemove.find(components.find(h)->second) != toRemove.end()){
-            cout << "already removed" << endl;
-            throw;
+		auto toR = components.find(c);
+		if (toRemove.find(toR->second) != toRemove.end())
+		{
+			cout << "already removed" << endl;
+			throw;
 		}
-		toRemove.insert(components.find(h)->second);
+		toRemove.insert(toR->second);
+		toR->first->onDestroy();
 		removeLock.unlock();
-		components.erase(h);
+		// components.erase(toR);
 	}
-    template<class t>
-	void removeComponent() {
+	void removeComponent(component *c)
+	{
 		removeLock.lock();
-		typename fast_list_deque<t>::iterator c = getComponent<t>();
-		if(toRemove.find(components.find(typeid(t).hash_code())->second) != toRemove.end()){
-            cout << "already removed" << endl;
-            throw;
+		auto toR = components.find(c);
+		if (toRemove.find(toR->second) != toRemove.end())
+		{
+			cout << "already removed" << endl;
+			throw;
 		}
-		toRemove.insert(components.find(typeid(t).hash_code())->second);
+		toRemove.insert(toR->second);
+		toR->first->onDestroy();
 		removeLock.unlock();
-		components.erase(typeid(t).hash_code());
+		// components.erase(toR);
+	}
+	template <class t>
+	void removeComponent()
+	{
+		removeLock.lock();
+		component *c = getComponent<t>();
+		auto toR = components.find(c);
+		if (toRemove.find(toR->second) != toRemove.end())
+		{
+			cout << "already removed" << endl;
+			throw;
+		}
+		toRemove.insert(toR->second);
+		toR->first->onDestroy();
+		removeLock.unlock();
 	}
 
-	void destroy() {
-		destroyLock.lock();
-		while (components.size() > 0) {
-			removeComponent(components.begin()->first);
-		}
-		if(toDestroy.find(transform) != toDestroy.end()){
-            cout << "already destroyed" << endl;
-            throw;
-		}
-		toDestroy.insert(transform);
-		destroyLock.unlock();
-		for(auto& i : transform->getChildren()){
-            i->gameObject->destroy();
+	void destroy()
+	{
+		if (!destroyed)
+		{
+
+			destroyLock.lock();
+			for(auto& i : components)
+			// while (components.size() > 0)
+			{
+				// removeLock.lock();
+				// auto toR = components.find(i.first);
+				// if (toRemove.find(toR->second) != toRemove.end())
+				// {
+				// 	cout << "already removed" << endl;
+				// 	throw;
+				// }
+				// toRemove.insert(toR->second);
+				// removeLock.unlock();
+				// toR->first->onDestroy();
+				removeComponent(i.first);
+			}
+			if (toDestroy.find(transform) != toDestroy.end())
+			{
+				cout << "already destroyed" << endl;
+				throw;
+			}
+			toDestroy.insert(transform);
+			destroyLock.unlock();
+			for (auto &i : transform->getChildren())
+			{
+				i->gameObject->destroy();
+			}
 		}
 	}
 
-	game_object(Transform* t) {
+	game_object(Transform *t)
+	{
+		destroyed = false;
 		this->transform = t;
 		t->gameObject = this;
 	}
-	game_object() {
+	game_object()
+	{
+		destroyed = false;
 		this->transform = new Transform(this);
 		root->Adopt(this->transform);
 	};
-	game_object(const game_object & g) {
+	game_object(const game_object &g)
+	{
+		destroyed = false;
 		this->transform = new Transform(*g.transform, this);
 		g.transform->getParent()->Adopt(this->transform);
-		for (auto& i : g.components) {
+		for (auto &i : g.components)
+		{
 			i.second->getComponent()->_copy(this);
+		}
+		for (auto &i : this->components)
+		{
+			i.second->getComponent()->onStart();
 		}
 	}
 
-	void _destroy() {
-
+	void _destroy()
+	{
 		delete this;
 	}
 
-	Transform* transform;
-
+	Transform *transform;
 };
 
-game_object* rootGameObject;
+game_object *rootGameObject;

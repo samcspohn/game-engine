@@ -91,7 +91,7 @@ void update(uint id){
         p.life -= deltaTime / prototypes[p.emitter_prototype].lifetime;
 
         if(proto.billboard == 1)
-            p.rotation = lookAt(-cameraForward,cameraUp);
+            p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
         if(p.life < 0)
         {
             uint index = atomicAdd(atomicCounters[liveParticles],-1);

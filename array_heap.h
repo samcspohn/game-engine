@@ -82,10 +82,92 @@ public:
 		return extent;
 	}
 	vector<t> data = vector<t>();
+	std::vector<bool> valid = std::vector<bool>();
 private:
 	set<uint32_t> avail = set<uint32_t> ();
 	uint32_t extent = 0;
-	std::vector<bool> valid = std::vector<bool>();
+};
+
+
+
+
+
+template<typename t>
+class deque_heap {
+public:
+	struct ref {
+		int index;
+		deque_heap<t>* a;
+		t* operator->() {
+			return &(a->data.at(index));
+		}
+		 operator int() {
+			return index;
+		}
+		t& operator*() {
+			return (a->data)[index];
+		}
+		t& data() {
+			return a->data.at(index);
+		}
+	};
+	friend deque_heap::ref;
+	t& operator[](unsigned int i) {
+//		if (i >= extent)
+//			throw -10;//"out of bounds";
+		//if(!valid[i])
+		//	throw exception("invalid");
+		return data.at(i);
+	}
+	ref _new() {
+		ref ret;
+		ret.a = this;
+		if (avail.size() > 0) {
+			ret.index = *avail.begin();
+			avail.erase(avail.begin());;
+			valid[ret.index] = true;
+			if (ret.index >= extent) {
+				extent = ret.index + 1;
+			}
+		}
+		else {
+			ret.index = data.size();
+			data.push_back(t());
+			valid.push_back(true);
+			++extent;
+		}
+		return ret;
+	}
+	void _delete(ref r) {
+		if (r.a != this)
+			throw;
+		avail.emplace(r.index);
+		valid[r.index] = false;
+		//(*data)[r.index] = t();
+		if (r.index == extent - 1) {
+			for (; extent > 0 && !valid[extent - 1]; --extent) {
+				avail.erase(extent - 1);
+			}
+			//++extant;
+			data.resize(extent);
+			valid.resize(extent);
+		}
+	}
+
+	float density() {
+		if (extent == 0)
+			return INFINITY;
+		return 1 - (float)avail.size() / (float)extent;
+	}
+
+	unsigned int size() {
+		return extent;
+	}
+	deque<t> data = deque<t>();
+	std::deque<bool> valid = std::deque<bool>();
+private:
+	set<uint32_t> avail = set<uint32_t> ();
+	uint32_t extent = 0;
 };
 
 #else

@@ -87,7 +87,7 @@ struct renderJob {
 	glm::mat4 rot;
 	glm::mat4 view;
 	bool completed;
-	std::function<void(void)> work;
+	std::function<void(void)> work = 0;
 };
 
 

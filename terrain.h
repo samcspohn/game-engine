@@ -20,12 +20,12 @@ float getNoise(float x, float y){
     return h;
 }
 class terrain;
-map<int,component_ref(terrain)> terrains;
+map<int,terrain*> terrains;
 
 class terrain : public component{
 public:
     COPY(terrain);
-    component_ref(_renderer) r;
+    _renderer* r;
     int width;
     int depth;
     bool generated = false;
