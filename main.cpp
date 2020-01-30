@@ -34,7 +34,7 @@ public:
 	{
 		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.01f);
 		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
-		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.deltaTime * -1.f);
+		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
 
 		glm::vec3 currVel = rb->getVelocity();
 		// rb->setVelocity(currVel + ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT))  * transform->up() * 10.f + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward()) * speed);
@@ -153,7 +153,7 @@ public:
 		{
 			// transform->gameObject->destroy();
 			// cout << "hit" << flush;
-			// hit = true;
+			hit = true;
 		}
 	}
 	UPDATE(cube_sc, update);
@@ -312,7 +312,7 @@ int main(void)
 
 	game_object *proto2 = new game_object();
 	proto2->addComponent<_renderer>();
-	proto2->addComponent<rigidBody>();
+	proto2->addComponent<rigidBody>()->gravity = false;
 	proto2->addComponent<collider>();
 	proto2->addComponent<cube_sc>();
 	proto2->getComponent<_renderer>()->set(modelShader, cubeModel);
