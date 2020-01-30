@@ -67,7 +67,7 @@ void begin(uint thread_id){
             
             // set trail
             if(ep.trail == 1){
-                if(e.last_particle != -1){
+                if(e.frame > 0){
                     particles[emitters_last_particle[thread_id]].next = int(x);
                 }
                 p.next = -int(thread_id) - 2;
@@ -79,6 +79,8 @@ void begin(uint thread_id){
             particles[x] = p;
         }
         // emitters[thread_id] = e;
+    }else{
+        emitters_last_particle[thread_id] = -1;
     }
 }
 

@@ -49,7 +49,7 @@ struct emitter
     int live;
 
     vec3 p;
-    int last_particle;
+    int frame;
 };
 enum particleCounters
 {
@@ -115,10 +115,9 @@ public:
     typename array_heap<emitter>::ref emitter;
     typename array_heap<GLint>::ref emitter_last_particle;
     COPY(particle_emitter);
-    int frame = 0;
     void lateUpdate()
     {
-        if(frame++ > 0)
+        if (emitter->frame++ > 0)
             emitter->emission -= (float)(int)emitter->emission;
         emitter->emission += prototype->emission_rate * Time.deltaTime;
         emitter->emitter_prototype = prototype.getId();
@@ -132,7 +131,7 @@ public:
         this->emitter->transform = transform->_T.index;
         this->emitter->live = 1;
         this->emitter->emission = 1;
-        frame = 0;
+        emitter->frame = 0;
         // emitter->last_particle = -1;
     }
     void onDestroy()
@@ -261,6 +260,12 @@ gpu_vector_proxy<uint> *localCount = new gpu_vector_proxy<uint>();
 vector<int> counters_(BUCKETS);
 vector<int> offsets_(BUCKETS);
 
+gpu_vector_proxy<d> *input = new gpu_vector_proxy<d>();
+gpu_vector_proxy<d> *_output = new gpu_vector_proxy<d>();
+gpu_vector_proxy<GLuint> *block_sums = new gpu_vector_proxy<GLuint>();
+gpu_vector_proxy<GLuint> *scan = new gpu_vector_proxy<GLuint>();
+gpu_vector_proxy<GLuint> *histo = new gpu_vector_proxy<GLuint>();
+
 class
 {
     GLuint VAO = 0;
@@ -291,11 +296,12 @@ public:
         {
             glGenVertexArrays(1, &this->VAO);
         }
-        glBindVertexArray(this->VAO);
-        // glBindBuffer(GL_ARRAY_BUFFER, dead.bufferId);
-        // glEnableVertexAttribArray(0);
-        // glVertexAttribIPointer(0, 1,  GL_UNSIGNED_INT, sizeof(GLuint),0);
-        glBindVertexArray(0);
+
+        input->tryRealloc(MAX_PARTICLES);
+        _output->tryRealloc(MAX_PARTICLES);
+        block_sums->tryRealloc(MAX_PARTICLES);
+        scan->tryRealloc(MAX_PARTICLES);
+        histo->tryRealloc(MAX_PARTICLES);
     }
 
     void sortParticles(mat4 vp)
@@ -315,7 +321,6 @@ public:
         counts->bufferData(zeros);
         atomics->storage->at(0) = 0;
         atomics->bufferData();
-
 
         GLuint _vp = glGetUniformLocation(particleSortProgram.Program, "vp");
         GLuint stage = glGetUniformLocation(particleSortProgram.Program, "stage");
@@ -427,6 +432,34 @@ public:
         //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         //     // glFlush();
         // }
+
+        GLuint nkeys = glGetUniformLocation(particleSortProgram.Program, "nkeys");
+        GLuint pass = glGetUniformLocation(particleSortProgram.Program, "pass");
+
+        block_sums->bindData(9);
+        scan->bindData(10);
+        histo->bindData(11);
+
+#define WG_SIZE 128
+#define N_GROUPS 16
+#define BUCK (1 << RADIX)
+#define RADIX 4
+#define BITS 32
+        for (int pass = 0; pass < BITS / RADIX; pass++)
+        {
+            if (pass % 2 == 0)
+            {
+                input->bindData(7);
+                _output->bindData(8);
+            }else{
+                input->bindData(8);
+                _output->bindData(7);
+            }
+            glUniform1i(stage, 0);
+            glUniform1ui(nkeys, numParticles);
+            glDispatchCompute(MAX_PARTICLES / 64, 1, 1);
+            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        }
     }
 
     void drawParticles(mat4 view, mat4 rot, mat4 proj)
@@ -454,6 +487,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, particles->bufferId);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, gpu_emitter_prototypes->bufferId);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, gpu_emitters->bufferId);
+        gpu_emitter_last_particle->bindData(5);
         data1->bindData(6);
 
         glBindVertexArray(this->VAO);
