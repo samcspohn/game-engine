@@ -632,7 +632,6 @@ void run()
 		}
 		cleanup();
 
-		// stopWatch.start();
 		// allcomponents[typeid(collider).hash_code()]->update();
 		// appendStat(allcomponents[typeid(collider).hash_code()]->name + "--update", stopWatch.stop());
 		// antiBullshitDevice.lock();
@@ -641,6 +640,7 @@ void run()
 
 		// wait for barrier
 
+		stopWatch.start();
 		lockUpdate();
 
 		cleanup();

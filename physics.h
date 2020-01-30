@@ -107,8 +107,8 @@ class rigidBody : public component
 {
 	friend collider;
 	friend physicsWorker;
-
 public:
+	bool gravity = true;
 	rigidBody()
 	{
 	}
@@ -125,29 +125,18 @@ public:
 	void onStart()
 	{
 		id = rbId.fetch_add(1);
-		vel = &vel1;
 		auto _c = transform->gameObject->getComponent<collider>();
 		if (_c != 0)
 		{
-			//            cout << "assigning rb in rigidBody" << endl;
 			assignRigidBody(_c, transform->gameObject->getComponent<rigidBody>());
 		}
 		//        mass = 1;
 	}
 	void update()
 	{
-		*currVel = *vel;
-		transform->move(*vel * Time.deltaTime);
-		*vel += Time.deltaTime * glm::vec3(0,-9.81f,0);
-		//		if (vel == &vel1) {
-		//			vel = &vel2;
-		//			currVel = &vel1;
-		//		}
-		//		else {
-		//			vel = &vel1;
-		//			currVel = &vel2;
-		//		}
-		//vel *= 1 - damping * Time.deltaTime;
+		transform->move(vel * Time.deltaTime);
+		if(gravity)
+			vel += Time.deltaTime * glm::vec3(0, -9.81f, 0);
 	}
 	UPDATE(rigidBody, update);
 	COPY(rigidBody);
@@ -163,30 +152,27 @@ public:
 			throw;
 		}
 		//lock.lock();
-		vel2 = vel1 = _vel;
+		vel = _vel;
 		//lock.unlock();
 	}
 	void accelerate(glm::vec3 acc)
 	{
 		//lock.lock();
-		vel2 = vel1 = *vel + acc;
+		vel += acc;
 		//lock.unlock();
 	}
 	glm::vec3 getVelocity()
 	{
-		if (vecIsNan(*vel))
+		if (vecIsNan(vel))
 		{
-			*vel = glm::vec3(0);
+			vel = glm::vec3(0);
 		}
-		return *vel;
+		return vel;
 	}
 	static void collide(colDat &a, colDat &b, int &colCount);
 
 private:
-	glm::vec3 vel1 = glm::vec3(0);
-	glm::vec3 vel2 = glm::vec3(0);
-	glm::vec3 *vel = &vel1;
-	glm::vec3 *currVel = &vel2;
+	glm::vec3 vel = glm::vec3(0);
 	glm::quat axis;
 	float rotVel;
 };
@@ -306,9 +292,9 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 			b.rb->setVelocity(a.rb->getVelocity());
 			a.rb->setVelocity(bvel);*/
 
-			glm::vec3 aCurr = *a.rb->vel;
-			*a.rb->vel += *b.rb->vel - aCurr + glm::vec3(x, y, z) * 2.f; // * 2.f) / a.rb->mass * b.rb->mass;
-			*b.rb->vel += aCurr - *b.rb->vel - glm::vec3(x, y, z) * 2.f; // * 2.f) / b.rb->mass * a.rb->mass;
+			glm::vec3 aCurr = a.rb->vel;
+			a.rb->vel += b.rb->vel - aCurr + glm::vec3(x, y, z) * 2.f; // * 2.f) / a.rb->mass * b.rb->mass;
+			b.rb->vel += aCurr - b.rb->vel - glm::vec3(x, y, z) * 2.f; // * 2.f) / b.rb->mass * a.rb->mass;
 
 			if (a.a.c == b.a.c)
 			{
@@ -325,13 +311,13 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 		{
 			//*b.rb->vel = glm::vec3(0);
 			//*b.rb->vel -= glm::vec3(x, y, z) * 2.f;
-			*b.rb->vel = glm::vec3((x == 0 ? b.rb->vel->x : -b.rb->vel->x * 0.5f), (y == 0 ? b.rb->vel->y : -b.rb->vel->y * 0.5f), (z == 0 ? b.rb->vel->z : -b.rb->vel->z * 0.5f)); // glm::vec3(x, y, z);
+			b.rb->vel = glm::vec3((x == 0 ? b.rb->vel.x : -b.rb->vel.x * 0.5f), (y == 0 ? b.rb->vel.y : -b.rb->vel.y * 0.5f), (z == 0 ? b.rb->vel.z : -b.rb->vel.z * 0.5f)); // glm::vec3(x, y, z);
 
 			((component *)b.c)->transform->move(-glm::vec3(x, y, z));
 		}
 		else if (a.rb != 0 && b.rb == 0)
 		{
-			*a.rb->vel = glm::vec3((x == 0 ? a.rb->vel->x : -a.rb->vel->x * 0.5f), (y == 0 ? a.rb->vel->y : -a.rb->vel->y * 0.5f), (z == 0 ? a.rb->vel->z : -a.rb->vel->z * 0.5f)); // glm::vec3(x, y, z);
+			a.rb->vel = glm::vec3((x == 0 ? a.rb->vel.x : -a.rb->vel.x * 0.5f), (y == 0 ? a.rb->vel.y : -a.rb->vel.y * 0.5f), (z == 0 ? a.rb->vel.z : -a.rb->vel.z * 0.5f)); // glm::vec3(x, y, z);
 			//*a.rb->vel += glm::vec3(x, y, z) * 2.f;
 			((component *)a.c)->transform->move(glm::vec3(x, y, z));
 		}
@@ -366,7 +352,8 @@ struct treenode
 		isLeaf.store(true);
 		objCounter = 0;
 	}
-	void init(bool _left, int _axis, int _parent, int _id){
+	void init(bool _left, int _axis, int _parent, int _id)
+	{
 		isLeaf.store(true);
 		objCounter = 0;
 		axis = _axis;
@@ -400,12 +387,12 @@ struct treenode
 			if (colliderData.a.c[axis] + colliderData.a.r[axis] < d)
 			{
 				nodes[children].insert(colliderData, depth + 1);
-				return;
+				// return;
 			}
 			else if (colliderData.a.c[axis] - colliderData.a.r[axis] > d)
 			{
 				nodes[children + 1].insert(colliderData, depth + 1);
-				return;
+				// return;
 			}
 			else
 			{
@@ -415,83 +402,91 @@ struct treenode
 					farthest = e;
 				setPosInTree(colliderData.c, push_back(colliderData));
 				m.unlock();
-				return;
-			}
-		}
-
-		m.lock();
-		if (isLeaf.load())
-		{
-			if (objCounter < maxObj)
-			{
-				setPosInTree(colliderData.c, push_back(colliderData));
-			}
-			if (objCounter >= maxObj)
-			{
-				octree2Size.fetch_add(2);
-				children = numNodes.fetch_add(2);
-				nodes[children].init(true,(axis + 1) % 3,id,children);
-				nodes[children + 1].init(false,(axis + 1) % 3,id,children+1);
-
-				for (auto &i : objs)
-				{
-					d += i.a.c[axis];
-				}
-				d /= objCounter;
-
-				farthest = 0;
-				int j = 0;
-				for (int i = 0; i < objCounter; i++)
-				{
-
-					if (objs[i].a.c[axis] + objs[i].a.r[axis] < d)
-					{
-						// nodes[children].insert(objs[i], 0);
-						setPosInTree(objs[i].c, nodes[children].push_back(objs[i]));
-					}
-					else if (objs[i].a.c[axis] - objs[i].a.r[axis] > d)
-					{
-						// nodes[children + 1].insert(objs[i],0);
-						setPosInTree(objs[i].c, nodes[children + 1].push_back(objs[i]));
-					}
-					else
-					{
-						float e = _max(abs(objs[i].a.c[axis] - objs[i].a.r[axis]), abs(objs[i].a.c[axis] + objs[i].a.r[axis])) - d;
-						if (e > farthest)
-						{
-							farthest = e;
-						}
-						objs[j] = objs[i];
-						setPosInTree(objs[j].c, &objs[j]);
-						j++;
-					}
-				}
-				objCounter = j;
-				isLeaf.store(false);
+				// return;
 			}
 		}
 		else
 		{
-			if (colliderData.a.c[axis] + colliderData.a.r[axis] < d)
+			m.lock();
+			if (isLeaf.load())
 			{
-				nodes[children].insert(colliderData, depth + 1);
-				return;
-			}
-			else if (colliderData.a.c[axis] - colliderData.a.r[axis] > d)
-			{
-				nodes[children + 1].insert(colliderData, depth + 1);
-				return;
+				if (objCounter < maxObj)
+				{
+					setPosInTree(colliderData.c, push_back(colliderData));
+				}
+				if (objCounter >= maxObj)
+				{
+					octree2Size.fetch_add(2);
+					children = numNodes.fetch_add(2);
+					nodes[children].init(true, (axis + 1) % 3, id, children);
+					nodes[children + 1].init(false, (axis + 1) % 3, id, children + 1);
+
+					for (auto &i : objs)
+					{
+						d += i.a.c[axis];
+					}
+					d /= objCounter;
+
+					farthest = 0;
+					int j = 0;
+					for (int i = 0; i < objCounter; i++)
+					{
+
+						if (objs[i].a.c[axis] + objs[i].a.r[axis] < d)
+						{
+							// nodes[children].insert(objs[i], 0);
+							setPosInTree(objs[i].c, nodes[children].push_back(objs[i]));
+						}
+						else if (objs[i].a.c[axis] - objs[i].a.r[axis] > d)
+						{
+							// nodes[children + 1].insert(objs[i],0);
+							setPosInTree(objs[i].c, nodes[children + 1].push_back(objs[i]));
+						}
+						else
+						{
+							float e = _max(abs(objs[i].a.c[axis] - objs[i].a.r[axis]), abs(objs[i].a.c[axis] + objs[i].a.r[axis])) - d;
+							if (e > farthest)
+							{
+								farthest = e;
+							}
+							objs[j] = objs[i];
+							setPosInTree(objs[j].c, &objs[j]);
+							j++;
+						}
+					}
+					objCounter = j;
+					isLeaf.store(false);
+					// m.unlock();
+					// return;
+				}
 			}
 			else
 			{
-				float e = _max(abs(colliderData.a.c[axis] - colliderData.a.r[axis]), abs(colliderData.a.c[axis] + colliderData.a.r[axis])) - d;
-				if (e > farthest)
-					farthest = e;
-				setPosInTree(colliderData.c, push_back(colliderData));
-				return;
+				if (colliderData.a.c[axis] + colliderData.a.r[axis] < d)
+				{
+					// m.unlock();
+					nodes[children].insert(colliderData, depth + 1);
+					// return;
+				}
+				else if (colliderData.a.c[axis] - colliderData.a.r[axis] > d)
+				{
+					// m.unlock();
+					nodes[children + 1].insert(colliderData, depth + 1);
+					// return;
+				}
+				else
+				{
+					float e = _max(abs(colliderData.a.c[axis] - colliderData.a.r[axis]), abs(colliderData.a.c[axis] + colliderData.a.r[axis])) - d;
+					if (e > farthest)
+						farthest = e;
+					setPosInTree(colliderData.c, push_back(colliderData));
+					// m.unlock();
+					// return;
+				}
 			}
+			m.unlock();
+
 		}
-		m.unlock();
 	}
 
 	struct iterator
@@ -623,9 +618,9 @@ public:
 		cd.valid = true;
 		cd.rb = rb;
 		int depth = 0;
-		leaveLock.lock();
+		// leaveLock.lock();
 		octree2->insert(cd, depth);
-		leaveLock.unlock();
+		// leaveLock.unlock();
 
 		//octLock.unlock();
 	}
@@ -644,7 +639,7 @@ public:
 			{
 				if (rb != 0)
 				{
-					rb->vel->y = rb->vel->y >= 0 ? rb->vel->y : -rb->vel->y;
+					rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
 					glm::vec3 p = transform->getPosition();
 					transform->setPosition(glm::vec3(p.x, h + cd.a.r.y, p.z));
 				}
