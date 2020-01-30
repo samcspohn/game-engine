@@ -38,5 +38,5 @@ struct emitter{
     int live;
 
     vec3 p;
-    int last_particle;
+    int frame;
 };

@@ -13,6 +13,7 @@ layout(std430,binding = 6) buffer d_{d data[];};
 layout(std430,binding = 2) buffer p{particle particles[];};
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 4) buffer e{emitter emitters[];};
+layout(std430,binding = 5) buffer elp{int emitters_last_particle[];};
 
 uniform vec3 cameraPos;
 uniform mat4 view;
@@ -69,7 +70,7 @@ void main(){
             mat4 vp = projection * vRot * view;
             particle p1 = particles[index];
             particle p2 = particles[index];
-            if(p1.next < -1){
+            if(p1.next < -1 && emitters_last_particle[p1.emitter] == index){
                 p2.position = transforms[emitters[p1.emitter].transform].position;
             }else if (particles[p1.next].prev == index){
                 p2.position = particles[p1.next].position;

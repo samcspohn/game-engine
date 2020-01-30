@@ -26,11 +26,11 @@ uniform uint breadth;
 
 //////////////////////////////////////////////////
 
-layout(std430,binding = 6) buffer d_in{d input[];};
-layout(std430,binding = 7) buffer d_out{d _output[];};
-layout(std430,binding = 8) buffer blk_sum{uint block_sums[];};
-layout(std430,binding = 9) buffer d_s{uint scan[];};
-layout(std430,binding = 10) buffer d_h{uint histo[];};
+layout(std430,binding = 7) buffer d_in{d input[];};
+layout(std430,binding = 8) buffer d_out{d _output[];};
+layout(std430,binding = 9) buffer blk_sum{uint block_sums[];};
+layout(std430,binding = 10) buffer d_s{uint scan[];};
+layout(std430,binding = 11) buffer d_h{uint histo[];};
 
 shared uint local_histo[BUCK*WG_SIZE];
 shared uint local_scan[BUCK*WG_SIZE];
@@ -141,7 +141,7 @@ void radix2(){
 
     /** BLOCK SUM KERNEL **/
     // __kernel void block_sum(__global int* input, __global int* _output,__local int* local_scan,__global int* block_sum)
- if(stage == 11)
+ if(stage == 2)
     {
         uint g_id = gl_GlobalInvocationID.x;
         uint l_id = gl_LocalInvocationID.x;
@@ -197,7 +197,7 @@ void radix2(){
 
     /** COALESCE KERNEL **/
     // __kernel void coalesce(__global int* scan, __global int* block_sums)
-    if(stage == 2)
+    if(stage == 3)
     {
 
         uint g_id = gl_GlobalInvocationID.x;
@@ -215,7 +215,7 @@ void radix2(){
 
     /** REORDER KERNEL **/
     // __kernel void reorder(__global int* array, __global int* histo, __global int* _output, const int pass, const int nkeys, __local int* local_histo)
-    if(stage == 3)
+    if(stage == 4)
     {
         uint g_id = gl_GlobalInvocationID.x;
         uint l_id = gl_LocalInvocationID.x;
