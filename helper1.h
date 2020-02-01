@@ -116,8 +116,12 @@ unsigned long t;
   return z;
 }
 
+mutex randMutex;
 float randf() {
-	return (float)xorshf96() / (float)ULONG_MAX;
+	randMutex.lock();
+	float ret = (float)xorshf96() / (float)ULONG_MAX;
+	randMutex.unlock();
+	return ret;
 }
 int _min(int a, int b) {
 	if (a < b)
