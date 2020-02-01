@@ -132,11 +132,11 @@ public:
 		rot = randomSphere();
 		// dir = randomSphere() * .5f;
 		rb = transform->gameObject->getComponent<rigidBody>();
-		rb->setVelocity(rb->getVelocity() + randomSphere() * randf() * 3.f);
+		rb->setVelocity(randomSphere() * randf() * 3.f);
 	}
 	void update()
 	{
-		// transform->translate(dir * Time.deltaTime * 10.f);
+		// transform->move(dir * Time.deltaTime * 10.f);
 		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 600.f / numCubes * Time.deltaTime || hit)
 		{
@@ -144,18 +144,18 @@ public:
 			transform->gameObject->destroy();
 		}
 	}
-	void onCollision(game_object *go)
-	{
-		if( proto == transform->gameObject )
-			return;
+	// void onCollision(game_object *go)
+	// {
+	// 	if( proto == transform->gameObject )
+	// 		return;
 
-		if (go->getComponent<cube_sc>() == 0)
-		{
-			// transform->gameObject->destroy();
-			// cout << "hit" << flush;
-			hit = true;
-		}
-	}
+	// 	if (go->getComponent<cube_sc>() == 0)
+	// 	{
+	// 		// transform->gameObject->destroy();
+	// 		// cout << "hit" << flush;
+	// 		hit = true;
+	// 	}
+	// }
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };
@@ -209,7 +209,7 @@ public:
 			{
 				game_object *go = new game_object(*proto);
 				go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
-				//				go->getComponent<cube_sc>()->dir = transform->forward() * 2.f + randomSphere() * 0.6f;
+				// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
 				go->transform->setPosition(transform->getPosition() + transform->forward() * 5.f - transform->up() * 2.5f);
 				numCubes.fetch_add(1);
 			}
@@ -253,9 +253,9 @@ int main(void)
 	srand(100);
 
 	emitter_prototype_ emitterProto = createNamedEmitter("emitter1");
-	emitterProto->emission_rate = 1.f;
-	emitterProto->lifetime = 8.f;
-	emitterProto->color = vec4(1, 0, 0.1f, 0.8f);
+	emitterProto->emission_rate = 4.f;
+	emitterProto->lifetime = 2.f;
+	emitterProto->color = vec4(1, 1, 0.1f, 0.8f);
 	emitterProto->velocity = vec3(1.f);
 	emitterProto->scale = vec3(1.5f);
 	emitterProto->billboard = 1;
@@ -273,13 +273,14 @@ int main(void)
 	game_object *CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
+	CUBE->getComponent<rigidBody>()->gravity = false;
 	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
 	pe2->prototype = emitterProto;
-	// auto pe3 = CUBE->addComponent<particle_emitter>();
-	// pe3->prototype = emitterProto3;
+	auto pe3 = CUBE->addComponent<particle_emitter>();
+	pe3->prototype = emitterProto3;
 
 	//gameObjects.front()->addComponent<mvpSolver>();
 

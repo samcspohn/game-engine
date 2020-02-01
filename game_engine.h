@@ -328,7 +328,7 @@ void renderThreadFunc()
 
 				renderDone.store(true);
 
-				glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
+				glClearColor(0.7f, 0.7f, 1.f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
@@ -720,6 +720,7 @@ void run()
 
 	while (renderThreadReady.load())
 		this_thread::sleep_for(1ms);
+	renderThread->join();
 
 	cout << endl;
 	componentStats.erase("");

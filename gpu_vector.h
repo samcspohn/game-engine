@@ -37,6 +37,9 @@ public:
 		id = this->gpu_vector_base::idGenerator.fetch_add(1);
 		gpu_buffers.insert(std::pair(id,this));
 	}
+	t& operator[](unsigned int i) {
+		return storage->at(i);
+	}
 	void init() {
 		renderLock.lock();
 		renderJob rj;
