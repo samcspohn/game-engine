@@ -10,7 +10,7 @@
 #include "listThing2.h"
 #include "fast_list.h"
 #include "array_heap.h"
-#include <boost/thread/barrier.hpp>
+
 #define ull unsigned long long
 class game_object;
 class Transform;

@@ -25,7 +25,7 @@ uniform uint numElements;
 uniform uint breadth;
 //////////////////////////////////////////////////
 
-layout(std430,binding = 1) buffer d_in{d input[];};
+layout(std430,binding = 1) buffer d_in{d _input[];};
 layout(std430,binding = 2) buffer d_out{d _output[];};
 layout(std430,binding = 3) buffer blk_sum{uint block_sums[];};
 layout(std430,binding = 6) buffer d_s{uint scan[];};
@@ -43,7 +43,7 @@ uniform uint offset;
 
 void radix2(uint g_id){
 
-    // __kernel void count(const __global int* input,__global int* _output,__local int* local_histo,const int pass,const int nkeys)
+    // __kernel void count(const __global int* _input,__global int* _output,__local int* local_histo,const int pass,const int nkeys)
     if(stage == 0)
     {
         uint i;
@@ -64,7 +64,7 @@ void radix2(uint g_id){
         }
         
         for(i = start; i < end; i++) {
-            uint key = input[i].key;
+            uint key = _input[i].key;
             key = ((key >> (pass * RADIX)) & (BUCK - 1));
             really_local_histo[key]++;
         }
@@ -178,7 +178,7 @@ void radix2(uint g_id){
         }
         
         for(i = start; i < end; i++) {
-                d item = input[i];
+                d item = _input[i];
                 uint key = (item.key >> (pass * RADIX)) & (BUCK - 1);
                 // uint pos = local_histo[key * l_size + l_id];
                 uint pos = really_local_histo[key]++;
@@ -278,8 +278,8 @@ void main () {
             d item;
             item.key =  ~floatBitsToUint(z);
             item.id = gid;
-            input[index] = item;
-            // input[index].id = gid;
+            _input[index] = item;
+            // _input[index].id = gid;
         }
     }
     else{
