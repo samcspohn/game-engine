@@ -7,8 +7,8 @@ struct d{
 };
 const uint WG_SIZE = 128;
 const uint N_GROUPS = 16;
-const uint RADIX = 4;
-const uint BUCK = 16;
+const uint RADIX = 8;
+const uint BUCK = 1 << RADIX;
 
 // layout(std430,binding = 0) buffer c{uint counts[];}; //5? long
 // layout(std430,binding = 1) buffer o{uint offsets[];}; //5? long
@@ -31,8 +31,8 @@ layout(std430,binding = 3) buffer blk_sum{uint block_sums[];};
 layout(std430,binding = 6) buffer d_s{uint scan[];};
 layout(std430,binding = 7) buffer d_h{uint histo[];};
 
-// shared uint local_histo[BUCK*WG_SIZE];
-// shared uint local_scan[BUCK*WG_SIZE];
+shared uint local_histo[BUCK];
+// shared uint local_scan[BUCK*N_GROUPS];
 
 uniform uint nkeys;
 uniform uint pass;
@@ -47,12 +47,19 @@ void radix2(uint g_id){
     if(stage == 0)
     {
         uint i;
-        uint really_local_histo[BUCK];
-        for(i = 0; i < BUCK; i++){
-            really_local_histo[i] = 0;
+        // uint really_local_histo[BUCK];
+        // for(i = 0; i < BUCK; i++){
+        //     really_local_histo[i] = 0;
+        // }
+        uint bucks_size = (BUCK) / WG_SIZE;
+        uint bucks_start = bucks_size * gl_LocalInvocationID.x;
+        uint bucks_end = bucks_start + bucks_size;
+        for(i = bucks_start; i < bucks_end; i++){
+            local_histo[i] = 0;
         }
-        // barrier();
-        // memoryBarrierShared();
+
+        barrier();
+        memoryBarrierShared();
 
         //Calculate elements to process per item
         uint size = nkeys / count;
@@ -66,11 +73,12 @@ void radix2(uint g_id){
         for(i = start; i < end; i++) {
             uint key = input[i].key;
             key = ((key >> (pass * RADIX)) & (BUCK - 1));
-            really_local_histo[key]++;
+            atomicAdd(local_histo[key],1);
         }
-
-        for(i = 0; i < BUCK; i++) {
-            histo[i * count + g_id] = really_local_histo[i];
+        memoryBarrierShared();
+        barrier();
+        for(i = bucks_start; i < bucks_end; i++) {
+            histo[i * N_GROUPS + gl_WorkGroupID.x] = local_histo[i];
         }
         // if(g_id == count - 1)
         // histo[0] = nkeys;
@@ -86,8 +94,7 @@ void radix2(uint g_id){
                 uint temp = histo[start];
                 histo[start] = 0;
                 for(uint j = start + 1; j < end; j++){
-                    uint temp2 = histo[j];
-                    histo[j] = temp;
+                    uint temp2 = histo[j];histo[i * N_GROUPS + gl_WorkGroupID.x];
                     temp += temp2;
                 }
                 block_sums[i] = temp;
@@ -124,8 +131,8 @@ void radix2(uint g_id){
 
     // scan kernel 2
     if(stage == 1){
-        uint start = g_id * 128;
-        uint end = start + 128;
+        uint start = g_id * 64;
+        uint end = start + 64;
         
         uint temp = histo[start];
         histo[start] = 0;
@@ -140,7 +147,7 @@ void radix2(uint g_id){
     if(stage == 2){
         uint temp = block_sums[0];
         block_sums[0] = 0;
-        for(uint i = 1; i < 256; i++){
+        for(uint i = 1; i < 64; i++){
             uint temp2 = block_sums[i];
             block_sums[i] = temp;
             temp += temp2;
@@ -149,7 +156,7 @@ void radix2(uint g_id){
 
     if(stage == 3){
         // uint group_id = gl_WorkGroupID.x;
-        histo[g_id] += block_sums[g_id/128];
+        histo[g_id] += block_sums[g_id/64];
     }
 
 
@@ -161,12 +168,19 @@ void radix2(uint g_id){
         // uint g_id = gl_GlobalInvocationID.x;
         //Bring histo to local memory
         uint i;
-        uint really_local_histo[BUCK];
-        for(i = 0; i < BUCK; i++){
-            really_local_histo[i] = histo[i * count + g_id];
+        // uint really_local_histo[BUCK];
+        // for(i = 0; i < BUCK; i++){
+        //     really_local_histo[i] = histo[i * count + g_id];
+        // }
+        uint bucks_size = (BUCK) / WG_SIZE;
+        uint bucks_start = bucks_size * gl_LocalInvocationID.x;
+        uint bucks_end = bucks_start + bucks_size;
+        for(i = bucks_start; i < bucks_end; i++) {
+            local_histo[i] = histo[i * N_GROUPS + gl_WorkGroupID.x];
         }
+        memoryBarrierShared();
         
-        // barrier();
+        barrier();
         // memoryBarrierShared();
 
         //Write to global memory in order
@@ -181,7 +195,7 @@ void radix2(uint g_id){
                 d item = input[i];
                 uint key = (item.key >> (pass * RADIX)) & (BUCK - 1);
                 // uint pos = local_histo[key * l_size + l_id];
-                uint pos = really_local_histo[key]++;
+                uint pos = atomicAdd(local_histo[key],1);
                 // if(pass == 7)
                 //     pos = nkeys - pos - 1;
                 _output[pos + offset] = item;
