@@ -37,10 +37,7 @@ public:
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
 
 		glm::vec3 currVel = rb->getVelocity();
-		// rb->setVelocity(currVel + ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT))  * transform->up() * 10.f + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward()) * speed);
-
-		//		transform->translate(glm::vec3(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D), Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT), Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
-		//  cout << "\rcubes: " << numCubes << " \tfps: " << 1.f / Time.unscaledSmoothDeltaTime << "                  ";
+		
 		if (framecount++ > 1)
 			cout << "\rcubes: " << numCubes << " particles: " << atomicCounters->storage->at(particleCounters::liveParticles) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
 		if (Input.getKeyDown(GLFW_KEY_R))
@@ -67,22 +64,23 @@ public:
 		terrainHit h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
 		if (colliding)
 		{ // if grounded
-			rb->gravity = true;
+			// rb->gravity = true;
 			flying = false;
 			jumped = false;
-			transform->setPosition(vec3(transform->getPosition().x, h.height + 1.f,transform->getPosition().z));
+			transform->setPosition(vec3(transform->getPosition().x, h.height + 1.f, transform->getPosition().z));
 			vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
-			if (inputVel.x != 0 || inputVel.z != 0){
+
+			glm::vec3 vel = rb->getVelocity();
+			if (transform->getPosition().y - 1.0f <= h.height)
+				rb->setVelocity(vec3(vel.x, 0, vel.y) * 0.5f);
+			if (inputVel.x != 0 || inputVel.z != 0)
+			{
 
 				inputVel = normalize(inputVel);
-
 				vec3 temp = cross(inputVel, h.normal);
-				inputVel = normalize(cross(h.normal,temp));
+				inputVel = normalize(cross(h.normal, temp));
 				rb->setVelocity(currVel + inputVel * speed);
 			}
-			glm::vec3 vel = rb->getVelocity();
-			// if(transform->getPosition().y - 1.0f <= h.height )
-				// rb->setVelocity(vec3(vel.x, 0, vel.y) * 0.5f);
 			if (Input.getKeyDown(GLFW_KEY_SPACE))
 			{ // jump
 				jumped = true;
@@ -110,7 +108,8 @@ public:
 				glm::vec3 vel = rb->getVelocity();
 				rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
 			}
-			else{
+			else
+			{
 				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 				if (inputVel.x != 0 || inputVel.z != 0)
 					inputVel = normalize(inputVel);
@@ -120,15 +119,15 @@ public:
 			}
 		}
 		if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
-			{ // pressing jump while airborne begins flight
-				flying = true;
-			}
+		{ // pressing jump while airborne begins flight
+			flying = true;
+		}
 		if (Input.getKeyDown(GLFW_KEY_SPACE))
-			{ // jump
-				glm::vec3 vel = rb->getVelocity();
-				jumped = true;
-				rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
-			}
+		{ // jump
+			glm::vec3 vel = rb->getVelocity();
+			jumped = true;
+			rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
+		}
 		colliding = false;
 		//
 		//		 if(Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased){

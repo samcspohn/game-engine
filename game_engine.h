@@ -55,7 +55,7 @@ game_object *player;
 glm::mat4 proj;
 thread *renderThread;
 bool recieveMouse = true;
-map<string, rolling_buffer> componentStats;
+
 vector<mutex> updateLocks(concurrency::numThreads);
 vector<queue<updateJob>> updateWork(concurrency::numThreads);
 
@@ -162,17 +162,7 @@ glm::mat4 getProjection()
 {
 	return glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, (GLfloat).1f, (GLfloat)1e32f);
 }
-void appendStat(string name, float dtime)
-{
-	auto a = componentStats.find(name);
-	if (a != componentStats.end())
-		a->second.add(dtime);
-	else
-	{
-		componentStats[name] = rolling_buffer(200);
-		componentStats[name].add(dtime);
-	}
-}
+
 mutex gpuDataLock;
 
 void renderThreadFunc()
@@ -277,14 +267,19 @@ void renderThreadFunc()
 				break;
 			case renderNum::render:
 			{
+				gpuTimer gt;
+
 				stopWatch.start();
 				updateInfo();
-
+				
 				gpuDataLock.lock();
+				
+				gt.start();
 				GPU_TRANSFORMS->bufferData(); //array_heap
 
 				GPU_RENDERERS->bufferData();
 				GPU_MATRIXES->tryRealloc(GPU_MATRIXES_IDS.size());
+				appendStat("buffer transforms", gt.stop());
 
 				GLuint matPView = glGetUniformLocation(matProgram.Program, "view");
 				GLuint matvRot = glGetUniformLocation(matProgram.Program, "vRot");
@@ -293,6 +288,8 @@ void renderThreadFunc()
 				GLuint matCamPos = glGetUniformLocation(matProgram.Program, "camPos");
 				GLuint matCamForward = glGetUniformLocation(matProgram.Program, "camForward");
 				GLuint matNum = glGetUniformLocation(matProgram.Program, "num");
+
+				gt.start();
 
 				glUseProgram(matProgram.Program);
 
@@ -314,11 +311,16 @@ void renderThreadFunc()
 
 				glDispatchCompute(GPU_RENDERERS->size() / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				appendStat("matrix compute", gt.stop());
 
 				gpuDataLock.unlock();
 
 				updateParticles();
+
+				timer t;
+				t.start();
 				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view);
+				appendStat("sort particles", t.stop());
 
 				//buffer renderer ids
 				for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
@@ -335,13 +337,18 @@ void renderThreadFunc()
 
 				glEnable(GL_CULL_FACE);
 				glDepthMask(GL_TRUE);
-				cam_render(rj.rot, rj.proj, rj.view);
 
+				gt.start();
+				cam_render(rj.rot, rj.proj, rj.view);
+				appendStat("cam_render", gt.stop());
+
+				gt.start();
 				glDisable(GL_CULL_FACE);
 				glDepthMask(GL_FALSE);
 				particle_renderer.drawParticles(rj.view, rj.rot, rj.proj);
-				glDepthMask(GL_TRUE);
+				appendStat("particle_render", gt.stop());
 
+				glDepthMask(GL_TRUE);
 				glfwSwapBuffers(window);
 				glFlush();
 				appendStat("render", stopWatch.stop());
@@ -356,16 +363,6 @@ void renderThreadFunc()
 					(gpu_buffers.begin()->second)->deleteBuffer();
 				}
 
-				// delete GPU_MATRIXES;
-				// delete GPU_RENDERERS;
-				// delete GPU_TRANSFORMS;
-				//				delete GPU_TRANSFORM_IDS;
-
-				//  for (map<string, map<string, renderingMeta*> >::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++) {
-				//  	for (map<string, renderingMeta*>::iterator j = i->second.begin(); j != i->second.end(); j++) {
-				//  		delete j->second->_ids;
-				//  	}
-				//  }
 				glFlush();
 				renderThreadReady.exchange(false);
 				glfwTerminate();

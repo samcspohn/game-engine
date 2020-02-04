@@ -21,34 +21,39 @@ using namespace chrono;
 #ifndef HELPER
 #define HELPER
 
-
 struct rolling_buffer
 {
-	rolling_buffer() {
+	rolling_buffer()
+	{
 		size = 100;
 	}
-	rolling_buffer(int size) {
+	rolling_buffer(int size)
+	{
 		this->size = size;
 	}
 	deque<double> buffer;
 	double runningTotal = 0;
-	void add(double timeDelta) {
+	void add(double timeDelta)
+	{
 		buffer.push_back(timeDelta);
 		runningTotal += timeDelta;
-		if (buffer.size() > size) {
+		if (buffer.size() > size)
+		{
 			runningTotal -= buffer.front();
 			buffer.erase(buffer.begin());
 		}
 	}
-	float getAverageValue() {
+	float getAverageValue()
+	{
 		return runningTotal / buffer.size();
 	}
+
 private:
 	int size;
 };
 
-
-class _time {
+class _time
+{
 public:
 	double time;
 	double unscaledTime;
@@ -58,29 +63,39 @@ public:
 	rolling_buffer timeBuffer = rolling_buffer(20);
 	float smoothDeltaTime;
 	float unscaledSmoothDeltaTime;
+
 private:
 };
 
 _time Time;
-class timer{
-    high_resolution_clock::time_point tstart;
-public:
-    void start(){
-        tstart = high_resolution_clock::now();
-    }
-    float stop(){
-        return (float)duration_cast<microseconds>(high_resolution_clock::now() - tstart).count();
-    }
-};
+class timer
+{
+	high_resolution_clock::time_point tstart;
 
+public:
+	void start()
+	{
+		tstart = high_resolution_clock::now();
+	}
+	float stop()
+	{
+		return (float)duration_cast<microseconds>(high_resolution_clock::now() - tstart).count() / 1000.0;
+	}
+};
 
 //
 //extern _time& Time = _time::_T;
 
 vector<string> splitString(string s_, char delim);
 
-enum renderNum { render, doFunc, rquit };
-struct renderJob {
+enum renderNum
+{
+	render,
+	doFunc,
+	rquit
+};
+struct renderJob
+{
 	renderNum type;
 	int val1;
 	glm::mat4 proj;
@@ -90,91 +105,144 @@ struct renderJob {
 	std::function<void(void)> work = 0;
 };
 
-
-void waitFor(bool& cond) {
+void waitFor(bool &cond)
+{
 	while (!cond)
 		this_thread::sleep_for(1ns);
 }
 
-void waitFor(atomic<bool>& cond) {
+void waitFor(atomic<bool> &cond)
+{
 	while (!cond)
 		this_thread::sleep_for(1ns);
 }
-static unsigned long x=123456789, y=362436069, z=521288629;
+static unsigned long x = 123456789, y = 362436069, z = 521288629;
 
-unsigned long xorshf96(void) {          //period 2^96-1
-unsigned long t;
-    x ^= x << 16;
-    x ^= x >> 5;
-    x ^= x << 1;
+unsigned long xorshf96(void)
+{ //period 2^96-1
+	unsigned long t;
+	x ^= x << 16;
+	x ^= x >> 5;
+	x ^= x << 1;
 
-   t = x;
-   x = y;
-   y = z;
-   z = t ^ x ^ y;
+	t = x;
+	x = y;
+	y = z;
+	z = t ^ x ^ y;
 
-  return z;
+	return z;
 }
 
 mutex randMutex;
-float randf() {
+float randf()
+{
 	randMutex.lock();
 	float ret = (float)xorshf96() / (float)ULONG_MAX;
 	randMutex.unlock();
 	return ret;
 }
-int _min(int a, int b) {
+int _min(int a, int b)
+{
 	if (a < b)
 		return a;
 	return b;
 }
 
-int _max(int a, int b) {
+int _max(int a, int b)
+{
 	if (a > b)
 		return a;
 	return b;
 }
 
-float _min(float a, float b) {
+float _min(float a, float b)
+{
 	if (a < b)
 		return a;
 	return b;
 }
 
-float _max(float a, float b) {
+float _max(float a, float b)
+{
 	if (a > b)
 		return a;
 	return b;
 }
-glm::vec3 randomSphere() {
+glm::vec3 randomSphere()
+{
 	glm::vec3 d = glm::normalize(glm::vec3(randf() * 2 - 1.0f, randf() * 2 - 1.0f, randf() * 2 - 1.0f));
-	float c =  powf(randf(), 1.0f / 3.0f);
+	float c = powf(randf(), 1.0f / 3.0f);
 	return d * c;
 }
 
-
-vector<string> splitString(string s_, char delim) {
+vector<string> splitString(string s_, char delim)
+{
 	string s;
 	stringstream ss(s_);
 	vector<string> ret;
-	while (getline(ss, s, delim)) {
+	while (getline(ss, s, delim))
+	{
 		ret.push_back(s);
 	}
 	return ret;
 }
 
-
-
 std::mutex renderLock;
 std::queue<renderJob> renderWork = std::queue<renderJob>();
 
-void enqueRenderJob(void (*work)(void) ) {
+void enqueRenderJob(void (*work)(void))
+{
 	renderJob rj;
 	rj.type = renderNum::doFunc;
-	rj.work = [work]() {work(); };
+	rj.work = [work]() { work(); };
 
 	renderLock.lock();
 	renderWork.push(rj);
 	renderLock.unlock();
 }
+
+map<string, rolling_buffer> componentStats;
+
+void appendStat(string name, float dtime)
+{
+	auto a = componentStats.find(name);
+	if (a != componentStats.end())
+		a->second.add(dtime);
+	else
+	{
+		componentStats[name] = rolling_buffer(200);
+		componentStats[name].add(dtime);
+	}
+}
+
+class gpuTimer
+{
+
+	GLuint64 startTime, stopTime;
+	unsigned int queryID[2];
+public:
+	void start()
+	{
+		// generate two queries
+		glGenQueries(2, queryID);
+		glQueryCounter(queryID[0], GL_TIMESTAMP);
+	}
+	float stop() {
+		 glQueryCounter(queryID[1], GL_TIMESTAMP);
+        // wait until the results are available
+        GLint stopTimerAvailable = 0;
+        while (!stopTimerAvailable)
+        {
+            glGetQueryObjectiv(queryID[1],
+                               GL_QUERY_RESULT_AVAILABLE,
+                               &stopTimerAvailable);
+        }
+
+        // get query results
+        glGetQueryObjectui64v(queryID[0], GL_QUERY_RESULT, &startTime);
+        glGetQueryObjectui64v(queryID[1], GL_QUERY_RESULT, &stopTime);
+		return (float)(stopTime - startTime) / 1000000.0;
+	}
+};
+
 #endif // !HELPER
