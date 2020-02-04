@@ -3,6 +3,8 @@
 #include "concurrency.h"
 #include <map>
 
+using namespace glm;
+
 vector<vector<float> > noise;
 float getNoise(float x, float y){
     x = fmod(x,(float)noise.size());
@@ -21,6 +23,13 @@ float getNoise(float x, float y){
 }
 class terrain;
 map<int,terrain*> terrains;
+
+struct terrainHit{
+    vec3 normal;
+    float height;
+    terrainHit(){}
+    terrainHit(vec3 n, float h) : normal(n), height(h){}
+};
 
 class terrain : public component{
 public:
@@ -45,28 +54,32 @@ public:
         return x * width + z;
     }
     vector<vector<float> >heightMap;
-    float getHeight(float x, float z){
+    terrainHit getHeight(float x, float z){
         if(!generated)
-        return -INFINITY;
+        return terrainHit(vec3(0,1,0),-INFINITY);
 
         x -= transform->getPosition().x;
         z -= transform->getPosition().z;
         x /= transform->getScale().x;
         z /= transform->getScale().z;
         if(x > width - 2.f || z > width - 2.f || x < 0.f || z < 0.f)
-            return -INFINITY;
+            return terrainHit(vec3(0,1,0),-INFINITY);
         // return 1.f;
 
         float xr = fmod(x,1.f);
         float yr = fmod(z,1.f);
         float a1 = heightMap[(int)x][(int)z];
+        vec3 v1 = vec3(0,a1,0);
         float a2 = heightMap[(int)x + 1][(int)z];
+        vec3 v2 = vec3(1,a2,0);
         float a3 = heightMap[(int)x][(int)z + 1];
+        vec3 v3 = vec3(0,a3,1);
         float a4 = heightMap[(int)x + 1][((int)z + 1)];
         float x1 = a1 * (1 - xr) + a2 * (xr);
         float x2 = a3 * (1 - xr) + a4 * (xr);
         float h = (x1 * (1 - yr) + x2 * (yr)) * transform->getScale().y + transform->getPosition().y;
-        return h;
+        vec3 normal = normalize(cross(v1 - v2, v3 - v2));
+        return terrainHit(normal,h);
     }
     
     void generate(int _width, int _depth){
