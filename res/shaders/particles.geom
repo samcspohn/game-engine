@@ -75,8 +75,8 @@ void main(){
             }else if (particles[p1.next].prev == index){
                 p2.position = particles[p1.next].position;
             }
-            vec3 point1 = normalize(cross(cameraPos - p1.position,p2.position - p1.position)) * .5f;
-            vec3 point2 = normalize(cross(cameraPos - p2.position,p1.position - p2.position)) * -.5f;
+            vec3 point1 = normalize(cross(cameraPos - p1.position,p2.position - p1.position)) * .5f * p1.scale.x;
+            vec3 point2 = normalize(cross(cameraPos - p2.position,p1.position - p2.position)) * -.5f * p1.scale.x;
             // vec3 point2 = vec3(5);
             // vec3 point1 = vec3(5);
             createVert(p1.position + point1,vp,identity(),index);

@@ -109,6 +109,7 @@ class rigidBody : public component
 	friend physicsWorker;
 public:
 	bool gravity = true;
+	float bounciness = .5f;
 	rigidBody()
 	{
 	}
@@ -275,6 +276,7 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 		r /= 2;
 		if (vecIsNan(r))
 			r = glm::vec3();
+		colCount++;
 
 		if (a.rb != 0 && b.rb != 0)
 		{
@@ -298,13 +300,17 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 
 			if (a.a.c == b.a.c)
 			{
-				((component *)a.c)->transform->move(length(glm::vec3(x, y, z)) * randomSphere() * (1 - mRatio));
-				((component *)b.c)->transform->move(-length(glm::vec3(x, y, z)) * randomSphere() * mRatio);
+				// a.rb->vel += length(glm::vec3(x, y, z)) * randomSphere() * (1 - mRatio);
+				// b.rb->vel += length(glm::vec3(x, y, z)) * randomSphere() * (mRatio);
+				((component *)a.c)->transform->move(length(glm::vec3(x, y, z)) * randomSphere() * (1 - mRatio)* (1.f/colCount));
+				((component *)b.c)->transform->move(-length(glm::vec3(x, y, z)) * randomSphere() * mRatio * (1.f/colCount));
 			}
 			else
 			{
-				((component *)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio));
-				((component *)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio);
+				// a.rb->vel += glm::vec3(x, y, z) * (1 - mRatio);
+				// b.rb->vel += -glm::vec3(x, y, z) * mRatio;
+				((component *)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio) * (1.f/colCount));
+				((component *)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio * (1.f/colCount));
 			}
 		}
 		else if (b.rb != 0 && a.rb == 0)
@@ -634,14 +640,15 @@ public:
 		octree2->query(cd.a, cd, colCount);
 		for (auto &i : terrains)
 		{
-			float h = i.second->getHeight(cd.a.c.x, cd.a.c.z);
-			if ((cd.a.c - cd.a.r).y < h)
+			terrainHit h = i.second->getHeight(cd.a.c.x, cd.a.c.z);
+			if ((cd.a.c - cd.a.r).y < h.height)
 			{
 				if (rb != 0)
 				{
-					rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
+					rb->vel = glm::reflect(rb->vel,h.normal) * rb->bounciness;
+					// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
 					glm::vec3 p = transform->getPosition();
-					transform->setPosition(glm::vec3(p.x, h + cd.a.r.y, p.z));
+					transform->setPosition(glm::vec3(p.x, h.height + cd.a.r.y, p.z));
 				}
 				transform->gameObject->collide(i.second->transform->gameObject);
 			}
