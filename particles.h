@@ -6,7 +6,7 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_PARTICLES 1024 * 1024 * 10
+#define MAX_PARTICLES 1024 * 1024 * 4
 struct particle
 {
     vec3 position;
@@ -454,11 +454,11 @@ public:
         histo->bindData(7);
 
         flip = true;
-        int starts[] = {6,4,0};
+        int starts[] = {0,0,0};
         int ends[] = {8,8,8};
         int offset = 0;
         int divisors[] = {0,4,16};
-        for (int grain = 0; grain <= 2; grain++)
+        for (int grain = 0; grain <= 1; grain++)
         {
             glUniform1ui(nkeys, numParticles / pow(2, divisors[grain]));
             glUniform1ui(_offset, numParticles - numParticles / pow(2, divisors[grain]));

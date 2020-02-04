@@ -12,14 +12,14 @@ class player_sc : public component
 {
 	bool cursorReleased = false;
 	float speed = 10.f;
-	rigidBody* rb;
-	bool flying = true;
+	rigidBody *rb;
+	bool flying = false;
 	bool jumped = false; // do not fly and jump in same frame
 	bool colliding = false;
 	int framecount = 0;
 
 public:
-	terrain* t;
+	terrain *t;
 
 	void onCollision(game_object *collidee)
 	{
@@ -64,50 +64,72 @@ public:
 			Time.timeScale = 1;
 		}
 
-		float h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
-		// if(transform->getPosition().y - 1.05f <= h || colliding){ // if grounded
-		// 	flying = false;
-		// 	jumped = false;
-		// 	vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
-		// 	 + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S))  * transform->forward());
-		// 	if(inputVel.x != 0 || inputVel.z != 0)
-		// 		inputVel = normalize(inputVel);
+		terrainHit h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
+		if (colliding)
+		{ // if grounded
+			rb->gravity = true;
+			flying = false;
+			jumped = false;
+			transform->setPosition(vec3(transform->getPosition().x, h.height + 1.f,transform->getPosition().z));
+			vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
+			if (inputVel.x != 0 || inputVel.z != 0){
 
-		// 	rb->setVelocity(currVel + inputVel * speed);
-		// 	glm::vec3 vel = rb->getVelocity();
-		// 	rb->setVelocity(glm::vec3(vel.x,0,vel.z) * 0.5f);
-		// 	if(Input.getKeyDown(GLFW_KEY_SPACE)){ // jump
-		// 		jumped = true;
-		// 		rb->setVelocity(vec3(vel.x * .5f, .5f * speed,vel.z * .5f));
-		// 	}
-		// 	if(h == -INFINITY){
-		// 		jumped = true;
-		// 		return;
-		// 	}
-		// 	glm::vec3 currPos = transform->getPosition();
-		// 	// currPos.y = h + .99f;
-		// 	// transform->setPosition(currPos);
-		// }
-		// if(transform->getPosition().y - 1.05f > h){
-		if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
-		{ // pressing jump while airborne begins flight
-			flying = true;
-		}
-		if (flying)
-		{ // if flying dont apply gravity
-			vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
-			if (inputVel.x != 0 || inputVel.z != 0)
 				inputVel = normalize(inputVel);
-			rb->setVelocity(currVel + inputVel * speed * 5.f);
+
+				vec3 temp = cross(inputVel, h.normal);
+				inputVel = normalize(cross(h.normal,temp));
+				rb->setVelocity(currVel + inputVel * speed);
+			}
 			glm::vec3 vel = rb->getVelocity();
-			rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
+			// if(transform->getPosition().y - 1.0f <= h.height )
+				// rb->setVelocity(vec3(vel.x, 0, vel.y) * 0.5f);
+			if (Input.getKeyDown(GLFW_KEY_SPACE))
+			{ // jump
+				jumped = true;
+				rb->setVelocity(vec3(vel.x * .5f, speed + vel.y, vel.z * .5f));
+			}
+			if (h.height == -INFINITY)
+			{
+				jumped = true;
+				return;
+			}
+			glm::vec3 currPos = transform->getPosition();
+			// currPos.y = h + .99f;
+			// transform->setPosition(currPos);
 		}
-		else
-		{ // else apply gravity
-			rb->setVelocity(rb->getVelocity() + glm::vec3(0, -9.81f, 0) * Time.deltaTime);
+		if (transform->getPosition().y - 1.0f > h.height)
+		{
+
+			if (flying)
+			{ // if flying dont apply gravity
+				rb->gravity = false;
+				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
+				if (inputVel.x != 0 || inputVel.z != 0)
+					inputVel = normalize(inputVel);
+				rb->setVelocity(currVel + inputVel * speed * 5.f);
+				glm::vec3 vel = rb->getVelocity();
+				rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
+			}
+			else{
+				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
+				if (inputVel.x != 0 || inputVel.z != 0)
+					inputVel = normalize(inputVel);
+				rb->setVelocity(currVel + inputVel * speed * 0.1f);
+				glm::vec3 vel = rb->getVelocity();
+				// rb->setVelocity(vel - vec3(speed,0,speed) * 0.3f);
+			}
 		}
-		// }
-		// colliding = false;
+		if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
+			{ // pressing jump while airborne begins flight
+				flying = true;
+			}
+		if (Input.getKeyDown(GLFW_KEY_SPACE))
+			{ // jump
+				glm::vec3 vel = rb->getVelocity();
+				jumped = true;
+				rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
+			}
+		colliding = false;
 		//
 		//		 if(Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased){
 		//            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -122,7 +144,7 @@ class cube_sc : public component
 {
 public:
 	//	glm::vec3 dir;
-	rigidBody* rb;
+	rigidBody *rb;
 	glm::vec3 rot;
 	// glm::vec3 dir;
 	bool hit = false;
@@ -164,7 +186,8 @@ class nbody : public component
 {
 
 	//    glm::vec3 vel;
-	rigidBody* rb;
+	rigidBody *rb;
+
 public:
 	void onStart()
 	{
@@ -199,7 +222,7 @@ class moreCUBES : public component
 {
 
 public:
-	float rof = 100;
+	float rof = 10000 / 60;
 	void update()
 	{
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_1))
@@ -231,8 +254,8 @@ int main(void)
 
 	player = new game_object();
 	player->addComponent<moreCUBES>();
-	// player->addComponent<collider>();
-	player->addComponent<rigidBody>();
+	player->addComponent<collider>();
+	player->addComponent<rigidBody>()->bounciness = 0.3f;
 	player->addComponent<player_sc>();
 
 	ground = new game_object();
@@ -252,28 +275,28 @@ int main(void)
 	numCubes = n;
 	srand(100);
 
-	emitter_prototype_ emitterProto = createNamedEmitter("emitter1");
+	emitter_prototype_ emitterProto = createNamedEmitter("flame");
 	emitterProto->emission_rate = 4.f;
-	emitterProto->lifetime = 2.f;
+	emitterProto->lifetime = 1.f;
 	emitterProto->color = vec4(1, 1, 0.1f, 0.8f);
 	emitterProto->velocity = vec3(1.f);
 	emitterProto->scale = vec3(1.5f);
 	emitterProto->billboard = 1;
 	emitterProto->trail = 1;
 
-	emitter_prototype_ emitterProto3 = createNamedEmitter("emitter3");
+	emitter_prototype_ emitterProto3 = createNamedEmitter("smoke");
 	*emitterProto3 = *emitterProto;
-	emitterProto3->emission_rate = 6.f;
-	emitterProto3->lifetime = 6;
-	emitterProto3->trail = 0;
+	emitterProto3->emission_rate = 4.f;
+	emitterProto3->lifetime = 5.f;
+	// emitterProto3->trail = 0;
 	emitterProto3->scale = vec3(3);
-	emitterProto3->velocity = vec3(2.f);
+	emitterProto3->velocity = vec3(4.f);
 	emitterProto3->color = vec4(0.5f);
 
 	game_object *CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
-	CUBE->getComponent<rigidBody>()->gravity = false;
+	CUBE->getComponent<rigidBody>()->bounciness = 0.95f; //->gravity = false;
 	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
@@ -296,7 +319,7 @@ int main(void)
 	}
 	auto nanosuitMan = new game_object(*CUBE);
 	nanosuitMan->getComponent<_renderer>()->set(modelShader, nanoSuitModel);
-	cube_sc* it = nanosuitMan->getComponent<cube_sc>();
+	cube_sc *it = nanosuitMan->getComponent<cube_sc>();
 	nanosuitMan->removeComponent<cube_sc>(it);
 	nanosuitMan->transform->move(glm::vec3(-10.f));
 
