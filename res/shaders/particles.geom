@@ -70,11 +70,13 @@ void main(){
             mat4 vp = projection * vRot * view;
             particle p1 = particles[index];
             particle p2 = particles[index];
-            if(p1.next < -1 && emitters_last_particle[p1.emitter] == index){
+            if(p1.next < -1 && emitters_last_particle[-p1.next - 2] == index){
                 p2.position = transforms[emitters[p1.emitter].transform].position;
             }else if (particles[p1.next].prev == index){
                 p2.position = particles[p1.next].position;
             }
+            if(length(p1.position - p2.position) > 100)
+                p2 = p1;
             vec3 point1 = normalize(cross(cameraPos - p1.position,p2.position - p1.position)) * .5f * p1.scale.x;
             vec3 point2 = normalize(cross(cameraPos - p2.position,p1.position - p2.position)) * -.5f * p1.scale.x;
             // vec3 point2 = vec3(5);

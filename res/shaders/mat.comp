@@ -17,9 +17,10 @@ uniform vec3 camForward;
 uniform mat4 view;
 uniform mat4 vRot;
 uniform mat4 projection;
+uniform vec3 floatingOrigin;
+uniform int stage;
 
-
-#define vector(name, type ,_binding) layout(std430,binding = _binding) buffer _{uint size; type name[];}
+#define vector(name, type ,_binding) layout(std430,binding = _binding) buffer _name{uint size; type name[];}
 
 //vector(transforms, _transform, 0);
 
@@ -43,29 +44,33 @@ bool planeIntersect(float plane[4], vec3 point) {
 
 layout( local_size_x = 64,  local_size_y = 1, local_size_z = 1) in;
 void main () {
-	uint gid = gl_GlobalInvocationID.x;
 
+	uint gid = gl_GlobalInvocationID.x;
 	if(gid >= num)
 		return;
-	//plane
-		float a, b, c, d;
-		a = camForward.x;
-		b = camForward.y;
-		c = camForward.z;
-		d = a * -camPos.x + b * -camPos.y + c * -camPos.z;
-		float plane[] = { a,b,c,d };
 
-	_transform transform = transforms[renderers[gid].transform];
-//	uint renderid = renderers[gid].renderer;
-	uint buffsid = renderers[gid].id;
-//	if(planeIntersect(plane,transform.position + transform.scale * 2) && planeIntersect(plane,transform.position - transform.scale * 2))
-//		matrixes[buffsid].visible = false;
-//	else{
-//		matrixes[buffsid].visible = true;
+		if(stage == 1){
 
-		matrixes[buffsid].model = translate(identity(),transform.position) * scale(identity(),transform.scale) * rotate(identity(),transform.rotation);
-		matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
+		//plane
+			// float a, b, c, d;
+			// a = camForward.x;
+			// b = camForward.y;
+			// c = camForward.z;
+			// d = a * -camPos.x + b * -camPos.y + c * -camPos.z;
+			// float plane[] = { a,b,c,d };
 
-		matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(identity(),transform.rotation)))));
+			_transform transform = transforms[renderers[gid].transform];
+		
+			//	uint renderid = renderers[gid].renderer;
+			uint buffsid = renderers[gid].id;
+
+			matrixes[buffsid].model = translate(identity(),transform.position) * scale(identity(),transform.scale) * rotate(identity(),transform.rotation);
+			matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
+
+			matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(identity(),transform.rotation)))));
+		}
+		if(stage == 0){
+			transforms[gid].position -= floatingOrigin;
+		}
 //	}
 }

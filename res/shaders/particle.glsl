@@ -40,3 +40,10 @@ struct emitter{
     vec3 p;
     int frame;
 };
+
+struct emitterInit{
+    uint transformID;
+    uint emitterProtoID;
+    int live;
+    int id;
+}; 

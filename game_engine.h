@@ -164,7 +164,7 @@ glm::mat4 getProjection()
 }
 
 mutex gpuDataLock;
-
+int frameCounter = 0;
 void renderThreadFunc()
 {
 
@@ -237,8 +237,8 @@ void renderThreadFunc()
 	GPU_RENDERERS->ownStorage();
 	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
 	GPU_TRANSFORMS = new gpu_vector<_transform>();
-	//	GPU_TRANSFORMS->ownStorage();
-	GPU_TRANSFORMS->storage = &TRANSFORMS.data;
+	GPU_TRANSFORMS->ownStorage();
+	// GPU_TRANSFORMS->storage = &TRANSFORMS.data;
 	// log("here");
 	// ids->init();
 
@@ -271,31 +271,33 @@ void renderThreadFunc()
 
 				stopWatch.start();
 				updateInfo();
-				
-				gpuDataLock.lock();
-				
-				gt.start();
-				GPU_TRANSFORMS->bufferData(); //array_heap
 
+				//////////////////////////////////////////////////////////////////////////////
+				/////////////////////////////// Lock Transform ///////////////////////////////
+				//////////////////////////////////////////////////////////////////////////////
+				gpuDataLock.lock();
+
+				gt.start();
+				GPU_TRANSFORMS->bufferData();
 				GPU_RENDERERS->bufferData();
 				GPU_MATRIXES->tryRealloc(GPU_MATRIXES_IDS.size());
-				appendStat("buffer transforms", gt.stop());
+				appendStat("transforms buffer", gt.stop());
 
-				GLuint matPView = glGetUniformLocation(matProgram.Program, "view");
-				GLuint matvRot = glGetUniformLocation(matProgram.Program, "vRot");
-				GLuint matProjection = glGetUniformLocation(matProgram.Program, "projection");
+				uint emitterInitCount = emitterInits.size();
+				gpu_emitter_inits->bufferData(emitterInits);
 
-				GLuint matCamPos = glGetUniformLocation(matProgram.Program, "camPos");
-				GLuint matCamForward = glGetUniformLocation(matProgram.Program, "camForward");
-				GLuint matNum = glGetUniformLocation(matProgram.Program, "num");
+				gpuDataLock.unlock();
+				//////////////////////////////////////////////////////////////////////////////
+				////////////////////////////// Unlock Transform //////////////////////////////
+				//////////////////////////////////////////////////////////////////////////////
 
 				gt.start();
 
 				glUseProgram(matProgram.Program);
 
-				glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(rj.view));
-				glUniformMatrix4fv(matvRot, 1, GL_FALSE, glm::value_ptr(rj.rot));
-				glUniformMatrix4fv(matProjection, 1, GL_FALSE, glm::value_ptr(rj.proj));
+				glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "view"), 1, GL_FALSE, glm::value_ptr(rj.view));
+				glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "vRot"), 1, GL_FALSE, glm::value_ptr(rj.rot));
+				glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "projection"), 1, GL_FALSE, glm::value_ptr(rj.proj));
 
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, GPU_RENDERERS->bufferId);
@@ -304,33 +306,32 @@ void renderThreadFunc()
 				mainCamPos = player->transform->getPosition();
 				MainCamForward = player->transform->forward();
 				mainCamUp = player->transform->up();
-				glUniform3f(matCamPos, mainCamPos.x, mainCamPos.y, mainCamPos.z);
-				glUniform3f(matCamForward, MainCamForward.x, MainCamForward.y, MainCamForward.z);
-
-				glUniform1ui(matNum, GPU_RENDERERS->size());
-
+				glUniform3f(glGetUniformLocation(matProgram.Program, "camPos"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+				glUniform3f(glGetUniformLocation(matProgram.Program, "camForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+				glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+				glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), 1);
+				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), GPU_RENDERERS->size());
 				glDispatchCompute(GPU_RENDERERS->size() / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				appendStat("matrix compute", gt.stop());
-
-				gpuDataLock.unlock();
-
-				updateParticles();
-
-				timer t;
-				t.start();
-				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view);
-				appendStat("sort particles", t.stop());
 
 				//buffer renderer ids
 				for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
 					for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
 						j->second->_ids->bufferData();
-				//				ids->bufferData();
+
+				gt.start();
+				updateParticles(mainCamPos,emitterInitCount);
+				appendStat("particles compute", gt.stop());
+
+				timer t;
+				t.start();
+				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view);
+				appendStat("particles sort", t.stop());
 
 				renderDone.store(true);
 
-				glClearColor(0.7f, 0.7f, 1.f, 1.0f);
+				glClearColor(0.6f, 0.7f, 1.f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
@@ -340,13 +341,13 @@ void renderThreadFunc()
 
 				gt.start();
 				cam_render(rj.rot, rj.proj, rj.view);
-				appendStat("cam_render", gt.stop());
+				appendStat("render cam", gt.stop());
 
 				gt.start();
 				glDisable(GL_CULL_FACE);
 				glDepthMask(GL_FALSE);
 				particle_renderer.drawParticles(rj.view, rj.rot, rj.proj);
-				appendStat("particle_render", gt.stop());
+				appendStat("render particles", gt.stop());
 
 				glDepthMask(GL_TRUE);
 				glfwSwapBuffers(window);
@@ -379,7 +380,6 @@ void renderThreadFunc()
 		}
 	}
 }
-
 
 // scripting
 mutex antiBullshitDevice;
@@ -526,7 +526,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 		// 	continue;
 
 		lockUpdate();
-		if(doCleanUp)
+		if (doCleanUp)
 			cleanup();
 		for (int i = 0; i < concurrency::numThreads; ++i)
 		{
@@ -542,7 +542,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 		int s = cb->size();
 
 		lockUpdate();
-		if(doCleanUp)
+		if (doCleanUp)
 			cleanup();
 		for (int i = 0; i < concurrency::numThreads; ++i)
 		{
@@ -552,7 +552,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 		this_thread::sleep_for(1ns);
 	}
 	lockUpdate();
-	if(doCleanUp)
+	if (doCleanUp)
 		cleanup();
 	unlockUpdate();
 }
@@ -590,7 +590,7 @@ void run()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		
+
 		while (!eventsPollDone)
 		{
 			this_thread::sleep_for(1ns);
@@ -598,12 +598,10 @@ void run()
 		eventsPollDone = false;
 
 		stopWatch.start();
-		gpuDataLock.lock();
-		appendStat("wait for render", stopWatch.stop());
 
 		// scripting
 		doLoopIteration(gameComponents);
-		
+
 		lockUpdate();
 		leaves.clear();
 		octree2->clear();
@@ -615,11 +613,14 @@ void run()
 		unlockUpdate();
 
 		bool working = true;
-		while(working){
+		while (working)
+		{
 			working = false;
 			lockUpdate();
-			for(auto i : updateWork){
-				if(i.size() > 0){
+			for (auto i : updateWork)
+			{
+				if (i.size() > 0)
+				{
 					working = true;
 					break;
 				}
@@ -628,51 +629,49 @@ void run()
 			this_thread::sleep_for(1ns);
 		}
 		cleanup();
-
-		// allcomponents[typeid(collider).hash_code()]->update();
-		// appendStat(allcomponents[typeid(collider).hash_code()]->name + "--update", stopWatch.stop());
-		// antiBullshitDevice.lock();
 		doLoopIteration(gameEngineComponents, false);
-		// antiBullshitDevice.unlock();
-
-		// wait for barrier
 
 		stopWatch.start();
 		lockUpdate();
-
 		cleanup();
 
+		gpuDataLock.lock();
+		appendStat("wait for render", stopWatch.stop());
+
+		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
 		GPU_RENDERERS->storage->resize(gpu_renderers.size());
 		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-		{
-			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-			{
+			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
 				j->second->_ids->storage->resize(j->second->ids.data.size());
-			}
-		}
+		
 		appendStat("prepare memory", stopWatch.stop());
 
+		emitterInits.clear();
+		for (auto &i : emitter_inits)
+			emitterInits.push_back(i.second);
+		emitter_inits.clear();
+
 		for (int i = 0; i < concurrency::numThreads; ++i)
-		{
 			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
-		}
 		unlockUpdate();
 
 		// this_thread::sleep_for(2ns);
 
 		working = true;
-		while(working){
+		while (working)
+		{
 			working = false;
 			lockUpdate();
-			for(auto i : updateWork){
-				if(i.size() > 0){
+			for (auto i : updateWork)
+			{
+				if (i.size() > 0)
+				{
 					working = true;
 					break;
 				}
 			}
 			unlockUpdate();
 			this_thread::sleep_for(1ns);
-
 		}
 		// syncThreads();
 		gpuDataLock.unlock();
@@ -680,7 +679,7 @@ void run()
 		// rendering
 		//        stopWatch.start();
 		renderJob rj;
-		rj.work = [&]{return;};
+		rj.work = [&] { return; };
 		rj.type = renderNum::render;
 		rj.val1 = GPU_RENDERERS->size();
 		rj.proj = ::proj;																			//((_camera*)(cameras->front()))->getProjection();
@@ -723,7 +722,13 @@ void run()
 	componentStats.erase("");
 	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
 	{
-		cout << i->first << " : " << i->second.getAverageValue() << endl;
+		int count = 0;
+		for (auto &j : allcomponents)
+		{
+			if (j.second->name + "--update" == i->first)
+				count = j.second->size();
+		}
+		cout << count << " : " << i->first << " : " << i->second.getAverageValue() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
 }

@@ -562,7 +562,7 @@ class collider : public component
 	list<collider *>::iterator itr;
 
 public:
-	colDat *posInTree;
+	colDat *posInTree = 0;
 	COPY(collider);
 	bool _registerEngineComponent()
 	{
@@ -573,6 +573,7 @@ public:
 	}
 	void onStart()
 	{
+		posInTree = 0;
 		id = colid++;
 		colM.lock();
 		collider_manager.colliders.push_back(this);
@@ -618,6 +619,7 @@ public:
 		//if (id == 0) {
 		//	cout << "\ncreate tree\n";
 		//}
+		posInTree = 0;
 		a = AABB(transform->getPosition(), r * transform->getScale());
 		cd.a = a;
 		cd.c = this;
@@ -625,7 +627,7 @@ public:
 		cd.rb = rb;
 		int depth = 0;
 		// leaveLock.lock();
-		octree2->insert(cd, depth);
+		// octree2->insert(cd, depth);
 		// leaveLock.unlock();
 
 		//octLock.unlock();
@@ -637,7 +639,7 @@ public:
 	{
 
 		int colCount = 0;
-		octree2->query(cd.a, cd, colCount);
+		// octree2->query(cd.a, cd, colCount);
 		for (auto &i : terrains)
 		{
 			terrainHit h = i.second->getHeight(cd.a.c.x, cd.a.c.z);
@@ -648,7 +650,7 @@ public:
 					rb->vel = glm::reflect(rb->vel,h.normal) * rb->bounciness;
 					// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
 					glm::vec3 p = transform->getPosition();
-					transform->setPosition(glm::vec3(p.x, h.height + cd.a.r.y, p.z));
+					transform->setPosition(glm::vec3(p.x, h.height + cd.a.r.y + 0.1f, p.z));
 				}
 				transform->gameObject->collide(i.second->transform->gameObject);
 			}

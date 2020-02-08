@@ -16,8 +16,7 @@ out vec4 color;
 
 
 void main()
-{
-    
+{   
     gl_FragDepth = log2(logz) * 0.5 * FC;
     color = col;
 }
