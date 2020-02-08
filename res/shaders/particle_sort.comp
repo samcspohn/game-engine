@@ -6,10 +6,10 @@ struct d{
     uint id;
 };
 const uint WG_SIZE = 128;
-const uint N_GROUPS = 16;
+const uint N_GROUPS = 256;
 const uint RADIX = 12;
 const uint BUCK = 1 << RADIX;
-const uint block_sum_size = 256;
+const uint block_sum_size = uint(sqrt(N_GROUPS * BUCK));
 
 // layout(std430,binding = 0) buffer c{uint counts[];}; //5? long
 // layout(std430,binding = 1) buffer o{uint offsets[];}; //5? long
@@ -287,11 +287,11 @@ void main () {
     if(gid >= count)
         return;
     if(stage == -1){
-        float z = (vp * vec4(particles[gid].position,1)).z;
-        if(z > 0  && particles[gid].live == 1){
+        vec3 v = (vp * vec4(particles[gid].position,1)).xyz;
+        if(v.z > 0 && abs(v.x / v.z) < 1.1 && abs(v.y / v.z) < 1.1 && particles[gid].live == 1){
             index = atomicAdd(atomics[0],1);
             d item;
-            item.key =  ~floatBitsToUint(z) << 1;
+            item.key =  ~floatBitsToUint(v.z) << 1;
             item.id = gid;
             _input[index] = item;
             // _input[index].id = gid;

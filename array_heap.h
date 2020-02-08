@@ -12,6 +12,7 @@ using namespace std;
 
 template<typename t>
 class array_heap {
+	mutex m;
 public:
 	struct ref {
 		int index;
@@ -40,6 +41,7 @@ public:
 	ref _new() {
 		ref ret;
 		ret.a = this;
+		m.lock();
 		if (avail.size() > 0) {
 			ret.index = *avail.begin();
 			avail.erase(avail.begin());;
@@ -54,11 +56,13 @@ public:
 			valid.push_back(true);
 			++extent;
 		}
+		m.unlock();
 		return ret;
 	}
 	void _delete(ref r) {
 		if (r.a != this)
 			throw;
+		m.lock();
 		avail.emplace(r.index);
 		valid[r.index] = false;
 		//(*data)[r.index] = t();
@@ -70,6 +74,7 @@ public:
 			data.resize(extent);
 			valid.resize(extent);
 		}
+		m.unlock();
 	}
 
 	float density() {

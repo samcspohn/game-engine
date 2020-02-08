@@ -15,6 +15,7 @@ std::set<Transform *> toDestroy;
 
 class _renderer;
 
+mutex game_object_m;
 class game_object
 {
 
@@ -136,23 +137,12 @@ public:
 
 	void destroy()
 	{
+		game_object_m.lock();
 		if (!destroyed)
 		{
-
 			destroyLock.lock();
 			for(auto& i : components)
-			// while (components.size() > 0)
 			{
-				// removeLock.lock();
-				// auto toR = components.find(i.first);
-				// if (toRemove.find(toR->second) != toRemove.end())
-				// {
-				// 	cout << "already removed" << endl;
-				// 	throw;
-				// }
-				// toRemove.insert(toR->second);
-				// removeLock.unlock();
-				// toR->first->onDestroy();
 				removeComponent(i.first);
 			}
 			if (toDestroy.find(transform) != toDestroy.end())
@@ -167,22 +157,28 @@ public:
 				i->gameObject->destroy();
 			}
 		}
+		game_object_m.unlock();
 	}
 
 	game_object(Transform *t)
 	{
+		game_object_m.lock();
 		destroyed = false;
 		this->transform = t;
 		t->gameObject = this;
+		game_object_m.unlock();
 	}
 	game_object()
 	{
+		game_object_m.lock();
 		destroyed = false;
 		this->transform = new Transform(this);
 		root->Adopt(this->transform);
+		game_object_m.unlock();
 	};
 	game_object(const game_object &g)
 	{
+		game_object_m.lock();
 		destroyed = false;
 		this->transform = new Transform(*g.transform, this);
 		g.transform->getParent()->Adopt(this->transform);
@@ -194,6 +190,7 @@ public:
 		{
 			i.second->getComponent()->onStart();
 		}
+		game_object_m.unlock();
 	}
 
 	void _destroy()

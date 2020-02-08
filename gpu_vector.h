@@ -69,7 +69,7 @@ public:
 	}
 	void retrieveData(){
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-    	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * size(), storage->data());
+    	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * size(), storage->data());
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 

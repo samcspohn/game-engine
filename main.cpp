@@ -6,6 +6,7 @@
 using namespace glm;
 atomic<int> numCubes(0);
 game_object *proto = nullptr;
+game_object *ExplosionProto = nullptr;
 
 game_object *ground;
 class player_sc : public component
@@ -17,7 +18,7 @@ class player_sc : public component
 	bool jumped = false; // do not fly and jump in same frame
 	bool colliding = false;
 	int framecount = 0;
-
+	vec3 ownSpeed = vec3(0);
 public:
 	terrain *t;
 
@@ -46,7 +47,7 @@ public:
 		}
 		else if (Input.getKeyDown(GLFW_KEY_F))
 		{
-			speed /= 2;
+  			speed /= 2;
 		}
 		if (Input.getKeyDown(GLFW_KEY_P))
 		{
@@ -71,8 +72,8 @@ public:
 			vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 
 			glm::vec3 vel = rb->getVelocity();
-			if (transform->getPosition().y - 1.0f <= h.height)
-				rb->setVelocity(vec3(vel.x, 0, vel.y) * 0.5f);
+			// if (transform->getPosition().y - 1.0f <= h.height)
+			// 	rb->setVelocity(vec3(vel.x, 0, vel.y) * 0.5f);
 			if (inputVel.x != 0 || inputVel.z != 0)
 			{
 
@@ -110,10 +111,13 @@ public:
 			}
 			else
 			{
+				rb->gravity = true;
 				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 				if (inputVel.x != 0 || inputVel.z != 0)
 					inputVel = normalize(inputVel);
-				rb->setVelocity(currVel + inputVel * speed * 0.1f);
+				ownSpeed += inputVel * speed * 0.1f;
+				if(length2(ownSpeed) < speed * speed)
+					rb->setVelocity(currVel + inputVel * speed * 0.1f);
 				glm::vec3 vel = rb->getVelocity();
 				// rb->setVelocity(vel - vec3(speed,0,speed) * 0.3f);
 			}
@@ -139,10 +143,30 @@ public:
 	UPDATE(player_sc, update);
 	COPY(player_sc);
 };
+
+
+class explosion_sc : public component{
+	float life;
+public:
+	void onStart(){
+		life = 0;
+	}
+	void update(){
+		if(transform->gameObject == ExplosionProto)
+			return;
+		life += Time.deltaTime;
+		if(life > 0.1f){
+			transform->gameObject->destroy();
+		}
+	}
+	UPDATE(explosion_sc,update);
+	COPY(explosion_sc);
+};
+
+
 class cube_sc : public component
 {
 public:
-	//	glm::vec3 dir;
 	rigidBody *rb;
 	glm::vec3 rot;
 	// glm::vec3 dir;
@@ -151,13 +175,13 @@ public:
 	void onStart()
 	{
 		rot = randomSphere();
-		// dir = randomSphere() * .5f;
+		// dir = randomSphere() * 15.f;
 		rb = transform->gameObject->getComponent<rigidBody>();
 		rb->setVelocity(randomSphere() * randf() * 3.f);
 	}
 	void update()
 	{
-		// transform->move(dir * Time.deltaTime * 10.f);
+		// transform->translate(dir * Time.deltaTime * 10.f);
 		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 600.f / numCubes * Time.deltaTime || hit)
 		{
@@ -165,18 +189,21 @@ public:
 			transform->gameObject->destroy();
 		}
 	}
-	// void onCollision(game_object *go)
-	// {
-	// 	if( proto == transform->gameObject )
-	// 		return;
+	void onCollision(game_object *go)
+	{
+		if( proto == transform->gameObject )
+			return;
 
-	// 	if (go->getComponent<cube_sc>() == 0)
-	// 	{
-	// 		// transform->gameObject->destroy();
-	// 		// cout << "hit" << flush;
-	// 		hit = true;
-	// 	}
-	// }
+		if (go->getComponent<terrain>() != 0)
+		{
+			auto exp = new game_object(*ExplosionProto);
+			exp->transform->setPosition(transform->getPosition());
+			numCubes.fetch_add(-1);
+			transform->gameObject->destroy();
+			// cout << "hit" << flush;
+			// hit = true;
+		}
+	}
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };
@@ -221,7 +248,7 @@ class moreCUBES : public component
 {
 
 public:
-	float rof = 10000 / 60;
+	float rof = 1000000 / 60;
 	void update()
 	{
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_1))
@@ -253,8 +280,8 @@ int main(void)
 
 	player = new game_object();
 	player->addComponent<moreCUBES>();
-	player->addComponent<collider>();
-	player->addComponent<rigidBody>()->bounciness = 0.3f;
+	// player->addComponent<collider>();
+	player->addComponent<rigidBody>()->bounciness = 0.03f;
 	player->addComponent<player_sc>();
 
 	ground = new game_object();
@@ -274,35 +301,68 @@ int main(void)
 	numCubes = n;
 	srand(100);
 
-	emitter_prototype_ emitterProto = createNamedEmitter("flame");
-	emitterProto->emission_rate = 4.f;
-	emitterProto->lifetime = 1.f;
-	emitterProto->color = vec4(1, 1, 0.1f, 0.8f);
-	emitterProto->velocity = vec3(1.f);
-	emitterProto->scale = vec3(1.5f);
-	emitterProto->billboard = 1;
-	emitterProto->trail = 1;
+	emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
+	flameEmitterProto->emission_rate = 3.f;
+	flameEmitterProto->lifetime = 0.67f;
+	flameEmitterProto->color = vec4(1, 1, 0.1f, 0.8f);
+	flameEmitterProto->velocity = vec3(1.f);
+	flameEmitterProto->scale = vec3(1.5f);
+	flameEmitterProto->billboard = 1;
+	flameEmitterProto->trail = 1;
 
-	emitter_prototype_ emitterProto3 = createNamedEmitter("smoke");
-	*emitterProto3 = *emitterProto;
-	emitterProto3->emission_rate = 4.f;
-	emitterProto3->lifetime = 5.f;
-	// emitterProto3->trail = 0;
-	emitterProto3->scale = vec3(3);
-	emitterProto3->velocity = vec3(4.f);
-	emitterProto3->color = vec4(0.5f);
+	emitter_prototype_ smokeEmitter = createNamedEmitter("smoke");
+	*smokeEmitter = *flameEmitterProto;
+	smokeEmitter->emission_rate = 2.f;
+	smokeEmitter->lifetime = 4.f;
+	smokeEmitter->trail = 1;
+	smokeEmitter->scale = vec3(3);
+	smokeEmitter->velocity = vec3(4.f);
+	smokeEmitter->color = vec4(0.5f);
 
 	game_object *CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
 	CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
-	CUBE->getComponent<rigidBody>()->bounciness = 0.95f; //->gravity = false;
+	CUBE->getComponent<rigidBody>()->bounciness = .98f; //->gravity = false; //
 	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
-	pe2->prototype = emitterProto;
+	pe2->setPrototype(flameEmitterProto);
 	auto pe3 = CUBE->addComponent<particle_emitter>();
-	pe3->prototype = emitterProto3;
+	pe3->setPrototype(smokeEmitter);
+
+////////////////////////////////////////////////
+	emitter_prototype_ emitterProto2 = createNamedEmitter("expflame");
+	emitterProto2->emission_rate = 100.f;
+	emitterProto2->lifetime = 1.f;
+	emitterProto2->color = vec4(1, 1, 0.2f, 0.8f);
+	emitterProto2->velocity = vec3(60.f);
+	emitterProto2->scale = vec3(25.f);
+	emitterProto2->billboard = 1;
+	emitterProto2->trail = 0;
+
+	emitter_prototype_ emitterProto4 = createNamedEmitter("expsmoke");
+	*emitterProto4 = *emitterProto2;
+	emitterProto4->emission_rate = 300.f;
+	emitterProto4->lifetime = 6.f;
+	// emitterProto3->trail = 0;
+	emitterProto4->scale = vec3(20);
+	emitterProto4->velocity = vec3(30.f);
+	emitterProto4->color = vec4(0.45f);
+
+	game_object *explosionProto = new game_object();
+	// explosionProto->addComponent<collider>();
+	explosionProto->addComponent<explosion_sc>();
+	auto pe4 = explosionProto->addComponent<particle_emitter>();
+	pe4->setPrototype(emitterProto2);
+	auto pe5 = explosionProto->addComponent<particle_emitter>();
+	pe5->setPrototype(emitterProto4);
+
+	ExplosionProto = explosionProto;
+
+////////////////////////////////////////////////
+
+	
 
 	//gameObjects.front()->addComponent<mvpSolver>();
 
@@ -315,15 +375,17 @@ int main(void)
 		go->transform->translate(randomSphere() * 3.f);
 		if (fmod((float)i, (n / 100)) < 0.01)
 			cout << "\r" << (float)i / (float)n << "    " << flush;
+		go->getComponent<rigidBody>()->setVelocity(randomSphere() * randf() * 100.f);
 	}
 	auto nanosuitMan = new game_object(*CUBE);
+	nanosuitMan->addComponent<_renderer>();
 	nanosuitMan->getComponent<_renderer>()->set(modelShader, nanoSuitModel);
-	cube_sc *it = nanosuitMan->getComponent<cube_sc>();
-	nanosuitMan->removeComponent<cube_sc>(it);
+	// cube_sc *it = nanosuitMan->getComponent<cube_sc>();
+	// nanosuitMan->removeComponent<cube_sc>(it);
 	nanosuitMan->transform->move(glm::vec3(-10.f));
 
 	emitter_prototype_ ep2 = createNamedEmitter("emitter2");
-	*ep2 = *emitterProto;
+	*ep2 = *flameEmitterProto;
 	ep2->billboard = 0;
 	ep2->trail = 0;
 	ep2->emission_rate = 5.0f;
@@ -331,18 +393,18 @@ int main(void)
 	ep2->velocity = vec3(1);
 	ep2->color = vec4(1, .4, 0, 0.5);
 	auto pe = nanosuitMan->addComponent<particle_emitter>();
-	pe->prototype = ep2;
+	pe->setPrototype(ep2);
 
 	game_object *proto2 = new game_object();
 	proto2->addComponent<_renderer>();
 	proto2->addComponent<rigidBody>()->gravity = false;
 	proto2->addComponent<collider>();
-	proto2->addComponent<cube_sc>();
+	// proto2->addComponent<cube_sc>();
 	proto2->getComponent<_renderer>()->set(modelShader, cubeModel);
 	proto2->addComponent<particle_emitter>();
-	proto2->removeComponent<cube_sc>();
+	// proto2->removeComponent<cube_sc>();
 	// proto2->removeComponent<particle_emitter>();
-	proto2->getComponent<particle_emitter>()->prototype = ep2;
+	proto2->getComponent<particle_emitter>()->setPrototype(ep2);
 	proto2->transform->setScale(glm::vec3(10.f));
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
 	for (int i = 0; i < 15; ++i)
