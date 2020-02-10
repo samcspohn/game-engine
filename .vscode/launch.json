@@ -4,8 +4,9 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "clang++ build and debug active file",
+            "name": "build and debug release",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/a.out",
@@ -22,7 +23,28 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build",
+            "preLaunchTask": "build release",
+            // "miDebuggerPath": "/usr/bin/lldb-mi"
+        },
+        {
+            "name": "build and debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/a.out",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode":"gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build debug",
             // "miDebuggerPath": "/usr/bin/lldb-mi"
         }
     ]
