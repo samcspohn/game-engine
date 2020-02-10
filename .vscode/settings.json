@@ -16,6 +16,9 @@
         "functional": "cpp",
         "tuple": "cpp",
         "thread": "cpp",
-        "atomic": "cpp"
+        "atomic": "cpp",
+        "mutex": "cpp",
+        "shared_mutex": "cpp",
+        "condition_variable": "cpp"
     }
 }

@@ -81,7 +81,7 @@ void initEmitters(uint id){
     e.transform = ei.transformID;
     e.live = ei.live;
     e.frame = 0;
-    e.emission = prototypes[e.emitter_prototype].emission_rate * deltaTime;
+    e.emission = 1;//prototypes[e.emitter_prototype].emission_rate * deltaTime;
 
     emitters[ei.id] = e;
 }

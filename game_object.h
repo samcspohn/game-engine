@@ -8,14 +8,10 @@
 //#include "physics.h"
 using namespace std;
 
-mutex removeLock;
 std::set<compItr *> toRemove;
-mutex destroyLock;
 std::set<Transform *> toDestroy;
 
 class _renderer;
-
-mutex game_object_m;
 class game_object
 {
 
@@ -93,7 +89,7 @@ public:
 	template <class t>
 	void removeComponent(t *c)
 	{
-		removeLock.lock();
+		gameLock.lock();
 		auto toR = components.find(c);
 		if (toRemove.find(toR->second) != toRemove.end())
 		{
@@ -102,12 +98,12 @@ public:
 		}
 		toRemove.insert(toR->second);
 		toR->first->onDestroy();
-		removeLock.unlock();
+		gameLock.unlock();
 		// components.erase(toR);
 	}
 	void removeComponent(component *c)
 	{
-		removeLock.lock();
+		gameLock.lock();
 		auto toR = components.find(c);
 		if (toRemove.find(toR->second) != toRemove.end())
 		{
@@ -116,13 +112,13 @@ public:
 		}
 		toRemove.insert(toR->second);
 		toR->first->onDestroy();
-		removeLock.unlock();
+		gameLock.unlock();
 		// components.erase(toR);
 	}
 	template <class t>
 	void removeComponent()
 	{
-		removeLock.lock();
+		gameLock.lock();
 		component *c = getComponent<t>();
 		auto toR = components.find(c);
 		if (toRemove.find(toR->second) != toRemove.end())
@@ -132,18 +128,24 @@ public:
 		}
 		toRemove.insert(toR->second);
 		toR->first->onDestroy();
-		removeLock.unlock();
+		gameLock.unlock();
 	}
 
 	void destroy()
 	{
-		game_object_m.lock();
+		gameLock.lock();
 		if (!destroyed)
 		{
-			destroyLock.lock();
-			for(auto& i : components)
+			for (auto &i : components)
 			{
-				removeComponent(i.first);
+				auto toR = components.find(i.first);
+				if (toRemove.find(toR->second) != toRemove.end())
+				{
+					cout << "already removed" << endl;
+					throw;
+				}
+				toRemove.insert(toR->second);
+				toR->first->onDestroy();
 			}
 			if (toDestroy.find(transform) != toDestroy.end())
 			{
@@ -151,34 +153,33 @@ public:
 				throw;
 			}
 			toDestroy.insert(transform);
-			destroyLock.unlock();
 			for (auto &i : transform->getChildren())
 			{
 				i->gameObject->destroy();
 			}
 		}
-		game_object_m.unlock();
+		gameLock.unlock();
 	}
 
 	game_object(Transform *t)
 	{
-		game_object_m.lock();
+		gameLock.lock();
 		destroyed = false;
 		this->transform = t;
 		t->gameObject = this;
-		game_object_m.unlock();
+		gameLock.unlock();
 	}
 	game_object()
 	{
-		game_object_m.lock();
+		gameLock.lock();
 		destroyed = false;
 		this->transform = new Transform(this);
 		root->Adopt(this->transform);
-		game_object_m.unlock();
+		gameLock.unlock();
 	};
 	game_object(const game_object &g)
 	{
-		game_object_m.lock();
+		gameLock.lock();
 		destroyed = false;
 		this->transform = new Transform(*g.transform, this);
 		g.transform->getParent()->Adopt(this->transform);
@@ -190,7 +191,7 @@ public:
 		{
 			i.second->getComponent()->onStart();
 		}
-		game_object_m.unlock();
+		gameLock.unlock();
 	}
 
 	void _destroy()

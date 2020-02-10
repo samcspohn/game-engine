@@ -293,7 +293,8 @@ struct d
 #define RADIX 12
 #define BUCK (1 << RADIX)
 #define BITS 32
-#define BLOCK_SUM_SIZE sqrt(N_GROUPS * BUCK)
+#define BLOCK_SUM_SIZE 256
+// sqrt(N_GROUPS * BUCK)
 gpu_vector_proxy<uint> *counts = new gpu_vector_proxy<uint>();
 gpu_vector_proxy<uint> *offsets = new gpu_vector_proxy<uint>();
 gpu_vector<d> *data1 = new gpu_vector<d>();
@@ -356,7 +357,8 @@ public:
         scan->ownStorage();
         scan->storage->resize(BUCK * N_GROUPS);
         histo->ownStorage();
-        histo->storage->resize(BUCK * N_GROUPS);
+        // histo->storage->resize(BUCK * N_GROUPS);
+        histo->storage->resize(65536);
 
         input->bufferData();
         _output->bufferData();
@@ -417,50 +419,87 @@ public:
         glUniform1ui(nkeys, numParticles);
         glUniform1ui(_offset, 0);
         int start = 0;
-        for (int pass = 2, end = 3; pass < end; pass++)
-        {
-            if (flip)
-            {
-                input->bindData(1);   // input
-                _output->bindData(2); // output
-            }
-            else
-            {
-                _output->bindData(1); // input
-                input->bindData(2);   // output
-            }
-            flip = !flip;
-            glUniform1ui(_pass, pass);
+        input->bindData(1);   // input
+        _output->bindData(2); // output
+        flip = !flip;
 
-            glUniform1i(stage, 0);
-            glUniform1ui(count, N_GROUPS * 128);
-            glUniform1ui(wg_size, 128);
-            glDispatchCompute(N_GROUPS, 1, 1); // count
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        glUniform1i(stage, -2);
+        glUniform1ui(count, 65536);
+        // glUniform1ui(wg_size, 128);
+        glDispatchCompute(65536 / 128, 1, 1); // count
+        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-            glUniform1i(stage, 1);
-            glUniform1ui(count, BLOCK_SUM_SIZE);
-            glDispatchCompute(BLOCK_SUM_SIZE / 128 + 1, 1, 1);
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // scan
-            // glFlush();
-            glUniform1i(stage, 2);
-            glUniform1ui(count, 1);
-            glDispatchCompute(1, 1, 1);
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // block sum
-            // glFlush();
-            glUniform1i(stage, 3);
-            glUniform1ui(count, N_GROUPS * BUCK);
-            glDispatchCompute(N_GROUPS * BUCK / 128, 1, 1);
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // coalesce
-            // glFlush();
-            glUniform1i(stage, 4);
-            glUniform1ui(count, N_GROUPS * 128);
-            glUniform1ui(wg_size, 128);
-            glDispatchCompute(N_GROUPS, 1, 1);
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // Reorder
-            // glFlush();
-            // histo->retrieveData();
-        }
+        glUniform1i(stage, 0);
+        glUniform1ui(count, numParticles);
+
+        glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+        glUniform1i(stage, 1);
+        glUniform1ui(count, 256);
+        glDispatchCompute(256 / 128, 1, 1); // count
+        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+        glUniform1i(stage, 2);
+        glUniform1ui(count, 1);
+        glDispatchCompute(1, 1, 1); // count
+        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+        glUniform1i(stage, 3);
+        glUniform1ui(count, 65536);
+        glDispatchCompute(65536 / 128, 1, 1); // count
+        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+        glUniform1i(stage, 4);
+        glUniform1ui(count, numParticles);
+        glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+
+        // for (int pass = 2, end = 3; pass < end; pass++)
+        // {
+        //     if (flip)
+        //     {
+        //         input->bindData(1);   // input
+        //         _output->bindData(2); // output
+        //     }
+        //     else
+        //     {
+        //         _output->bindData(1); // input
+        //         input->bindData(2);   // output
+        //     }
+        //     flip = !flip;
+        //     glUniform1ui(_pass, pass);
+
+        //     glUniform1i(stage, 0);
+        //     glUniform1ui(count, N_GROUPS * 128);
+        //     glUniform1ui(wg_size, 128);
+        //     glDispatchCompute(N_GROUPS, 1, 1); // count
+        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+        //     glUniform1i(stage, 1);
+        //     glUniform1ui(count, BLOCK_SUM_SIZE);
+        //     glDispatchCompute(BLOCK_SUM_SIZE / 128 + 1, 1, 1);
+        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // scan
+        //     // glFlush();
+        //     glUniform1i(stage, 2);
+        //     glUniform1ui(count, 1);
+        //     glDispatchCompute(1, 1, 1);
+        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // block sum
+        //     // glFlush();
+        //     glUniform1i(stage, 3);
+        //     glUniform1ui(count, N_GROUPS * BUCK);
+        //     glDispatchCompute(N_GROUPS * BUCK / 128, 1, 1);
+        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // coalesce
+        //     // glFlush();
+        //     glUniform1i(stage, 4);
+        //     glUniform1ui(count, N_GROUPS * 128);
+        //     glUniform1ui(wg_size, 128);
+        //     glDispatchCompute(N_GROUPS, 1, 1);
+        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // Reorder
+        //     // glFlush();
+        //     // histo->retrieveData();
+        // }
         appendStat("sort particle list",t1.stop());
         // printf("sort list: %f ms\n", (stopTime - startTime) / 1000000.0);
 
