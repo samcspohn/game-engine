@@ -246,38 +246,39 @@ void radix2(uint g_id){
 // }
 
 
-// void radix(uint gid){
-//     uint index;
-//     // first pass
-//     if(stage == 0){
-//         index = data1[gid].key & 0x0000ffff;
-//         atomicAdd(counts[index],1);
-//     }
-//     else if(gid == 0 && stage == 1){
-//         offsets[0] = 0;
-//         for(int i = 1; i < 65536; i++){
-//             offsets[i] = offsets[i - 1] + counts[i - 1];
-//         }
-//     }else if(stage == 2){
-//         index = data1[gid].key & 0x0000ffff;
-//         data2[atomicAdd(offsets[index],1)] = data1[gid];
-//     }
+void radix(uint gid){
+    uint index;
+    // first pass
+    if(stage == 0){
+        index = _input[gid].key & 0x0000ffff;
+        atomicAdd(histo[index],1);
+    }
+    else if(gid == 0 && stage == 1){
+        histo[0] = 0;
+        for(int i = 1; i < 65536; i++){
+            histo[i] = histo[i - 1] + histo[i - 1];
+        }
+    }else if(stage == 2){
+        d item = _input[gid]; 
+        index = item.key & 0x0000ffff;
+        _output[atomicAdd(histo[index],1)] = item;
+    }
 
-//     // second pass
-//     else if(stage == 3){
-//         index = data2[gid].key >> 16;
-//         atomicAdd(counts[index],1);
-//     }
-//     else if(gid == 0 && stage == 4){
-//         offsets[0] = 0;
-//         for(int i = 1; i < 65536; i++){
-//             offsets[i] = offsets[i - 1] + counts[i - 1];
-//         }
-//     }else if(stage == 5){
-//         index = data2[gid].key >> 16;
-//         data1[atomics[0] - atomicAdd(offsets[index],1)] = data2[gid];
-//     }
-// }
+    // // second pass
+    // else if(stage == 3){
+    //     index = data2[gid].key >> 16;
+    //     atomicAdd(counts[index],1);
+    // }
+    // else if(gid == 0 && stage == 4){
+    //     offsets[0] = 0;
+    //     for(int i = 1; i < 65536; i++){
+    //         offsets[i] = offsets[i - 1] + counts[i - 1];
+    //     }
+    // }else if(stage == 5){
+    //     index = data2[gid].key >> 16;
+    //     data1[atomics[0] - atomicAdd(offsets[index],1)] = data2[gid];
+    // }
+}
 
 
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
@@ -292,6 +293,7 @@ void main () {
             index = atomicAdd(atomics[0],1);
             d item;
             item.key =  ~floatBitsToUint(v.z) << 1;
+            // item.key =  ~floatBitsToUint(v.z) >> 16;
             item.id = gid;
             _input[index] = item;
             // _input[index].id = gid;

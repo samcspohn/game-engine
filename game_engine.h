@@ -285,6 +285,7 @@ void renderThreadFunc()
 
 				uint emitterInitCount = emitterInits.size();
 				gpu_emitter_inits->bufferData(emitterInits);
+				glFlush();
 
 				gpuDataLock.unlock();
 				//////////////////////////////////////////////////////////////////////////////
@@ -397,22 +398,20 @@ void unlockUpdate()
 void cleanup()
 {
 	// antiBullshitDevice.lock();
-	removeLock.lock();
+	gameLock.lock();
 	for (auto &i : toRemove)
 	{
 		i->erase();
 	}
 	toRemove.clear();
-	removeLock.unlock();
 
-	destroyLock.lock();
 	for (auto &i : toDestroy)
 	{
 		i->gameObject->_destroy();
 		i->_destroy();
 	}
 	toDestroy.clear();
-	destroyLock.unlock();
+	gameLock.unlock();
 	// antiBullshitDevice.unlock();
 }
 //void componentUpdateThread(int index) {
@@ -557,6 +556,26 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	unlockUpdate();
 }
 
+
+void waitForWork(){
+	
+		bool working = true;
+		while (working)
+		{
+			working = false;
+			lockUpdate();
+			for (auto i : updateWork)
+			{
+				if (i.size() > 0)
+				{
+					working = true;
+					break;
+				}
+			}
+			unlockUpdate();
+			this_thread::sleep_for(1ns);
+		}
+}
 void run()
 {
 	timer stopWatch;
@@ -612,30 +631,19 @@ void run()
 		cleanup();
 		unlockUpdate();
 
-		bool working = true;
-		while (working)
-		{
-			working = false;
-			lockUpdate();
-			for (auto i : updateWork)
-			{
-				if (i.size() > 0)
-				{
-					working = true;
-					break;
-				}
-			}
-			unlockUpdate();
-			this_thread::sleep_for(1ns);
-		}
+		waitForWork();
 		cleanup();
 		doLoopIteration(gameEngineComponents, false);
+
+
+		waitForWork();
 
 		stopWatch.start();
 		lockUpdate();
 		cleanup();
 
 		gpuDataLock.lock();
+		gameLock.lock();
 		appendStat("wait for render", stopWatch.stop());
 
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
@@ -657,23 +665,9 @@ void run()
 
 		// this_thread::sleep_for(2ns);
 
-		working = true;
-		while (working)
-		{
-			working = false;
-			lockUpdate();
-			for (auto i : updateWork)
-			{
-				if (i.size() > 0)
-				{
-					working = true;
-					break;
-				}
-			}
-			unlockUpdate();
-			this_thread::sleep_for(1ns);
-		}
+		waitForWork();
 		// syncThreads();
+		gameLock.unlock();
 		gpuDataLock.unlock();
 
 		// rendering

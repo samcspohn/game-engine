@@ -417,6 +417,14 @@ public:
         glUniform1ui(nkeys, numParticles);
         glUniform1ui(_offset, 0);
         int start = 0;
+        // input->bindData(1);   // input
+        // _output->bindData(2); // output
+
+        // glUniform1i(stage, 0);
+        // glUniform1ui(count, N_GROUPS * 128);
+        // glUniform1ui(wg_size, 128);
+        // glDispatchCompute(N_GROUPS, 1, 1); // count
+        // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         for (int pass = 2, end = 3; pass < end; pass++)
         {
             if (flip)
