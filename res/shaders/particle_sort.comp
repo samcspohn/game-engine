@@ -9,7 +9,8 @@ const uint WG_SIZE = 128;
 const uint N_GROUPS = 256;
 const uint RADIX = 12;
 const uint BUCK = 1 << RADIX;
-const uint block_sum_size = uint(sqrt(N_GROUPS * BUCK));
+// const uint block_sum_size = uint(sqrt(N_GROUPS * BUCK));
+const uint block_sum_size = 256;
 
 // layout(std430,binding = 0) buffer c{uint counts[];}; //5? long
 // layout(std430,binding = 1) buffer o{uint offsets[];}; //5? long
@@ -246,21 +247,45 @@ void radix2(uint g_id){
 // }
 
 
-void radix(uint gid){
+void radix(uint g_id){
     uint index;
     // first pass
     if(stage == 0){
-        index = _input[gid].key & 0x0000ffff;
+        index = _input[g_id].key;
         atomicAdd(histo[index],1);
     }
-    else if(gid == 0 && stage == 1){
-        histo[0] = 0;
-        for(int i = 1; i < 65536; i++){
-            histo[i] = histo[i - 1] + histo[i - 1];
+
+    if(stage == 1){
+        uint start = g_id * block_sum_size;
+        uint end = start + block_sum_size;
+        
+        uint temp = histo[start];
+        histo[start] = 0;
+        for(uint i = start + 1; i < end; i++){
+            uint temp2 = histo[i];
+            histo[i] = temp;
+            temp += temp2;
         }
-    }else if(stage == 2){
-        d item = _input[gid]; 
-        index = item.key & 0x0000ffff;
+        block_sums[g_id] = temp;
+    }
+
+    if(stage == 2){
+        uint temp = block_sums[0];
+        block_sums[0] = 0;
+        for(uint i = 1; i < block_sum_size; i++){
+            uint temp2 = block_sums[i];
+            block_sums[i] = temp;
+            temp += temp2;
+        }
+    }
+
+    if(stage == 3){
+        // uint group_id = gl_WorkGroupID.x;
+        histo[g_id] += block_sums[g_id/block_sum_size];
+    }
+    else if(stage == 4){
+        d item = _input[g_id]; 
+        index = item.key;
         _output[atomicAdd(histo[index],1)] = item;
     }
 
@@ -287,21 +312,23 @@ void main () {
     uint index;
     if(gid >= count)
         return;
+    if(stage == -2)
+        histo[gid] = 0;
     if(stage == -1){
         vec3 v = (vp * vec4(particles[gid].position,1)).xyz;
-        if(v.z > 0 && abs(v.x / v.z) < 1.1 && abs(v.y / v.z) < 1.1 && particles[gid].live == 1){
+        if(particles[gid].live == 1 && v.z > 0){// && abs(v.x / v.z) < 1.1 && abs(v.y / v.z) < 1.1){
             index = atomicAdd(atomics[0],1);
             d item;
             item.key =  ~floatBitsToUint(v.z) << 1;
-            // item.key =  ~floatBitsToUint(v.z) >> 16;
+            item.key = item.key >> 16;
             item.id = gid;
             _input[index] = item;
             // _input[index].id = gid;
         }
     }
     else{
-        radix2(gid);
-        // radix(gid);
+        // radix2(gid);
+        radix(gid);
         // merge(gid);
     }
 
