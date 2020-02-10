@@ -4,7 +4,26 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build debug",
+            "type": "shell",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "command": "clang++",
+            "args": ["main.cpp", "-g", "-fpermissive", "-w", 
+                "-std=c++17",
+                "-lGL", "-lGLU",
+                "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
+                "-lXi", "-lSOIL", "-lassimp"
+                ],
+        },
+        {
+            "label": "build release",
             "type": "shell",
             "presentation": {
                 "echo": true,
