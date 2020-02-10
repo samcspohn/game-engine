@@ -15,6 +15,7 @@
 
 using namespace std;
 
+mutex gameLock;
 glm::vec3 vec3forward(0, 0, 1);
 glm::vec3 vec3up(0, 1, 0);
 glm::vec3 vec3right(1, 0, 0);
@@ -66,9 +67,6 @@ _transform& get_T(int index) {
 	return (index >= 0 ? TRANSFORMS[index] : STATIC_TRANSFORMS[switchAH(index)]);
 }
 
-mutex transformArray;
-mutex transformMutex;
-
 Transform* root;
 class Transform {
 public:
@@ -76,10 +74,10 @@ public:
 	game_object* gameObject;
 
 	void init() {
-		transformMutex.lock();
+		// gameLock.lock();
 		_T = TRANSFORMS._new();
 		GO_T_refs[_T] = gameObject;
-		transformMutex.unlock();
+		// gameLock.unlock();
 		parent = 0;
 		root->Adopt(this);
 	}
@@ -207,7 +205,6 @@ public:
 	}
 
 	void _destroy() {
-//		transformMutex.lock();
 		orphan();
 		if (enabled) {
 			GO_T_refs[_T] = 0;
@@ -217,8 +214,6 @@ public:
 		{
 			STATIC_TRANSFORMS._delete(_T);
 		}
-
-//		transformMutex.unlock();
 		if (enabled)
 			--transforms_enabled;
 		delete this;
