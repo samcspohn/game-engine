@@ -37,7 +37,8 @@ struct emitter{
     float emission;
     int live;
 
-    vec3 p;
+    vec2 p;
+    int last;
     int frame;
 };
 

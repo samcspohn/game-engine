@@ -11,7 +11,6 @@ layout(std430,binding = 2) buffer p{particle particles[];};
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 4) buffer e{emitter emitters[];};
 layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
-layout(std430,binding = 7) buffer elp{int emitters_last_particle[];};
 layout(std430,binding = 5) buffer r{uint rng[];};
 layout(std430,binding = 6) buffer d{uint dead[];};
 layout(std430,binding = 1) buffer ac{uint atomicCounters[];};
@@ -82,7 +81,7 @@ void initEmitters(uint id){
     e.live = ei.live;
     e.frame = 0;
     e.emission = 1;//prototypes[e.emitter_prototype].emission_rate * deltaTime;
-
+    e.last = -1;
     emitters[ei.id] = e;
 }
 
@@ -127,11 +126,11 @@ void emit(uint thread_id){
             // set trail
             if(ep.trail == 1){
                 if(e.frame > 0){
-                    particles[emitters_last_particle[thread_id]].next = int(x);
+                    particles[e.last].next = int(x);
                 }
                 p.next = -int(thread_id) - 2;
-                p.prev = emitters_last_particle[thread_id];
-                emitters_last_particle[thread_id] = int(x);
+                p.prev = e.last;
+                e.last = int(x);
             }
 
             p.live = 1;
@@ -142,7 +141,7 @@ void emit(uint thread_id){
         e.emission -= float(uint(e.emission));
     }else{
         e.frame = 0;
-        emitters_last_particle[thread_id] = -1;
+        e.last = -1;
     }
     emitters[thread_id] = e;
 
