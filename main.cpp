@@ -33,6 +33,7 @@ public:
 	}
 	void update()
 	{
+		rb->gravity = true;
 		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.01f);
 		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
@@ -101,7 +102,7 @@ public:
 
 			if (flying)
 			{ // if flying dont apply gravity
-				rb->gravity = false;
+				rb->gravity = true;
 				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 				if (inputVel.x != 0 || inputVel.z != 0)
 					inputVel = normalize(inputVel);
@@ -189,21 +190,21 @@ public:
 			transform->gameObject->destroy();
 		}
 	}
-	void onCollision(game_object *go)
-	{
-		if( proto == transform->gameObject )
-			return;
+	// void onCollision(game_object *go)
+	// {
+	// 	if( proto == transform->gameObject )
+	// 		return;
 
-		if (go->getComponent<terrain>() != 0)
-		{
-			auto exp = new game_object(*ExplosionProto);
-			exp->transform->setPosition(transform->getPosition());
-			numCubes.fetch_add(-1);
-			transform->gameObject->destroy();
-			// cout << "hit" << flush;
-			// hit = true;
-		}
-	}
+	// 	if (go->getComponent<terrain>() != 0)
+	// 	{
+	// 		auto exp = new game_object(*ExplosionProto);
+	// 		exp->transform->setPosition(transform->getPosition());
+	// 		numCubes.fetch_add(-1);
+	// 		transform->gameObject->destroy();
+	// 		// cout << "hit" << flush;
+	// 		// hit = true;
+	// 	}
+	// }
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };
@@ -314,10 +315,10 @@ int main(void)
 	*smokeEmitter = *flameEmitterProto;
 	smokeEmitter->emission_rate = 2.f;
 	smokeEmitter->lifetime = 4.f;
-	smokeEmitter->trail = 1;
-	smokeEmitter->scale = vec3(3);
-	smokeEmitter->velocity = vec3(4.f);
 	smokeEmitter->color = vec4(0.5f);
+	smokeEmitter->velocity = vec3(4.f);
+	smokeEmitter->scale = vec3(3);
+	smokeEmitter->trail = 1;
 
 	game_object *CUBE = new game_object();
 	CUBE->addComponent<_renderer>();

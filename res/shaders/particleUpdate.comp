@@ -45,8 +45,10 @@ void update(uint id, float dt){
         particle p = particles[id];
         emitter_prototype proto = prototypes[p.emitter_prototype];
         p.position += p.velocity * dt;
+        p.position2 += p.velocity2 * dt;
         // p.position -= floatingOrigin;
         p.life -= dt / prototypes[p.emitter_prototype].lifetime;
+        p.life2 -= dt / prototypes[p.emitter_prototype].lifetime;
 
         if(proto.billboard == 1)
             p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
@@ -123,10 +125,15 @@ void emit(uint thread_id){
             rand(id,time + 2 + count) - 0.5f);
             p.velocity = vec3(rotate(identity(),transforms[e.transform].rotation) * vec4(random * ep.velocity * transforms[e.transform].scale,1));
             
+            p.position += p.velocity * dt * count;
+            p.life -= dt * count++ / prototypes[p.emitter_prototype].lifetime;
             // set trail
             if(ep.trail == 1){
                 if(e.frame > 0){
                     particles[e.last].next = int(x);
+                    particles[e.last].position2 = p.position;
+                    particles[e.last].velocity2 = p.velocity;
+                    particles[e.last].life2 = p.life;
                 }
                 p.next = -int(thread_id) - 2;
                 p.prev = e.last;
@@ -135,8 +142,6 @@ void emit(uint thread_id){
 
             p.live = 1;
             particles[x] = p;
-            
-            update(x,dt * count++);
         }
         e.emission -= float(uint(e.emission));
     }else{
