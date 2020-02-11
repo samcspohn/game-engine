@@ -259,7 +259,7 @@ public:
 				game_object *go = new game_object(*proto);
 				go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
 				// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
-				go->transform->setPosition(transform->getPosition() + transform->forward() * 5.f - transform->up() * 2.5f);
+				go->transform->setPosition(transform->getPosition() + transform->forward() * 30.f - transform->up() * 20.f);
 				numCubes.fetch_add(1);
 			}
 		}
