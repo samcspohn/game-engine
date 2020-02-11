@@ -12,7 +12,12 @@ struct particle{
     float life;
     int next;
     int prev;
-    float p;
+    float life2;
+    vec3 position2;
+    float p1;
+    vec3 velocity2;
+    float p2;
+    vec4 p3;
 };
 struct emitter_prototype{
     float emission_rate;

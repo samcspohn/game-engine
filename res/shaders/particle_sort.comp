@@ -311,10 +311,9 @@ void radix(uint g_id){
 
             if(p1.next < -1 && emitters[-p1.next - 2].last == item.id){
                 rp.pos2 = transforms[emitters[p1.emitter].transform].position;
-            }else if (particles[p1.next].prev == item.id){
-                rp.pos2 = particles[p1.next].position;
-            }
-            if(length(rp.pos2 - rp.pos1) > 100)
+            }else 
+                rp.pos2 = p1.position2;
+            if(length(rp.pos2 - rp.pos1) > 300)
                 rp.pos2 = rp.pos1;
                 
         }else{
@@ -354,7 +353,7 @@ void main () {
         histo[gid] = 0;
     if(stage == -1){
         vec3 v = (vp * vec4(particles[gid].position,1)).xyz;
-        if(particles[gid].live == 1 && v.z > 0){// && abs(v.x / v.z) < 1.1 && abs(v.y / v.z) < 1.1){
+        if(particles[gid].live == 1 && v.z > 0 && abs(v.x / v.z) < 1.1 && abs(v.y / v.z) < 1.1){
             index = atomicAdd(atomics[0],1);
             d item;
             item.key =  ~floatBitsToUint(v.z) << 1;
