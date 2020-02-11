@@ -314,9 +314,11 @@ void radix(uint g_id){
             }else if (particles[p1.next].prev == item.id){
                 rp.pos2 = particles[p1.next].position;
             }
+            if(length(rp.pos2 - rp.pos1) > 100)
+                rp.pos2 = rp.pos1;
                 
         }else{
-            vec3 point = (rotate(identity(),p1.rotation) * vec4(0,1,0,1)).xyz * rp.scale.x;
+            vec3 point = (rotate(identity(),p1.rotation) * vec4(0,1,0,1)).xyz * rp.scale.x * 0.5f;
             rp.pos1 = p1.position - point;
             rp.pos2 = p1.position + point;
         }
