@@ -158,8 +158,8 @@ void main(){
 
             // p1 = (inverse(projection) * vec4(p1,1)).xyz;
             // p2 = (inverse(projection) * vec4(p2,1)).xyz;
-            vec3 point1 = normalize(cross(-p1,p2 - p1)) * .5f * 3;//scale(rp);
-            vec3 point2 = normalize(cross(-p2,p1 - p2)) * -.5f * 3;//scale(rp);
+            vec3 point1 = normalize(cross(-p1,p2 - p1)) * .5f * scale(rp);
+            vec3 point2 = normalize(cross(-p2,p1 - p2)) * -.5f * scale(rp);
             // vec3 point2 = vec3(5);
             // vec3 point1 = vec3(5);
             createVert(p1 + point1,vp,identity(),rp);
