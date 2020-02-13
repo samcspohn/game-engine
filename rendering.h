@@ -78,6 +78,10 @@ public:
 //shader data
 struct _shaderMeta {
 	_shaderMeta() {}
+	_shaderMeta(string compute) {
+		name = compute;
+		shader = new Shader(compute);
+	}
 	_shaderMeta(string vertex, string fragment) {
 		name = vertex + fragment;
 		shader = new Shader(vertex, fragment);
@@ -101,6 +105,16 @@ public:
 class _shader {
 public:
 	_shader() {}
+	_shader(string compute) {
+		auto ms = shaderManager.shaders.find(compute);
+		if (ms != shaderManager.shaders.end()) {
+			s = ms->second;
+		}
+		else {
+			shaderManager.shaders[compute] = new _shaderMeta(compute);
+			s = shaderManager.shaders[compute];
+		}
+	}
 	_shader(string vertex, string fragment) {
 		auto ms = shaderManager.shaders.find(vertex + fragment);
 		if (ms != shaderManager.shaders.end()) {

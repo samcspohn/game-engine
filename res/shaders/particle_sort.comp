@@ -2,19 +2,9 @@
 #include "particle.glsl"
 #include "transform.glsl"
 #include "util.glsl"
-struct d{
-    uint key;
-    uint id;
-};
 
-struct renderParticle{
-    vec3 pos1;
-    uint emitterID;
-    vec3 pos2;
-    uint emitterProtoID;
-    vec3 scale;
-    float life;
-};
+
+
 const uint WG_SIZE = 128;
 const uint N_GROUPS = 256;
 const uint RADIX = 12;
@@ -34,11 +24,11 @@ layout(std430,binding = 4) buffer p{particle particles[];};
 layout(std430,binding = 5) buffer a{uint atomics[];};
 layout(std430,binding = 6) buffer d_s{uint scan[];};
 layout(std430,binding = 7) buffer d_h{uint histo[];};
-layout(std430,binding = 8) buffer r{renderParticle render[];};
 layout(std430,binding = 9) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 10) buffer e{emitter emitters[];};
 uniform int stage;
 uniform mat4 vp;
+uniform mat4 view;
 uniform uint count;
 // uniform mat4 frustum;
 uniform uint numElements;
@@ -57,169 +47,169 @@ uniform uint offset;
 
 
 
-void radix2(uint g_id){
+// void radix2(uint g_id){
 
-    // __kernel void count(const __global int* _input,__global int* _output,__local int* local_histo,const int pass,const int nkeys)
-    if(stage == 0)
-    {
-        uint i;
-        // uint really_local_histo[BUCK];
-        // for(i = 0; i < BUCK; i++){
-        //     really_local_histo[i] = 0;
-        // }
-        uint bucks_size = (BUCK) / WG_SIZE;
-        uint bucks_start = bucks_size * gl_LocalInvocationID.x;
-        uint bucks_end = bucks_start + bucks_size;
-        for(i = bucks_start; i < bucks_end; i++){
-            local_histo[i] = 0;
-        }
+//     // __kernel void count(const __global int* _input,__global int* _output,__local int* local_histo,const int pass,const int nkeys)
+//     if(stage == 0)
+//     {
+//         uint i;
+//         // uint really_local_histo[BUCK];
+//         // for(i = 0; i < BUCK; i++){
+//         //     really_local_histo[i] = 0;
+//         // }
+//         uint bucks_size = (BUCK) / WG_SIZE;
+//         uint bucks_start = bucks_size * gl_LocalInvocationID.x;
+//         uint bucks_end = bucks_start + bucks_size;
+//         for(i = bucks_start; i < bucks_end; i++){
+//             local_histo[i] = 0;
+//         }
 
-        barrier();
-        // memoryBarrierShared();
+//         barrier();
+//         // memoryBarrierShared();
 
-        //Calculate elements to process per item
-        uint size = nkeys / count;
-        //Calculate where to start on the global array
-        uint start = g_id * size + offset;
-        uint end = start + size;
-        if(g_id == count - 1){
-            end = nkeys + offset;
-        }
+//         //Calculate elements to process per item
+//         uint size = nkeys / count;
+//         //Calculate where to start on the global array
+//         uint start = g_id * size + offset;
+//         uint end = start + size;
+//         if(g_id == count - 1){
+//             end = nkeys + offset;
+//         }
         
-        for(i = start; i < end; i++) {
-            uint key = _input[i].key;
-            key = ((key >> (pass * RADIX - 4)) & (BUCK - 1));
-            atomicAdd(local_histo[key],1);
-        }
-        // memoryBarrierShared();
-        barrier();
-        for(i = bucks_start; i < bucks_end; i++) {
-            histo[i * N_GROUPS + gl_WorkGroupID.x] = local_histo[i];
-        }
-        // if(g_id == count - 1)
-        // histo[0] = nkeys;
-    }
+//         for(i = start; i < end; i++) {
+//             uint key = _input[i].key;
+//             key = ((key >> (pass * RADIX - 4)) & (BUCK - 1));
+//             atomicAdd(local_histo[key],1);
+//         }
+//         // memoryBarrierShared();
+//         barrier();
+//         for(i = bucks_start; i < bucks_end; i++) {
+//             histo[i * N_GROUPS + gl_WorkGroupID.x] = local_histo[i];
+//         }
+//         // if(g_id == count - 1)
+//         // histo[0] = nkeys;
+//     }
 
 
-    if(stage == 11){
-        // if(g_id == 0){
-            for(uint i = 0; i < 256; i++){
-                uint start = i * 128;
-                uint end = start + 128;
+//     if(stage == 11){
+//         // if(g_id == 0){
+//             for(uint i = 0; i < 256; i++){
+//                 uint start = i * 128;
+//                 uint end = start + 128;
                 
-                uint temp = histo[start];
-                histo[start] = 0;
-                for(uint j = start + 1; j < end; j++){
-                    uint temp2 = histo[j];histo[i * N_GROUPS + gl_WorkGroupID.x];
-                    temp += temp2;
-                }
-                block_sums[i] = temp;
-            }
+//                 uint temp = histo[start];
+//                 histo[start] = 0;
+//                 for(uint j = start + 1; j < end; j++){
+//                     uint temp2 = histo[j];histo[i * N_GROUPS + gl_WorkGroupID.x];
+//                     temp += temp2;
+//                 }
+//                 block_sums[i] = temp;
+//             }
 
-            uint temp = block_sums[0];
-            block_sums[0] = 0;
-            for(uint i = 1; i < 256; i++){
-                uint temp2 = block_sums[i];
-                block_sums[i] = temp;
-                temp += temp2;
-            }
+//             uint temp = block_sums[0];
+//             block_sums[0] = 0;
+//             for(uint i = 1; i < 256; i++){
+//                 uint temp2 = block_sums[i];
+//                 block_sums[i] = temp;
+//                 temp += temp2;
+//             }
 
-            // for(int i = 0; i < 256; i++){
-            //     for(int j = 0; j < 128; j++){
-            //         histo[i*128 + j] += block_sums[i];
-            //     }
-            // }
-            for(int i = 0; i < 32768; i++){
-                histo[i] += block_sums[i/128];
-            }
+//             // for(int i = 0; i < 256; i++){
+//             //     for(int j = 0; j < 128; j++){
+//             //         histo[i*128 + j] += block_sums[i];
+//             //     }
+//             // }
+//             for(int i = 0; i < 32768; i++){
+//                 histo[i] += block_sums[i/128];
+//             }
 
 
-            // uint temp = histo[0];
-            // histo[0] = 0;
-            // uint end = BUCK * 16 * 128;
-            // for(uint i = 1; i < end; i++){
-            //     uint temp2 = histo[i];
-            //     histo[i] = temp;
-            //     temp += temp2;
-            // }
-        // }
-    }
+//             // uint temp = histo[0];
+//             // histo[0] = 0;
+//             // uint end = BUCK * 16 * 128;
+//             // for(uint i = 1; i < end; i++){
+//             //     uint temp2 = histo[i];
+//             //     histo[i] = temp;
+//             //     temp += temp2;
+//             // }
+//         // }
+//     }
 
-    // scan kernel 2
-    if(stage == 1){
-        uint start = g_id * block_sum_size;
-        uint end = start + block_sum_size;
+//     // scan kernel 2
+//     if(stage == 1){
+//         uint start = g_id * block_sum_size;
+//         uint end = start + block_sum_size;
         
-        uint temp = histo[start];
-        histo[start] = 0;
-        for(uint i = start + 1; i < end; i++){
-            uint temp2 = histo[i];
-            histo[i] = temp;
-            temp += temp2;
-        }
-        block_sums[g_id] = temp;
-    }
+//         uint temp = histo[start];
+//         histo[start] = 0;
+//         for(uint i = start + 1; i < end; i++){
+//             uint temp2 = histo[i];
+//             histo[i] = temp;
+//             temp += temp2;
+//         }
+//         block_sums[g_id] = temp;
+//     }
 
-    if(stage == 2){
-        uint temp = block_sums[0];
-        block_sums[0] = 0;
-        for(uint i = 1; i < block_sum_size; i++){
-            uint temp2 = block_sums[i];
-            block_sums[i] = temp;
-            temp += temp2;
-        }
-    }
+//     if(stage == 2){
+//         uint temp = block_sums[0];
+//         block_sums[0] = 0;
+//         for(uint i = 1; i < block_sum_size; i++){
+//             uint temp2 = block_sums[i];
+//             block_sums[i] = temp;
+//             temp += temp2;
+//         }
+//     }
 
-    if(stage == 3){
-        // uint group_id = gl_WorkGroupID.x;
-        histo[g_id] += block_sums[g_id/block_sum_size];
-    }
+//     if(stage == 3){
+//         // uint group_id = gl_WorkGroupID.x;
+//         histo[g_id] += block_sums[g_id/block_sum_size];
+//     }
 
 
 
-    /** REORDER KERNEL **/
-    // __kernel void reorder(__global int* array, __global int* histo, __global int* _output, const int pass, const int nkeys, __local int* local_histo)
-    if(stage == 4)
-    {
-        // uint g_id = gl_GlobalInvocationID.x;
-        //Bring histo to local memory
-        uint i;
-        // uint really_local_histo[BUCK];
-        // for(i = 0; i < BUCK; i++){
-        //     really_local_histo[i] = histo[i * count + g_id];
-        // }
-        uint bucks_size = (BUCK) / WG_SIZE;
-        uint bucks_start = bucks_size * gl_LocalInvocationID.x;
-        uint bucks_end = bucks_start + bucks_size;
-        for(i = bucks_start; i < bucks_end; i++) {
-            local_histo[i] = histo[i * N_GROUPS + gl_WorkGroupID.x];
-        }
-        // memoryBarrierShared();
+//     /** REORDER KERNEL **/
+//     // __kernel void reorder(__global int* array, __global int* histo, __global int* _output, const int pass, const int nkeys, __local int* local_histo)
+//     if(stage == 4)
+//     {
+//         // uint g_id = gl_GlobalInvocationID.x;
+//         //Bring histo to local memory
+//         uint i;
+//         // uint really_local_histo[BUCK];
+//         // for(i = 0; i < BUCK; i++){
+//         //     really_local_histo[i] = histo[i * count + g_id];
+//         // }
+//         uint bucks_size = (BUCK) / WG_SIZE;
+//         uint bucks_start = bucks_size * gl_LocalInvocationID.x;
+//         uint bucks_end = bucks_start + bucks_size;
+//         for(i = bucks_start; i < bucks_end; i++) {
+//             local_histo[i] = histo[i * N_GROUPS + gl_WorkGroupID.x];
+//         }
+//         // memoryBarrierShared();
         
-        barrier();
-        // memoryBarrierShared();
+//         barrier();
+//         // memoryBarrierShared();
 
-        //Write to global memory in order
-        uint size = nkeys / count;
-        uint start = g_id * size  + offset;
-        uint end = start + size;
-        if(g_id == count - 1){
-            end = nkeys + offset;
-        }
+//         //Write to global memory in order
+//         uint size = nkeys / count;
+//         uint start = g_id * size  + offset;
+//         uint end = start + size;
+//         if(g_id == count - 1){
+//             end = nkeys + offset;
+//         }
         
-        for(i = start; i < end; i++) {
-                d item = _input[i];
-                uint key = (item.key >> (pass * RADIX - 4)) & (BUCK - 1);
-                // uint pos = local_histo[key * l_size + l_id];
-                uint pos = atomicAdd(local_histo[key],1);
-                // if(pass == 7)
-                //     pos = nkeys - pos - 1;
-                _output[pos + offset] = item;
-                // _output[nkeys - i - 1] = item;
-        }
+//         for(i = start; i < end; i++) {
+//                 d item = _input[i];
+//                 uint key = (item.key >> (pass * RADIX - 4)) & (BUCK - 1);
+//                 // uint pos = local_histo[key * l_size + l_id];
+//                 uint pos = atomicAdd(local_histo[key],1);
+//                 // if(pass == 7)
+//                 //     pos = nkeys - pos - 1;
+//                 _output[pos + offset] = item;
+//                 // _output[nkeys - i - 1] = item;
+//         }
         
-    }
-}
+//     }
+// }
 
 
 
@@ -265,7 +255,7 @@ void radix(uint g_id){
     uint index;
     // first pass
     if(stage == 0){
-        index = _input[g_id].key;
+        index = key(_input[g_id]);
         atomicAdd(histo[index],1);
     }
 
@@ -299,31 +289,8 @@ void radix(uint g_id){
     }
     else if(stage == 4){
         d item = _input[g_id]; 
-        index = item.key;
-        particle p1 = particles[item.id];
-        renderParticle rp;
-        rp.emitterID = p1.emitter;
-        rp.scale = p1.scale;
-        rp.life = p1.life;
-        rp.emitterProtoID = p1.emitter_prototype;
-        if(prototypes[p1.emitter_prototype].trail == 1){
-            rp.pos1 = p1.position;
-
-            if(p1.next < -1 && emitters[-p1.next - 2].last == item.id){
-                rp.pos2 = transforms[emitters[p1.emitter].transform].position;
-            }else 
-                rp.pos2 = p1.position2;
-            if(length(rp.pos2 - rp.pos1) > 300)
-                rp.pos2 = rp.pos1;
-                
-        }else{
-            vec3 point = (rotate(identity(),p1.rotation) * vec4(0,1,0,1)).xyz * rp.scale.x * 0.5f;
-            rp.pos1 = p1.position - point;
-            rp.pos2 = p1.position + point;
-        }
-            render[atomicAdd(histo[index],1)] = rp;
-        
-        // _output[atomicAdd(histo[index],1)] = item;
+        index = key(item);        
+        _output[atomicAdd(histo[index],1)] = item;
     }
 
     // // second pass
@@ -342,7 +309,41 @@ void radix(uint g_id){
     // }
 }
 
+uint convertFloatToClamped(float f){
+    return uint(f * 32768 + 32768);
+}
+uint getAngle(vec3 a, vec3 b,vec2 quadrant){
+    float angle = acos(dot(normalize(a),normalize(b)));
+    if(quadrant.x > 0){
+        angle = 6.28318530718 - angle;
+    }
+    return uint((angle / 6.28318530718) * 65536);
+}
+void rotateX(inout vec3 vec, float angle){
+    float y = vec.y;
+    float z = vec.z;
+    vec.y = y * cos(angle) - z * sin(angle);
+    vec.z = y * sin(angle) + z * cos(angle);
+}
 
+void genPosition1(inout d item, vec3 a){
+    vec3 newVec = vec3(a.x,a.y,-a.z);
+    uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
+    // rotateX(newVec,-xAxisAngle);
+    setDX1(item, xAxisAngle);
+    uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
+    setDY1(item, yAxisAngle);
+    setDZ1(item, -length(a));
+}
+void genPosition2(inout d item, vec3 a){
+    vec3 newVec = vec3(a.x,a.y,-a.z);
+    uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
+    // rotateX(newVec,-xAxisAngle);
+    setDX2(item, xAxisAngle);
+    uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
+    setDY2(item, yAxisAngle);
+    setDZ2(item, -length(a));
+}
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
@@ -352,13 +353,32 @@ void main () {
     if(stage == -2)
         histo[gid] = 0;
     if(stage == -1){
-        vec3 v = (vp * vec4(particles[gid].position,1)).xyz;
-        if(particles[gid].live == 1 && v.z > 0 && abs(v.x / v.z) < 1.1 && abs(v.y / v.z) < 1.1){
+        particle p = particles[gid];
+        vec3 p1 = (vp * vec4(p.position,1)).xyz;
+        vec3 p2 = (vp * vec4(p.position2,1)).xyz;
+        if(p.live == 1 && p1.z > 0 && abs(p1.x / p1.z) < 1.1 && abs(p1.y / p1.z) < 1.1){
             index = atomicAdd(atomics[0],1);
             d item;
-            item.key =  ~floatBitsToUint(v.z) << 1;
-            item.key = item.key >> 16;
-            item.id = gid;
+            uint _key =  ~floatBitsToUint(p1.z) << 1;
+            key(item, _key >> 16);
+            emitterID(item, p.emitter);
+            scale(item,p.scale.x);
+            life(item, p.life);
+            protoID(item, p.emitter_prototype);
+            vec3 p11;
+            vec3 p21;
+            if(prototypes[p.emitter_prototype].trail == 1){
+                p11 = (view * vec4(p.position,1)).xyz;
+                p21 = (view * vec4(p.position2,1)).xyz;
+            }else{
+                vec3 point = (rotate(identity(),p.rotation) * vec4(0,1,0,1)).xyz * p.scale.x * 0.5f;
+                p11 = (view * vec4(p.position - point,1)).xyz;
+                p21 = (view * vec4(p.position + point,1)).xyz;
+            }
+            genPosition1(item, p11);
+            genPosition2(item, p21);
+
+            // item.id = gid;
             _input[index] = item;
             // _input[index].id = gid;
         }

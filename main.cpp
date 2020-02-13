@@ -19,6 +19,7 @@ class player_sc : public component
 	bool colliding = false;
 	int framecount = 0;
 	vec3 ownSpeed = vec3(0);
+
 public:
 	terrain *t;
 
@@ -39,7 +40,7 @@ public:
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
 
 		glm::vec3 currVel = rb->getVelocity();
-		
+
 		if (framecount++ > 1)
 			cout << "\rcubes: " << numCubes << " particles: " << atomicCounters->storage->at(particleCounters::liveParticles) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
 		if (Input.getKeyDown(GLFW_KEY_R))
@@ -48,7 +49,7 @@ public:
 		}
 		else if (Input.getKeyDown(GLFW_KEY_F))
 		{
-  			speed /= 2;
+			speed /= 2;
 		}
 		if (Input.getKeyDown(GLFW_KEY_P))
 		{
@@ -117,7 +118,7 @@ public:
 				if (inputVel.x != 0 || inputVel.z != 0)
 					inputVel = normalize(inputVel);
 				ownSpeed += inputVel * speed * 0.1f;
-				if(length2(ownSpeed) < speed * speed)
+				if (length2(ownSpeed) < speed * speed)
 					rb->setVelocity(currVel + inputVel * speed * 0.1f);
 				glm::vec3 vel = rb->getVelocity();
 				// rb->setVelocity(vel - vec3(speed,0,speed) * 0.3f);
@@ -134,36 +135,44 @@ public:
 			rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
 		}
 		colliding = false;
-		//
-		//		 if(Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased){
-		//            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		//		 }else if(Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased){
-		//            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_ENABLED);
-		//		 }
+
+		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cursorReleased = false;
+		}
+		else if (Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursorReleased = true;
+		}
 	}
 	UPDATE(player_sc, update);
 	COPY(player_sc);
 };
 
-
-class explosion_sc : public component{
+class explosion_sc : public component
+{
 	float life;
+
 public:
-	void onStart(){
+	void onStart()
+	{
 		life = 0;
 	}
-	void update(){
-		if(transform->gameObject == ExplosionProto)
+	void update()
+	{
+		if (transform->gameObject == ExplosionProto)
 			return;
 		life += Time.deltaTime;
-		if(life > 0.1f){
+		if (life > 0.1f)
+		{
 			transform->gameObject->destroy();
 		}
 	}
-	UPDATE(explosion_sc,update);
+	UPDATE(explosion_sc, update);
 	COPY(explosion_sc);
 };
-
 
 class cube_sc : public component
 {
@@ -332,7 +341,7 @@ int main(void)
 	auto pe3 = CUBE->addComponent<particle_emitter>();
 	pe3->setPrototype(smokeEmitter);
 
-////////////////////////////////////////////////
+	////////////////////////////////////////////////
 	emitter_prototype_ emitterProto2 = createNamedEmitter("expflame");
 	emitterProto2->emission_rate = 100.f;
 	emitterProto2->lifetime = 1.f;
@@ -361,9 +370,7 @@ int main(void)
 
 	ExplosionProto = explosionProto;
 
-////////////////////////////////////////////////
-
-	
+	////////////////////////////////////////////////
 
 	//gameObjects.front()->addComponent<mvpSolver>();
 

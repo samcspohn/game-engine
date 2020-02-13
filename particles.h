@@ -6,7 +6,7 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_PARTICLES 1024 * 1024 * 10
+#define MAX_PARTICLES 1024 * 1024 * 12
 struct particle
 {
     vec3 position;
@@ -53,7 +53,6 @@ struct emitter
     float emission;
     int live;
 
-    vec2 p;
     int last;
     int frame;
 };
@@ -282,10 +281,17 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     atomicCounters->retrieveData();
 }
 
-struct d
-{
-    float key;
-    int id;
+
+struct d{
+	uint x;
+	uint y;
+	uint z;
+	uint protoID_scale;
+
+    // vec2 p;
+	uint emitterID;
+	uint key_life;
+
 };
 struct renderParticle{
     vec3 pos1;
@@ -324,9 +330,10 @@ gpu_vector<d> *_output = new gpu_vector<d>();
 gpu_vector<GLuint> *block_sums = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *scan = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
-gpu_vector_proxy<renderParticle> *renderParticles = new gpu_vector_proxy<renderParticle>();
+// gpu_vector_proxy<renderParticle> *renderParticles = new gpu_vector_proxy<renderParticle>();
 
 
+// Shader renderPrepShader("res/shaders/renderParticle.comp");
 class
 {
     GLuint VAO = 0;
@@ -354,6 +361,7 @@ public:
         atomics->ownStorage();
         atomics->storage->push_back(0);
         particleShader = _shader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
+        // renderPrepShader = Shader("res/shaders/renderParticle.comp");
         if (this->VAO == 0)
         {
             glGenVertexArrays(1, &this->VAO);
@@ -378,11 +386,11 @@ public:
         block_sums->bufferData();
         scan->bufferData();
         histo->bufferData();
-        renderParticles->tryRealloc(MAX_PARTICLES);
+        // renderParticles->tryRealloc(MAX_PARTICLES);
     }
     bool flip = true;
 
-    void sortParticles(mat4 vp)
+    void sortParticles(mat4 vp, mat4 view)
     {
         gpuTimer t1;
         t1.start();
@@ -390,6 +398,7 @@ public:
 
 
         GLuint _vp = glGetUniformLocation(particleSortProgram.Program, "vp");
+        GLuint _view = glGetUniformLocation(particleSortProgram.Program, "view");
         GLuint stage = glGetUniformLocation(particleSortProgram.Program, "stage");
         GLuint count = glGetUniformLocation(particleSortProgram.Program, "count");
         GLuint max_particles = glGetUniformLocation(particleSortProgram.Program, "max_particles");
@@ -400,7 +409,7 @@ public:
         GLuint _pass = glGetUniformLocation(particleSortProgram.Program, "pass");
         GLuint wg_size = glGetUniformLocation(particleSortProgram.Program, "wg_size");
         GLuint _offset = glGetUniformLocation(particleSortProgram.Program, "offset");
-
+        glUniformMatrix4fv(_view, 1, GL_FALSE, glm::value_ptr(view));
 
 
         // glFlush();
@@ -419,7 +428,7 @@ public:
         atomics->bindData(5);
         scan->bindData(6);
         histo->bindData(7);
-        renderParticles->bindData(8);
+        // renderParticles->bindData(8);
         gpu_emitter_prototypes->bindData(9);
         gpu_emitters->bindData(10);
 
@@ -520,11 +529,31 @@ public:
         //     // histo->retrieveData();
         // }
         appendStat("sort particle list",t1.stop());
-        // printf("sort list: %f ms\n", (stopTime - startTime) / 1000000.0);
+        // _output->retrieveData();
+        // t1.start();
 
+        // renderPrepShader.Use();
+        // glUniform1i(stage, 0);
+        // glUniform1ui(count, numParticles);
+        // glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+        // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        // appendStat("make render particles",t1.stop());
         
     }
 
+    void prepRender(){
+        GPU_TRANSFORMS->bindData(0);
+        input->bindData(1);
+        _output->bindData(2);
+        block_sums->bindData(3);
+        particles->bindData(4);
+        atomics->bindData(5);
+        scan->bindData(6);
+        histo->bindData(7);
+        // renderParticles->bindData(8);
+        gpu_emitter_prototypes->bindData(9);
+        gpu_emitters->bindData(10);
+    }
     void drawParticles(mat4 view, mat4 rot, mat4 proj)
     {
 
@@ -549,11 +578,9 @@ public:
         GPU_TRANSFORMS->bindData(0);
         gpu_emitter_prototypes->bindData(3);
         gpu_emitters->bindData(4);
-        renderParticles->bindData(8);
+        // renderParticles->bindData(8);
         particles->bindData(2);
-        // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, particles->bufferId);
-        // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, gpu_emitter_prototypes->bufferId);
-        // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, gpu_emitters->bufferId);
+
         // data1->bindData(6);
         // if (!flip)
             _output->bindData(6);
