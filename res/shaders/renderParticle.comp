@@ -1,0 +1,59 @@
+#version 430 core
+
+#extension GL_ARB_compute_shader : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
+#include "particle.glsl"
+#include "transform.glsl"
+#include "util.glsl"
+
+struct d{
+    uint key;
+    uint id;
+};
+
+struct renderParticle{
+    vec3 pos1;
+    uint emitterID;
+    vec3 pos2;
+    uint emitterProtoID;
+    vec3 scale;
+    float life;
+};
+
+layout(std430,binding = 2) buffer d_out{d _output[];};
+layout(std430,binding = 4) buffer p{particle particles[];};
+layout(std430,binding = 8) buffer r{renderParticle render[];};
+layout(std430,binding = 9) buffer ep{emitter_prototype prototypes[];};
+layout(std430,binding = 10) buffer e{emitter emitters[];};
+
+uniform uint count;
+
+layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
+void main () {
+    uint gid = gl_GlobalInvocationID.x;
+    if(gid >= count)
+        return;
+    uint index = _output[gid].id;
+    particle p = particles[gid];
+    renderParticle rp;
+    rp.emitterID = p.emitter;
+    rp.scale = p.scale;
+    rp.life = p.life;
+    rp.emitterProtoID = p.emitter_prototype;
+    if(prototypes[p.emitter_prototype].trail == 1){
+        rp.pos1 = p.position;
+        rp.pos2 = p.position2;
+
+        // if(p.next < -1 && emitters[-p.next - 2].last == item.id){
+        //     rp.pos2 = transforms[emitters[p.emitter].transform].position;
+        // }else 
+        if(length(rp.pos2 - rp.pos1) > 300)
+            rp.pos2 = rp.pos1;
+            
+    }else{
+        vec3 point = (rotate(identity(),p.rotation) * vec4(0,1,0,1)).xyz * rp.scale.x * 0.5f;
+        rp.pos1 = p.position - point;
+        rp.pos2 = p.position + point;
+    }
+    render[gid] = rp;
+}

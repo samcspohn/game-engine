@@ -12,7 +12,7 @@ layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 4) buffer e{emitter emitters[];};
 layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
 layout(std430,binding = 5) buffer r{uint rng[];};
-layout(std430,binding = 6) buffer d{uint dead[];};
+layout(std430,binding = 6) buffer de{uint dead[];};
 layout(std430,binding = 1) buffer ac{uint atomicCounters[];};
 
 const uint liveParticles = 0;
@@ -45,7 +45,13 @@ void update(uint id, float dt){
         particle p = particles[id];
         emitter_prototype proto = prototypes[p.emitter_prototype];
         p.position += p.velocity * dt;
-        p.position2 += p.velocity2 * dt;
+
+        if(p.next < -1 && emitters[-p.next - 2].last == id){
+            p.position2 = transforms[emitters[p.emitter].transform].position;
+        }else{
+            p.position2 += p.velocity2 * dt;
+        }
+
         // p.position -= floatingOrigin;
         p.life -= dt / prototypes[p.emitter_prototype].lifetime;
         p.life2 -= dt / prototypes[p.emitter_prototype].lifetime;

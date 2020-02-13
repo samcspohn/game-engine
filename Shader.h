@@ -191,6 +191,7 @@ public:
 		if (!success)
 		{
 			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
+			cout << file << endl;
 			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
 		}
 		return shader;

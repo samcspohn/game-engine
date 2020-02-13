@@ -327,7 +327,7 @@ void renderThreadFunc()
 
 				timer t;
 				t.start();
-				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view);
+				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view, rj.rot * rj.view);
 				appendStat("particles sort", t.stop());
 
 				renderDone.store(true);
@@ -352,7 +352,7 @@ void renderThreadFunc()
 
 				glDepthMask(GL_TRUE);
 				glfwSwapBuffers(window);
-				glFlush();
+				// glFlush();
 				appendStat("render", stopWatch.stop());
 				//renderDone.store(true);
 			}

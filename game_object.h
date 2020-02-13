@@ -3,13 +3,14 @@
 #include <map>
 #include "Component.h"
 #include <set>
+#include <unordered_set>
 #include "plf_list.h"
 #include "fast_list.h"
 //#include "physics.h"
 using namespace std;
 
-std::set<compItr *> toRemove;
-std::set<Transform *> toDestroy;
+plf::list<compItr *> toRemove;
+plf::list<Transform *> toDestroy;
 
 class _renderer;
 class game_object
@@ -91,12 +92,12 @@ public:
 	{
 		gameLock.lock();
 		auto toR = components.find(c);
-		if (toRemove.find(toR->second) != toRemove.end())
-		{
-			cout << "already removed" << endl;
-			throw;
-		}
-		toRemove.insert(toR->second);
+		// if (toRemove.find(toR->second) != toRemove.end())
+		// {
+		// 	cout << "already removed" << endl;
+		// 	throw;
+		// }
+		toRemove.push_back(toR->second);
 		toR->first->onDestroy();
 		gameLock.unlock();
 		// components.erase(toR);
@@ -105,12 +106,12 @@ public:
 	{
 		gameLock.lock();
 		auto toR = components.find(c);
-		if (toRemove.find(toR->second) != toRemove.end())
-		{
-			cout << "already removed" << endl;
-			throw;
-		}
-		toRemove.insert(toR->second);
+		// if (toRemove.find(toR->second) != toRemove.end())
+		// {
+		// 	cout << "already removed" << endl;
+		// 	throw;
+		// }
+		toRemove.push_back(toR->second);
 		toR->first->onDestroy();
 		gameLock.unlock();
 		// components.erase(toR);
@@ -121,12 +122,12 @@ public:
 		gameLock.lock();
 		component *c = getComponent<t>();
 		auto toR = components.find(c);
-		if (toRemove.find(toR->second) != toRemove.end())
-		{
-			cout << "already removed" << endl;
-			throw;
-		}
-		toRemove.insert(toR->second);
+		// if (toRemove.find(toR->second) != toRemove.end())
+		// {
+		// 	cout << "already removed" << endl;
+		// 	throw;
+		// }
+		toRemove.push_back(toR->second);
 		toR->first->onDestroy();
 		gameLock.unlock();
 	}
@@ -139,20 +140,20 @@ public:
 			for (auto &i : components)
 			{
 				auto toR = components.find(i.first);
-				if (toRemove.find(toR->second) != toRemove.end())
-				{
-					cout << "already removed" << endl;
-					throw;
-				}
-				toRemove.insert(toR->second);
+				// if (toRemove.find(toR->second) != toRemove.end())
+				// {
+				// 	cout << "already removed" << endl;
+				// 	throw;
+				// }
+				toRemove.push_back(toR->second);
 				toR->first->onDestroy();
 			}
-			if (toDestroy.find(transform) != toDestroy.end())
-			{
-				cout << "already destroyed" << endl;
-				throw;
-			}
-			toDestroy.insert(transform);
+			// if (toDestroy.find(transform) != toDestroy.end())
+			// {
+			// 	cout << "already destroyed" << endl;
+			// 	throw;
+			// }
+			toDestroy.push_back(transform);
 			for (auto &i : transform->getChildren())
 			{
 				i->gameObject->destroy();
