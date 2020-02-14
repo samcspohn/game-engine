@@ -89,75 +89,13 @@ vec3 getPoint2(inout d item){
 void main(){
     // uint index = data[index_[0]].id;
     uint index = index_[0];
-    // if(particles[index].live == 1){
 
-        // top left
-        // if(prototypes[particles[index].emitter_prototype].trail == 0){
-            // vec3 position = particles[index].position;
-            // mat4 model = translate(identity(),particles[index].position) * scale(identity(),particles[index].scale) * rotate(identity(),particles[index].rotation);
-            // mat4 mvp = projection * vRot * view * model;
-            // renderParticle rp;
-            // rp.life = particles[index].life;
-            // rp.emitterProtoID = particles[index].emitter_prototype;
-            // createVert(vec3(-.5f,.5f,0),mvp,model,rp);
-            // offset = gl_Position.xy;
-            // createVert(vec3(.5f,.5f,0),mvp,model,rp);
-            // createVert(vec3(-.5f,-.5f,0),mvp,model,rp);
-            // createVert(vec3(.5f,-.5f,0),mvp,model,rp);
-        // }else{
             mat4 vp = projection;// * vRot * view;
             d rp = data[index];
-            // rp.life = 1;
-            // rp.pos1 = vec3(1);
-            // rp.pos2 = vec3(2);
-            // rp.scale = vec3(10);
-            // particle p1 = particles[index];
-            // particle p2 = particles[index];
-            // if(p1.next < -1 && emitters_last_particle[-p1.next - 2] == index){
-            //     p2.position = transforms[emitters[p1.emitter].transform].position;
-            // }else if (particles[p1.next].prev == index){
-            //     p2.position = particles[p1.next].position;
-            // }
-            // if(length(rp.pos1 - rp.pos2) > 100)
-            //     rp.pos2 = rp.pos1;
-
 
             vec3 p1 = getPoint1(rp);
             vec3 p2 = getPoint2(rp);
-            // vec3 p1;// = position1(rp);
-            // vec3 p1 = vec3(50);
-            // p1.z = getDZ1(rp);
-            
-            // // p1.x = 10;
-            // p1.x = float(getDX1(rp));
-            // p1.x -= 32768;
-            // p1.x /= 32768;
-            // p1.x *= p1.z;
-            // p1.x /= 0.8;
-            // // p1.y = 10;
-            // p1.y = float(getDY1(rp));
-            // p1.y -= 32768;
-            // p1.y /= 32768;
-            // p1.y *= p1.z;
 
-            // vec3 p2;// = position2(rp);
-            // vec3 p2 = vec3(0);
-            // p2.z = getDZ2(rp);
-
-            // // p2.x = 0;
-            // p2.x = float(getDX2(rp));
-            // p2.x -= 32768;
-            // p2.x /= 32768;
-            // p2.x *= p2.z;
-            // p2.x /= 0.8;
-            // // p2.y = 0;
-            // p2.y = float(getDY2(rp));
-            // p2.y -= 32768;
-            // p2.y /= 32768;
-            // p2.y *= p2.z;
-
-            // p1 = (inverse(projection) * vec4(p1,1)).xyz;
-            // p2 = (inverse(projection) * vec4(p2,1)).xyz;
             vec3 point1 = normalize(cross(-p1,p2 - p1)) * .5f * scale(rp);
             vec3 point2 = normalize(cross(-p2,p1 - p2)) * -.5f * scale(rp);
             // vec3 point2 = vec3(5);

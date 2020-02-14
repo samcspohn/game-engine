@@ -61,7 +61,7 @@ struct d{
 	uint z;
 	uint protoID_scale;
 
-	uint emitterID;
+	// uint emitterID;
 	uint key_life;
 
 };
@@ -118,12 +118,12 @@ float scale(inout d item){
 void scale(inout d item, float sc){
     item.protoID_scale = (item.protoID_scale & 0xffff0000) | (floatBitsToUint(sc) >> 16);
 }
-void emitterID(inout d item, uint emitter_id){
-    item.emitterID = emitter_id;
-}
-uint emitterID(inout d item){
-    return item.emitterID;
-}
+// void emitterID(inout d item, uint emitter_id){
+//     item.emitterID = emitter_id;
+// }
+// uint emitterID(inout d item){
+//     return item.emitterID;
+// }
 
 uint key(inout d item){
     return item.key_life >> 16;
