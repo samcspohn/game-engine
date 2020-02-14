@@ -361,7 +361,7 @@ void main () {
             d item;
             uint _key =  ~floatBitsToUint(p1.z) << 1;
             key(item, _key >> 16);
-            emitterID(item, p.emitter);
+            // emitterID(item, p.emitter);
             scale(item,p.scale.x);
             life(item, p.life);
             protoID(item, p.emitter_prototype);

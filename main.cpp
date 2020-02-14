@@ -293,7 +293,7 @@ int main(void)
 	// player->addComponent<collider>();
 	player->addComponent<rigidBody>()->bounciness = 0.03f;
 	player->addComponent<player_sc>();
-
+	player->transform->translate(vec3(0,0,-5120));
 	ground = new game_object();
 
 	ground->transform->scale(vec3(10));
