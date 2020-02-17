@@ -3,6 +3,18 @@
 #include <iostream>
 #include <string>
 
+#include <iomanip>
+#include <locale>
+
+template<class T>
+std::string FormatWithCommas(T value)
+{
+    std::stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << std::fixed << value;
+    return ss.str();
+}
+
 using namespace glm;
 atomic<int> numCubes(0);
 game_object *proto = nullptr;
@@ -42,7 +54,7 @@ public:
 		glm::vec3 currVel = rb->getVelocity();
 
 		if (framecount++ > 1)
-			cout << "\rcubes: " << numCubes << " particles: " << atomicCounters->storage->at(particleCounters::liveParticles) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
+			cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles)) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
 		if (Input.getKeyDown(GLFW_KEY_R))
 		{
 			speed *= 2;
@@ -199,21 +211,21 @@ public:
 			transform->gameObject->destroy();
 		}
 	}
-	// void onCollision(game_object *go)
-	// {
-	// 	if( proto == transform->gameObject )
-	// 		return;
+	void onCollision(game_object *go)
+	{
+		if( proto == transform->gameObject )
+			return;
 
-	// 	if (go->getComponent<terrain>() != 0)
-	// 	{
-	// 		auto exp = new game_object(*ExplosionProto);
-	// 		exp->transform->setPosition(transform->getPosition());
-	// 		numCubes.fetch_add(-1);
-	// 		transform->gameObject->destroy();
-	// 		// cout << "hit" << flush;
-	// 		// hit = true;
-	// 	}
-	// }
+		if (go->getComponent<terrain>() != 0)
+		{
+			auto exp = new game_object(*ExplosionProto);
+			exp->transform->setPosition(transform->getPosition());
+			numCubes.fetch_add(-1);
+			transform->gameObject->destroy();
+			// cout << "hit" << flush;
+			// hit = true;
+		}
+	}
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };

@@ -288,6 +288,7 @@ void renderThreadFunc()
 				glFlush();
 
 				gpuDataLock.unlock();
+
 				//////////////////////////////////////////////////////////////////////////////
 				////////////////////////////// Unlock Transform //////////////////////////////
 				//////////////////////////////////////////////////////////////////////////////
@@ -330,7 +331,7 @@ void renderThreadFunc()
 				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view, rj.rot * rj.view);
 				appendStat("particles sort", t.stop());
 
-				renderDone.store(true);
+				// renderDone.store(true);
 
 				glClearColor(0.6f, 0.7f, 1.f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -352,7 +353,7 @@ void renderThreadFunc()
 
 				glDepthMask(GL_TRUE);
 				glfwSwapBuffers(window);
-				// glFlush();
+				glFlush();
 				appendStat("render", stopWatch.stop());
 				//renderDone.store(true);
 			}
@@ -375,10 +376,10 @@ void renderThreadFunc()
 				break;
 			}
 		}
-		else
-		{
-			this_thread::sleep_for(0ns);
-		}
+		// else
+		// {
+			this_thread::sleep_for(1ns);
+		// }
 	}
 }
 
@@ -610,13 +611,16 @@ void run()
 	while (!glfwWindowShouldClose(window))
 	{
 
+		timer gameLoopTotal;
+		timer gameLoopMain;
+		gameLoopTotal.start();
 		while (!eventsPollDone)
 		{
 			this_thread::sleep_for(1ns);
 		}
 		eventsPollDone = false;
 
-		stopWatch.start();
+		gameLoopMain.start();
 
 		// scripting
 		doLoopIteration(gameComponents);
@@ -638,26 +642,28 @@ void run()
 
 		waitForWork();
 
-		stopWatch.start();
 		lockUpdate();
 		cleanup();
+		appendStat("game loop main",gameLoopMain.stop());
 
+		stopWatch.start();
 		gpuDataLock.lock();
 		gameLock.lock();
-		appendStat("wait for render", stopWatch.stop());
+		appendStat("wait for data", stopWatch.stop());
 
+		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
 		GPU_RENDERERS->storage->resize(gpu_renderers.size());
 		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
 			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
 				j->second->_ids->storage->resize(j->second->ids.data.size());
 		
-		appendStat("prepare memory", stopWatch.stop());
 
 		emitterInits.clear();
 		for (auto &i : emitter_inits)
 			emitterInits.push_back(i.second);
 		emitter_inits.clear();
+		appendStat("prepare memory", stopWatch.stop());
 
 		for (int i = 0; i < concurrency::numThreads; ++i)
 			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
@@ -681,10 +687,12 @@ void run()
 		rj.view = glm::translate(-player->transform->getPosition());								// ((_camera*)(cameras->front()))->GetViewMatrix();
 
 		renderDone.store(false);
-
+		stopWatch.start();
 		renderLock.lock();
+		appendStat("wait for render",stopWatch.stop());
 		renderWork.push(rj);
 		renderLock.unlock();
+		appendStat("game loop total",gameLoopTotal.stop());
 		//		appendStat("rendering", stopWatch.stop());
 
 		//        unlockUpdate();
@@ -719,7 +727,7 @@ void run()
 		int count = 0;
 		for (auto &j : allcomponents)
 		{
-			if (j.second->name + "--update" == i->first)
+			if (j.second->name + "--update" == i->first || j.second->name + "--late_update" == i->first)
 				count = j.second->size();
 		}
 		cout << count << " : " << i->first << " : " << i->second.getAverageValue() << endl;
