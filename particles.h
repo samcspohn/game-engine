@@ -57,7 +57,8 @@ struct emitter
     int frame;
 };
 
-struct emitterInit{
+struct emitterInit
+{
     uint transformID;
     uint emitterProtoID;
     int live;
@@ -123,17 +124,19 @@ vector<emitterInit> emitterInits;
 vector<emitterInit> emitterInitsdb;
 // vector<emitterInit> emitter_inits_db;
 
-unordered_map<uint,emitterInit> emitter_inits;
+unordered_map<uint, emitterInit> emitter_inits;
 bool updateEmitters = true;
 
 class particle_emitter : public component
 {
     emitter_prototype_ prototype;
+
 public:
     typename array_heap<emitter>::ref emitter;
     typename array_heap<GLint>::ref emitter_last_particle;
     COPY(particle_emitter);
-    void setPrototype(emitter_prototype_ ep){
+    void setPrototype(emitter_prototype_ ep)
+    {
         prototype = ep;
         emitter->emitter_prototype = ep.getId();
         updateEmitters = true;
@@ -228,16 +231,17 @@ void initParticles()
 }
 
 Shader particleSortProgram("res/shaders/particle_sort.comp");
+Shader particleSortProgram2("res/shaders/particle_sort2.comp");
 Shader particleProgram("res/shaders/particleUpdate.comp");
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
 
     gpu_emitter_prototypes->bufferData();
-    if(updateEmitters){
+    if (updateEmitters)
+    {
         // gpu_emitters->bufferData();
         updateEmitters = false;
     }
-    
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     // run shader update
@@ -276,24 +280,24 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);   
-    
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
     atomicCounters->retrieveData();
 }
 
-
-struct d{
-	uint x;
-	uint y;
-	uint z;
-	uint protoID_scale;
+struct d
+{
+    uint x;
+    uint y;
+    uint z;
+    uint protoID_scale;
 
     // vec2 p;
-	uint emitterID;
-	uint key_life;
-
+    uint emitterID;
+    uint key_life;
 };
-struct renderParticle{
+struct renderParticle
+{
     vec3 pos1;
     uint emitterID;
     vec3 pos2;
@@ -331,7 +335,6 @@ gpu_vector<GLuint> *block_sums = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *scan = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
 // gpu_vector_proxy<renderParticle> *renderParticles = new gpu_vector_proxy<renderParticle>();
-
 
 // Shader renderPrepShader("res/shaders/renderParticle.comp");
 class
@@ -394,32 +397,42 @@ public:
     {
         gpuTimer t1;
         t1.start();
-        particleSortProgram.Use();
 
+        GLuint program;
 
-        GLuint _vp = glGetUniformLocation(particleSortProgram.Program, "vp");
-        GLuint _view = glGetUniformLocation(particleSortProgram.Program, "view");
-        GLuint stage = glGetUniformLocation(particleSortProgram.Program, "stage");
-        GLuint count = glGetUniformLocation(particleSortProgram.Program, "count");
-        GLuint max_particles = glGetUniformLocation(particleSortProgram.Program, "max_particles");
-        GLuint num_elements = glGetUniformLocation(particleSortProgram.Program, "numElements");
-        GLuint breadth = glGetUniformLocation(particleSortProgram.Program, "breadth");
+        bool sort1 = true;
+        if (sort1)
+        {
+            particleSortProgram.Use();
+            program = particleSortProgram.Program;
+        }
+        else
+        {
+            particleSortProgram2.Use();
+            program = particleSortProgram2.Program;
+        }
+
+        GLuint _vp = glGetUniformLocation(program, "vp");
+        GLuint _view = glGetUniformLocation(program, "view");
+        GLuint stage = glGetUniformLocation(program, "stage");
+        GLuint count = glGetUniformLocation(program, "count");
+        GLuint max_particles = glGetUniformLocation(program, "max_particles");
+        GLuint num_elements = glGetUniformLocation(program, "numElements");
+        GLuint breadth = glGetUniformLocation(program, "breadth");
         glUniformMatrix4fv(_vp, 1, GL_FALSE, glm::value_ptr(vp));
-        GLuint nkeys = glGetUniformLocation(particleSortProgram.Program, "nkeys");
-        GLuint _pass = glGetUniformLocation(particleSortProgram.Program, "pass");
-        GLuint wg_size = glGetUniformLocation(particleSortProgram.Program, "wg_size");
-        GLuint _offset = glGetUniformLocation(particleSortProgram.Program, "offset");
+        GLuint nkeys = glGetUniformLocation(program, "nkeys");
+        GLuint _pass = glGetUniformLocation(program, "pass");
+        GLuint wg_size = glGetUniformLocation(program, "wg_size");
+        GLuint _offset = glGetUniformLocation(program, "offset");
         glUniformMatrix4fv(_view, 1, GL_FALSE, glm::value_ptr(view));
-
 
         // glFlush();
         // data1->retrieveData();
 
-
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
-                
+
         GPU_TRANSFORMS->bindData(0);
         input->bindData(1);
         _output->bindData(2);
@@ -432,36 +445,44 @@ public:
         gpu_emitter_prototypes->bindData(9);
         gpu_emitters->bindData(10);
 
-
-
-        glUniform1i(stage, -1);
-        glUniform1ui(wg_size, 128);
-
-        glUniform1ui(count, MAX_PARTICLES);
-        glDispatchCompute(MAX_PARTICLES / 128, 1, 1);
-        glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-
-        atomics->retrieveData();
-        uint numParticles = atomics->storage->at(0);
-        appendStat("make particle list",t1.stop());
-
-        flip = true;
-        glUniform1ui(nkeys, numParticles);
-        glUniform1ui(_offset, 0);
-        int start = 0;
-        input->bindData(1);   // input
-        _output->bindData(2); // output
-        flip = !flip;
-
         glUniform1i(stage, -2);
         glUniform1ui(count, 65536);
         glDispatchCompute(65536 / 128, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-        glUniform1i(stage, 0);
-        glUniform1ui(count, numParticles);
-        glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+        glUniform1i(stage, -1);
+        glUniform1ui(count, MAX_PARTICLES);
+        glDispatchCompute(MAX_PARTICLES / 128, 1, 1);
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+        uint numParticles;
+        if (sort1)
+        {
+            atomics->retrieveData();
+            numParticles = atomics->storage->at(0);
+        }
+        else
+        {
+            numParticles = MAX_PARTICLES;
+        }
+        appendStat("make particle list", t1.stop());
+
+        flip = true;
+        // glUniform1ui(nkeys, numParticles);
+        // glUniform1ui(_offset, 0);
+        int start = 0;
+        input->bindData(1);   // input
+        _output->bindData(2); // output
+        flip = !flip;
+
+        if (sort1)
+        {
+
+            glUniform1i(stage, 0);
+            glUniform1ui(count, numParticles);
+            glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        }
 
         glUniform1i(stage, 1);
         glUniform1ui(count, 256);
@@ -472,6 +493,9 @@ public:
         glUniform1ui(count, 1);
         glDispatchCompute(1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        if(sort1){
+            atomics->retrieveData();
+        }
 
         glUniform1i(stage, 3);
         glUniform1ui(count, 65536);
@@ -483,52 +507,9 @@ public:
         glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
+        numParticles = atomics->storage->at(0);
 
-        // for (int pass = 2, end = 3; pass < end; pass++)
-        // {
-        //     if (flip)
-        //     {
-        //         input->bindData(1);   // input
-        //         _output->bindData(2); // output
-        //     }
-        //     else
-        //     {
-        //         _output->bindData(1); // input
-        //         input->bindData(2);   // output
-        //     }
-        //     flip = !flip;
-        //     glUniform1ui(_pass, pass);
-
-        //     glUniform1i(stage, 0);
-        //     glUniform1ui(count, N_GROUPS * 128);
-        //     glUniform1ui(wg_size, 128);
-        //     glDispatchCompute(N_GROUPS, 1, 1); // count
-        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-
-        //     glUniform1i(stage, 1);
-        //     glUniform1ui(count, BLOCK_SUM_SIZE);
-        //     glDispatchCompute(BLOCK_SUM_SIZE / 128 + 1, 1, 1);
-        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // scan
-        //     // glFlush();
-        //     glUniform1i(stage, 2);
-        //     glUniform1ui(count, 1);
-        //     glDispatchCompute(1, 1, 1);
-        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // block sum
-        //     // glFlush();
-        //     glUniform1i(stage, 3);
-        //     glUniform1ui(count, N_GROUPS * BUCK);
-        //     glDispatchCompute(N_GROUPS * BUCK / 128, 1, 1);
-        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // coalesce
-        //     // glFlush();
-        //     glUniform1i(stage, 4);
-        //     glUniform1ui(count, N_GROUPS * 128);
-        //     glUniform1ui(wg_size, 128);
-        //     glDispatchCompute(N_GROUPS, 1, 1);
-        //     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT); // Reorder
-        //     // glFlush();
-        //     // histo->retrieveData();
-        // }
-        appendStat("sort particle list",t1.stop());
+        appendStat("sort particle list", t1.stop());
         // _output->retrieveData();
         // t1.start();
 
@@ -538,10 +519,10 @@ public:
         // glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
         // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         // appendStat("make render particles",t1.stop());
-        
     }
 
-    void prepRender(){
+    void prepRender()
+    {
         GPU_TRANSFORMS->bindData(0);
         input->bindData(1);
         _output->bindData(2);
@@ -583,7 +564,7 @@ public:
 
         // data1->bindData(6);
         // if (!flip)
-            _output->bindData(6);
+        _output->bindData(6);
         // else
         //     input->bindData(6);
 

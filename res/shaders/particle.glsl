@@ -14,7 +14,7 @@ struct particle{
     int prev;
     float life2;
     vec3 position2;
-    float p1;
+    int visible;
     vec3 velocity2;
     float p2;
     vec4 p3;
