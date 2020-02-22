@@ -2,7 +2,7 @@
 #include "fast_list.h"
 #include <map>
 #include "rendering.h"
-
+#include <fstream>
 using namespace std;
 using namespace glm;
 
@@ -231,7 +231,8 @@ void initParticles()
 }
 
 Shader particleSortProgram("res/shaders/particle_sort.comp");
-Shader particleSortProgram2("res/shaders/particle_sort2.comp");
+// Shader particleSortProgram2("res/shaders/particle_sort2.comp");
+Shader particleSortProgram2("res/shaders/particleUpdate.comp");
 Shader particleProgram("res/shaders/particleUpdate.comp");
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
@@ -266,7 +267,8 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
     glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "max_particles"), max_particles);
-    glUniform3f(glGetUniformLocation(particleProgram.Program, "floatingOrigin"), floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
+    GLuint fo = glGetUniformLocation(particleProgram.Program, "floatingOrigin");
+    glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), emitterInitCount);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 2);
@@ -289,11 +291,12 @@ struct d
 {
     uint x;
     uint y;
-    uint z;
+    float z1;
+    float z2;
     uint protoID_scale;
 
     // vec2 p;
-    uint emitterID;
+    uint rotation;
     uint key_life;
 };
 struct renderParticle
@@ -337,6 +340,8 @@ gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
 // gpu_vector_proxy<renderParticle> *renderParticles = new gpu_vector_proxy<renderParticle>();
 
 // Shader renderPrepShader("res/shaders/renderParticle.comp");
+bool sort1 = true;
+
 class
 {
     GLuint VAO = 0;
@@ -346,8 +351,12 @@ public:
     vector<uint> zeros;
 
     vector<d> res;
+    ofstream output;
+    rolling_buffer time;
     void init()
     {
+        time = rolling_buffer(1000);
+        output = ofstream("particle_perf.txt", ios_base::app);
         cout << endl
              << "1 << 8: " << (1 << 8) << endl;
         if (zeros.size() == 0)
@@ -391,16 +400,17 @@ public:
         histo->bufferData();
         // renderParticles->tryRealloc(MAX_PARTICLES);
     }
-    bool flip = true;
 
-    void sortParticles(mat4 vp, mat4 view)
+    void end(){
+        output << (sort1 ? "sort1: " : "sort2: ") << time.getAverageValue() << endl;
+        output.close();
+    }
+    bool flip = true;
+    void sortParticles(mat4 vp, mat4 view, vec3 camPos)
     {
         gpuTimer t1;
-        t1.start();
-
         GLuint program;
 
-        bool sort1 = true;
         if (sort1)
         {
             particleSortProgram.Use();
@@ -425,10 +435,10 @@ public:
         GLuint wg_size = glGetUniformLocation(program, "wg_size");
         GLuint _offset = glGetUniformLocation(program, "offset");
         glUniformMatrix4fv(_view, 1, GL_FALSE, glm::value_ptr(view));
-
+        glUniform3f(glGetUniformLocation(program, "camPos"), camPos.x, camPos.y, camPos.z);
         // glFlush();
         // data1->retrieveData();
-
+        gpuTimer gt2;
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
@@ -445,6 +455,7 @@ public:
         gpu_emitter_prototypes->bindData(9);
         gpu_emitters->bindData(10);
 
+        gt2.start();
         glUniform1i(stage, -2);
         glUniform1ui(count, 65536);
         glDispatchCompute(65536 / 128, 1, 1); // count
@@ -454,7 +465,8 @@ public:
         glUniform1ui(count, MAX_PARTICLES);
         glDispatchCompute(MAX_PARTICLES / 128, 1, 1);
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-
+        appendStat("sort particle list stage -2,-1", gt2.stop());
+        
         uint numParticles;
         if (sort1)
         {
@@ -465,7 +477,6 @@ public:
         {
             numParticles = MAX_PARTICLES;
         }
-        appendStat("make particle list", t1.stop());
 
         flip = true;
         // glUniform1ui(nkeys, numParticles);
@@ -475,15 +486,19 @@ public:
         _output->bindData(2); // output
         flip = !flip;
 
-        if (sort1)
-        {
+        // if (sort1)
+        // {
+            // gt2.start();
+            // glUniform1i(stage, 0);
+            // glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
+            // glUniform1ui(nkeys, numParticles);
+            // glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
+            // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+            // appendStat("sort particle list stage 0", gt2.stop());
+        // }
 
-            glUniform1i(stage, 0);
-            glUniform1ui(count, numParticles);
-            glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-        }
 
+        gt2.start();
         glUniform1i(stage, 1);
         glUniform1ui(count, 256);
         glDispatchCompute(256 / 128, 1, 1); // count
@@ -493,15 +508,16 @@ public:
         glUniform1ui(count, 1);
         glDispatchCompute(1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-        if(sort1){
+        if(!sort1){
             atomics->retrieveData();
         }
-
         glUniform1i(stage, 3);
         glUniform1ui(count, 65536);
         glDispatchCompute(65536 / 128, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        appendStat("sort particle list stage 1,2,3", gt2.stop());
 
+        gt2.start();
         glUniform1i(stage, 4);
         glUniform1ui(count, numParticles);
         glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
@@ -509,7 +525,11 @@ public:
 
         numParticles = atomics->storage->at(0);
 
-        appendStat("sort particle list", t1.stop());
+        appendStat("sort particle list stage 4", gt2.stop());
+
+        double t = t1.stop();
+        appendStat("sort particle list", t);
+        time.add(t);
         // _output->retrieveData();
         // t1.start();
 

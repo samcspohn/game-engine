@@ -37,7 +37,8 @@ uniform uint breadth;
 
 
 
-shared uint local_histo[BUCK];
+
+// shared uint local_histo[BUCK];
 // shared uint local_scan[BUCK*N_GROUPS];
 
 uniform uint nkeys;
@@ -45,7 +46,7 @@ uniform uint pass;
 uniform uint wg_size;
 uniform uint offset;
 
-
+uniform vec3 camPos;
 
 // void radix2(uint g_id){
 
@@ -249,14 +250,76 @@ uniform uint offset;
 //         data1[i] = data2[i];
 //     }
 // }
+shared uint _keys[4096];
+shared uint buckets[2048]; // 12 bits
+shared uint ids[4096];
+shared uint local_sums[128];
+
+void subSort(uint g_id){
+    
+    // 4096 / 128 = 32
+    uint l_id = gl_LocalInvocationID.x;
+    uint w_id = gl_WorkGroupID.x;
+    uint start = l_id * 32;
+    uint end = start + 32;
+
+    uint buckStart = l_id * 16;
+    uint buckEnd = buckStart + 16;
+
+    uint globalOffset = 4096 * w_id;
+    for(uint i = buckStart; i < buckEnd; ++i){
+        buckets[i] = 0;
+    }
+
+barrier();
+    if(end + globalOffset > nkeys){
+        end = nkeys - globalOffset;
+    }
+    for(uint i = start; i < end; ++i){
+        uint k = key(_output[globalOffset + i]);
+        k >>= 5;
+        _keys[i] = k;
+        ids[i] = globalOffset + i;
+        atomicAdd(buckets[k],1);
+    }
+barrier();
+
+    uint temp = buckets[buckStart];
+    buckets[buckStart] = 0;
+    for(uint i = buckStart + 1; i < buckEnd; i++){
+        uint temp2 = buckets[i];
+        buckets[i] = temp;
+        temp += temp2;
+    }
+    local_sums[l_id] = temp;
+barrier();
+    if(l_id == 0){
+        uint temp = local_sums[0];
+        local_sums[0] = 0;
+        for(uint i = 1; i < 128; i++){
+            uint temp2 = local_sums[i];
+            local_sums[i] = temp;
+            temp += temp2;
+        }
+    }
+barrier();
+    for(uint i = buckStart; i < buckEnd; ++i){
+        // uint group_id = gl_WorkGroupID.x;
+        buckets[i] += local_sums[l_id];
+    }
+barrier();
+
+    for(uint i = start; i < end; ++i){
+        _input[globalOffset + atomicAdd(buckets[_keys[i]],1)] = _output[ids[i]];
+    }
+}
 
 
 void radix(uint g_id){
     uint index;
     // first pass
     if(stage == 0){
-        index = key(_input[g_id]);
-        atomicAdd(histo[index],1);
+        subSort(g_id);
     }
 
     if(stage == 1){
@@ -289,8 +352,10 @@ void radix(uint g_id){
     }
     else if(stage == 4){
         d item = _input[g_id]; 
-        index = key(item);        
+        index = key(item);  
         _output[atomicAdd(histo[index],1)] = item;
+        // uint off = count / 128;
+        // _output[(gl_LocalInvocationID.x * off + gl_WorkGroupID.x) % count] = item;
     }
 
     // // second pass
@@ -330,20 +395,20 @@ void genPosition1(inout d item, vec3 a){
     vec3 newVec = vec3(a.x,a.y,-a.z);
     uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
     // rotateX(newVec,-xAxisAngle);
-    setDX1(item, xAxisAngle);
+    setX(item, xAxisAngle);
     uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
-    setDY1(item, yAxisAngle);
-    setDZ1(item, -length(a));
+    setY(item, yAxisAngle);
+    setZ(item, -length(a));
 }
-void genPosition2(inout d item, vec3 a){
-    vec3 newVec = vec3(a.x,a.y,-a.z);
-    uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
-    // rotateX(newVec,-xAxisAngle);
-    setDX2(item, xAxisAngle);
-    uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
-    setDY2(item, yAxisAngle);
-    setDZ2(item, -length(a));
-}
+// void genPosition2(inout d item, vec3 a){
+//     vec3 newVec = vec3(a.x,a.y,-a.z);
+//     uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
+//     // rotateX(newVec,-xAxisAngle);
+//     setDX2(item, xAxisAngle);
+//     uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
+//     setDY2(item, yAxisAngle);
+//     setDZ2(item, -length(a));
+// }
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
@@ -359,27 +424,35 @@ void main () {
         if(p.live == 1 && p1.z > 0 && abs(p1.x / p1.z) < 1.1 && abs(p1.y / p1.z) < 1.1){
             index = atomicAdd(atomics[0],1);
             d item;
-            uint _key =  ~floatBitsToUint(p1.z) << 1;
-            key(item, _key >> 16);
+            uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
+            key(item, _key);
             // emitterID(item, p.emitter);
-            scale(item,p.scale.x);
             life(item, p.life);
             protoID(item, p.emitter_prototype);
             vec3 p11;
             vec3 p21;
+            vec4 rot;
+            vec2 _scale;
+            rot = p.rotation;
             if(prototypes[p.emitter_prototype].trail == 1){
-                p11 = (view * vec4(p.position,1)).xyz;
-                p21 = (view * vec4(p.position2,1)).xyz;
+                p11 = p.position;
+                p21 = p.position2;
+                p11 = p11 + (p21 - p11) / 2;
+                _scale = vec2(p.scale.x, length(p.position - p.position2));
             }else{
-                vec3 point = (rotate(identity(),p.rotation) * vec4(0,1,0,1)).xyz * p.scale.x * 0.5f;
-                p11 = (view * vec4(p.position - point,1)).xyz;
-                p21 = (view * vec4(p.position + point,1)).xyz;
+                _scale = p.scale.xy;
+                p11 = p.position;
             }
+            p11 -= camPos;
+            setScale(item,_scale);
             genPosition1(item, p11);
-            genPosition2(item, p21);
+            setRotation(item, rot);
+            // genPosition2(item, p21);
 
             // item.id = gid;
+            atomicAdd(histo[_key],1);
             _input[index] = item;
+            // _output[index] = item;
             // _input[index].id = gid;
         }
     }

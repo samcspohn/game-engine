@@ -26,7 +26,7 @@ class player_sc : public component
 	bool cursorReleased = false;
 	float speed = 10.f;
 	rigidBody *rb;
-	bool flying = false;
+	bool flying = true;
 	bool jumped = false; // do not fly and jump in same frame
 	bool colliding = false;
 	int framecount = 0;
@@ -211,21 +211,21 @@ public:
 			transform->gameObject->destroy();
 		}
 	}
-	void onCollision(game_object *go)
-	{
-		if( proto == transform->gameObject )
-			return;
+	// void onCollision(game_object *go)
+	// {
+	// 	if( proto == transform->gameObject )
+	// 		return;
 
-		if (go->getComponent<terrain>() != 0)
-		{
-			auto exp = new game_object(*ExplosionProto);
-			exp->transform->setPosition(transform->getPosition());
-			numCubes.fetch_add(-1);
-			transform->gameObject->destroy();
-			// cout << "hit" << flush;
-			// hit = true;
-		}
-	}
+	// 	if (go->getComponent<terrain>() != 0)
+	// 	{
+	// 		auto exp = new game_object(*ExplosionProto);
+	// 		exp->transform->setPosition(transform->getPosition());
+	// 		numCubes.fetch_add(-1);
+	// 		transform->gameObject->destroy();
+	// 		// cout << "hit" << flush;
+	// 		// hit = true;
+	// 	}
+	// }
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };
@@ -289,8 +289,12 @@ public:
 	UPDATE(moreCUBES, update);
 	COPY(moreCUBES);
 };
-int main(void)
+int main(int argc, char** argv)
 {
+	if(argc > 1)
+		sort1 = stoi(argv[1]);
+	if(argc > 2)
+		maxGameDuration = (float)stoi(argv[2]);
 	// hideMouse = false;
 	init();
 	_shader particleShader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
@@ -303,7 +307,7 @@ int main(void)
 	player = new game_object();
 	player->addComponent<moreCUBES>();
 	// player->addComponent<collider>();
-	player->addComponent<rigidBody>()->bounciness = 0.03f;
+	player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
 	player->transform->translate(vec3(0,0,-5120));
 	ground = new game_object();
@@ -427,7 +431,7 @@ int main(void)
 	proto2->getComponent<particle_emitter>()->setPrototype(ep2);
 	proto2->transform->setScale(glm::vec3(10.f));
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
-	for (int i = 0; i < 15; ++i)
+	for (int i = 0; i < 5; ++i)
 	{
 		proto2 = new game_object(*proto2);
 		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));

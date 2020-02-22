@@ -57,6 +57,26 @@ ret.z = (m10 - m01) * w4_recip;
 return ret;
 }
 
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
+vec3 rotate(vec3 axis, float angle, vec3 vec){
+	if(angle == 0){
+		return vec;
+	}
+	return (rotationMatrix(axis, angle) * vec4(vec,1)).xyz;
+}
+
 const uint RIGHT = 0x0000ffff;
 const uint LEFT = 0xffff0000;
     uint getLeft(uint field) {
@@ -78,5 +98,3 @@ const uint LEFT = 0xffff0000;
 	uint getLowBits(inout uint o){
 		return getRight(o);
 	}
-
-

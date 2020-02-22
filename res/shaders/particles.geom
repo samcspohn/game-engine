@@ -35,7 +35,7 @@ layout (triangle_strip, max_vertices=4) out;
 in uint index_[];
 
 
-void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp){
+void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
         gl_Position = mvp * vec4(point,1);
         logz = 1.0 + gl_Position.w;
         gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
@@ -43,7 +43,7 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp){
         FragPos = vec3(model * vec4(point,1.0f));
         // protoID(rp);
         col = prototypes[protoID(rp)].color;
-        col.a *= life(rp);
+        col.a *= _life;
         // logz = log2(logz) * 0.5 * FC;
         EmitVertex();
 
@@ -68,43 +68,74 @@ void rotateY(inout vec3 vec, float angle){
 float getAngle(uint a){
     return float(a) / 65536 * 6.28318530718;
 }
-vec3 getPoint1(inout d item){
-    float anglex = getAngle(getDX1(item));
-    float angley = getAngle(getDY1(item));
-    vec3 p = vec3(0,0, getDZ1(item));
+vec3 getPosition(inout d item){
+    float anglex = getAngle(getX(item));
+    float angley = getAngle(getY(item));
+    vec3 p = vec3(0,0, getZ(item));
     rotateX(p,-anglex);
     rotateY(p,angley);
     // p.z = getDZ1(item);
     return p;
 }
-vec3 getPoint2(inout d item){
-    float anglex = getAngle(getDX2(item));
-    float angley = getAngle(getDY2(item));
-    vec3 p = vec3(0,0, getDZ2(item));
-    rotateX(p,-anglex);
-    rotateY(p,angley);
-    // p.z = getDZ2(item);
-    return p;
-}
+// vec3 getPoint2(inout d item){
+//     float anglex = getAngle(getDX2(item));
+//     float angley = getAngle(getDY2(item));
+//     vec3 p = vec3(0,0, getDZ2(item));
+//     rotateX(p,-anglex);
+//     rotateY(p,angley);
+//     // p.z = getDZ2(item);
+//     return p;
+// }
 void main(){
     // uint index = data[index_[0]].id;
     uint index = index_[0];
 
-            mat4 vp = projection;// * vRot * view;
             d rp = data[index];
 
-            vec3 p1 = getPoint1(rp);
-            vec3 p2 = getPoint2(rp);
+            vec3 position = getPosition(rp) + cameraPos;
+            vec2 s = getScale(rp);
+            vec3 _scale = vec3(s.x,s.y,1);
+            vec4 rotation = getRotation(rp);
+            // float _life = life(rp);
+            mat4 rot = rotate(identity(),rotation);
+            mat4 model = translate(identity(),position) * rot * scale(identity(),_scale);
+            mat4 mvp = projection * vRot * view * model;
 
-            vec3 point1 = normalize(cross(-p1,p2 - p1)) * .5f * scale(rp);
-            vec3 point2 = normalize(cross(-p2,p1 - p2)) * -.5f * scale(rp);
-            // vec3 point2 = vec3(5);
-            // vec3 point1 = vec3(5);
-            createVert(p1 + point1,vp,identity(),rp);
+            uint proto_id = protoID(rp);
+            float life1 = life(rp);
+            float life2 = life1;
+            if(prototypes[proto_id].trail == 1)
+                life2 = life1 - 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
+
+            createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1);
             // offset = gl_Position.xy;
-            createVert(p1 - point1,vp,identity(),rp);
-            createVert(p2 + point2,vp,identity(),rp);
-            createVert(p2 - point2,vp,identity(),rp);
+            createVert(vec3(.5f,.5f,0),mvp,model,rp, life1);
+            createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2);
+            createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2);
+
+
+            // mat4 vp = projection;// * vRot * view;
+            // d rp = data[index];
+
+            // vec3 p1 = getPoint1(rp);
+            // vec3 p2 = getPoint2(rp);
+
+            // vec3 point1 = normalize(cross(-p1,p2 - p1)) * .5f * scale(rp);
+            
+            // vec3 point2 = normalize(cross(-p2,p1 - p2)) * -.5f * scale(rp);
+            
+            // // vec3 point2 = vec3(5);
+            // // vec3 point1 = vec3(5);
+            // uint proto_id = protoID(rp);
+            // float life1 = life(rp);
+            // float life2 = life1;
+            // if(prototypes[proto_id].trail == 1)
+            //     life2 = life1 - 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
+            // createVert(p1 + point1,vp,identity(),rp, life2);
+            // // offset = gl_Position.xy;
+            // createVert(p1 - point1,vp,identity(),rp, life2);
+            // createVert(p2 + point2,vp,identity(),rp, life1);
+            // createVert(p2 - point2,vp,identity(),rp, life1);
         // }
         EndPrimitive();
     // }
