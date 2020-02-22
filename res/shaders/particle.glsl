@@ -56,75 +56,67 @@ struct emitterInit{
 
 
 struct d{
-	uint x;
-	uint y;
-	uint z;
-	uint protoID_scale;
-
-	// uint emitterID;
+	uint xy;
+    float z;
+	uint qxy;
+    uint qzw;
+    
+	uint scale_xy;
+	uint protoID;
 	uint key_life;
-
 };
 
 
-uint getDX1(inout d item){
-    return getHighBits(item.x);
+uint getX(inout d item){
+    return getHighBits(item.xy);
 }
-void setDX1(inout d item, uint x1){
-    setHighBits(item.x, x1);
-}
-uint getDY1(inout d item){ // 0xffff0000
-    return getHighBits(item.y);
-}
-void setDY1(inout d item, uint y1){
-    setHighBits(item.y, y1);
-}
-void setDZ1(inout d item, float z){
-    item.z = (item.z & 0x0000ffff) | (floatBitsToUint(z) & 0xffff0000);
-}
-float getDZ1(inout d item){
-    return uintBitsToFloat(item.z & 0xffff0000);
+void setX(inout d item, uint x1){
+    setHighBits(item.xy, x1);
 }
 
-////////////////////////////////////////////////////
-uint getDX2(inout d item){ // 0x0000ffff
-    return getLowBits(item.x);
+uint getY(inout d item){ // 0x0000ffff
+    return getLowBits(item.xy);
 }
-void setDX2(inout d item, uint x2){
-    setLowBits(item.x, x2);
+void setY(inout d item, uint y2){
+    setLowBits(item.xy,y2);
 }
-uint getDY2(inout d item){ // 0x0000ffff
-    return getLowBits(item.y);
+
+void setZ(inout d item, float z){
+    item.z = z;
+    // item.z1 = (item.z & 0x0000ffff) | (floatBitsToUint(z) & 0xffff0000);
 }
-void setDY2(inout d item, uint y2){
-    setLowBits(item.y,y2);
+float getZ(inout d item){
+    return item.z;
+    // return uintBitsToFloat(item.z & 0xffff0000);
 }
-void setDZ2(inout d item, float z){
-    item.z = (item.z & 0xffff0000) | (floatBitsToUint(z) >> 16);
+void setScale(inout d item, vec2 scale){
+    item.scale_xy = (floatBitsToUint(scale.x) & LEFT) | (floatBitsToUint(scale.y) >> 16);
 }
-float getDZ2(inout d item){
-    return uintBitsToFloat((item.z & 0x0000ffff) << 16);
+vec2 getScale(inout d item){
+    return vec2(uintBitsToFloat(item.scale_xy & LEFT), uintBitsToFloat(getLowBits(item.scale_xy) << 16));
+}
+
+void setRotation(inout d item, vec4 quat){
+    quat = normalize(quat);
+    setHighBits(item.qxy,uint(quat.x * 32768 + 32768));
+    setLowBits(item.qxy,uint(quat.y * 32768 + 32768));
+    setHighBits(item.qzw,uint(quat.z * 32768 + 32768));
+    setLowBits(item.qzw,uint(quat.w * 32768 + 32768));
+}
+
+vec4 getRotation(inout d item){
+    return vec4((float(getHighBits(item.qxy)) - 32768) / 32768,
+                (float(getLowBits(item.qxy)) - 32768) / 32768,
+                (float(getHighBits(item.qzw)) - 32768) / 32768,
+                (float(getLowBits(item.qzw)) - 32768) / 32768);
 }
 
 uint protoID(inout d item){
-    return item.protoID_scale >> 16;
+    return item.protoID >> 16;
 }
 void protoID(inout d item, uint id){
-    item.protoID_scale = (item.protoID_scale & 0x0000ffff) | (id << 16);
+    item.protoID = (item.protoID & 0x0000ffff) | (id << 16);
 }
-float scale(inout d item){
-    return uintBitsToFloat((item.protoID_scale & 0x0000ffff) << 16);
-}
-void scale(inout d item, float sc){
-    item.protoID_scale = (item.protoID_scale & 0xffff0000) | (floatBitsToUint(sc) >> 16);
-}
-// void emitterID(inout d item, uint emitter_id){
-//     item.emitterID = emitter_id;
-// }
-// uint emitterID(inout d item){
-//     return item.emitterID;
-// }
-
 uint key(inout d item){
     return item.key_life >> 16;
 }

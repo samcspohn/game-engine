@@ -328,7 +328,7 @@ void renderThreadFunc()
 
 				timer t;
 				t.start();
-				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view, rj.rot * rj.view);
+				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view, rj.rot * rj.view, mainCamPos);
 				appendStat("particles sort", t.stop());
 
 				// renderDone.store(true);
@@ -360,7 +360,7 @@ void renderThreadFunc()
 				renderLock.unlock();
 				break;
 			case rquit:
-
+				particle_renderer.end();
 				while (gpu_buffers.size() > 0)
 				{
 					(gpu_buffers.begin()->second)->deleteBuffer();
@@ -577,6 +577,8 @@ void waitForWork(){
 			this_thread::sleep_for(1ns);
 		}
 }
+
+float maxGameDuration = INFINITY;
 void run()
 {
 	timer stopWatch;
@@ -608,7 +610,7 @@ void run()
 	octree2->id = 0;
 	numNodes = 1;
 
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
 
 		timer gameLoopTotal;

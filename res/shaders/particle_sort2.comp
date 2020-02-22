@@ -332,10 +332,17 @@ void radix(uint g_id){
             if(prototypes[p.emitter_prototype].trail == 1){
                 p11 = (view * vec4(p.position,1)).xyz;
                 p21 = (view * vec4(p.position2,1)).xyz;
+                item.rotation = 0;
             }else{
                 vec3 point = (rotate(identity(),p.rotation) * vec4(0,1,0,1)).xyz * p.scale.x * 0.5f;
                 p11 = (view * vec4(p.position - point,1)).xyz;
                 p21 = (view * vec4(p.position + point,1)).xyz;
+
+                mat4 model = translate(identity(),p.position) * scale(identity(),p.scale) * rotate(identity(),p.rotation);
+                // vec3 withRot = normalize(cross(model * vec3, p11 - p21));
+                vec3 std = normalize(cross(-p11, p11 - p21));
+                item.rotation = getAngle(std, (rotate(identity(),p.rotation) * vec4(1,0,0,1)).xyz,vec2(0,0));
+
             }
             genPosition1(item, p11);
             genPosition2(item, p21);
