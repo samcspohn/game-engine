@@ -289,13 +289,13 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
 struct d
 {
-    vec4 rot;
+    // vec4 rot;
 	uint xy;
     float z;
 	// uint qwx;
     // uint qyz;
-    // uint qxy;
-    // uint qzw;
+    uint qxy;
+    uint qzw;
 	uint scale_xy;
 	uint protoID;
 	uint key_life;
