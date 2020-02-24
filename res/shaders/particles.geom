@@ -94,8 +94,9 @@ void main(){
 
             vec3 position = getPosition(rp) + cameraPos;
             vec2 s = getScale(rp);
-            vec3 _scale = vec3(s.x,s.y,1);
+            vec3 _scale = vec3(s.x,s.y,0);
             vec4 rotation = getRotation(rp);
+            // _scale = (rotate(identity(),rotation) * vec4(_scale,1)).xyz;
             // float _life = life(rp);
             mat4 rot = rotate(identity(),rotation);
             mat4 model = translate(identity(),position) * rot * scale(identity(),_scale);

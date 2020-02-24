@@ -59,6 +59,7 @@ void update(uint id, float dt){
         if(proto.billboard == 1)
             p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
         if(proto.trail == 1){
+            // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
             vec3 y = p.position2 - p.position;
             vec3 x = cross(y, p.position2 - cameraPosition);
             vec3 l = cross(x,y);

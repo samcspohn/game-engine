@@ -306,8 +306,9 @@ int main(int argc, char** argv)
 
 	player = new game_object();
 	player->addComponent<moreCUBES>();
-	// player->addComponent<collider>();
-	player->addComponent<rigidBody>()->gravity = false;
+	player->addComponent<collider>();
+	player->addComponent<rigidBody>()->bounciness = 0.3;
+	// player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
 	player->transform->translate(vec3(0,0,-5120));
 	ground = new game_object();
@@ -431,7 +432,7 @@ int main(int argc, char** argv)
 	proto2->getComponent<particle_emitter>()->setPrototype(ep2);
 	proto2->transform->setScale(glm::vec3(10.f));
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
-	for (int i = 0; i < 5; ++i)
+	for (int i = 0; i < 20; ++i)
 	{
 		proto2 = new game_object(*proto2);
 		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));

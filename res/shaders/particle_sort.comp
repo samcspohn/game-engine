@@ -451,8 +451,8 @@ void main () {
 
             // item.id = gid;
             atomicAdd(histo[_key],1);
-            _input[index] = item;
-            // _output[index] = item;
+            // _input[index] = item;
+            _output[index] = item;
             // _input[index].id = gid;
         }
     }

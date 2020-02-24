@@ -289,15 +289,16 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
 struct d
 {
-    uint x;
-    uint y;
-    float z1;
-    float z2;
-    uint protoID_scale;
-
-    // vec2 p;
-    uint rotation;
-    uint key_life;
+    vec4 rot;
+	uint xy;
+    float z;
+	// uint qwx;
+    // uint qyz;
+    // uint qxy;
+    // uint qzw;
+	uint scale_xy;
+	uint protoID;
+	uint key_life;
 };
 struct renderParticle
 {
@@ -488,13 +489,13 @@ public:
 
         // if (sort1)
         // {
-            // gt2.start();
-            // glUniform1i(stage, 0);
-            // glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
-            // glUniform1ui(nkeys, numParticles);
-            // glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
-            // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-            // appendStat("sort particle list stage 0", gt2.stop());
+            gt2.start();
+            glUniform1i(stage, 0);
+            glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
+            glUniform1ui(nkeys, numParticles);
+            glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
+            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+            appendStat("sort particle list stage 0", gt2.stop());
         // }
 
 

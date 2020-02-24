@@ -56,11 +56,13 @@ struct emitterInit{
 
 
 struct d{
+    vec4 rot;
 	uint xy;
     float z;
-	uint qxy;
-    uint qzw;
-    
+	// uint qwx;
+    // uint qyz;
+    // uint qxy;
+    // uint qzw;
 	uint scale_xy;
 	uint protoID;
 	uint key_life;
@@ -98,17 +100,29 @@ vec2 getScale(inout d item){
 
 void setRotation(inout d item, vec4 quat){
     quat = normalize(quat);
-    setHighBits(item.qxy,uint(quat.x * 32768 + 32768));
-    setLowBits(item.qxy,uint(quat.y * 32768 + 32768));
-    setHighBits(item.qzw,uint(quat.z * 32768 + 32768));
-    setLowBits(item.qzw,uint(quat.w * 32768 + 32768));
+    // setHighBits(item.qwx,uint(quat.w * 32768 + 32768));
+    // setLowBits(item.qwx,uint(quat.x * 32768 + 32768));
+    // setHighBits(item.qyz,uint(quat.y * 32768 + 32768));
+    // setLowBits(item.qyz,uint(quat.z * 32768 + 32768));
+
+
+    // setHighBits(item.qxy,uint(quat.x * 32768 + 32768));
+    // setLowBits(item.qxy,uint(quat.y * 32768 + 32768));
+    // setHighBits(item.qzw,uint(quat.z * 32768 + 32768));
+    // setLowBits(item.qzw,uint(quat.w * 32768 + 32768));
+    item.rot = quat;
 }
 
 vec4 getRotation(inout d item){
-    return vec4((float(getHighBits(item.qxy)) - 32768) / 32768,
-                (float(getLowBits(item.qxy)) - 32768) / 32768,
-                (float(getHighBits(item.qzw)) - 32768) / 32768,
-                (float(getLowBits(item.qzw)) - 32768) / 32768);
+    return item.rot;
+    // return normalize(vec4((float(getHighBits(item.qxy)) - 32768) / 32768,
+    //             (float(getLowBits(item.qxy)) - 32768) / 32768,
+    //             (float(getHighBits(item.qzw)) - 32768) / 32768,
+    //             (float(getLowBits(item.qzw)) - 32768) / 32768));
+    // return normalize(vec4((float(getHighBits(item.qwx)) - 32768) / 32768,
+    //         (float(getLowBits(item.qwx)) - 32768) / 32768,
+    //         (float(getHighBits(item.qyz)) - 32768) / 32768,
+    //         (float(getLowBits(item.qyz)) - 32768) / 32768));
 }
 
 uint protoID(inout d item){
