@@ -64,7 +64,7 @@ void main () {
 			//	uint renderid = renderers[gid].renderer;
 			uint buffsid = renderers[gid].id;
 
-			matrixes[buffsid].model = translate(identity(),transform.position) * scale(identity(),transform.scale) * rotate(identity(),transform.rotation);
+			matrixes[buffsid].model = translate(identity(),transform.position) * rotate(identity(),transform.rotation) * scale(identity(),transform.scale);
 			matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
 
 			matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(identity(),transform.rotation)))));
