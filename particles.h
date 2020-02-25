@@ -358,8 +358,7 @@ public:
     {
         time = rolling_buffer(1000);
         output = ofstream("particle_perf.txt", ios_base::app);
-        cout << endl
-             << "1 << 8: " << (1 << 8) << endl;
+
         if (zeros.size() == 0)
         {
             zeros = vector<uint>(BUCKETS);
