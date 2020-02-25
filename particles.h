@@ -338,6 +338,7 @@ gpu_vector<d> *_output = new gpu_vector<d>();
 gpu_vector<GLuint> *block_sums = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *scan = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
+gpu_vector_proxy<uint> *keys = new gpu_vector_proxy<uint>();
 // gpu_vector_proxy<renderParticle> *renderParticles = new gpu_vector_proxy<renderParticle>();
 
 // Shader renderPrepShader("res/shaders/renderParticle.comp");
@@ -399,6 +400,7 @@ public:
         block_sums->bufferData();
         scan->bufferData();
         histo->bufferData();
+        keys->tryRealloc(MAX_PARTICLES);
         // renderParticles->tryRealloc(MAX_PARTICLES);
     }
 
@@ -455,6 +457,7 @@ public:
         // renderParticles->bindData(8);
         gpu_emitter_prototypes->bindData(9);
         gpu_emitters->bindData(10);
+        keys->bindData(11);
 
         gt2.start();
         glUniform1i(stage, -2);
@@ -489,13 +492,13 @@ public:
 
         // if (sort1)
         // {
-            gt2.start();
-            glUniform1i(stage, 0);
-            glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
-            glUniform1ui(nkeys, numParticles);
-            glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
-            glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-            appendStat("sort particle list stage 0", gt2.stop());
+            // gt2.start();
+            // glUniform1i(stage, 0);
+            // glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
+            // glUniform1ui(nkeys, numParticles);
+            // glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
+            // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+            // appendStat("sort particle list stage 0", gt2.stop());
         // }
 
 
@@ -519,14 +522,23 @@ public:
         appendStat("sort particle list stage 1,2,3", gt2.stop());
 
         gt2.start();
-        glUniform1i(stage, 4);
-        glUniform1ui(count, numParticles);
-        glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+        glUniform1i(stage, 0);
+        glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
+        glUniform1ui(nkeys, numParticles);
+        glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        appendStat("sort particle list stage 0", gt2.stop());
+
+
+        // gt2.start();
+        // glUniform1i(stage, 4);
+        // glUniform1ui(count, numParticles);
+        // glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
+        // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+        // appendStat("sort particle list stage 4", gt2.stop());
+
 
         numParticles = atomics->storage->at(0);
-
-        appendStat("sort particle list stage 4", gt2.stop());
 
         double t = t1.stop();
         appendStat("sort particle list", t);
