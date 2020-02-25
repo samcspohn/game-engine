@@ -1,9 +1,8 @@
 #pragma once
 #include <vector>
 #include <set>
-#include <vector>
 #include <array>
-#include <vector>
+
 using namespace std;
 
 //#define ARRAY_HEAP_POINTERS
@@ -63,17 +62,17 @@ public:
 		if (r.a != this)
 			throw;
 		m.lock();
-		avail.emplace(r.index);
+		avail.push_front(r.index);
 		valid[r.index] = false;
 		//(*data)[r.index] = t();
-		if (r.index == extent - 1) {
-			for (; extent > 0 && !valid[extent - 1]; --extent) {
-				avail.erase(extent - 1);
-			}
-			//++extant;
-			data.resize(extent);
-			valid.resize(extent);
-		}
+		// if (r.index == extent - 1) {
+		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {
+		// 		avail.erase(extent - 1);
+		// 	}
+		// 	//++extant;
+		// 	data.resize(extent);
+		// 	valid.resize(extent);
+		// }
 		m.unlock();
 	}
 
@@ -89,7 +88,7 @@ public:
 	vector<t> data = vector<t>();
 	std::vector<bool> valid = std::vector<bool>();
 private:
-	set<uint32_t> avail = set<uint32_t> ();
+	deque<uint32_t> avail = deque<uint32_t> ();
 	uint32_t extent = 0;
 };
 
@@ -146,17 +145,17 @@ public:
 	void _delete(ref r) {
 		if (r.a != this)
 			throw;
-		avail.emplace(r.index);
+		avail.push_front(r.index);
 		valid[r.index] = false;
 		//(*data)[r.index] = t();
-		if (r.index == extent - 1) {
-			for (; extent > 0 && !valid[extent - 1]; --extent) {
-				avail.erase(extent - 1);
-			}
-			//++extant;
-			data.resize(extent);
-			valid.resize(extent);
-		}
+		// if (r.index == extent - 1) {
+		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {
+		// 		avail.erase(extent - 1);
+		// 	}
+		// 	//++extant;
+		// 	data.resize(extent);
+		// 	valid.resize(extent);
+		// }
 	}
 
 	float density() {
@@ -171,7 +170,7 @@ public:
 	deque<t> data = deque<t>();
 	std::deque<bool> valid = std::deque<bool>();
 private:
-	set<uint32_t> avail = set<uint32_t> ();
+	deque<uint32_t> avail = deque<uint32_t> ();
 	uint32_t extent = 0;
 };
 

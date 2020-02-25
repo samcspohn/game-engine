@@ -120,3 +120,8 @@ sort1: 8.02569
 sort1: 7.88371
 sort1: -nan
 sort1: 11.098
+sort1: -nan
+sort1: 7.37724
+sort1: 8.91836
+sort1: 5.80977
+sort1: 6.58715
