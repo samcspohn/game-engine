@@ -38,3 +38,5 @@ sort1: -nan
 sort1: 36.3374
 sort1: -nan
 sort1: 36.3584
+sort1: 28.0607
+sort1: 36.4865
