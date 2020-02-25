@@ -294,8 +294,8 @@ barrier();
     local_sums[l_id] = temp;
 barrier();
     if(l_id == 0){
-        uint temp = local_sums[0];
-        local_sums[0] = 0;
+        uint temp = globalOffset +  local_sums[0];
+        local_sums[0] = globalOffset;
         for(uint i = 1; i < 128; i++){
             uint temp2 = local_sums[i];
             local_sums[i] = temp;
@@ -310,7 +310,7 @@ barrier();
 barrier();
 
     for(uint i = start; i < end; ++i){
-        _input[globalOffset + atomicAdd(buckets[_keys[i]],1)] = _output[ids[i]];
+        _input[atomicAdd(buckets[_keys[i]],1)] = _output[ids[i]];
     }
 }
 
