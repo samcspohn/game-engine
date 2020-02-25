@@ -1,9 +1,8 @@
 #pragma once
 #include <vector>
 #include <set>
-#include <vector>
 #include <array>
-#include <vector>
+
 using namespace std;
 
 //#define ARRAY_HEAP_POINTERS
