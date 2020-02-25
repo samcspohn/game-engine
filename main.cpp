@@ -211,21 +211,21 @@ public:
 			transform->gameObject->destroy();
 		}
 	}
-	// void onCollision(game_object *go)
-	// {
-	// 	if( proto == transform->gameObject )
-	// 		return;
+	void onCollision(game_object *go)
+	{
+		if( proto == transform->gameObject )
+			return;
 
-	// 	if (go->getComponent<terrain>() != 0)
-	// 	{
-	// 		auto exp = new game_object(*ExplosionProto);
-	// 		exp->transform->setPosition(transform->getPosition());
-	// 		numCubes.fetch_add(-1);
-	// 		transform->gameObject->destroy();
-	// 		// cout << "hit" << flush;
-	// 		// hit = true;
-	// 	}
-	// }
+		if (go->getComponent<terrain>() != 0)
+		{
+			auto exp = new game_object(*ExplosionProto);
+			exp->transform->setPosition(transform->getPosition());
+			numCubes.fetch_add(-1);
+			transform->gameObject->destroy();
+			// cout << "hit" << flush;
+			// hit = true;
+		}
+	}
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };
