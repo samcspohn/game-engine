@@ -67,7 +67,7 @@ public:
 	bool inited = false;
 	_frustum f;
 	map<string, map<string, gpu_vector<GLuint>* >> shader_model_culled; // for transforms
-	map<string, map<string, gpu_vector<matrix> *>> mats;		  // for rendering
+	map<string, map<string, gpu_vector_proxy<matrix> *>> mats;		  // for rendering
 
 	glm::mat4 view;
 	glm::mat4 rot;
@@ -119,13 +119,13 @@ public:
 			{
 				shader_model_culled[i.first][j.first]->bindData(4);
 				uint size = shader_model_culled[i.first][j.first]->size();
-				j.second->bufferData();
-				// j.second->tryRealloc(size);
+				// j.second->bufferData();
+				j.second->tryRealloc(size);
 				j.second->bindData(3); // bind to something -> mats is matCompute output buffer
 				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), size);
 				glDispatchCompute(size / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				j.second->retrieveData();
+				// j.second->retrieveData();
 				// cout << "f";
 			}
 		}
@@ -229,8 +229,8 @@ class cullObjects : public component
 					{
 						if(d->shader_model_culled[i.first].find(j.first) == d->shader_model_culled[i.first].end()){
 							d->shader_model_culled[i.first][j.first] = new gpu_vector<GLuint>();
-							d->mats[i.first][j.first] = new gpu_vector<matrix>();
-							d->mats[i.first][j.first]->ownStorage();
+							d->mats[i.first][j.first] = new gpu_vector_proxy<matrix>();
+							// d->mats[i.first][j.first]->ownStorage();
 						}
 						auto &s = d->shader_model_culled[i.first][j.first];
 						s->ownStorage();
@@ -247,7 +247,7 @@ class cullObjects : public component
 						{
 							vec->push_back(k);
 						}
-						d->mats[i.first][j.first]->storage->resize(vec->size());
+						std::sort(vec->begin(),vec->end());
 					}
 				}
 			}
