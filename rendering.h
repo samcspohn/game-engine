@@ -144,7 +144,9 @@ int renderingId = 0;
 struct renderingMeta {
 	GLuint id = -1;
 	gpu_vector<GLuint>* _ids;
+	
 	fast_list<GLuint> ids = fast_list<GLuint>();
+	fast_list<GLuint> transformIds = fast_list<GLuint>();
 	_shader s;
 	_model m;
 	renderingMeta() {
@@ -166,6 +168,7 @@ struct renderingMeta {
 		m = other.m;
 		//ids = fast_list<GLuint>(other.ids);
 		_ids = new gpu_vector<GLuint>();
+		;
 		_ids->storage = &ids.data;
 	}
 	~renderingMeta() {
@@ -189,7 +192,7 @@ class _renderer : public component {
 	fast_list<GLuint>::iterator idLoc;
 	renderingMeta* meta = 0;
 	fast_list<__renderer>::iterator _Rloc;
-
+	fast_list<GLuint>::iterator transformIdRef;
 
 
 public:
@@ -230,6 +233,7 @@ public:
 		idLoc = r->second[m.m->name]->ids.push_back(matrixLoc);
 		meta = (r->second[m.m->name]);
 		_Rloc = gpu_renderers.push_back(__renderer(transform->_T, matrixLoc));
+		transformIdRef = meta->transformIds.push_back(transform->_T);
 		rendererLock.unlock();
 
 	}
@@ -245,6 +249,7 @@ public:
 			meta->ids.erase(idLoc);
 			GPU_MATRIXES_IDS._delete(matrixLoc);
 			gpu_renderers.erase(_Rloc);
+			meta->transformIds.erase(transformIdRef);
 			rendererLock.unlock();
 		}
 	}
@@ -257,3 +262,7 @@ public:
 	COPY(_renderer);
 };
 
+class camera : public component
+{
+	
+};

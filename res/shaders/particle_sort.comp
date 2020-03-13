@@ -47,6 +47,8 @@ uniform uint wg_size;
 uniform uint offset;
 
 uniform vec3 camPos;
+uniform vec3 cameraForward;
+uniform vec3 cameraUp;
 
 // void radix2(uint g_id){
 
@@ -419,6 +421,7 @@ void main () {
         histo[gid] = 0;
     if(stage == -1){
         particle p = particles[gid];
+        emitter_prototype proto = prototypes[p.emitter_prototype];
         vec3 p1 = (vp * vec4(p.position,1)).xyz;
         vec3 p2 = (vp * vec4(p.position2,1)).xyz;
         if(p.live == 1 && p1.z > 0 && abs(p1.x / p1.z) < 1.1 && abs(p1.y / p1.z) < 1.1){
@@ -442,6 +445,15 @@ void main () {
             }else{
                 _scale = p.scale.xy;
                 p11 = p.position;
+            }
+            if(proto.billboard == 1)
+                rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
+            if(proto.trail == 1){
+                // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
+                vec3 y = p.position2 - p.position;
+                vec3 x = cross(y, p.position2 - camPos);
+                vec3 l = cross(x,y);
+                rot = lookAt(l,y);
             }
             p11 -= camPos;
             setScale(item,_scale);

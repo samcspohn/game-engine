@@ -248,7 +248,7 @@ void renderThreadFunc()
 	timer stopWatch;
 
 	renderDone.store(true);
-	::proj = glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 1.f, 1e10f);
+	// ::proj = glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 1.f, 1e10f);
 	while (true)
 	{
 		// log("render loop");
@@ -275,6 +275,7 @@ void renderThreadFunc()
 				//////////////////////////////////////////////////////////////////////////////
 				/////////////////////////////// Lock Transform ///////////////////////////////
 				//////////////////////////////////////////////////////////////////////////////
+				auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
 				gpuDataLock.lock();
 
 				gt.start();
@@ -286,7 +287,18 @@ void renderThreadFunc()
 				uint emitterInitCount = emitterInits.size();
 				gpu_emitter_inits->bufferData(emitterInits);
 				glFlush();
+				
 
+				// glm::mat4 view;
+				// glm::mat4 rot;
+				// glm::mat4 proj;
+				for(_camera& c : cameras->data.data){
+					c.view = c.GetViewMatrix();
+					c.rot = c.getRotationMatrix();
+					c.proj = c.getProjection();
+				}
+
+				_camera::initPrepRender(matProgram);
 				gpuDataLock.unlock();
 
 				//////////////////////////////////////////////////////////////////////////////
@@ -295,61 +307,66 @@ void renderThreadFunc()
 
 				gt.start();
 
-				glUseProgram(matProgram.Program);
+				// glUseProgram(matProgram.Program);
 
-				glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "view"), 1, GL_FALSE, glm::value_ptr(rj.view));
-				glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "vRot"), 1, GL_FALSE, glm::value_ptr(rj.rot));
-				glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "projection"), 1, GL_FALSE, glm::value_ptr(rj.proj));
+				// glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "view"), 1, GL_FALSE, glm::value_ptr(rj.view));
+				// glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "vRot"), 1, GL_FALSE, glm::value_ptr(rj.rot));
+				// glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "projection"), 1, GL_FALSE, glm::value_ptr(rj.proj));
 
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, GPU_RENDERERS->bufferId);
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
+				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
+				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, GPU_RENDERERS->bufferId);
+				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
 
-				mainCamPos = player->transform->getPosition();
-				MainCamForward = player->transform->forward();
-				mainCamUp = player->transform->up();
-				glUniform3f(glGetUniformLocation(matProgram.Program, "camPos"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-				glUniform3f(glGetUniformLocation(matProgram.Program, "camForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
-				glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-				glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), 1);
-				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), GPU_RENDERERS->size());
-				glDispatchCompute(GPU_RENDERERS->size() / 64 + 1, 1, 1);
-				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				appendStat("matrix compute", gt.stop());
+				// mainCamPos = player->transform->getPosition();
+				// MainCamForward = player->transform->forward();
+				// mainCamUp = player->transform->up();
+				// glUniform3f(glGetUniformLocation(matProgram.Program, "camPos"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+				// glUniform3f(glGetUniformLocation(matProgram.Program, "camForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+				// glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+				// glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), 1);
+				// glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), GPU_RENDERERS->size());
+				// glDispatchCompute(GPU_RENDERERS->size() / 64 + 1, 1, 1);
+				// glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				// appendStat("matrix compute", gt.stop());
 
-				//buffer renderer ids
-				for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-					for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-						j->second->_ids->bufferData();
+				// //buffer renderer ids
+				// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+				// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
+				// 		j->second->_ids->bufferData();
 
-				gt.start();
-				updateParticles(mainCamPos,emitterInitCount);
-				appendStat("particles compute", gt.stop());
+			
 
-				timer t;
-				t.start();
-				particle_renderer.sortParticles(rj.proj * rj.rot * rj.view, rj.rot * rj.view, mainCamPos);
-				appendStat("particles sort", t.stop());
 
-				// renderDone.store(true);
+				// cam_render(rj.rot, rj.proj, rj.view);
+					glClearColor(0.6f, 0.7f, 1.f, 1.0f);
+					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				
+				for(_camera& c : cameras->data.data){
+					glEnable(GL_CULL_FACE);
+					glDepthMask(GL_TRUE);
+					gt.start();
+					c.prepRender(matProgram);
+					c.render();
+					appendStat("render cam", gt.stop());
 
-				glClearColor(0.6f, 0.7f, 1.f, 1.0f);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
+					gt.start(); // move outside of loop
+					updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
+					appendStat("particles compute", gt.stop());
 
-				glEnable(GL_CULL_FACE);
-				glDepthMask(GL_TRUE);
+					timer t;
+					t.start();
+					particle_renderer.sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos);
+					appendStat("particles sort", t.stop());
 
-				gt.start();
-				cam_render(rj.rot, rj.proj, rj.view);
-				appendStat("render cam", gt.stop());
 
-				gt.start();
-				glDisable(GL_CULL_FACE);
-				glDepthMask(GL_FALSE);
-				particle_renderer.drawParticles(rj.view, rj.rot, rj.proj);
-				appendStat("render particles", gt.stop());
+					gt.start();
+					glDisable(GL_CULL_FACE);
+					glDepthMask(GL_FALSE);
+					particle_renderer.drawParticles(c.view, c.rot, c.proj);
+					appendStat("render particles", gt.stop());
+				}
+
 
 				glDepthMask(GL_TRUE);
 				glfwSwapBuffers(window);
@@ -493,6 +510,8 @@ void init()
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	gameEngineComponents.erase(copyWorkers);
+	rootGameObject->addComponent<cullObjects>();
+	gameEngineComponents.erase(allcomponents[typeid(cullObjects).hash_code()]);
 }
 void syncThreads()
 {
@@ -669,6 +688,11 @@ void run()
 
 		for (int i = 0; i < concurrency::numThreads; ++i)
 			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
+		unlockUpdate();
+
+		lockUpdate();
+		for (int i = 0; i < concurrency::numThreads; ++i)
+			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::update, 1, 0));
 		unlockUpdate();
 
 		// this_thread::sleep_for(2ns);

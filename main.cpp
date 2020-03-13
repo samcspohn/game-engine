@@ -6,19 +6,21 @@
 #include <iomanip>
 #include <locale>
 
-template<class T>
+template <class T>
 std::string FormatWithCommas(T value)
 {
-    std::stringstream ss;
-    ss.imbue(std::locale(""));
-    ss << std::fixed << value;
-    return ss.str();
+	std::stringstream ss;
+	ss.imbue(std::locale(""));
+	ss << std::fixed << value;
+	return ss.str();
 }
 
 using namespace glm;
 atomic<int> numCubes(0);
 game_object *proto = nullptr;
 game_object *ExplosionProto = nullptr;
+emitter_prototype_ _expSmoke;
+emitter_prototype_ _expFlame;
 
 game_object *ground;
 class player_sc : public component
@@ -180,6 +182,7 @@ public:
 		if (life > 0.1f)
 		{
 			transform->gameObject->destroy();
+			numCubes.fetch_add(-1);
 		}
 	}
 	UPDATE(explosion_sc, update);
@@ -189,50 +192,57 @@ public:
 class cube_sc : public component
 {
 public:
-	rigidBody *rb;
+	// rigidBody *rb;
+	vec3 vel;
 	glm::vec3 rot;
 	// glm::vec3 dir;
 	bool hit = false;
+	float life;
 	cube_sc() {}
 	void onStart()
 	{
 		rot = randomSphere();
-		// dir = randomSphere() * 15.f;
-		rb = transform->gameObject->getComponent<rigidBody>();
-		rb->setVelocity(randomSphere() * randf() * 3.f);
+		hit = false;
+		life = 0;
 	}
 	void update()
 	{
-		// transform->translate(dir * Time.deltaTime * 10.f);
-		transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
-		if (Input.getKey(GLFW_KEY_C) && proto != transform->gameObject && randf() < 600.f / numCubes * Time.deltaTime || hit)
+		if (!hit)
 		{
-			numCubes.fetch_add(-1);
-			transform->gameObject->destroy();
+			transform->move(vel * Time.deltaTime);
+			transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
+			vel += vec3(0, -9.81, 0) * Time.deltaTime;
+		}
+		else
+		{
+			if (life < Time.time)
+			{
+				transform->gameObject->destroy();
+				numCubes.fetch_add(-1);
+			}
 		}
 	}
-	// void onCollision(game_object *go)
-	// {
-	// 	if( proto == transform->gameObject )
-	// 		return;
+	void onCollision(game_object *go)
+	{
+		if (proto == transform->gameObject || hit)
+			return;
 
-	// 	if (go->getComponent<terrain>() != 0)
-	// 	{
-	// 		auto exp = new game_object(*ExplosionProto);
-	// 		exp->transform->setPosition(transform->getPosition());
-	// 		numCubes.fetch_add(-1);
-	// 		transform->gameObject->destroy();
-	// 		// cout << "hit" << flush;
-	// 		// hit = true;
-	// 	}
-	// }
+		if (go->getComponent<terrain>() != 0)
+		{
+			auto myEmitters = transform->gameObject->getComponents<particle_emitter>();
+			myEmitters[0]->setPrototype(_expFlame);
+			myEmitters[1]->setPrototype(_expSmoke);
+			// transform->gameObject->removeComponent<_renderer>();
+			hit = true;
+			life = Time.time + 0.1f;
+		}
+	}
 	UPDATE(cube_sc, update);
 	COPY(cube_sc);
 };
 
 class nbody : public component
 {
-
 	//    glm::vec3 vel;
 	rigidBody *rb;
 
@@ -279,7 +289,8 @@ public:
 			for (int i = 0; i < r; i++)
 			{
 				game_object *go = new game_object(*proto);
-				go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
+				// go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
+				go->getComponent<cube_sc>()->vel = transform->forward() * 100.f + randomSphere() * randf() * 30.f;
 				// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
 				go->transform->setPosition(transform->getPosition() + transform->forward() * 30.f - transform->up() * 20.f);
 				numCubes.fetch_add(1);
@@ -289,13 +300,37 @@ public:
 	UPDATE(moreCUBES, update);
 	COPY(moreCUBES);
 };
-int main(int argc, char** argv)
+
+class autoCubes : public component
 {
-	if(argc > 1)
+
+public:
+	float rof = 10000 / 60;
+	void update()
+	{
+
+		float r = rof * Time.deltaTime;
+		for (int i = 0; i < r; i++)
+		{
+			game_object *go = new game_object(*proto);
+			// go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
+			go->getComponent<cube_sc>()->vel = transform->forward() * 100.f + randomSphere() * randf() * 30.f;
+			// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
+			go->transform->setPosition(transform->getPosition() + transform->forward() * 30.f - transform->up() * 20.f);
+			numCubes.fetch_add(1);
+		}
+	}
+	UPDATE(autoCubes, update);
+	COPY(autoCubes);
+};
+int main(int argc, char **argv)
+{
+	if (argc > 1)
 		sort1 = stoi(argv[1]);
-	if(argc > 2)
+	if (argc > 2)
 		maxGameDuration = (float)stoi(argv[2]);
-	// hideMouse = false;
+
+	hideMouse = false;
 	init();
 	_shader particleShader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
@@ -305,21 +340,24 @@ int main(int argc, char** argv)
 	//	waitForRenderQueue();
 
 	player = new game_object();
+	auto playerCam = player->addComponent<_camera>();
+	playerCam->fov = 90;
+	playerCam->farPlane = 1e32f;
 	player->addComponent<moreCUBES>();
 	player->addComponent<collider>();
 	player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
-	player->transform->translate(vec3(0,0,-5120));
+	player->transform->translate(vec3(0, 0, -5120));
 	ground = new game_object();
 
-	ground->transform->scale(vec3(10));
+	ground->transform->scale(vec3(20));
 	auto r = ground->addComponent<_renderer>();
 	r->set(modelShader, terrainModel);
 	auto t = ground->addComponent<terrain>();
 	t->r = r;
 	t->width = t->depth = 1024;
-	ground->transform->translate(glm::vec3(-5120, -2050, -5120));
+	ground->transform->translate(glm::vec3(-10240, -5000, -10240));
 
 	player->getComponent<player_sc>()->t = t;
 	ifstream config("config.txt");
@@ -340,16 +378,16 @@ int main(int argc, char** argv)
 	emitter_prototype_ smokeEmitter = createNamedEmitter("smoke");
 	*smokeEmitter = *flameEmitterProto;
 	smokeEmitter->emission_rate = 2.f;
-	smokeEmitter->lifetime = 4.f;
-	smokeEmitter->color = vec4(0.5f);
+	smokeEmitter->lifetime = 3.f;
+	smokeEmitter->color = vec4(0.5f, 0.5f, 0.5f, 0.2f);
 	smokeEmitter->velocity = vec3(4.f);
 	smokeEmitter->scale = vec3(3);
 	smokeEmitter->trail = 1;
 
 	game_object *CUBE = new game_object();
 	CUBE->addComponent<_renderer>();
-	CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
-	CUBE->getComponent<rigidBody>()->bounciness = .98f; //->gravity = false; //
+	// CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
+	// CUBE->getComponent<rigidBody>()->bounciness = .98f; //->gravity = false; //
 	CUBE->addComponent<collider>();
 	CUBE->addComponent<cube_sc>();
 	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
@@ -360,22 +398,24 @@ int main(int argc, char** argv)
 
 	////////////////////////////////////////////////
 	emitter_prototype_ emitterProto2 = createNamedEmitter("expflame");
-	emitterProto2->emission_rate = 100.f;
+	emitterProto2->emission_rate = 50.f;
 	emitterProto2->lifetime = 1.f;
 	emitterProto2->color = vec4(1, 1, 0.2f, 0.8f);
 	emitterProto2->velocity = vec3(60.f);
 	emitterProto2->scale = vec3(25.f);
 	emitterProto2->billboard = 1;
 	emitterProto2->trail = 0;
+	_expFlame = emitterProto2;
 
 	emitter_prototype_ emitterProto4 = createNamedEmitter("expsmoke");
 	*emitterProto4 = *emitterProto2;
-	emitterProto4->emission_rate = 300.f;
+	emitterProto4->emission_rate = 50.f;
 	emitterProto4->lifetime = 6.f;
 	// emitterProto3->trail = 0;
 	emitterProto4->scale = vec3(20);
 	emitterProto4->velocity = vec3(30.f);
 	emitterProto4->color = vec4(0.45f);
+	_expSmoke = emitterProto4;
 
 	game_object *explosionProto = new game_object();
 	// explosionProto->addComponent<collider>();
@@ -393,14 +433,33 @@ int main(int argc, char** argv)
 
 	proto = CUBE;
 
-	game_object *go = new game_object(*CUBE);
+	game_object *shooter = new game_object();
+	shooter->transform->move(vec3(0, 100, 0));
+	shooter->addComponent<_renderer>()->set(modelShader, cubeModel);
+	shooter->addComponent<autoCubes>()->rof = 40;
+	shooter->addComponent<collider>();
+	shooter->transform->setScale(vec3(6));
+	game_object *go = new game_object(*shooter);
+
+	for (int i = 0; i < 200; ++i)
+	{
+		go = new game_object(*go);
+		go->transform->translate(randomSphere() * 1000.f);
+		vec3 pos = go->transform->getPosition();
+		go->transform->setPosition(vec3(fmod(pos.x, 8000), fmod(pos.y, 300.f) + 100.f, fmod(pos.z, 8000)));
+		go->transform->rotate(randomSphere(), randf() * 10.f);
+		// if (fmod((float)i, (n / 100)) < 0.01)
+		// cout << "\r" << (float)i / (float)n << "    " << flush;
+	}
+
+	go = new game_object(*CUBE);
 	for (int i = 0; i < n; i++)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 3.f);
 		if (fmod((float)i, (n / 100)) < 0.01)
 			cout << "\r" << (float)i / (float)n << "    " << flush;
-		go->getComponent<rigidBody>()->setVelocity(randomSphere() * randf() * 100.f);
+		go->getComponent<cube_sc>()->vel = randomSphere() * randf() * 100.f;
 	}
 	auto nanosuitMan = new game_object(*CUBE);
 	nanosuitMan->addComponent<_renderer>();

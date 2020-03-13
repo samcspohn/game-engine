@@ -15,7 +15,7 @@ plf::list<Transform *> toDestroy;
 class _renderer;
 class game_object
 {
-
+	mutex lock;
 	map<component *, compItr *> components;
 	~game_object() { destroyed = false; };
 	bool destroyed = false;
@@ -38,6 +38,17 @@ public:
 				return (t *)i.first;
 			}
 		return 0;
+	}
+	template <typename t>
+	vector<t*> getComponents(){
+		vector<t*> ret;
+		ull hash = typeid(t).hash_code();
+		for (auto &i : components)
+			if (i.second->hash == hash)
+			{
+				ret.push_back((t *)i.first);
+			}
+		return ret;
 	}
 
 	void collide(game_object *go)
@@ -106,11 +117,6 @@ public:
 	{
 		gameLock.lock();
 		auto toR = components.find(c);
-		// if (toRemove.find(toR->second) != toRemove.end())
-		// {
-		// 	cout << "already removed" << endl;
-		// 	throw;
-		// }
 		toRemove.push_back(toR->second);
 		toR->first->onDestroy();
 		gameLock.unlock();
@@ -122,11 +128,6 @@ public:
 		gameLock.lock();
 		component *c = getComponent<t>();
 		auto toR = components.find(c);
-		// if (toRemove.find(toR->second) != toRemove.end())
-		// {
-		// 	cout << "already removed" << endl;
-		// 	throw;
-		// }
 		toRemove.push_back(toR->second);
 		toR->first->onDestroy();
 		gameLock.unlock();
@@ -140,19 +141,9 @@ public:
 			for (auto &i : components)
 			{
 				auto toR = components.find(i.first);
-				// if (toRemove.find(toR->second) != toRemove.end())
-				// {
-				// 	cout << "already removed" << endl;
-				// 	throw;
-				// }
 				toRemove.push_back(toR->second);
 				toR->first->onDestroy();
 			}
-			// if (toDestroy.find(transform) != toDestroy.end())
-			// {
-			// 	cout << "already destroyed" << endl;
-			// 	throw;
-			// }
 			toDestroy.push_back(transform);
 			for (auto &i : transform->getChildren())
 			{
@@ -162,7 +153,7 @@ public:
 		gameLock.unlock();
 	}
 
-	game_object(Transform *t)
+	game_object(Transform *t) : lock()
 	{
 		gameLock.lock();
 		destroyed = false;
@@ -170,7 +161,7 @@ public:
 		t->gameObject = this;
 		gameLock.unlock();
 	}
-	game_object()
+	game_object() : lock()
 	{
 		gameLock.lock();
 		destroyed = false;
@@ -178,12 +169,13 @@ public:
 		root->Adopt(this->transform);
 		gameLock.unlock();
 	};
-	game_object(const game_object &g)
+	game_object(const game_object &g) : lock()
 	{
 		gameLock.lock();
 		destroyed = false;
 		this->transform = new Transform(*g.transform, this);
 		g.transform->getParent()->Adopt(this->transform);
+		gameLock.unlock();
 		for (auto &i : g.components)
 		{
 			i.second->getComponent()->_copy(this);
@@ -192,7 +184,6 @@ public:
 		{
 			i.second->getComponent()->onStart();
 		}
-		gameLock.unlock();
 	}
 
 	void _destroy()

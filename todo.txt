@@ -1,5 +1,9 @@
 
-localize most emitter data on gpu.
+polish physics
+add collision layers
+add obb/sphere/point
+
+add sound
 
 add 'force emit' to particle emitter
 let particles emit particles
@@ -9,9 +13,6 @@ add previous position and rotation to emitter -- interpolate particle emissions
 add textures to particles
 add color/size/velocity over life
 
-finish physics 
-
-add sound
 add ui
 
 add lights/lighting
@@ -31,3 +32,4 @@ improve low activity performance
 
 //////////////////////////// done //////////////////////////////
 send 'wake' to activate new emitters. -- new stage to particle update.
+localize most emitter data on gpu.

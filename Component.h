@@ -20,7 +20,7 @@ bool compareTransform(Transform *t1, Transform *t2);
 struct compItr
 {
 	ull hash;
-	map<component*,compItr*>* goComponents;
+	map<component *, compItr *> *goComponents;
 	virtual void erase(){};
 	virtual component *getComponent(){};
 };
@@ -53,7 +53,7 @@ struct compItr_ : public compItr
 template <typename t>
 struct compInfo
 {
-	component* compPtr;
+	component *compPtr;
 	compItr *CompItr;
 };
 
@@ -61,7 +61,7 @@ class componentStorageBase
 {
 public:
 	string name;
-
+	mutex lock;
 	virtual void update(){};
 	virtual void update(int index, int size) {}
 	virtual void lateUpdate(int index, int size) {}
@@ -124,7 +124,8 @@ public:
 	// 		}
 	// 	}
 	// }
-	void update(){
+	void update()
+	{
 		((component *)&(data.data.front()))->_update(0, 0, data.size());
 	}
 	void update(int index, int size)
@@ -153,31 +154,37 @@ template <typename t>
 inline compInfo<t> addComponentToAll(const t &c)
 {
 
-	componentLock.lock();
 	ull hash = typeid(t).hash_code();
 
 	if (allcomponents.find(hash) == allcomponents.end())
 	{
-		allcomponents[hash] = (componentStorageBase *)(new componentStorage<t>());
-		allcomponents[hash]->name = typeid(t).name();
-		if (((component *)&c)->_registerEngineComponent())
+
+		componentLock.lock();
+		if (allcomponents.find(hash) == allcomponents.end())
 		{
-			gameEngineComponents.insert(allcomponents[hash]);
+			allcomponents[hash] = (componentStorageBase *)(new componentStorage<t>());
+			allcomponents[hash]->name = typeid(t).name();
+			if (((component *)&c)->_registerEngineComponent())
+			{
+				gameEngineComponents.insert(allcomponents[hash]);
+			}
+			else
+			{
+				gameComponents.insert(allcomponents[hash]);
+			}
 		}
-		else
-		{
-			gameComponents.insert(allcomponents[hash]);
-		}
+		componentLock.unlock();
 	}
 	componentStorage<t> *compStorage = static_cast<componentStorage<t> *>(allcomponents[hash]);
+	compStorage->lock.lock();
 	typename deque_heap<t>::ref id = compStorage->data._new();
+	compStorage->lock.unlock();
 	*id = std::move(c);
 
 	compInfo<t> ret;
 	ret.compPtr = &(*id);
 	ret.CompItr = new compItr_<t>(id, &compStorage->data);
 	ret.CompItr->hash = hash;
-	componentLock.unlock();
 	return ret;
 }
 
@@ -230,7 +237,7 @@ void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size)
 		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
 		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
 		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
-		for (i; i != end; ++i, ++val)                                                                          \
+		for (i; i != end; ++i, ++val)                                                                   \
 		{                                                                                               \
 			if (*val)                                                                                   \
 			{                                                                                           \

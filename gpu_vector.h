@@ -52,7 +52,7 @@ public:
 	}
 	void ownStorage() {
 		if (ownsStorage)
-			throw;
+			return;
 		storage = new vector<t>();
 		ownsStorage = true;
 	}
