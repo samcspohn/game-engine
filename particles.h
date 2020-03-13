@@ -127,6 +127,7 @@ vector<emitterInit> emitterInitsdb;
 unordered_map<uint, emitterInit> emitter_inits;
 bool updateEmitters = true;
 
+
 class particle_emitter : public component
 {
     emitter_prototype_ prototype;
@@ -148,15 +149,7 @@ public:
         ei.id = this->emitter.index;
         emitter_inits[ei.id] = ei;
     }
-    // void lateUpdate()
-    // {
-    //     if (emitter->frame++ > 0)
-    //         emitter->emission -= (float)(int)emitter->emission;
-    //     emitter->emission += prototype->emission_rate * Time.deltaTime;
-    //     emitter->emitter_prototype = prototype.getId();
-    //     // num_particles += (int)emitter->emission;
-    //     emitter->transform = transform->_T.index;
-    // }
+
     void onStart()
     {
         this->emitter = emitters._new();
@@ -175,7 +168,6 @@ public:
         ei.id = this->emitter.index;
         emitter_inits[ei.id] = ei;
 
-        // emitter->last_particle = -1;
     }
     void onDestroy()
     {
@@ -191,10 +183,8 @@ public:
         ei.transformID = transform->_T.index;
         ei.id = this->emitter.index;
         emitter_inits[ei.id] = ei;
-
-        // emitter->last_particle = -1;
     }
-    // LATE_UPDATE(particle_emitter, lateUpdate);
+
 };
 
 void initParticles()
@@ -410,17 +400,8 @@ public:
     {
         gpuTimer t1;
         GLuint program;
-
-        if (sort1)
-        {
-            particleSortProgram.Use();
-            program = particleSortProgram.Program;
-        }
-        else
-        {
-            particleSortProgram2.Use();
-            program = particleSortProgram2.Program;
-        }
+        particleSortProgram.Use();
+        program = particleSortProgram.Program;
 
         GLuint _vp = glGetUniformLocation(program, "vp");
         GLuint _view = glGetUniformLocation(program, "view");
@@ -436,6 +417,9 @@ public:
         GLuint _offset = glGetUniformLocation(program, "offset");
         glUniformMatrix4fv(_view, 1, GL_FALSE, glm::value_ptr(view));
         glUniform3f(glGetUniformLocation(program, "camPos"), camPos.x, camPos.y, camPos.z);
+        glUniform3f(glGetUniformLocation(program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+        glUniform3f(glGetUniformLocation(program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
+        
         // glFlush();
         // data1->retrieveData();
         gpuTimer gt2;
@@ -468,15 +452,8 @@ public:
         appendStat("sort particle list stage -2,-1", gt2.stop());
         
         uint numParticles;
-        if (sort1)
-        {
             atomics->retrieveData();
             numParticles = atomics->storage->at(0);
-        }
-        else
-        {
-            numParticles = MAX_PARTICLES;
-        }
 
         flip = true;
         // glUniform1ui(nkeys, numParticles);

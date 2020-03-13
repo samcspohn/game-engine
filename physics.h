@@ -350,17 +350,17 @@ struct treenode
 	int children = -1;
 
 	bool left;
-	atomic<bool> isLeaf;
+	bool isLeaf;
 	int objCounter = 0;
 	colDat objs[maxObj];
 	void clear()
 	{
-		isLeaf.store(true);
+		isLeaf = (true);
 		objCounter = 0;
 	}
 	void init(bool _left, int _axis, int _parent, int _id)
 	{
-		isLeaf.store(true);
+		isLeaf =(true);
 		objCounter = 0;
 		axis = _axis;
 		parent = _parent;
@@ -388,7 +388,7 @@ struct treenode
 
 	void insert(colDat colliderData, int depth)
 	{
-		if (!isLeaf.load())
+		if (!isLeaf)
 		{
 			if (colliderData.a.c[axis] + colliderData.a.r[axis] < d)
 			{
@@ -414,7 +414,7 @@ struct treenode
 		else
 		{
 			m.lock();
-			if (isLeaf.load())
+			if (isLeaf)
 			{
 				if (objCounter < maxObj)
 				{
@@ -461,7 +461,7 @@ struct treenode
 						}
 					}
 					objCounter = j;
-					isLeaf.store(false);
+					isLeaf = (false);
 					// m.unlock();
 					// return;
 				}
@@ -568,9 +568,6 @@ public:
 	{
 		return true;
 	}
-	collider()
-	{
-	}
 	void onStart()
 	{
 		posInTree = 0;
@@ -633,7 +630,7 @@ public:
 		//octLock.unlock();
 	}
 
-	rigidBody *rb;
+	rigidBody *rb = 0;
 	int id;
 	void lateUpdate()
 	{

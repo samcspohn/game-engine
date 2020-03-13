@@ -47,7 +47,7 @@ vec4 logVert(vec4 in_) {
 
 void main()
 {
-	uint id = ids[gl_InstanceID];
+	uint id = gl_InstanceID;
 	col = vec4(1,1,1,1);
 
 	mat4 model = matrixes[id].model;
