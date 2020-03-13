@@ -336,30 +336,33 @@ void renderThreadFunc()
 
 			
 
+					gt.start(); // move outside of loop
+					updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
+					appendStat("particles compute", gt.stop());
 
 				// cam_render(rj.rot, rj.proj, rj.view);
 					glClearColor(0.6f, 0.7f, 1.f, 1.0f);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				
 				for(_camera& c : cameras->data.data){
+					// render geometry
+					gt.start();
+					c.prepRender(matProgram);
+					appendStat("matrix compute", gt.stop());
+
 					glEnable(GL_CULL_FACE);
 					glDepthMask(GL_TRUE);
 					gt.start();
-					c.prepRender(matProgram);
 					c.render();
 					appendStat("render cam", gt.stop());
 
-
-					gt.start(); // move outside of loop
-					updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
-					appendStat("particles compute", gt.stop());
-
+					// sort particles
 					timer t;
 					t.start();
 					particle_renderer.sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos);
 					appendStat("particles sort", t.stop());
-
-
+					
+					// render particles
 					gt.start();
 					glDisable(GL_CULL_FACE);
 					glDepthMask(GL_FALSE);
