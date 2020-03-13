@@ -233,9 +233,6 @@ void renderThreadFunc()
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
 
 	renderThreadReady.exchange(true);
-	GPU_RENDERERS = new gpu_vector<__renderer>();
-	GPU_RENDERERS->ownStorage();
-	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
 	GPU_TRANSFORMS = new gpu_vector<_transform>();
 	GPU_TRANSFORMS->ownStorage();
 	// GPU_TRANSFORMS->storage = &TRANSFORMS.data;
@@ -280,8 +277,6 @@ void renderThreadFunc()
 
 				gt.start();
 				GPU_TRANSFORMS->bufferData();
-				GPU_RENDERERS->bufferData();
-				GPU_MATRIXES->tryRealloc(GPU_MATRIXES_IDS.size());
 				appendStat("transforms buffer", gt.stop());
 
 				uint emitterInitCount = emitterInits.size();
@@ -677,7 +672,6 @@ void run()
 
 		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
-		GPU_RENDERERS->storage->resize(gpu_renderers.size());
 		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
 			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
 				j->second->_ids->storage->resize(j->second->ids.data.size());
@@ -710,7 +704,6 @@ void run()
 		renderJob rj;
 		rj.work = [&] { return; };
 		rj.type = renderNum::render;
-		rj.val1 = GPU_RENDERERS->size();
 		rj.proj = ::proj;																			//((_camera*)(cameras->front()))->getProjection();
 		rj.rot = glm::lookAt(vec3(0, 0, 0), player->transform->forward(), player->transform->up()); //glm::toMat4(glm::inverse(player->transform->getRotation()));// ((_camera*)(cameras->front()))->getRotationMatrix();
 		rj.view = glm::translate(-player->transform->getPosition());								// ((_camera*)(cameras->front()))->GetViewMatrix();

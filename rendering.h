@@ -20,7 +20,7 @@ struct matrix {
 gpu_vector_proxy<matrix>* GPU_MATRIXES;
 //gpu_vector<GLuint> ids;
 
-array_heap<bool> GPU_MATRIXES_IDS = array_heap<bool>();
+// array_heap<bool> GPU_MATRIXES_IDS = array_heap<bool>();
 
 
 
@@ -36,8 +36,8 @@ struct __renderer {
 };
 
 mutex rendererLock;
-fast_list<__renderer> gpu_renderers = fast_list<__renderer>();
-gpu_vector<__renderer>* GPU_RENDERERS;
+// fast_list<__renderer> gpu_renderers = fast_list<__renderer>();
+// gpu_vector<__renderer>* GPU_RENDERERS;
 
 // model data
 struct _modelMeta {
@@ -188,10 +188,10 @@ public:
 class _renderer : public component {
 	_shader shader;
 	_model model;
-	array_heap<bool>::ref matrixLoc;
-	fast_list<GLuint>::iterator idLoc;
+	// array_heap<bool>::ref matrixLoc;
+	// fast_list<GLuint>::iterator idLoc;
 	renderingMeta* meta = 0;
-	fast_list<__renderer>::iterator _Rloc;
+	// fast_list<__renderer>::iterator _Rloc;
 	fast_list<GLuint>::iterator transformIdRef;
 
 
@@ -203,8 +203,11 @@ public:
 	void onStart() {
 		if (shader.s == 0 || model.m == 0)
 			return;
-		set(shader, model);
-		transform->gameObject->renderer = transform->gameObject->getComponent<_renderer>();
+		if(meta != 0)
+			set(meta);
+		else
+			set(shader,model);
+		transform->gameObject->renderer = this;
 	}
 	_renderer() {}
 
@@ -212,10 +215,8 @@ public:
 		rendererLock.lock();
 		shader = s;
 		model = m;
-		if (meta != 0) {
-			meta->ids.erase(idLoc);
-			GPU_MATRIXES_IDS._delete(matrixLoc);
-			gpu_renderers.erase(_Rloc);
+		if (!transformIdRef.isNull()) {
+			meta->transformIds.erase(transformIdRef);
 		}
 		auto r = renderingManager.shader_model_vector.find(s.s->name);
 		if (r == renderingManager.shader_model_vector.end()) {
@@ -229,26 +230,36 @@ public:
 				r->second[m.m->name] = new renderingMeta(s, m);
 		}
 
-		matrixLoc = GPU_MATRIXES_IDS._new();
-		idLoc = r->second[m.m->name]->ids.push_back(matrixLoc);
 		meta = (r->second[m.m->name]);
-		_Rloc = gpu_renderers.push_back(__renderer(transform->_T, matrixLoc));
 		transformIdRef = meta->transformIds.push_back(transform->_T);
 		rendererLock.unlock();
 
+	}
+	void set(renderingMeta* _meta){
+		shader = _meta->s;
+		model = _meta->m;
+		meta = _meta;
+		GLuint t = transform->_T;
+		if (!transformIdRef.isNull()) {
+			renderLock.lock();
+			meta->transformIds.erase(transformIdRef);
+		}
+		else
+			renderLock.lock();
+		transformIdRef = meta->transformIds.push_back(t);
+		renderLock.unlock();
 	}
 	_renderer(const _renderer& other) {
 //		if (other.meta != 0) {
 			shader = other.shader;
 			model = other.model;
+			meta = other.meta;
+			transformIdRef = fast_list<GLuint>::iterator();
 //		}
 	}
 	void onDestroy(){
         if (meta != 0) {
 			rendererLock.lock();
-			meta->ids.erase(idLoc);
-			GPU_MATRIXES_IDS._delete(matrixLoc);
-			gpu_renderers.erase(_Rloc);
 			meta->transformIds.erase(transformIdRef);
 			rendererLock.unlock();
 		}
@@ -257,7 +268,7 @@ public:
 //	}
 
 	void updateTransformLoc(int loc) {
-		_Rloc->transform = loc;
+		*transformIdRef = loc;
 	}
 	COPY(_renderer);
 };

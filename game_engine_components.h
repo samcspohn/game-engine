@@ -247,7 +247,7 @@ class cullObjects : public component
 						{
 							vec->push_back(k);
 						}
-						std::sort(vec->begin(),vec->end());
+						// std::sort(vec->begin(),vec->end());
 					}
 				}
 			}
@@ -277,12 +277,7 @@ class copyBuffers : public component
 					GPU_TRANSFORMS->storage->at(itr++) = *from++;
 			}
 
-			{
-				size_t from = gpu_renderers.size() / numt * getThreadID();
-				size_t to = (getThreadID() != numt - 1 ? gpu_renderers.size() / numt : gpu_renderers.size() - from);
-				memcpy(&(GPU_RENDERERS->storage->at(from)), &(gpu_renderers.data[from]), sizeof(__renderer) * to);
-			}
-
+			
 			for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
 			{
 				for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
