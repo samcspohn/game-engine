@@ -6,21 +6,34 @@
 #include "particle.glsl"
 #include "transform.glsl"
 
+
+struct _emission{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    int emitterID;
+    int last;
+};
+
+
 layout(std430,binding = 0) buffer t{_transform transforms[];};
+layout(std430,binding = 1) buffer ac{int atomicCounters[];};
 layout(std430,binding = 2) buffer p{particle particles[];};
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 4) buffer e{emitter emitters[];};
-layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
 layout(std430,binding = 5) buffer r{uint rng[];};
 layout(std430,binding = 6) buffer de{uint dead[];};
-layout(std430,binding = 1) buffer ac{uint atomicCounters[];};
+layout(std430,binding = 7) buffer ed{_emission emitted[];};
+layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
 
 const uint liveParticles = 0;
 const uint destroyCounter = 1;
+const uint emittedCounter = 2;
+
 uniform uint count;
 uniform float deltaTime;
 uniform float time;
-uniform uint max_particles;
+uniform int max_particles;
 uniform uint stage;
 uniform vec3 cameraPosition;
 uniform vec3 cameraForward;
@@ -33,7 +46,49 @@ float rand(in vec2 xy, in float seed){
     xy += vec2(1);
     return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
 }
+void initParticle(_emission e, uint x){
+    emitter_prototype ep = prototypes[e.emitter_prototype];
+    particle p;
+    p.position = e.position;
+    vec2 id = vec2(x % max_particles, x / max_particles);
+    p.rotation = normalize(vec4(
+    rand(id,time + 3) - 0.5f,
+    rand(id,time + 4) - 0.5f,
+    rand(id,time + 5) - 0.5f,
+    rand(id,time + 6) - 0.5f
+    ));
+    // p.rotation  = transforms[e.transform].rotation;
+    p.scale = ep.scale;
+    p.life = 1.f;
+    p.emitter = e.emitterID;
+    p.emitter_prototype = e.emitter_prototype;
+    vec3 random = vec3(
+    rand(id,time) - 0.5f,
+    rand(id,time + 1) - 0.5f,
+    rand(id,time + 2) - 0.5f);
+    // vec3(rotate(identity(),transforms[e.transform].rotation) * vec4(random * ep.velocity * ep.scale,1))
+    p.velocity = random * ep.velocity;
+    
+    // p.life -= dt * count++ / prototypes[p.emitter_prototype].lifetime;
+    // set trail
+    if(ep.trail == 1){
+        if(e.last > -1){
+            particles[e.last].next = int(x);
+            particles[e.last].position2 = p.position;
+            particles[e.last].velocity2 = p.velocity;
+            particles[e.last].life2 = p.life;
+        }
+        p.next = -int(e.emitterID) - 2;
+        p.prev = e.last;
+        emitters[e.emitterID].last = int(x);
+    }
 
+    p.live = 1;
+    atomicAdd(atomicCounters[liveParticles],1);
+    if(atomicCounters[liveParticles] > max_particles)
+        atomicMin(atomicCounters[liveParticles],max_particles);
+    particles[x] = p;
+}
 
 void update(uint id, float dt){
 
@@ -41,33 +96,25 @@ void update(uint id, float dt){
     // if(localID == 0)
     //     garbage[0] = 0;
     // barrier();
-    if(particles[id].live == 1){
+    if(particles[id].live == 1 && stage == 1){
         particle p = particles[id];
         emitter_prototype proto = prototypes[p.emitter_prototype];
         p.position += p.velocity * dt;
 
         if(p.next < -1 && emitters[-p.next - 2].last == id){
-            p.position2 = transforms[emitters[p.emitter].transform].position;
+            p.position2 = transforms[emitters[-p.next - 2].transform].position;
         }else{
             p.position2 += p.velocity2 * dt;
+            // p.position2 = particles[p.next].position;
         }
 
         // p.position -= floatingOrigin;
         p.life -= dt / prototypes[p.emitter_prototype].lifetime;
         p.life2 -= dt / prototypes[p.emitter_prototype].lifetime;
 
-        // if(proto.billboard == 1)
-        //     p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
-        // if(proto.trail == 1){
-        //     // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
-        //     vec3 y = p.position2 - p.position;
-        //     vec3 x = cross(y, p.position2 - cameraPosition);
-        //     vec3 l = cross(x,y);
-        //     p.rotation = lookAt(l,y);
-        // }
         if(p.life < 0)
         {
-            uint index = atomicAdd(atomicCounters[liveParticles],-1);
+            int index = atomicAdd(atomicCounters[liveParticles],-1);
             dead[index - 1] = id;
             // uint index = atomicAdd(garbage[0],1);
             // garbage[index + 2] = id;
@@ -75,6 +122,13 @@ void update(uint id, float dt){
             p.next = p.prev = -1;
         }
         particles[id] = p;
+    }else if(particles[id].live == 0 && stage == 3){
+        int emitId = atomicAdd(atomicCounters[emittedCounter],-1);
+        if(emitId > 0){
+            _emission e = emitted[emitId - 1];
+            initParticle(e, id);
+        }
+        
     }
     // barrier();
     // if(localID == 0){
@@ -100,6 +154,7 @@ void initEmitters(uint id){
     emitters[ei.id] = e;
 }
 
+
 void emit(uint thread_id){
     // live[0] = 1;
     
@@ -109,52 +164,56 @@ void emit(uint thread_id){
         emitter_prototype ep = prototypes[e.emitter_prototype];
         e.emission += ep.emission_rate * deltaTime;
         e.frame++;
-        uint emission = uint(e.emission);
-        uint new_particles_start = atomicAdd(atomicCounters[liveParticles],emission);
-        atomicMin(atomicCounters[liveParticles],max_particles);
-        uint end = new_particles_start + emission;
+        int emission = int(e.emission);
+        
+        int new_particles_start = atomicAdd(atomicCounters[emittedCounter],emission);
+        int end = new_particles_start + emission;
         float dt = deltaTime;
         dt /= float(emission + 1);
         float count = 0.0;
-        for(uint i = new_particles_start; i < end && i < max_particles; ++i){
-            int x = int(dead[i]);
-            particle p;
-            p.position = transforms[e.transform].position;
-            vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
-            p.rotation = normalize(vec4(
-            rand(id,time + 3 + count) - 0.5f,
-            rand(id,time + 4 + count) - 0.5f,
-            rand(id,time + 5 + count) - 0.5f,
-            rand(id,time + 6 + count) - 0.5f
-            ));
-            // p.rotation  = transforms[e.transform].rotation;
-            p.scale = transforms[e.transform].scale * ep.scale;
-            p.life = 1.f;
-            p.emitter = thread_id;
-            p.emitter_prototype = e.emitter_prototype;
-            vec3 random = vec3(
-            rand(id,time) - 0.5f,
-            rand(id,time + 1 + count) - 0.5f,
-            rand(id,time + 2 + count) - 0.5f);
-            p.velocity = vec3(rotate(identity(),transforms[e.transform].rotation) * vec4(random * ep.velocity * transforms[e.transform].scale,1));
+        for(int i = new_particles_start; i < end && i < max_particles; ++i){
+            emitted[i].position = transforms[e.transform].position;
+            emitted[i].emitterID = int(thread_id);
+            emitted[i].emitter_prototype = e.emitter_prototype;
+            emitted[i].last = e.last;
+            // int x = int(dead[i]);
+            // particle p;
+            // p.position = transforms[e.transform].position;
+            // vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
+            // p.rotation = normalize(vec4(
+            // rand(id,time + 3 + count) - 0.5f,
+            // rand(id,time + 4 + count) - 0.5f,
+            // rand(id,time + 5 + count) - 0.5f,
+            // rand(id,time + 6 + count) - 0.5f
+            // ));
+            // // p.rotation  = transforms[e.transform].rotation;
+            // p.scale = transforms[e.transform].scale * ep.scale;
+            // p.life = 1.f;
+            // p.emitter = thread_id;
+            // p.emitter_prototype = e.emitter_prototype;
+            // vec3 random = vec3(
+            // rand(id,time) - 0.5f,
+            // rand(id,time + 1 + count) - 0.5f,
+            // rand(id,time + 2 + count) - 0.5f);
+            // p.velocity = vec3(rotate(identity(),transforms[e.transform].rotation) * vec4(random * ep.velocity * transforms[e.transform].scale,1));
             
-            p.position += p.velocity * dt * count;
-            p.life -= dt * count++ / prototypes[p.emitter_prototype].lifetime;
-            // set trail
-            if(ep.trail == 1){
-                if(e.frame > 0){
-                    particles[e.last].next = int(x);
-                    particles[e.last].position2 = p.position;
-                    particles[e.last].velocity2 = p.velocity;
-                    particles[e.last].life2 = p.life;
-                }
-                p.next = -int(thread_id) - 2;
-                p.prev = e.last;
-                e.last = int(x);
-            }
+            // p.position += p.velocity * dt * count;
+            // p.life -= dt * count++ / prototypes[p.emitter_prototype].lifetime;
+            // // set trail
+            // if(ep.trail == 1){
+            //     if(e.frame > 0){
+            //         particles[e.last].next = int(x);
+            //         particles[e.last].position2 = p.position;
+            //         particles[e.last].velocity2 = p.velocity;
+            //         particles[e.last].life2 = p.life;
+            //     }
+            //     p.next = -int(thread_id) - 2;
+            //     p.prev = e.last;
+            //     e.last = int(x);
+            // }
 
-            p.live = 1;
-            particles[x] = p;
+            // p.live = 1;
+            // particles[x] = p;
         }
         e.emission -= float(uint(e.emission));
     }else{
@@ -182,6 +241,10 @@ void main () {
     if( stage == 0 && gid < count) // only emitters
         emit(gid);
     if(stage == 1 && gid < max_particles){
+        float dt = deltaTime;
+        update(gid, dt);
+    }
+    if(stage == 3 && gid < max_particles){
         float dt = deltaTime;
         update(gid, dt);
     }

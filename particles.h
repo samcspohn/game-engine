@@ -64,6 +64,13 @@ struct emitterInit
     int live;
     int id;
 };
+struct _emission{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    int emitterID;
+    int last;
+};
 enum particleCounters
 {
     liveParticles = 0,
@@ -71,6 +78,7 @@ enum particleCounters
 };
 gpu_vector<GLuint> *rng = new gpu_vector<GLuint>();
 gpu_vector<particle> *particles = new gpu_vector<particle>();
+gpu_vector_proxy<_emission> *emitted = new gpu_vector_proxy<_emission>();
 // gpu_vector<GLuint> live;
 gpu_vector_proxy<GLuint> *dead = new gpu_vector_proxy<GLuint>();
 gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
@@ -201,6 +209,8 @@ void initParticles()
     *particles->storage = vector<particle>(MAX_PARTICLES);
     particles->bufferData();
 
+    emitted->tryRealloc(MAX_PARTICLES);
+
     // live.ownStorage();
     // *live.storage = vector<uint>(MAX_PARTICLES);
     // live.bufferData();
@@ -228,12 +238,8 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
 
     gpu_emitter_prototypes->bufferData();
-    if (updateEmitters)
-    {
-        // gpu_emitters->bufferData();
-        updateEmitters = false;
-    }
-
+    
+    
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     // run shader update
 
@@ -244,6 +250,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, particles->bufferId);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, gpu_emitter_prototypes->bufferId);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, gpu_emitters->bufferId);
+    emitted->bindData(7);
     gpu_emitter_inits->bindData(8);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, rng->bufferId);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, dead->bufferId);
@@ -256,7 +263,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
     glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
     glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "max_particles"), max_particles);
+    glUniform1i(glGetUniformLocation(particleProgram.Program, "max_particles"), max_particles);
     GLuint fo = glGetUniformLocation(particleProgram.Program, "floatingOrigin");
     glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
 
@@ -270,11 +277,18 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(emitters.size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
+    glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     atomicCounters->retrieveData();
+    (*atomicCounters)[2] = 0;
+    atomicCounters->bufferData();
+    
 }
 
 struct d
