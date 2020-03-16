@@ -348,7 +348,7 @@ int main(int argc, char **argv)
 	player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
-	player->transform->translate(vec3(0, 0, -5120));
+	player->transform->translate(vec3(0, 0, -10120));
 	ground = new game_object();
 
 	ground->transform->scale(vec3(20));
@@ -441,7 +441,7 @@ int main(int argc, char **argv)
 	shooter->transform->setScale(vec3(6));
 	game_object *go = new game_object(*shooter);
 
-	for (int i = 0; i < 1100; ++i)
+	for (int i = 0; i < 1200; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);
