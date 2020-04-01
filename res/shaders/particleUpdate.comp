@@ -12,6 +12,7 @@ struct _emission{
     uint emitter_prototype;
     vec3 direction;
     int emitterID;
+    vec3 scale;
     int last;
 };
 
@@ -58,7 +59,7 @@ void initParticle(_emission e, uint x){
     rand(id,time + 6) - 0.5f
     ));
     // p.rotation  = transforms[e.transform].rotation;
-    p.scale = ep.scale;
+    p.scale = ep.scale * e.scale;
     p.life = 1.f;
     p.emitter = e.emitterID;
     p.emitter_prototype = e.emitter_prototype;
@@ -67,7 +68,7 @@ void initParticle(_emission e, uint x){
     rand(id,time + 1) - 0.5f,
     rand(id,time + 2) - 0.5f);
     // vec3(rotate(identity(),transforms[e.transform].rotation) * vec4(random * ep.velocity * ep.scale,1))
-    p.velocity = random * ep.velocity;
+    p.velocity = random * ep.velocity * e.scale;
     
     // p.life -= dt * count++ / prototypes[p.emitter_prototype].lifetime;
     // set trail
@@ -96,7 +97,15 @@ void update(uint id, float dt){
     // if(localID == 0)
     //     garbage[0] = 0;
     // barrier();
-    if(particles[id].live == 1 && stage == 1){
+    if(particles[id].live == 0){
+        int emitId = atomicAdd(atomicCounters[emittedCounter],-1);
+        if(emitId > 0){
+            _emission e = emitted[emitId - 1];
+            initParticle(e, id);
+        }
+        
+    }
+     if(particles[id].live == 1){
         particle p = particles[id];
         emitter_prototype proto = prototypes[p.emitter_prototype];
         p.position += p.velocity * dt;
@@ -122,14 +131,7 @@ void update(uint id, float dt){
             p.next = p.prev = -1;
         }
         particles[id] = p;
-    }else if(particles[id].live == 0 && stage == 3){
-        int emitId = atomicAdd(atomicCounters[emittedCounter],-1);
-        if(emitId > 0){
-            _emission e = emitted[emitId - 1];
-            initParticle(e, id);
-        }
-        
-    }
+    } 
     // barrier();
     // if(localID == 0){
     //     garbage[1] = atomicAdd(atomicCounters[liveParticles], -garbage[0]);
@@ -175,6 +177,7 @@ void emit(uint thread_id){
             emitted[i].position = transforms[e.transform].position;
             emitted[i].emitterID = int(thread_id);
             emitted[i].emitter_prototype = e.emitter_prototype;
+            emitted[i].scale = transforms[e.transform].scale;
             emitted[i].last = e.last;
             // int x = int(dead[i]);
             // particle p;

@@ -411,9 +411,11 @@ void unlockUpdate()
 	for (auto &i : updateLocks)
 		i.unlock();
 }
+double cleanupTime = 0;
 void cleanup()
 {
-	// antiBullshitDevice.lock();
+	timer t;
+	t.start();
 	gameLock.lock();
 	for (auto &i : toRemove)
 	{
@@ -428,27 +430,8 @@ void cleanup()
 	}
 	toDestroy.clear();
 	gameLock.unlock();
-	// antiBullshitDevice.unlock();
+	cleanupTime += t.stop();
 }
-//void componentUpdateThread(int index) {
-//    timer stopWatch;
-//	while (true) {
-//        updateLocks[index].lock();
-//		if (updateWork[index].size() > 0) {
-//			updateJob uj = updateWork[index].front(); updateWork[index].pop();
-//			if (uj.componentStorage == 0)
-//				break;
-//            if(index == 0)
-//                stopWatch.start();
-//			ComponentsUpdate(uj.componentStorage, index);
-//			if(index == 0)
-//                appendStat(uj.componentStorage->name, stopWatch.stop());
-//		}
-//        updateLocks[index].unlock();
-//        this_thread::sleep_for(0ns);
-//	}
-//
-//}
 
 vector<size_t> threadCounters = vector<size_t>(concurrency::numThreads, 0);
 
@@ -457,7 +440,6 @@ atomic<bool> makeOctree(false);
 
 void componentUpdateThread(int index)
 {
-	timer stopWatch;
 	while (true)
 	{
 		updateLocks[index].lock();
@@ -466,9 +448,6 @@ void componentUpdateThread(int index)
 			updateJob uj = updateWork[index].front();
 			if (uj.componentStorage == 0)
 				break;
-			if (index == 0)
-				stopWatch.start();
-
 			if (uj.ut == update_type::update)
 			{
 				ComponentsUpdate(uj.componentStorage, index, uj.size);
@@ -477,16 +456,7 @@ void componentUpdateThread(int index)
 			{
 				ComponentsLateUpdate(uj.componentStorage, index, uj.size);
 			}
-
-			threadCounters[index]++;
-			if (index == 0 && uj.ut == update_type::update)
-				appendStat(uj.componentStorage->name + "--update", stopWatch.stop());
-			else if (index == 0 && uj.ut == update_type::lateupdate)
-				appendStat(uj.componentStorage->name + "--late_update", stopWatch.stop());
 			updateWork[index].pop();
-
-			// _barrier.wait();
-			// uj.barrier->wait();
 		}
 		updateLocks[index].unlock();
 		this_thread::sleep_for(1ns);
@@ -530,7 +500,22 @@ void syncThreads()
 		this_thread::sleep_for(1ns);
 	}
 }
-
+void doWork(componentStorageBase* cs,update_type type){
+	int s = cs->size();
+	timer stopWatch;
+	stopWatch.start();
+	lockUpdate();
+	for (int i = 0; i < concurrency::numThreads; ++i)
+		updateWork[i].push(updateJob(cs, type, s, 0));
+	unlockUpdate();
+	this_thread::sleep_for(1ns);
+	lockUpdate();
+	unlockUpdate();
+	if (type == update_type::update)
+		appendStat(cs->name + "--update", stopWatch.stop());
+	else if (type == update_type::lateupdate)
+		appendStat(cs->name + "--late_update", stopWatch.stop());
+}
 void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 {
 	// UPDATE
@@ -538,19 +523,9 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	{
 		componentStorageBase *cb = j;
 		int s = cb->size();
-
-		// if(j->name == "8collider")
-		// 	continue;
-
-		lockUpdate();
+		doWork(j,update_type::update);
 		if (doCleanUp)
 			cleanup();
-		for (int i = 0; i < concurrency::numThreads; ++i)
-		{
-			updateWork[i].push(updateJob(j, update_type::update, s, 0));
-		}
-		unlockUpdate();
-		this_thread::sleep_for(1ns);
 	}
 	// LATE UPDATE
 	for (auto &j : ssb)
@@ -558,20 +533,11 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 		componentStorageBase *cb = j;
 		int s = cb->size();
 
-		lockUpdate();
+		doWork(j,update_type::lateupdate);
 		if (doCleanUp)
 			cleanup();
-		for (int i = 0; i < concurrency::numThreads; ++i)
-		{
-			updateWork[i].push(updateJob(j, update_type::lateupdate, s, 0));
-		}
-		unlockUpdate();
-		this_thread::sleep_for(1ns);
 	}
-	lockUpdate();
-	if (doCleanUp)
-		cleanup();
-	unlockUpdate();
+
 }
 
 
@@ -621,11 +587,9 @@ void run()
 	eventsPollDone = true;
 	unlockUpdate();
 
-	leaves.clear();
-	octree2 = &nodes.front();
-	octree2->clear();
-	octree2->id = 0;
-	numNodes = 1;
+	for(auto & i : collisionGraph)
+		collisionLayers[i.first].clear();
+	// Octree->clear();
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
@@ -633,6 +597,7 @@ void run()
 		timer gameLoopTotal;
 		timer gameLoopMain;
 		gameLoopTotal.start();
+		cleanupTime = 0;
 		while (!eventsPollDone)
 		{
 			this_thread::sleep_for(1ns);
@@ -645,12 +610,9 @@ void run()
 		doLoopIteration(gameComponents);
 
 		lockUpdate();
-		leaves.clear();
-		octree2->clear();
-		octree2 = &nodes.front();
-		octree2->id = 0;
-		numNodes = 1;
-		nodes[0].parent = -1;
+		for(auto & i : collisionGraph)
+			collisionLayers[i.first].clear();
+		// Octree->clear();
 		cleanup();
 		unlockUpdate();
 
@@ -714,6 +676,7 @@ void run()
 		appendStat("wait for render",stopWatch.stop());
 		renderWork.push(rj);
 		renderLock.unlock();
+		appendStat("clean up", cleanupTime);
 		appendStat("game loop total",gameLoopTotal.stop());
 		//		appendStat("rendering", stopWatch.stop());
 
@@ -746,13 +709,8 @@ void run()
 	componentStats.erase("");
 	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
 	{
-		int count = 0;
-		for (auto &j : allcomponents)
-		{
-			if (j.second->name + "--update" == i->first || j.second->name + "--late_update" == i->first)
-				count = j.second->size();
-		}
-		cout << count << " : " << i->first << " : " << i->second.getAverageValue() << endl;
+
+		cout << i->first << " : " << i->second.getAverageValue() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
 }

@@ -69,6 +69,7 @@ struct _emission{
     uint emitter_prototype;
     vec3 direction;
     int emitterID;
+    vec3 scale;
     int last;
 };
 enum particleCounters
@@ -139,6 +140,7 @@ bool updateEmitters = true;
 class particle_emitter : public component
 {
     emitter_prototype_ prototype;
+    static mutex lock;
 
 public:
     typename array_heap<emitter>::ref emitter;
@@ -155,7 +157,9 @@ public:
         ei.live = 1;
         ei.transformID = transform->_T.index;
         ei.id = this->emitter.index;
+        lock.lock();
         emitter_inits[ei.id] = ei;
+        lock.unlock();
     }
 
     void onStart()
@@ -174,7 +178,9 @@ public:
         ei.live = 1;
         ei.transformID = transform->_T.index;
         ei.id = this->emitter.index;
+        lock.lock();
         emitter_inits[ei.id] = ei;
+        lock.unlock();
 
     }
     void onDestroy()
@@ -190,11 +196,13 @@ public:
         ei.live = 0;
         ei.transformID = transform->_T.index;
         ei.id = this->emitter.index;
+        lock.lock();
         emitter_inits[ei.id] = ei;
+        lock.unlock();
     }
 
 };
-
+mutex particle_emitter::lock = mutex();
 void initParticles()
 {
 
@@ -277,9 +285,9 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(emitters.size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
-    glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    // glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
+    // glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
+    // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
