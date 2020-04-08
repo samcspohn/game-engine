@@ -1,10 +1,80 @@
 #include "game_engine.h"
+#include "initMain.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include <iomanip>
 #include <locale>
+#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "bullet/btBulletDynamicsCommon.h"
+
+btDynamicsWorld* world;	//every physical object go to the world
+btDispatcher* dispatcher;	//what collision algorithm to use?
+btCollisionConfiguration* collisionConfig;	//what collision algorithm to use?
+btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other
+btConstraintSolver* solver;					//solve collisions, apply forces, impulses
+std::vector<btRigidBody*> bodies;
+
+btRigidBody* addSphere(float rad,float x,float y,float z,float mass)
+{
+	btTransform t;	//position and rotation
+	t.setIdentity();
+	t.setOrigin(btVector3(x,y,z));	//put it to x,y,z coordinates
+	btBoxShape* sphere=new btBoxShape(btVector3(1,1,1));	//it's a sphere, so use sphereshape
+	btVector3 inertia(0,0,0);	//inertia is 0,0,0 for static object, else
+	if(mass!=0.0)
+		sphere->calculateLocalInertia(mass,inertia);	//it can be determined by this function (for all kind of shapes)
+	
+	btMotionState* motion=new btDefaultMotionState(t);	//set the position (and motion)
+	btRigidBody::btRigidBodyConstructionInfo info(mass,motion,sphere,inertia);	//create the constructioninfo, you can create multiple bodies with the same info
+	btRigidBody* body=new btRigidBody(info);	//let's create the body itself
+	world->addRigidBody(body);	//and let the world know about it
+	bodies.push_back(body);	//to be easier to clean, I store them a vector
+	return body;
+}
+
+_transform renderSphere(btRigidBody* sphere)
+{
+	// if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
+	// 	return;
+	// glColor3f(1,0,0);
+	// float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
+	btTransform _t;
+	sphere->getMotionState()->getWorldTransform(_t);	//get the transform
+	mat4 mat; 
+	_t.getOpenGLMatrix(glm::value_ptr(mat));	//OpenGL matrix stores the rotation and orientation
+	
+	_transform t;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
+	return t;
+}
+
+game_object* physObj;
+
+
+class physicsObject : public component{
+
+	btRigidBody* rb;
+	public:
+	void init(float x, float y, float z, vec3 force){
+		rb = addSphere(1,x,y,z,1);
+		rb->setLinearVelocity(btVector3(force.x,force.y,force.z));
+	}
+
+	void update(){
+		_transform _t = renderSphere(rb);
+		transform->setPosition(_t.position);
+		transform->setRotation(_t.rotation);
+		transform->setScale(_t.scale);
+		// get transform from btTransform
+	}
+	UPDATE(physicsObject, update);
+	COPY(physicsObject);
+};
+
 
 template <class T>
 std::string FormatWithCommas(T value)
@@ -109,7 +179,7 @@ public:
 			go->getComponent<missle>()->vel = (transform->forward() + (transform->right() * (randf() - 0.5f) + transform->up() * (randf() - 0.5f)) * dispersion) * speed;
 			go->getComponent<missle>()->setBullet(ammo);
 			// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
-			go->transform->setPosition(transform->getPosition() + transform->forward()*10.f - transform->up()*20.f);
+			go->transform->setPosition(transform->getPosition() + transform->forward() * 12.f);
 		}
 		numCubes.fetch_add((int)reload);
 		reload -= (int)reload;
@@ -150,10 +220,11 @@ public:
 		guns[1]->ammo = bullets["laser"];
 		guns[1]->rof = 1000 / 60;
 		guns[1]->dispersion = 0;
-		guns[1]->speed = 60000;
+		guns[1]->speed = 30;
 	}
 	void update()
 	{
+
 		rb->gravity = true;
 		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.01f);
 		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
@@ -186,44 +257,6 @@ public:
 
 		terrainHit h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
 
-
-		// if (transform->getPosition().z < h.height + 1.f)
-		// { // if grounded
-		// 	// rb->gravity = true;
-		// 	flying = false;
-		// 	jumped = false;
-		// 	transform->setPosition(vec3(transform->getPosition().x, h.height + 1.1f, transform->getPosition().z));
-		// 	vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
-
-		// 	glm::vec3 vel = rb->getVelocity();
-		// 	// if (transform->getPosition().y - 1.0f <= h.height)
-		// 	// 	rb->setVelocity(vec3(vel.x, 0, vel.y) * 0.5f);
-		// 	if (inputVel.x != 0 || inputVel.z != 0)
-		// 	{
-
-		// 		inputVel = normalize(inputVel);
-		// 		vec3 temp = cross(inputVel, h.normal);
-		// 		inputVel = normalize(cross(h.normal, temp));
-		// 		rb->setVelocity(currVel + inputVel * speed);
-		// 	}
-		// 	if (Input.getKeyDown(GLFW_KEY_SPACE))
-		// 	{ // jump
-		// 		jumped = true;
-		// 		rb->setVelocity(vec3(vel.x * .5f, speed + vel.y, vel.z * .5f));
-		// 	}
-		// 	if (h.height == -INFINITY)
-		// 	{
-		// 		jumped = true;
-		// 		return;
-		// 	}
-		// 	glm::vec3 currPos = transform->getPosition();
-		// 	// currPos.y = h + .99f;
-		// 	// transform->setPosition(currPos);
-		// }
-		// if (transform->getPosition().y - 1.0f > h.height)
-		// {
-		// 	if (flying)
-		// 	{ // if flying dont apply gravity
 				rb->gravity = false;
 				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 				if (inputVel.x != 0 || inputVel.z != 0)
@@ -231,20 +264,7 @@ public:
 				rb->setVelocity(currVel + inputVel * speed * 5.f);
 				glm::vec3 vel = rb->getVelocity();
 				rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
-			// }
-			// else
-			// {
-			// 	rb->gravity = true;
-			// 	vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
-			// 	if (inputVel.x != 0 || inputVel.z != 0)
-			// 		inputVel = normalize(inputVel);
-			// 	ownSpeed += inputVel * speed * 0.1f;
-			// 	if (length2(ownSpeed) < speed * speed)
-			// 		rb->setVelocity(currVel + inputVel * speed * 0.1f);
-			// 	glm::vec3 vel = rb->getVelocity();
-			// 	// rb->setVelocity(vel - vec3(speed,0,speed) * 0.3f);
-			// }
-		// }
+		
 		if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
 		{ // pressing jump while airborne begins flight
 			flying = true;
@@ -267,7 +287,12 @@ public:
 			cursorReleased = true;
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-			guns[0]->fire();
+			for(int i = 0; i < 1; i++){
+				auto g = new game_object(*physObj);
+				vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+				physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+			}
+			// guns[0]->fire();
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT)){
 			guns[1]->fire();
@@ -342,6 +367,152 @@ public:
 	UPDATE(autoCubes, update);
 	COPY(autoCubes);
 };
+
+
+typedef char byte_t;
+
+
+static int s_gridSize = 128 + 1;  // must be (2^N) + 1
+static btScalar s_gridSpacing = 0.5;
+static btScalar s_gridHeightScale = 0.02;
+
+static btScalar
+convertToFloat
+(
+	const char * p,
+	PHY_ScalarType type
+)
+{
+	btAssert(p);
+
+	switch (type) {
+	case PHY_FLOAT:
+	{
+		btScalar * pf = (btScalar *)p;
+		return *pf;
+	}
+
+	case PHY_UCHAR:
+	{
+		unsigned char * pu = (unsigned char *)p;
+		return ((*pu) * s_gridHeightScale);
+	}
+
+	case PHY_SHORT:
+	{
+		short * ps = (short *)p;
+		return ((*ps) * s_gridHeightScale);
+	}
+
+	default:
+		btAssert(!"bad type");
+	}
+
+	return 0;
+}
+static void
+convertFromFloat
+(
+	byte_t * p,
+	btScalar value,
+	PHY_ScalarType type
+)
+{
+	btAssert(p && "null");
+
+	switch (type) {
+	case PHY_FLOAT:
+	{
+		btScalar * pf = (btScalar *)p;
+		*pf = value;
+	}
+	break;
+
+	case PHY_UCHAR:
+	{
+		unsigned char * pu = (unsigned char *)p;
+		*pu = (unsigned char)(value / s_gridHeightScale);
+	}
+	break;
+
+	case PHY_SHORT:
+	{
+		short * ps = (short *)p;
+		*ps = (short)(value / s_gridHeightScale);
+	}
+	break;
+
+	default:
+		btAssert(!"bad type");
+	}
+}
+
+
+// creates a radially-varying heightfield
+static void
+setRadial
+(
+	char * grid,
+	int bytesPerElement,
+	PHY_ScalarType type,
+	btScalar phase = 0.0
+)
+{
+	btAssert(grid);
+	btAssert(bytesPerElement > 0);
+
+	// min/max
+	btScalar period = 0.5 / s_gridSpacing;
+	btScalar floor = 0.0;
+	btScalar min_r = 3.0 * btSqrt(s_gridSpacing);
+	btScalar magnitude = 5.0 * btSqrt(s_gridSpacing);
+
+	// pick a base_phase such that phase = 0 results in max height
+	//   (this way, if you create a heightfield with phase = 0,
+	//    you can rely on the min/max heights that result)
+	btScalar base_phase = (0.5 * SIMD_PI) - (period * min_r);
+	phase += base_phase;
+
+	// center of grid
+	btScalar cx = 0.5 * s_gridSize * s_gridSpacing;
+	btScalar cy = cx;		// assume square grid
+	char * p = grid;
+	for (int i = 0; i < s_gridSize; ++i) {
+		float x = i * s_gridSpacing;
+		for (int j = 0; j < s_gridSize; ++j) {
+			float y = j * s_gridSpacing;
+
+			float dx = x - cx;
+			float dy = y - cy;
+
+			float r = sqrt((dx * dx) + (dy * dy));
+
+			float z = period;
+			if (r < min_r) {
+				r = min_r;
+			}
+			z = (1.0 / r) * sin(period * r + phase);
+			if (z > period) {
+				z = period;
+			}
+			else if (z < -period) {
+				z = -period;
+			}
+			z = floor + magnitude * z;
+
+			convertFromFloat(p, z, type);
+			p += bytesPerElement;
+		}
+	}
+}
+
+
+
+
+
+
+
+
 int main(int argc, char **argv)
 {
 	if (argc > 1)
@@ -350,127 +521,29 @@ int main(int argc, char **argv)
 		maxGameDuration = (float)stoi(argv[2]);
 
 	hideMouse = false;
+	
+	//pretty much initialize everything logically
+	collisionConfig=new btDefaultCollisionConfiguration();
+	dispatcher=new btCollisionDispatcher(collisionConfig);
+	broadphase=new btDbvtBroadphase();
+	solver=new btSequentialImpulseConstraintSolver();
+	world=new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfig);
+	world->setGravity(btVector3(0,-10,0));	//gravity on Earth
+	
 	init();
-	_shader particleShader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
-	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
-	_model cubeModel("res/models/cube/cube.obj");
-	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
-	_model terrainModel("res/models/terrain/terrain.obj");
-	//	waitForRenderQueue();
+	initmain()
+	//////////////////////////////////////////////////////////
 
-	collisionGraph[0] = {1};
-	collisionGraph[1] = {0,1};
+	physObj = new game_object();
+	physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
+	physObj->addComponent<physicsObject>()->init(0,20,0,vec3(0));
 
-	///////////////////////////////////////////////////
+	for(int i = 0; i < 60; i++){
+		auto g = new game_object(*physObj);
+		vec3 r = randomSphere() * 500.f * randf() + vec3(0,500,0);
+		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z,vec3(0));
+	}
 
-	emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
-	flameEmitterProto->emission_rate = 3.f;
-	flameEmitterProto->lifetime = 0.67f;
-	flameEmitterProto->color = vec4(1, 1, 0.1f, 0.8f);
-	flameEmitterProto->velocity = vec3(1.f);
-	flameEmitterProto->scale = vec3(1.5f);
-	flameEmitterProto->billboard = 1;
-	flameEmitterProto->trail = 1;
-
-	emitter_prototype_ smokeEmitter = createNamedEmitter("smoke");
-	*smokeEmitter = *flameEmitterProto;
-	smokeEmitter->emission_rate = 2.f;
-	smokeEmitter->lifetime = 3.f;
-	smokeEmitter->color = vec4(0.5f, 0.5f, 0.5f, 0.2f);
-	smokeEmitter->velocity = vec3(4.f);
-	smokeEmitter->scale = vec3(3);
-	smokeEmitter->trail = 1;
-
-	////////////////////////////////////////////////
-
-	emitter_prototype_ emitterProto2 = createNamedEmitter("expflame");
-	emitterProto2->emission_rate = 50.f;
-	emitterProto2->lifetime = 1.f;
-	emitterProto2->color = vec4(1, 1, 0.2f, 0.8f);
-	emitterProto2->velocity = vec3(60.f);
-	emitterProto2->scale = vec3(25.f);
-	emitterProto2->billboard = 1;
-	emitterProto2->trail = 0;
-	_expFlame = emitterProto2;
-
-	emitter_prototype_ emitterProto4 = createNamedEmitter("expsmoke");
-	*emitterProto4 = *emitterProto2;
-	emitterProto4->emission_rate = 50.f;
-	emitterProto4->lifetime = 6.f;
-	// emitterProto3->trail = 0;
-	emitterProto4->scale = vec3(20);
-	emitterProto4->velocity = vec3(30.f);
-	emitterProto4->color = vec4(0.45f);
-	_expSmoke = emitterProto4;
-	/////////////////////////////////////////////
-	bullet bomb;
-	bomb.primarybullet = flameEmitterProto;
-	bomb.secondarybullet = smokeEmitter;
-	bomb.primaryexplosion = emitterProto2;
-	bomb.secondaryexplosion = emitterProto4;
-	bullets["bomb"] = bomb;
-
-	bullet laser;
-	laser.primarybullet = createNamedEmitter("laserbeam");
-	laser.primarybullet->color = vec4(.8,.8,1,1);
-	laser.primarybullet->lifetime = 0.3f;
-	laser.primarybullet->emission_rate = 20.f;
-	laser.primarybullet->trail = 1;
-	laser.primarybullet->scale = vec3(20.f);
-	laser.primarybullet->velocity = vec3(1.f);
-	laser.secondarybullet = createNamedEmitter("laserbeam2");
-	laser.secondarybullet->color = vec4(.2,.2,1,0.5);
-	laser.secondarybullet->lifetime = 1.f;
-	laser.secondarybullet->emission_rate = 20.f;
-	laser.secondarybullet->trail = 1;
-	laser.secondarybullet->scale = vec3(25.f);
-	laser.secondarybullet->velocity = vec3(1.f);
-	laser.primaryexplosion = createNamedEmitter("beamexplosion1");
-	laser.primaryexplosion->color = vec4(.8,.8,1,1);
-	laser.primaryexplosion->scale = vec3(1000);
-	laser.primaryexplosion->lifetime = 1.f;
-	laser.primaryexplosion->emission_rate = 50.f;
-	laser.primaryexplosion->trail = 0;
-	laser.primaryexplosion->velocity = vec3(2000.f);
-	laser.secondaryexplosion = createNamedEmitter("beamexplosion2");
-	laser.secondaryexplosion->color = vec4(.2,.2,1,0.5);
-	laser.secondaryexplosion->scale = vec3(1000);
-	laser.secondaryexplosion->lifetime = 6.f;
-	laser.secondaryexplosion->emission_rate = 50.f;
-	laser.secondaryexplosion->trail = 0;
-	laser.secondaryexplosion->velocity = vec3(600.f);
-	bullets["laser"] = laser;
-
-	bullet blackLaser;
-	blackLaser.primarybullet = createNamedEmitter("blacklaserbeam");
-	blackLaser.primarybullet->color = vec4(0,0,0,1);
-	blackLaser.primarybullet->lifetime = 0.7f;
-	blackLaser.primarybullet->emission_rate = 20.f;
-	blackLaser.primarybullet->trail = 1;
-	blackLaser.primarybullet->scale = vec3(100.f);
-	blackLaser.primarybullet->velocity = vec3(1.f);
-	blackLaser.secondarybullet = createNamedEmitter("blacklaserbeam2");
-	blackLaser.secondarybullet->color = vec4(1,0,0,0.5);
-	blackLaser.secondarybullet->lifetime = 1.f;
-	blackLaser.secondarybullet->emission_rate = 20.f;
-	blackLaser.secondarybullet->trail = 1;
-	blackLaser.secondarybullet->scale = vec3(160.f);
-	blackLaser.secondarybullet->velocity = vec3(1.f);
-	blackLaser.primaryexplosion = createNamedEmitter("blackbeamexplosion1");
-	blackLaser.primaryexplosion->color = vec4(0,0,0,1);
-	blackLaser.primaryexplosion->scale = vec3(10000);
-	blackLaser.primaryexplosion->lifetime = 3.f;
-	blackLaser.primaryexplosion->emission_rate = 100.f;
-	blackLaser.primaryexplosion->trail = 0;
-	blackLaser.primaryexplosion->velocity = vec3(10000.f);
-	blackLaser.secondaryexplosion = createNamedEmitter("blackbeamexplosion2");
-	blackLaser.secondaryexplosion->color = vec4(0.8,0,0,0.5);
-	blackLaser.secondaryexplosion->scale = vec3(15000);
-	blackLaser.secondaryexplosion->lifetime = 6.f;
-	blackLaser.secondaryexplosion->emission_rate = 40.f;
-	blackLaser.secondaryexplosion->trail = 0;
-	blackLaser.secondaryexplosion->velocity = vec3(5000.f);
-	bullets["black"] = blackLaser;
 
 	player = new game_object();
 	auto playerCam = player->addComponent<_camera>();
@@ -478,20 +551,67 @@ int main(int argc, char **argv)
 	playerCam->farPlane = 1e32f;
 	player->addComponent<gun>();
 	player->addComponent<gun>();
-	player->addComponent<collider>()->layer = 1;
+	// player->addComponent<collider>()->layer = 1;
 	player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
-	player->transform->translate(vec3(0, 0, -10120));
+	player->transform->translate(vec3(0, 10, -10));
 	ground = new game_object();
 
-	ground->transform->scale(vec3(20));
+	// ground->transform->scale(vec3(20));
 	auto r = ground->addComponent<_renderer>();
 	r->set(modelShader, terrainModel);
 	auto t = ground->addComponent<terrain>();
 	t->r = r;
-	t->width = t->depth = 1024;
-	ground->transform->translate(glm::vec3(-10240, -5000, -10240));
+	// t->width = t->depth = 1024;
+	t->genHeightMap(128,128);
+	 ground->transform->translate(glm::vec3(-64,0,-64));
+	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));
+
+	float minH = 10000;
+	float maxH = -10000;
+	float *heightData = new float[128*128];
+	// setRadial(heightData, 4, PHY_FLOAT);
+	int x = 0;
+	for(int i = 0; i < t->heightMap.size(); i++){
+		for(int j = 0; j < t->heightMap[i].size(); j++){
+			heightData[j * 128 + i] = t->heightMap[i][j];
+			if(minH > heightData[i*128 + j])
+				minH = heightData[i*128 + j];
+			else if(maxH < heightData[i*128 + j])
+				maxH = heightData[i*128 + j];
+		}
+	}
+	// for(auto &i : t->heightMap){
+	// 	for(auto &j : i){
+	// 		// convertFromFloat(&heightData[x*4],j,PHY_FLOAT);
+	// 		heightData[x] = j;
+	// 		if(minH > j)
+	// 			minH = j;
+	// 		else if(maxH < j)
+	// 			maxH = j;
+	// 		x++;
+	// 	}
+	// }
+
+
+	//similar to createSphere
+	btTransform ter;
+	ter.setIdentity();
+	ter.setOrigin(btVector3(0,maxH/2,0));
+	btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
+	btHeightfieldTerrainShape* heightField =
+		new btHeightfieldTerrainShape(128,128,
+			heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH),1,PHY_FLOAT,false);
+	btVector3 localScaling(1,1,1);
+	heightField->setLocalScaling(localScaling);
+	btMotionState* motion=new btDefaultMotionState(ter);
+	// btVector3 localInertia(0,0,0);
+	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
+	btRigidBody* body=new btRigidBody(info);
+	world->addRigidBody(body);
+	bodies.push_back(body);
+
 
 	player->getComponent<player_sc>()->t = t;
 	ifstream config("config.txt");
@@ -553,6 +673,7 @@ int main(int argc, char **argv)
 	pe->setPrototype(ep2);
 
 	game_object *proto2 = new game_object();
+	proto2->transform->translate(vec3(50));
 	proto2->addComponent<spinner>();
 	proto2->addComponent<_renderer>();
 	proto2->addComponent<rigidBody>()->gravity = false;
@@ -565,15 +686,18 @@ int main(int argc, char **argv)
 	proto2->getComponent<particle_emitter>()->setPrototype(ep2);
 	proto2->transform->setScale(glm::vec3(10.f));
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
-	for (int i = 0; i < 20; ++i)
+
+	// create big cubes
+	for (int i = 0; i < 0; ++i)//20
 	{
 		proto2 = new game_object(*proto2);
-		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));
+		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1)),pow(10.f, (float)(i + 1)),pow(11.f, (float)(i + 1))));
 		proto2->transform->translate(glm::vec3(pow(10.f, (float)(i + 1))) * 2.f);
 		proto2->transform->rotate(randomSphere(),randf() * 1.5);
 	}
 
-	for (int i = 0; i < 1000; ++i)
+	// create shooters
+	for (int i = 0; i < 0; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);
@@ -584,6 +708,7 @@ int main(int argc, char **argv)
 		// cout << "\r" << (float)i / (float)n << "    " << flush;
 	}
 
+	// create blob of bombs
 	go = new game_object(*CUBE);
 	for (int i = 0; i < n; i++)
 	{
@@ -596,7 +721,23 @@ int main(int argc, char **argv)
 
 
 
-	run();
+	run(world);
+	for(int i=0;i<bodies.size();i++)
+	{
+		world->removeCollisionObject(bodies[i]);
+		btMotionState* motionState=bodies[i]->getMotionState();
+		btCollisionShape* shape=bodies[i]->getCollisionShape();
+		delete bodies[i];
+		delete shape;
+		delete motionState;
+	}
+	delete dispatcher;
+	delete collisionConfig;
+	delete solver;
+	delete broadphase;
+	delete world;
+	delete[] heightData;
+
 
 	return 0;
 }

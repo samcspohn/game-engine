@@ -19,7 +19,8 @@
                 "-std=c++17",
                 "-lGL", "-lGLU",
                 "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
-                "-lXi", "-lSOIL", "-lassimp"
+                "-lXi", "-lSOIL", "-lassimp",
+                "-Ireactphysics3d"
                 ],
         },
         {
@@ -34,12 +35,14 @@
                 "clear": true
             },
             "command": "clang++",
-            "args": ["main.cpp", "-g", "-fpermissive", "-w", 
-                "-O3",
+            "args": ["main.cpp", "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
+                "-Os",
                 "-std=c++17",
                 "-lGL", "-lGLU",
                 "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
-                "-lXi", "-lSOIL", "-lassimp"
+                "-lXi", "-lSOIL", "-lassimp",
+                // "-Ibullet"
+                "-I./bullet"
                 ],
         }
     ]

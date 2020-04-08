@@ -424,7 +424,7 @@ void main () {
         emitter_prototype proto = prototypes[p.emitter_prototype];
         vec3 p1 = (vp * vec4(p.position,1)).xyz;
         vec3 p2 = (vp * vec4(p.position2,1)).xyz;
-        if(p.live == 1 && p1.z > 0 && abs(p1.x / p1.z) < 1.1 && abs(p1.y / p1.z) < 1.1){
+        if(p.live == 1 && p1.z > 0){// && abs(p1.x / p1.z) < 1.1 && abs(p1.y / p1.z) < 1.1){
             index = atomicAdd(atomics[0],1);
             d item;
             uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
