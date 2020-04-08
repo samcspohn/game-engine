@@ -402,6 +402,8 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 	}
 }
 
+mutex colDatLock;
+vector<colDat> colliderData;
 
 struct treenode
 {
@@ -415,7 +417,7 @@ struct treenode
 	bool left;
 	bool isLeaf;
 	int objCounter;
-	vector<colDat*> objs;
+	vector<colDat> objs;
 	// colDat objs[maxObj];
 	void clear()
 	{
@@ -434,11 +436,11 @@ struct treenode
 		children = -1;
 		left = _left;
 	}
-	colDat *push_back(colDat* cd)
+	colDat *push_back(const colDat &cd)
 	{
 		objs.push_back(cd);
 		objCounter++;
-		return objs.back();
+		return &objs.back();
 		// if (objCounter == maxObj)
 		// 	return 0;
 		// objs[objCounter] = cd;
@@ -468,14 +470,14 @@ struct octree{
 			if (curr.left)
 				for (int i = 0; i < curr.objCounter; i++)
 				{
-					if (_a.c[curr.axis] - _a.r[curr.axis] < curr.objs[i]->a.c[curr.axis] + curr.objs[i]->a.r[curr.axis])
-						rigidBody::collide(myCol, *curr.objs[i], colCount);
+					if (_a.c[curr.axis] - _a.r[curr.axis] < curr.objs[i].a.c[curr.axis] + curr.objs[i].a.r[curr.axis])
+						rigidBody::collide(myCol, curr.objs[i], colCount);
 				}
 			else
 				for (int i = 0; i < curr.objCounter; i++)
 				{
-					if (_a.c[curr.axis] + _a.r[curr.axis] > curr.objs[i]->a.c[curr.axis] - curr.objs[i]->a.r[curr.axis])
-						rigidBody::collide(myCol, *curr.objs[i], colCount);
+					if (_a.c[curr.axis] + _a.r[curr.axis] > curr.objs[i].a.c[curr.axis] - curr.objs[i].a.r[curr.axis])
+						rigidBody::collide(myCol, curr.objs[i], colCount);
 				}
 		}
 
@@ -504,17 +506,17 @@ struct octree{
 		lock.unlock();
 		return size;
 	}
-	void insert(colDat * colliderData, int depth, treenode& curr){
+	void insert(colDat colliderData, int depth, treenode& curr){
 		// auto curr = [&]()-> treenode& {return this->nodes[currId];};
 		if (!curr.isLeaf)
 		{
-			if (colliderData->a.c[curr.axis] + colliderData->a.r[curr.axis] < curr.d)
+			if (colliderData.a.c[curr.axis] + colliderData.a.r[curr.axis] < curr.d)
 			{
 				insert(colliderData, depth + 1,nodes[curr.children]);
 				// nodes[curr.children].insert(colliderData, depth + 1);
 				// return;
 			}
-			else if (colliderData->a.c[curr.axis] - colliderData->a.r[curr.axis] > curr.d)
+			else if (colliderData.a.c[curr.axis] - colliderData.a.r[curr.axis] > curr.d)
 			{
 				insert(colliderData, depth + 1,nodes[curr.children + 1]);
 				// nodes[curr.children + 1].insert(colliderData, depth + 1);
@@ -523,10 +525,10 @@ struct octree{
 			else
 			{
 				curr.m.lock();
-				float e = _max(abs(colliderData->a.c[curr.axis] - colliderData->a.r[curr.axis]), abs(colliderData->a.c[curr.axis] + colliderData->a.r[curr.axis])) - curr.d;
+				float e = _max(abs(colliderData.a.c[curr.axis] - colliderData.a.r[curr.axis]), abs(colliderData.a.c[curr.axis] + colliderData.a.r[curr.axis])) - curr.d;
 				if (e > curr.farthest)
 					curr.farthest = e;
-				setPosInTree(colliderData->c, curr.push_back(colliderData));
+				setPosInTree(colliderData.c, curr.push_back(colliderData));
 				curr.m.unlock();
 				// return;
 			}
@@ -538,7 +540,7 @@ struct octree{
 			{
 				if (curr.objCounter < maxObj)
 				{
-					setPosInTree(colliderData->c, curr.push_back(colliderData));
+					setPosInTree(colliderData.c, curr.push_back(colliderData));
 				}
 				if (curr.objCounter >= maxObj)
 				{
@@ -549,7 +551,7 @@ struct octree{
 
 					for (auto &i : curr.objs)
 					{
-						curr.d += i->a.c[curr.axis];
+						curr.d += i.a.c[curr.axis];
 					}
 					curr.d /= curr.objCounter;
 
@@ -558,25 +560,25 @@ struct octree{
 					for (int i = 0; i < curr.objCounter; i++)
 					{
 
-						if (curr.objs[i]->a.c[curr.axis] + curr.objs[i]->a.r[curr.axis] < curr.d)
+						if (curr.objs[i].a.c[curr.axis] + curr.objs[i].a.r[curr.axis] < curr.d)
 						{
 							// nodes[curr.children].insert(curr.objs[i], 0);
-							setPosInTree(curr.objs[i]->c, nodes[curr.children].push_back(curr.objs[i]));
+							setPosInTree(curr.objs[i].c, nodes[curr.children].push_back(curr.objs[i]));
 						}
-						else if (curr.objs[i]->a.c[curr.axis] - curr.objs[i]->a.r[curr.axis] > curr.d)
+						else if (curr.objs[i].a.c[curr.axis] - curr.objs[i].a.r[curr.axis] > curr.d)
 						{
 							// nodes[curr.children + 1].insert(curr.objs[i],0);
-							setPosInTree(curr.objs[i]->c, nodes[curr.children + 1].push_back(curr.objs[i]));
+							setPosInTree(curr.objs[i].c, nodes[curr.children + 1].push_back(curr.objs[i]));
 						}
 						else
 						{
-							float e = _max(abs(curr.objs[i]->a.c[curr.axis] - curr.objs[i]->a.r[curr.axis]), abs(curr.objs[i]->a.c[curr.axis] + curr.objs[i]->a.r[curr.axis])) - curr.d;
+							float e = _max(abs(curr.objs[i].a.c[curr.axis] - curr.objs[i].a.r[curr.axis]), abs(curr.objs[i].a.c[curr.axis] + curr.objs[i].a.r[curr.axis])) - curr.d;
 							if (e > curr.farthest)
 							{
 								curr.farthest = e;
 							}
 							curr.objs[j] = curr.objs[i];
-							setPosInTree(curr.objs[j]->c, curr.objs[j]);
+							setPosInTree(curr.objs[j].c, &curr.objs[j]);
 							j++;
 						}
 					}
@@ -589,13 +591,13 @@ struct octree{
 			}
 			else
 			{
-				if (colliderData->a.c[curr.axis] + colliderData->a.r[curr.axis] < curr.d)
+				if (colliderData.a.c[curr.axis] + colliderData.a.r[curr.axis] < curr.d)
 				{
 					// m.unlock();
 					insert(colliderData, depth + 1,nodes[curr.children]);
 					// return;
 				}
-				else if (colliderData->a.c[curr.axis] - colliderData->a.r[curr.axis] > curr.d)
+				else if (colliderData.a.c[curr.axis] - colliderData.a.r[curr.axis] > curr.d)
 				{
 					// m.unlock();
 					insert(colliderData, depth + 1,nodes[curr.children + 1]);
@@ -603,10 +605,10 @@ struct octree{
 				}
 				else
 				{
-					float e = _max(abs(colliderData->a.c[curr.axis] - colliderData->a.r[curr.axis]), abs(colliderData->a.c[curr.axis] + colliderData->a.r[curr.axis])) - curr.d;
+					float e = _max(abs(colliderData.a.c[curr.axis] - colliderData.a.r[curr.axis]), abs(colliderData.a.c[curr.axis] + colliderData.a.r[curr.axis])) - curr.d;
 					if (e > curr.farthest)
 						curr.farthest = e;
-					setPosInTree(colliderData->c, curr.push_back(colliderData));
+					setPosInTree(colliderData.c, curr.push_back(colliderData));
 					// m.unlock();
 					// return;
 				}
@@ -615,7 +617,7 @@ struct octree{
 
 		}
 	}
-	void insert(colDat * colliderData, int depth )
+	void insert(colDat colliderData, int depth )
 	{
 		// treenode& curr = nodes[0];
 		insert(colliderData, depth,nodes[0]);
@@ -697,7 +699,6 @@ public:
 	} _collider;
 	AABB a;
 	colDat cd;
-	colDat* _cd;
 	void update()
 	{
 		//octLock.lock();
@@ -720,10 +721,8 @@ public:
 		cd.valid = true;
 		cd.rb = rb;
 		int depth = 0;
-		
-
 		// leaveLock.lock();
-		collisionLayers[layer].insert(&cd, depth);
+		collisionLayers[layer].insert(cd, depth);
 		// leaveLock.unlock();
 
 		//octLock.unlock();

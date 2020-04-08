@@ -104,7 +104,7 @@ class _time
 public:
 	double time;
 	double unscaledTime;
-	float deltaTime;
+	float deltaTime = 0.0001;
 	float unscaledDeltaTime;
 	double timeScale = 1;
 	rolling_buffer timeBuffer = rolling_buffer(20);

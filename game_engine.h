@@ -24,7 +24,8 @@
 #include "game_engine_components.h"
 #include "physics.h"
 #include "particles.h"
-
+#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "bullet/btBulletDynamicsCommon.h"
 using namespace glm;
 using namespace std;
 
@@ -301,39 +302,8 @@ void renderThreadFunc()
 				//////////////////////////////////////////////////////////////////////////////
 
 				gt.start();
-
-				// glUseProgram(matProgram.Program);
-
-				// glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "view"), 1, GL_FALSE, glm::value_ptr(rj.view));
-				// glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "vRot"), 1, GL_FALSE, glm::value_ptr(rj.rot));
-				// glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "projection"), 1, GL_FALSE, glm::value_ptr(rj.proj));
-
-				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
-				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, GPU_RENDERERS->bufferId);
-				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, GPU_MATRIXES->bufferId);
-
-				// mainCamPos = player->transform->getPosition();
-				// MainCamForward = player->transform->forward();
-				// mainCamUp = player->transform->up();
-				// glUniform3f(glGetUniformLocation(matProgram.Program, "camPos"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-				// glUniform3f(glGetUniformLocation(matProgram.Program, "camForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
-				// glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-				// glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), 1);
-				// glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), GPU_RENDERERS->size());
-				// glDispatchCompute(GPU_RENDERERS->size() / 64 + 1, 1, 1);
-				// glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				// appendStat("matrix compute", gt.stop());
-
-				// //buffer renderer ids
-				// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-				// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-				// 		j->second->_ids->bufferData();
-
-			
-
-					gt.start(); // move outside of loop
-					updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
-					appendStat("particles compute", gt.stop());
+				updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
+				appendStat("particles compute", gt.stop());
 
 				// cam_render(rj.rot, rj.proj, rj.view);
 					glClearColor(0.6f, 0.7f, 1.f, 1.0f);
@@ -359,8 +329,8 @@ void renderThreadFunc()
 					
 					// render particles
 					gt.start();
-					glDisable(GL_CULL_FACE);
-					glDepthMask(GL_FALSE);
+					// glDisable(GL_CULL_FACE);
+					// glDepthMask(GL_FALSE);
 					particle_renderer.drawParticles(c.view, c.rot, c.proj);
 					appendStat("render particles", gt.stop());
 				}
@@ -562,7 +532,7 @@ void waitForWork(){
 }
 
 float maxGameDuration = INFINITY;
-void run()
+void run(btDynamicsWorld* World)
 {
 	timer stopWatch;
 
@@ -615,14 +585,13 @@ void run()
 		// Octree->clear();
 		cleanup();
 		unlockUpdate();
-
+	World->stepSimulation(Time.deltaTime);
 		waitForWork();
 		cleanup();
 		doLoopIteration(gameEngineComponents, false);
 
 
 		waitForWork();
-
 		lockUpdate();
 		cleanup();
 		appendStat("game loop main",gameLoopMain.stop());
