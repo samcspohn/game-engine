@@ -62,6 +62,8 @@ public:
         z -= transform->getPosition().z;
         x /= transform->getScale().x;
         z /= transform->getScale().z;
+        x += (width - 1) / 2;
+        z += (depth - 1) / 2;
         if(x > width - 2.f || z > width - 2.f || x < 0.f || z < 0.f)
             return terrainHit(vec3(0,1,0),-INFINITY);
         // return 1.f;
@@ -125,7 +127,7 @@ public:
 
         for(int x = 0; x < width; x++){
             for(int z = 0; z < depth; z++){
-                verts[x * width + z] = glm::vec3(x,heightMap[x][z], z);
+                verts[x * width + z] = glm::vec3(x - (width - 1) / 2.0,heightMap[x][z], z - (depth - 1) / 2.0);
             }
         }
 

@@ -15,6 +15,9 @@ btCollisionConfiguration* collisionConfig;	//what collision algorithm to use?
 btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other
 btConstraintSolver* solver;					//solve collisions, apply forces, impulses
 std::vector<btRigidBody*> bodies;
+terrain* terr;
+
+int numBoxes = 0;
 
 btRigidBody* addSphere(float rad,float x,float y,float z,float mass)
 {
@@ -22,12 +25,14 @@ btRigidBody* addSphere(float rad,float x,float y,float z,float mass)
 	t.setIdentity();
 	t.setOrigin(btVector3(x,y,z));	//put it to x,y,z coordinates
 	btBoxShape* sphere=new btBoxShape(btVector3(1,1,1));	//it's a sphere, so use sphereshape
+	// btSphereShape* sphere = new btSphereShape(rad);
 	btVector3 inertia(0,0,0);	//inertia is 0,0,0 for static object, else
 	if(mass!=0.0)
 		sphere->calculateLocalInertia(mass,inertia);	//it can be determined by this function (for all kind of shapes)
 	
 	btMotionState* motion=new btDefaultMotionState(t);	//set the position (and motion)
 	btRigidBody::btRigidBodyConstructionInfo info(mass,motion,sphere,inertia);	//create the constructioninfo, you can create multiple bodies with the same info
+	// info.m_restitution = 0.8;
 	btRigidBody* body=new btRigidBody(info);	//let's create the body itself
 	world->addRigidBody(body);	//and let the world know about it
 	bodies.push_back(body);	//to be easier to clean, I store them a vector
@@ -69,6 +74,16 @@ class physicsObject : public component{
 		transform->setPosition(_t.position);
 		transform->setRotation(_t.rotation);
 		transform->setScale(_t.scale);
+		terrainHit hit = terr->getHeight(_t.position.x,_t.position.z);
+		if(_t.position.y < hit.height){
+			btTransform t = rb->getWorldTransform();
+			btVector3 v = t.getOrigin();
+			v.setY(hit.height + 1);
+			t.setOrigin(v);
+			rb->setWorldTransform(t);
+			rb->setLinearVelocity(btVector3(0,0,0));
+			// rb->applyForce(btVector3(0,0.1,0),btVector3(v.getX(),v.getY() - 0.9,v.getZ()));
+		}
 		// get transform from btTransform
 	}
 	UPDATE(physicsObject, update);
@@ -199,6 +214,7 @@ class player_sc : public component
 	bullet bomb;
 	bullet laser;
 	vector<gun*> guns;
+	float rotationSpeed = 10.f;
 public:
 	terrain *t;
 
@@ -226,14 +242,15 @@ public:
 	{
 
 		rb->gravity = true;
-		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * -0.01f);
-		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * -0.01f);
+		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
+		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
 		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
 
 		glm::vec3 currVel = rb->getVelocity();
 
 		if (framecount++ > 1)
-			cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles)) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "                           ";
+			cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))
+			 << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
 		if (Input.getKeyDown(GLFW_KEY_R))
 		{
 			speed *= 2;
@@ -287,7 +304,8 @@ public:
 			cursorReleased = true;
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-			for(int i = 0; i < 1; i++){
+			for(int i = 0; i <= Time.deltaTime * 100; i++){
+				numBoxes++;
 				auto g = new game_object(*physObj);
 				vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
 				physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
@@ -369,150 +387,6 @@ public:
 };
 
 
-typedef char byte_t;
-
-
-static int s_gridSize = 128 + 1;  // must be (2^N) + 1
-static btScalar s_gridSpacing = 0.5;
-static btScalar s_gridHeightScale = 0.02;
-
-static btScalar
-convertToFloat
-(
-	const char * p,
-	PHY_ScalarType type
-)
-{
-	btAssert(p);
-
-	switch (type) {
-	case PHY_FLOAT:
-	{
-		btScalar * pf = (btScalar *)p;
-		return *pf;
-	}
-
-	case PHY_UCHAR:
-	{
-		unsigned char * pu = (unsigned char *)p;
-		return ((*pu) * s_gridHeightScale);
-	}
-
-	case PHY_SHORT:
-	{
-		short * ps = (short *)p;
-		return ((*ps) * s_gridHeightScale);
-	}
-
-	default:
-		btAssert(!"bad type");
-	}
-
-	return 0;
-}
-static void
-convertFromFloat
-(
-	byte_t * p,
-	btScalar value,
-	PHY_ScalarType type
-)
-{
-	btAssert(p && "null");
-
-	switch (type) {
-	case PHY_FLOAT:
-	{
-		btScalar * pf = (btScalar *)p;
-		*pf = value;
-	}
-	break;
-
-	case PHY_UCHAR:
-	{
-		unsigned char * pu = (unsigned char *)p;
-		*pu = (unsigned char)(value / s_gridHeightScale);
-	}
-	break;
-
-	case PHY_SHORT:
-	{
-		short * ps = (short *)p;
-		*ps = (short)(value / s_gridHeightScale);
-	}
-	break;
-
-	default:
-		btAssert(!"bad type");
-	}
-}
-
-
-// creates a radially-varying heightfield
-static void
-setRadial
-(
-	char * grid,
-	int bytesPerElement,
-	PHY_ScalarType type,
-	btScalar phase = 0.0
-)
-{
-	btAssert(grid);
-	btAssert(bytesPerElement > 0);
-
-	// min/max
-	btScalar period = 0.5 / s_gridSpacing;
-	btScalar floor = 0.0;
-	btScalar min_r = 3.0 * btSqrt(s_gridSpacing);
-	btScalar magnitude = 5.0 * btSqrt(s_gridSpacing);
-
-	// pick a base_phase such that phase = 0 results in max height
-	//   (this way, if you create a heightfield with phase = 0,
-	//    you can rely on the min/max heights that result)
-	btScalar base_phase = (0.5 * SIMD_PI) - (period * min_r);
-	phase += base_phase;
-
-	// center of grid
-	btScalar cx = 0.5 * s_gridSize * s_gridSpacing;
-	btScalar cy = cx;		// assume square grid
-	char * p = grid;
-	for (int i = 0; i < s_gridSize; ++i) {
-		float x = i * s_gridSpacing;
-		for (int j = 0; j < s_gridSize; ++j) {
-			float y = j * s_gridSpacing;
-
-			float dx = x - cx;
-			float dy = y - cy;
-
-			float r = sqrt((dx * dx) + (dy * dy));
-
-			float z = period;
-			if (r < min_r) {
-				r = min_r;
-			}
-			z = (1.0 / r) * sin(period * r + phase);
-			if (z > period) {
-				z = period;
-			}
-			else if (z < -period) {
-				z = -period;
-			}
-			z = floor + magnitude * z;
-
-			convertFromFloat(p, z, type);
-			p += bytesPerElement;
-		}
-	}
-}
-
-
-
-
-
-
-
-
 int main(int argc, char **argv)
 {
 	if (argc > 1)
@@ -537,7 +411,7 @@ int main(int argc, char **argv)
 	physObj = new game_object();
 	physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
 	physObj->addComponent<physicsObject>()->init(0,20,0,vec3(0));
-
+	numBoxes += 61;
 	for(int i = 0; i < 60; i++){
 		auto g = new game_object(*physObj);
 		vec3 r = randomSphere() * 500.f * randf() + vec3(0,500,0);
@@ -558,28 +432,30 @@ int main(int argc, char **argv)
 	player->transform->translate(vec3(0, 10, -10));
 	ground = new game_object();
 
-	// ground->transform->scale(vec3(20));
+	ground->transform->scale(vec3(20));
 	auto r = ground->addComponent<_renderer>();
 	r->set(modelShader, terrainModel);
 	auto t = ground->addComponent<terrain>();
 	t->r = r;
+	terr = t;
 	// t->width = t->depth = 1024;
-	t->genHeightMap(128,128);
-	 ground->transform->translate(glm::vec3(-64,0,-64));
+	int terrainWidth = 1025;
+	t->genHeightMap(terrainWidth,terrainWidth);
+	 ground->transform->translate(glm::vec3(0,-4000,0));
 	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));
 
 	float minH = 10000;
 	float maxH = -10000;
-	float *heightData = new float[128*128];
+	float *heightData = new float[terrainWidth*terrainWidth];
 	// setRadial(heightData, 4, PHY_FLOAT);
 	int x = 0;
 	for(int i = 0; i < t->heightMap.size(); i++){
 		for(int j = 0; j < t->heightMap[i].size(); j++){
-			heightData[j * 128 + i] = t->heightMap[i][j];
-			if(minH > heightData[i*128 + j])
-				minH = heightData[i*128 + j];
-			else if(maxH < heightData[i*128 + j])
-				maxH = heightData[i*128 + j];
+			heightData[j * terrainWidth + i] = t->heightMap[i][j];
+			if(minH > t->heightMap[i][j])
+				minH = t->heightMap[i][j];
+			else if(maxH < t->heightMap[i][j])
+				maxH = t->heightMap[i][j];
 		}
 	}
 	// for(auto &i : t->heightMap){
@@ -598,16 +474,17 @@ int main(int argc, char **argv)
 	//similar to createSphere
 	btTransform ter;
 	ter.setIdentity();
-	ter.setOrigin(btVector3(0,maxH/2,0));
-	btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
+	ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
+	// btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
 	btHeightfieldTerrainShape* heightField =
-		new btHeightfieldTerrainShape(128,128,
-			heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH),1,PHY_FLOAT,false);
-	btVector3 localScaling(1,1,1);
+		new btHeightfieldTerrainShape(terrainWidth,terrainWidth,
+			heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
+	btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
 	heightField->setLocalScaling(localScaling);
 	btMotionState* motion=new btDefaultMotionState(ter);
 	// btVector3 localInertia(0,0,0);
 	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
+	// info.m_restitution = 0.02;
 	btRigidBody* body=new btRigidBody(info);
 	world->addRigidBody(body);
 	bodies.push_back(body);
