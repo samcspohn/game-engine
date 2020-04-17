@@ -4,3 +4,9 @@ build:
 
 run:
 	./main.exec
+getDeps:
+	pacman -S --noconfirm glfw-x11
+	pacman -S --noconfirm soil
+	pacman -S --noconfirm assimp
+	pacman -S --noconfirm glm
+	pacman -S --noconfirm gdb

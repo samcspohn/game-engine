@@ -585,7 +585,7 @@ void run(btDynamicsWorld* World)
 		// Octree->clear();
 		cleanup();
 		unlockUpdate();
-	World->stepSimulation(Time.deltaTime,1,1/30);
+	World->stepSimulation(Time.deltaTime,1,1.0/30.0);
 		waitForWork();
 		cleanup();
 		doLoopIteration(gameEngineComponents, false);
