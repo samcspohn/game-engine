@@ -78,7 +78,7 @@ public:
 	virtual void onDestroy() {}
 
 	virtual bool _registerEngineComponent() { return false; };
-	virtual void onCollision(game_object *go){};
+	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal){};
 	virtual void _update(int index, unsigned int _start, unsigned int _end){};
 	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end){};
 	virtual void _copy(game_object *go) = 0;

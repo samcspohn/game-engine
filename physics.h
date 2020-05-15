@@ -396,8 +396,8 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 		// 	((component *)a.c)->transform->move(glm::vec3(x, y, z));
 		// }
 		
-		((component *)a.c)->transform->gameObject->collide(((component *)b.c)->transform->gameObject);
-		((component *)b.c)->transform->gameObject->collide(((component *)a.c)->transform->gameObject);
+		((component *)a.c)->transform->gameObject->collide(((component *)b.c)->transform->gameObject,vec3(0),vec3(0));
+		((component *)b.c)->transform->gameObject->collide(((component *)a.c)->transform->gameObject,vec3(0),vec3(0));
 
 	}
 }
@@ -722,7 +722,8 @@ public:
 		cd.rb = rb;
 		int depth = 0;
 		// leaveLock.lock();
-		collisionLayers[layer].insert(cd, depth);
+		if(layer == 1)
+			collisionLayers[layer].insert(cd, depth);
 		// leaveLock.unlock();
 
 		//octLock.unlock();
@@ -735,7 +736,7 @@ public:
 
 		int colCount = 0;
 		for(auto & i : collisionGraph[layer]){
-			if(collisionLayers[i].nodes.size() >= collisionLayers[layer].nodes.size())
+			if(collisionLayers[i].nodes.size() <= collisionLayers[layer].nodes.size())
 				collisionLayers[i].query(cd.a, cd, colCount);
 		}
 		// Octree->query(cd.a, cd, colCount);
@@ -744,14 +745,14 @@ public:
 			terrainHit h = i.second->getHeight(cd.a.c.x, cd.a.c.z);
 			if ((cd.a.c - cd.a.r).y < h.height)
 			{
+				glm::vec3 p = transform->getPosition();
 				if (rb != 0)
 				{
 					rb->vel = glm::reflect(rb->vel,h.normal) * rb->bounciness;
 					// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
-					glm::vec3 p = transform->getPosition();
 					transform->setPosition(glm::vec3(p.x, h.height + cd.a.r.y + 0.1f, p.z));
 				}
-				transform->gameObject->collide(i.second->transform->gameObject);
+				transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
 			}
 		}
 	}

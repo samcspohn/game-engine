@@ -26,6 +26,39 @@
 #include "particles.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "bullet/btBulletDynamicsCommon.h"
+#include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h"
+
+// #include <nanogui/opengl.h>
+// #include <nanogui/glutil.h>
+// #include <nanogui/screen.h>
+// #include <nanogui/window.h>
+// #include <nanogui/layout.h>
+// #include <nanogui/label.h>
+// #include <nanogui/checkbox.h>
+// #include <nanogui/button.h>
+// #include <nanogui/toolbutton.h>
+// #include <nanogui/popupbutton.h>
+// #include <nanogui/combobox.h>
+// #include <nanogui/progressbar.h>
+// #include <nanogui/entypo.h>
+// #include <nanogui/messagedialog.h>
+// #include <nanogui/textbox.h>
+// #include <nanogui/slider.h>
+// #include <nanogui/imagepanel.h>
+// #include <nanogui/imageview.h>
+// #include <nanogui/vscrollpanel.h>
+// #include <nanogui/colorwheel.h>
+// #include <nanogui/colorpicker.h>
+// #include <nanogui/graph.h>
+// #include <nanogui/tabwidget.h>
+
+// #define IMGUI_IMPL_OPENGL_LOADER_GLEW
+// #include "imgui/imgui.h"
+// #include "imgui/imgui_impl_glfw.h"
+// #include "imgui/imgui_impl_opengl3.h"
+
+#include "gui.h"
+
 using namespace glm;
 using namespace std;
 
@@ -43,6 +76,8 @@ struct updateJob
 	updateJob() {}
 	updateJob(componentStorageBase *csb, update_type _ut, int _size, barrier *b) : componentStorage(csb), size(_size), ut(_ut), _barrier(b) {}
 };
+
+atomic<int> numCubes(0);
 
 GLFWwindow *window;
 GLdouble lastFrame = 0;
@@ -109,7 +144,7 @@ void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 	}
 	//camera.ProcessMouseMovement(xOffset, yOffset);
 }
-void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
+void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
 
 	if (key >= 0 && key < 1024)
@@ -141,7 +176,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 bool eventsPollDone;
-void updateInfo()
+void updateTiming()
 {
 	Input.resetKeyDowns();
 	mouseFrameBegin();
@@ -179,6 +214,39 @@ void renderThreadFunc()
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
 	window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
+	if (window == nullptr)
+	{
+		cout << "failed to create GLFW window" << endl;
+		glfwTerminate();
+
+		throw EXIT_FAILURE;
+	}
+
+/////////////////////////////////////////////////////////////
+///////////////////////// GUI ////////////////////////////////
+/////////////////////////////////////////////////////////////
+
+	IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+
+
+
+    // Setup style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+    // ImGui::StyleColorsLight();
+
+	auto font_default = io.Fonts->AddFontDefault();
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 	if (hideMouse)
@@ -194,13 +262,6 @@ void renderThreadFunc()
 
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	if (window == nullptr)
-	{
-		cout << "failed to create GLFW window" << endl;
-		glfwTerminate();
-
-		throw EXIT_FAILURE;
-	}
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0);
@@ -268,7 +329,7 @@ void renderThreadFunc()
 				gpuTimer gt;
 
 				stopWatch.start();
-				updateInfo();
+				updateTiming();
 
 				//////////////////////////////////////////////////////////////////////////////
 				/////////////////////////////// Lock Transform ///////////////////////////////
@@ -288,11 +349,7 @@ void renderThreadFunc()
 				// glm::mat4 view;
 				// glm::mat4 rot;
 				// glm::mat4 proj;
-				for(_camera& c : cameras->data.data){
-					c.view = c.GetViewMatrix();
-					c.rot = c.getRotationMatrix();
-					c.proj = c.getProjection();
-				}
+
 
 				_camera::initPrepRender(matProgram);
 				gpuDataLock.unlock();
@@ -329,14 +386,52 @@ void renderThreadFunc()
 					
 					// render particles
 					gt.start();
-					// glDisable(GL_CULL_FACE);
-					// glDepthMask(GL_FALSE);
+					glDisable(GL_CULL_FACE);
+					glDepthMask(GL_FALSE);
 					particle_renderer.drawParticles(c.view, c.rot, c.proj);
 					appendStat("render particles", gt.stop());
+					glDepthMask(GL_TRUE);
 				}
 
+/////////////////////////////////////////////////////////////
+///////////////////////// GUI ////////////////////////////////
+/////////////////////////////////////////////////////////////
+IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
+				ImGui_ImplOpenGL3_NewFrame();
+				ImGui_ImplGlfw_NewFrame();
+				ImGui::NewFrame();
 
-				glDepthMask(GL_TRUE);
+				ImGui::PushFont(font_default);
+				// // We specify a default position/size in case there's no data in the .ini file. Typically this isn't required! We only do it to make the Demo applications a little more welcoming.
+				// ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
+				// ImGui::SetNextWindowSize(ImVec2(100, 50), ImGuiCond_FirstUseEver);
+
+				// // Main body of the Demo window starts here.
+				// ImGuiWindowFlags flags = 0;
+				// flags |= ImGuiWindowFlags_NoTitleBar;
+				// flags |= ImGuiWindowFlags_NoMove;
+				// flags |= ImGuiWindowFlags_NoResize;
+				// // flags |= ImGuiWindowFlags_NoBackground;
+				// bool p_open = true;
+				// ImGui::Begin("Another Window", &p_open, flags);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+				// ImGui::Text(("fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime)).c_str());
+				// ImGui::Text(("missiles: " + FormatWithCommas(numCubes.load())).c_str());
+				// ImGui::Text(("particles: " + FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))).c_str());
+
+				// if (ImGui::Button("Close Me"))
+				// 	p_open = false;
+				// ImGui::End();
+				for(auto& i : gui::gui_windows){
+					i->render();
+				}
+				ImGui::PopFont();
+				// Rendering
+				ImGui::Render();
+				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+/////////////////////////////////////////////////////////////
+///////////////////////// GUI ////////////////////////////////
+/////////////////////////////////////////////////////////////
+
 				glfwSwapBuffers(window);
 				glFlush();
 				appendStat("render", stopWatch.stop());
@@ -351,9 +446,14 @@ void renderThreadFunc()
 					(gpu_buffers.begin()->second)->deleteBuffer();
 				}
 
+			// Cleanup
+				ImGui_ImplOpenGL3_Shutdown();
+				ImGui_ImplGlfw_Shutdown();
+				ImGui::DestroyContext();
+				
 				glFlush();
-				renderThreadReady.exchange(false);
 				glfwTerminate();
+				renderThreadReady.exchange(false);
 
 				renderLock.unlock();
 				return;
@@ -531,6 +631,7 @@ void waitForWork(){
 		}
 }
 
+
 float maxGameDuration = INFINITY;
 void run(btDynamicsWorld* World)
 {
@@ -574,6 +675,7 @@ void run(btDynamicsWorld* World)
 		}
 		eventsPollDone = false;
 
+
 		gameLoopMain.start();
 
 		// scripting
@@ -585,11 +687,11 @@ void run(btDynamicsWorld* World)
 		// Octree->clear();
 		cleanup();
 		unlockUpdate();
-	World->stepSimulation(Time.deltaTime,1,1.0/30.0);
 		waitForWork();
 		cleanup();
 		doLoopIteration(gameEngineComponents, false);
 
+		World->stepSimulation(Time.deltaTime, 1, 1.0 / 30.0);
 
 		waitForWork();
 		lockUpdate();
@@ -600,7 +702,12 @@ void run(btDynamicsWorld* World)
 		gpuDataLock.lock();
 		gameLock.lock();
 		appendStat("wait for data", stopWatch.stop());
-
+		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
+		for(_camera& c : cameras->data.data){
+			c.view = c.GetViewMatrix();
+			c.rot = c.getRotationMatrix();
+			c.proj = c.getProjection();
+		}
 		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
 		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
