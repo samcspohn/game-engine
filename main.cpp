@@ -8,14 +8,26 @@
 #include <locale>
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "bullet/btBulletDynamicsCommon.h"
+#include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h"
+#include "bullet/BulletCollision/CollisionDispatch/btCollisionDispatcherMt.h"
+#include "bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolverMt.h"
 
+
+
+
+btITaskScheduler* taskSchedular;
 btDynamicsWorld* world;	//every physical object go to the world
-btDispatcher* dispatcher;	//what collision algorithm to use?
+btCollisionDispatcherMt* dispatcherMt;	//what collision algorithm to use?
 btCollisionConfiguration* collisionConfig;	//what collision algorithm to use?
 btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other
 btConstraintSolver* solver;					//solve collisions, apply forces, impulses
+btConstraintSolverPoolMt *pool;
 std::vector<btRigidBody*> bodies;
 terrain* terr;
+
+// btDynamicsWorld* world;
+btDispatcher* dispatcher;
+// btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other	
 
 int numBoxes = 0;
 
@@ -34,6 +46,7 @@ btRigidBody* addSphere(float rad,float x,float y,float z,float mass)
 	btRigidBody::btRigidBodyConstructionInfo info(mass,motion,sphere,inertia);	//create the constructioninfo, you can create multiple bodies with the same info
 	// info.m_restitution = 0.8;
 	btRigidBody* body=new btRigidBody(info);	//let's create the body itself
+	body->setActivationState(DISABLE_DEACTIVATION);
 	world->addRigidBody(body);	//and let the world know about it
 	bodies.push_back(body);	//to be easier to clean, I store them a vector
 	return body;
@@ -91,17 +104,9 @@ class physicsObject : public component{
 };
 
 
-template <class T>
-std::string FormatWithCommas(T value)
-{
-	std::stringstream ss;
-	ss.imbue(std::locale(""));
-	ss << std::fixed << value;
-	return ss.str();
-}
 
 using namespace glm;
-atomic<int> numCubes(0);
+
 game_object *proto = nullptr;
 game_object *ExplosionProto = nullptr;
 emitter_prototype_ _expSmoke;
@@ -130,7 +135,7 @@ public:
 	vector<particle_emitter*> myEmitters;
 	// glm::vec3 dir;
 	bool hit = false;
-	float life;
+	double life;
 	missle() {}
 	void onStart()
 	{
@@ -152,25 +157,23 @@ public:
 			transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 			vel += vec3(0, -9.81, 0) * Time.deltaTime;
 		}
-		else
+		else if (life < Time.time)
 		{
-			if (life < Time.time)
-			{
-				transform->gameObject->destroy();
-				numCubes.fetch_add(-1);
-			}
+			transform->gameObject->destroy();
+			numCubes.fetch_add(-1);
 		}
 	}
-	void onCollision(game_object *go)
+	void onCollision(game_object *go,vec3 point, vec3 normal)
 	{
-		if (proto == transform->gameObject || hit)
+		if (proto == transform->gameObject)
 			return;
 
+			// vel = glm::reflect(vel,normal) * 0.99f;
 			myEmitters[0]->setPrototype(b.primaryexplosion);
 			myEmitters[1]->setPrototype(b.secondaryexplosion);
 			// transform->gameObject->removeComponent<_renderer>();
 			hit = true;
-			life = Time.time + 0.1f;
+			life = Time.time + 0.01;
 	}
 	UPDATE(missle, update);
 	COPY(missle);
@@ -179,25 +182,39 @@ public:
 class gun : public component
 {
 	float reload;
+	float lastFire;
+	vector<vec3> barrels = {vec3(0,-12,-10)};
 public:
 	float rof;
 	float speed;
 	float dispersion;
 	bullet ammo;
+	void onStart(){
+		lastFire = Time.time;
+	}
+	void setBarrels(vector<vec3> b){
+		barrels = b;
+	}
 	void fire()
 	{
-		reload += rof * Time.deltaTime;
-		for (int i = 0; i < (int)reload; i++)
-		{
-			game_object *go = new game_object(*proto);
-			// go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
-			go->getComponent<missle>()->vel = (transform->forward() + (transform->right() * (randf() - 0.5f) + transform->up() * (randf() - 0.5f)) * dispersion) * speed;
-			go->getComponent<missle>()->setBullet(ammo);
-			// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
-			go->transform->setPosition(transform->getPosition() + transform->forward() * 12.f);
+		// reload += rof * Time.deltaTime;
+		if(Time.time - lastFire > 1 / rof){
+			reload = glm::min((float)(Time.time - lastFire),1 / rof) * rof;
+			lastFire = Time.time;
+			for (int i = 0; i < (int)reload; i++)
+			{
+				for(auto& j : barrels){
+					game_object *go = new game_object(*proto);
+					// go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
+					go->getComponent<missle>()->vel = (transform->forward() + (transform->right() * (randf() - 0.5f) + transform->up() * (randf() - 0.5f)) * dispersion) * speed;
+					go->getComponent<missle>()->setBullet(ammo);
+					// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
+					go->transform->setPosition(transform->getPosition() + transform->getRotation() * transform->getScale() * j);
+				}
+			}
+			numCubes.fetch_add((int)reload);
+			// reload -= (int)reload;
 		}
-		numCubes.fetch_add((int)reload);
-		reload -= (int)reload;
 	}
 	// UPDATE(gun, update);
 	COPY(gun);
@@ -206,7 +223,7 @@ class player_sc : public component
 {
 	bool cursorReleased = false;
 	float speed = 10.f;
-	rigidBody *rb;
+	// rigidBody *rb;
 	bool flying = true;
 	bool jumped = false; // do not fly and jump in same frame
 	int framecount = 0;
@@ -215,6 +232,13 @@ class player_sc : public component
 	bullet laser;
 	vector<gun*> guns;
 	float rotationSpeed = 10.f;
+	float rotX;
+	float rotY;
+	
+	gui::window* info;
+	gui::text* fps;
+	gui::text* missileCounter;
+	gui::text* particleCounter;
 public:
 	terrain *t;
 
@@ -225,32 +249,69 @@ public:
 
 	void onStart()
 	{
-		rb = transform->gameObject->getComponent<rigidBody>();
+		// rb = transform->gameObject->getComponent<rigidBody>();
 		guns = transform->gameObject->getComponents<gun>();
 		// bomb = bullets["bomb"];
 		guns[0]->ammo = bullets["bomb"];
-		guns[0]->rof = 1'000'000 / 60;
+		guns[0]->rof = 1'000'00 / 60;
 		guns[0]->dispersion = 0.5f;
 		guns[0]->speed = 100;
 		// laser = bullets["laser"];
 		guns[1]->ammo = bullets["laser"];
 		guns[1]->rof = 1000 / 60;
 		guns[1]->dispersion = 0;
-		guns[1]->speed = 30;
+		guns[1]->speed = 30000;
+
+		info = new gui::window();
+		fps = new gui::text();
+		missileCounter = new gui::text();
+		particleCounter = new gui::text();
+		info->name = "game info";
+		ImGuiWindowFlags flags = 0;
+		flags |= ImGuiWindowFlags_NoTitleBar;
+		flags |= ImGuiWindowFlags_NoMove;
+		flags |= ImGuiWindowFlags_NoResize;
+		// flags |= ImGuiWindowFlags_NoBackground;
+		info->flags = flags;
+		info->pos = ImVec2(20,20);
+		info->size = ImVec2(100,50);
+		info->children.push_back(fps);
+		info->children.push_back(missileCounter);
+		info->children.push_back(particleCounter);
+
 	}
 	void update()
 	{
 
-		rb->gravity = true;
-		transform->rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
-		transform->rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
-		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
+		// rb->gravity = false;
+		transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
+		transform->getParent()->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
 
-		glm::vec3 currVel = rb->getVelocity();
+		transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
+		// rotX += Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
+		// rotY += Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
+		// vec3 lookAtPoint = vec3(0,0,1);
+		// lookAtPoint = rotateY(lookAtPoint,rotX);
+		// lookAtPoint = rotateX(lookAtPoint,rotY);
+		// transform->setRotation(lookAt(vec3(0),lookAtPoint,vec3(0,1,0)));
 
-		if (framecount++ > 1)
-			cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))
-			 << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
+		// transform->setRotation(lookAt(vec3(0),transform->forward(),vec3(0,1,0)));
+		// transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
+
+		// glm::vec3 currVel = rb->getVelocity();
+
+		if (framecount++ > 1){
+
+
+			// // cout <<  Time.time << endl;
+			// cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))
+			//  << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
+
+			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+			missileCounter->contents = "missiles: " + FormatWithCommas(numCubes.load());
+			particleCounter->contents = "particles: " + FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles));
+		}
+
 		if (Input.getKeyDown(GLFW_KEY_R))
 		{
 			speed *= 2;
@@ -272,26 +333,26 @@ public:
 			Time.timeScale = 1;
 		}
 
-		terrainHit h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
+		// terrainHit h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
 
-				rb->gravity = false;
-				vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
-				if (inputVel.x != 0 || inputVel.z != 0)
-					inputVel = normalize(inputVel);
-				rb->setVelocity(currVel + inputVel * speed * 5.f);
-				glm::vec3 vel = rb->getVelocity();
-				rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
+		// 		rb->gravity = false;
+		// 		vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
+		// 		if (inputVel.x != 0 || inputVel.z != 0)
+		// 			inputVel = normalize(inputVel);
+		// 		rb->setVelocity(currVel + inputVel * speed * 5.f);
+		// 		glm::vec3 vel = rb->getVelocity();
+		// 		rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
 		
-		if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
-		{ // pressing jump while airborne begins flight
-			flying = true;
-		}
-		if (Input.getKeyDown(GLFW_KEY_SPACE))
-		{ // jump
-			glm::vec3 vel = rb->getVelocity();
-			jumped = true;
-			rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
-		}
+		// if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
+		// { // pressing jump while airborne begins flight
+		// 	flying = true;
+		// }
+		// if (Input.getKeyDown(GLFW_KEY_SPACE))
+		// { // jump
+		// 	glm::vec3 vel = rb->getVelocity();
+		// 	jumped = true;
+		// 	rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
+		// }
 
 		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
 		{
@@ -303,15 +364,15 @@ public:
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			cursorReleased = true;
 		}
-		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-			for(int i = 0; i <= Time.deltaTime * 100; i++){
-				numBoxes++;
-				auto g = new game_object(*physObj);
-				vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
-				physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
-			}
-			// guns[0]->fire();
-		}
+		// if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+		// 	// for(int i = 0; i <= Time.deltaTime * 100; i++){
+		// 	// 	numBoxes++;
+		// 	// 	auto g = new game_object(*physObj);
+		// 	// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+		// 	// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+		// 	// }
+		// 	guns[0]->fire();
+		// }
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT)){
 			guns[1]->fire();
 		}
@@ -370,9 +431,87 @@ class spinner : public component
 };
 
 
+
+const float _pi = radians(180.f);
+class _turret : public component{
+	Transform* target;
+	Transform* guns;
+	gun* barrels;
+	float turret_angle;
+	float guns_angle;
+	float turret_speed = radians(15.f);
+	float gun_speed = radians(15.f);
+public:
+	float t_angles[3];
+	float g_angles[3][2];
+	void setTarget(Transform* t){
+		target = t;
+	}
+	void onStart(){
+		guns = transform->getChildren().front();
+		barrels = guns->gameObject->getComponent<gun>();
+	}
+	void update(){
+		// mat3 shipMat = toMat3(transform->getParent()->getRotation());
+		/////////////////////////////////////////////// turn turret
+		vec3 targetPos = inverse(toMat3(transform->getRotation())) * (target->getPosition() - transform->getPosition());
+		targetPos = normalize(vec3(targetPos.x,0,targetPos.z));
+		float angle = acos(targetPos.z);
+		float turn_angle = std::min(turret_speed * Time.deltaTime,angle) * (targetPos.x > 0 ? 1 : -1);
+		angle *= (targetPos.x > 0 ? 1 : -1);
+		bool canFire;
+
+		if((turret_angle + angle > 0 && turret_angle + angle - _pi > 0) || (turret_angle + angle < 0 && turret_angle + angle + _pi < 0)){
+			turn_angle = turret_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
+		}
+		if(turret_angle + turn_angle > t_angles[2]){ // left max angle
+			turn_angle = t_angles[2] - turret_angle;
+		}else if(turret_angle + turn_angle < t_angles[0]){ // right max angle
+			turn_angle = t_angles[0] - turret_angle;
+		}
+
+		canFire = abs(angle) < turret_speed * Time.deltaTime;
+		turret_angle += turn_angle;
+		float turret_turn_angle = turn_angle - angle;
+		transform->rotate(vec3(0,1,0),angle);
+
+		/////////////////////////////////////////////// turn guns
+		targetPos = inverse(toMat3(guns->getRotation())) * (target->getPosition() - transform->getPosition());
+		targetPos = normalize(vec3(0,targetPos.y,targetPos.z));
+		angle = acos(targetPos.z);
+		turn_angle = std::min(gun_speed * Time.deltaTime,angle) * (targetPos.y > 0 ? -1 : 1);
+		angle *= (targetPos.y > 0 ? 1 : -1);
+
+		int index = (turret_angle > 0 ? 2 : 0);
+		float ratio = abs(turret_angle / t_angles[index]);
+		float guns_angles[2] = {g_angles[index][0] * ratio + g_angles[1][0] * (1 - ratio),
+		g_angles[index][1] * ratio + g_angles[1][1] * (1 - ratio)};
+
+		// if((guns_angle + angle > 0 && guns_angle + angle - pi > 0) || (guns_angle + angle < 0 && guns_angle + angle + pi < 0)){
+		// 	turn_angle = gun_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
+		// }
+		if(guns_angle + turn_angle > guns_angles[1]){ // up max angle
+			turn_angle = guns_angles[1] - guns_angle;
+		}else if(guns_angle + turn_angle < guns_angles[0]){ // down max angle
+			turn_angle = guns_angles[0] - guns_angle;
+		}
+
+		guns_angle += turn_angle;
+		guns->rotate(vec3(1,0,0),turn_angle);
+
+		transform->rotate(vec3(0,1,0),turret_turn_angle);
+
+		canFire = canFire && abs(angle) < gun_speed * Time.deltaTime;
+		if(canFire && Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+			barrels->fire();
+		}
+	}
+	UPDATE(_turret,update);
+	COPY(_turret);
+};
+
 class autoCubes : public component
 {
-
 public:
 	gun* g;
 	void onStart(){
@@ -386,6 +525,93 @@ public:
 	COPY(autoCubes);
 };
 
+void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upright){
+	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
+	_model turretm("res/models/ship1/maingun.obj");
+	_model gunsm("res/models/ship1/3guns.obj");
+	game_object* turret = new game_object();
+	auto r = turret->addComponent<_renderer>();
+	r->set(modelShader,turretm);
+	game_object* guns = new game_object();
+	r = guns->addComponent<_renderer>();
+	r->set(modelShader, gunsm);
+	turret->transform->Adopt(guns->transform);
+	guns->transform->translate(vec3(0,-0.1,0.6));
+	vector<vec3> barrels = {vec3(-.56,0,2.3),vec3(0,0,2.3),vec3(0.56,0,2.3)};
+	auto g = guns->addComponent<gun>();
+	g->setBarrels(barrels);
+	g->ammo = bullets["bomb"];
+	g->rof = 1.f / 5.f;
+	g->dispersion = 0.1f;
+	g->speed = 200;
+	ship->Adopt(turret->transform);
+	turret->transform->translate(pos);
+
+	if(!upright){
+		turret->transform->rotate(vec3(0,0,1),radians(180.f));
+	}
+	if(!forward){
+		turret->transform->rotate(vec3(0,1,0),radians(180.f));
+	}
+	auto t = turret->addComponent<_turret>();
+	t->setTarget(target);
+	t->t_angles[0] = radians(-130.f);
+	t->t_angles[1] = radians(0.f);
+	t->t_angles[2] = radians(130.f);
+
+	t->g_angles[0][0] = radians(-80.f);
+	t->g_angles[0][1] = radians(20.f);
+	t->g_angles[1][0] = radians(-80.f);
+	t->g_angles[1][1] = radians(3.f);
+	t->g_angles[2][0] = radians(-80.f);
+	t->g_angles[2][1] = radians(20.f);
+}
+
+class _ship : public component{
+	vec3 vel;
+	float accel;
+	float thrust;
+	float maxReverse;
+	float maxForward;
+	float rotationSpeed;
+public:
+	void onStart(){
+		accel = 0;
+		thrust = 5;
+		maxReverse = 10;
+		maxForward = 15;
+		rotationSpeed = radians(5.f);
+	}
+	void update(){
+		transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
+		transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
+		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_E) - Input.getKey(GLFW_KEY_Q)) * Time.deltaTime * rotationSpeed);
+
+		vel -= vel * 0.1f * Time.deltaTime;
+		vel += transform->forward() * accel * Time.deltaTime;
+		if(length(vel) > 10){
+			vel = normalize(vel) * 10.f;
+		}
+		accel = glm::clamp(accel + (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * thrust * Time.deltaTime,-maxReverse,maxForward);
+		// cout << " accel: " << accel << endl;
+		transform->getParent()->move(vel * Time.deltaTime);
+		// vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
+		//  + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up()
+		//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
+	}
+	UPDATE(_ship,update);
+	COPY(_ship);
+};
+
+class _boom : public component{
+public:
+	Transform* t;
+	void update(){
+		transform->setPosition(t->getPosition());
+	}
+	UPDATE(_boom,update);
+	COPY(_boom);
+};
 
 int main(int argc, char **argv)
 {
@@ -397,14 +623,28 @@ int main(int argc, char **argv)
 	hideMouse = false;
 	
 	//pretty much initialize everything logically
-	collisionConfig=new btDefaultCollisionConfiguration();
-	dispatcher=new btCollisionDispatcher(collisionConfig);
+	btDefaultCollisionConstructionInfo cci;
+	cci.m_defaultMaxPersistentManifoldPoolSize = 80000;
+	cci.m_defaultMaxCollisionAlgorithmPoolSize = 80000;
+	taskSchedular = btCreateDefaultTaskScheduler();
+	taskSchedular->setNumThreads(concurrency::numThreads);
+	btSetTaskScheduler(taskSchedular);
+	auto ts = btGetTaskScheduler();
+	cout << "bt threads: " << ts->getNumThreads() << endl;
+	collisionConfig=new btDefaultCollisionConfiguration(cci);
+	btConstraintSolver *solverMt = new btSequentialImpulseConstraintSolverMt();
+	// dispatcherMt=new btCollisionDispatcherMt(collisionConfig);
 	broadphase=new btDbvtBroadphase();
 	solver=new btSequentialImpulseConstraintSolver();
+	pool = new btConstraintSolverPoolMt(concurrency::numThreads);
+	// world=new btDiscreteDynamicsWorldMt(dispatcherMt,broadphase,pool,solver,collisionConfig);//btDiscreteDynamicsWorldMt(dispatcher,broadphase,solver,collisionConfig);
+	
+	dispatcher=new btCollisionDispatcher(collisionConfig);
 	world=new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfig);
 	world->setGravity(btVector3(0,-10,0));	//gravity on Earth
 	
-	init();
+
+	::init();
 	initmain()
 	//////////////////////////////////////////////////////////
 
@@ -426,12 +666,46 @@ int main(int argc, char **argv)
 	player->addComponent<gun>();
 	player->addComponent<gun>();
 	// player->addComponent<collider>()->layer = 1;
-	player->addComponent<rigidBody>()->bounciness = 0.3;
+	// player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
-	player->transform->translate(vec3(0, 10, -10));
-	ground = new game_object();
+	player->transform->translate(vec3(0, 5, -20));
 
+	game_object* boom = new game_object();
+	boom->transform->Adopt(player->transform);
+	// auto b = boom->addComponent<_boom>();
+
+	auto pointer = new game_object();
+	pointer->transform->setPosition(player->transform->getPosition());
+	player->transform->Adopt(pointer->transform);
+	pointer->transform->translate(vec3(0,0,500));
+	pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
+
+	game_object* ship = new game_object();
+	auto r_ = ship->addComponent<_renderer>();
+	r_->set(modelShader,_model("res/models/ship1/ship.obj"));
+	ship->addComponent<_ship>();
+
+	vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
+	vec2(1.7,4.45),
+	vec2(1.7,-5.25),
+	vec2(1.2,-8.0),
+	vec2(-1.2,5.8),
+	vec2(-1.7,3.0),
+	vec2(-1.7,-4.2),
+	vec2(-1.2,-7.0)};
+	for(auto& i : MainGunPos_s){
+		makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0);
+	}
+	
+	game_object* ship_container = new game_object();
+	ship_container->transform->Adopt(ship->transform);
+	ship_container->transform->Adopt(boom->transform);
+	// ship->transform->Adopt(boom->transform);
+
+	// ship->transform->setScale(vec3(100));
+
+	ground = new game_object();
 	ground->transform->scale(vec3(20));
 	auto r = ground->addComponent<_renderer>();
 	r->set(modelShader, terrainModel);
@@ -474,16 +748,15 @@ int main(int argc, char **argv)
 	//similar to createSphere
 	btTransform ter;
 	ter.setIdentity();
-	ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
-	// btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
-	btHeightfieldTerrainShape* heightField =
-		new btHeightfieldTerrainShape(terrainWidth,terrainWidth,
-			heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
-	btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
-	heightField->setLocalScaling(localScaling);
+	ter.setOrigin(btVector3(0,0,0));
+	// ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
+	btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
+	// btHeightfieldTerrainShape* heightField = new btHeightfieldTerrainShape(terrainWidth,terrainWidth, heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
+	// btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
+	// heightField->setLocalScaling(localScaling);
 	btMotionState* motion=new btDefaultMotionState(ter);
 	// btVector3 localInertia(0,0,0);
-	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
+	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,plane);
 	// info.m_restitution = 0.02;
 	btRigidBody* body=new btRigidBody(info);
 	world->addRigidBody(body);
@@ -519,11 +792,12 @@ int main(int argc, char **argv)
 	proto = CUBE;
 
 	game_object *shooter = new game_object();
+	shooter->transform->setRotation(lookAt(vec3(0),vec3(0,1,0),vec3(0,0,1)));
 	shooter->transform->move(vec3(0, 100, 0));
 	shooter->addComponent<_renderer>()->set(modelShader, cubeModel);
 	gun* g = shooter->addComponent<gun>();
-	g->rof = 8;
-	g->dispersion = 0.3;
+	g->rof = 100;
+	g->dispersion = 0.5;
 	g->speed = 100;
 	g->ammo = bullets["bomb"];
 	shooter->addComponent<autoCubes>();
@@ -565,7 +839,7 @@ int main(int argc, char **argv)
 	proto2->transform->translate(glm::vec3(10.f) * 0.5f);
 
 	// create big cubes
-	for (int i = 0; i < 0; ++i)//20
+	for (int i = 0; i < 1; ++i)//20
 	{
 		proto2 = new game_object(*proto2);
 		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1)),pow(10.f, (float)(i + 1)),pow(11.f, (float)(i + 1))));
@@ -574,7 +848,7 @@ int main(int argc, char **argv)
 	}
 
 	// create shooters
-	for (int i = 0; i < 0; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);
@@ -608,6 +882,7 @@ int main(int argc, char **argv)
 		delete shape;
 		delete motionState;
 	}
+	delete solverMt;
 	delete dispatcher;
 	delete collisionConfig;
 	delete solver;

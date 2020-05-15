@@ -478,7 +478,7 @@ GLuint game_engine::init() {
 	return 0;
 }
 
-void updateInfo() {
+void updateTiming() {
 	Input.resetKeyDowns();
 	mouseFrameBegin();
 	glfwPollEvents();
@@ -579,7 +579,7 @@ void game_engine::run() {
 
 		renderJob rj;
 		rj.type = renderNum::doFunc;
-		rj.work = []() {updateInfo(); };
+		rj.work = []() {updateTiming(); };
 
 		renderLock.lock();
 		renderWork.push(rj);

@@ -41,8 +41,8 @@ struct _transform {
 //		rotation = normalize(rotation);
 	}
 };
-array_heap<_transform> TRANSFORMS = array_heap<_transform>();
-array_heap<_transform> STATIC_TRANSFORMS = array_heap<_transform>();
+array_heap<_transform> TRANSFORMS;// = array_heap<_transform>();
+array_heap<_transform> STATIC_TRANSFORMS;// = array_heap<_transform>();
 gpu_vector<_transform>* GPU_TRANSFORMS = nullptr;
 
 class game_object;

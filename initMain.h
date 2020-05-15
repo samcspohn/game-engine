@@ -14,7 +14,7 @@
 	flameEmitterProto->lifetime = 0.67f;\
 	flameEmitterProto->color = vec4(1, 1, 0.1f, 0.8f);\
 	flameEmitterProto->velocity = vec3(1.f);\
-	flameEmitterProto->scale = vec3(1.5f);\
+	flameEmitterProto->scale = vec3(2.f);\
 	flameEmitterProto->billboard = 1;\
 	flameEmitterProto->trail = 1;\
 \
@@ -61,7 +61,7 @@
 	laser.primarybullet->scale = vec3(20.f);\
 	laser.primarybullet->velocity = vec3(1.f);\
 	laser.secondarybullet = createNamedEmitter("laserbeam2");\
-	laser.secondarybullet->color = vec4(.2,.2,1,0.5);\
+	laser.secondarybullet->color = vec4(.6,.6,1,0.5);\
 	laser.secondarybullet->lifetime = 1.f;\
 	laser.secondarybullet->emission_rate = 20.f;\
 	laser.secondarybullet->trail = 1;\

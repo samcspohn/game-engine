@@ -10,3 +10,5 @@ getDeps:
 	pacman -S --noconfirm assimp
 	pacman -S --noconfirm glm
 	pacman -S --noconfirm gdb
+	pacman -S --noconfirm clang
+	pacman -S --noconfirm mygui

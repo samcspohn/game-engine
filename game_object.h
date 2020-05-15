@@ -51,11 +51,11 @@ public:
 		return ret;
 	}
 
-	void collide(game_object *go)
+	void collide(game_object *go,glm::vec3 point, glm::vec3 normal)
 	{
 		for (auto &i : components)
 		{
-			i.first->onCollision(go);
+			i.first->onCollision(go,point,normal);
 		}
 	}
 

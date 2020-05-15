@@ -21,6 +21,16 @@ using namespace std;
 using namespace chrono;
 #ifndef HELPER
 #define HELPER
+template <class T>
+std::string FormatWithCommas(T value)
+{
+	std::stringstream ss;
+	ss.imbue(std::locale(""));
+	ss << std::fixed << value;
+	return ss.str();
+}
+
+
 class Barrier
     {
     private:
