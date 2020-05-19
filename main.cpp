@@ -561,6 +561,8 @@ class gunManager : public component{
 		}
 	}
 	void update(){
+		if(Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+		}
 
 	}
 	UPDATE(gunManager,update);
@@ -1073,7 +1075,7 @@ int main(int argc, char **argv)
 	}
 
 	// create shooters
-	for (int i = 0; i < 3; ++i)
+	for (int i = 0; i < 300; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);
