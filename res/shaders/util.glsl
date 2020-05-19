@@ -18,27 +18,6 @@ mat4 rotate(mat4 m, vec4 q){
 	r[0][3] = r[1][3] = r[2][3] = r[3][0] = r[3][1] = r[3][2] = 0;
 	r[3][3] = 1;
 	return m * r;
-	// #define qw q.w
-	// #define qx q.x
-	// #define qy q.y
-	// #define qz q.z
-	// const float qx2 = qx * qx;
-	// const float qy2 = qy * qy;
-	// const float qz2 = qz * qz;
-	// // mat4 r = {{a,-b,-c,-d},
-	// // 		{b,a,-d,c},
-	// // 		{c,d,a,-b},
-	// // 		{d,-c,b,a}};
-	// mat4 r = {{1 - 2*qy2 - 2*qz2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw, 0},
-	// 	{2*qx*qy + 2*qz*qw, 1 - 2*qx2 - 2*qz2, 2*qy*qz - 2*qx*qw, 0},
-	// 	{2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx2 - 2*qy2, 0},
-	// 	{0,0,0,1}};
-	// #undef qw
-	// #undef qx
-	// #undef qy
-	// #undef qz
-	// return m * r;
-	
 }
 
 mat4 identity(){
@@ -78,75 +57,6 @@ ret.z = (m10 - m01) * w4_recip;
 #undef m21
 #undef m22
 return ret;
-// 	vec3 f = (normalize(lookAt));
-// 	vec3 s = (normalize(cross(up, f)));
-// 	vec3 u = (cross(f, s));
-
-// 	mat4 Result = mat4(1);
-// 	Result[0][0] = s.x;
-// 	Result[1][0] = s.y;
-// 	Result[2][0] = s.z;
-// 	Result[0][1] = u.x;
-// 	Result[1][1] = u.y;
-// 	Result[2][1] = u.z;
-// 	Result[0][2] = f.x;
-// 	Result[1][2] = f.y;
-// 	Result[2][2] = f.z;
-// 	Result[3][0] = -dot(s, vec3(0));
-// 	Result[3][1] = -dot(u, vec3(0));
-// 	Result[3][2] = -dot(f, vec3(0));
-// 	mat4 m = Result;
-
-// #define m00 Result[0][0]
-// #define m01 Result[0][1]
-// #define m02 Result[0][2]
-// #define m10 Result[1][0]
-// #define m11 Result[1][1]
-// #define m12 Result[1][2]
-// #define m20 Result[2][0]
-// #define m21 Result[2][1]
-// #define m22 Result[2][2]
-
-// vec4 q;
-
-// float tr = m00 + m11 + m22;
-// if (tr > 0) { 
-//   float S = sqrt(tr+1.0) * 2; // S=4*qw 
-//   q.w = 0.25 * S;
-//   q.x = (m21 - m12) / S;
-//   q.y = (m02 - m20) / S; 
-//   q.z = (m10 - m01) / S; 
-// } else if (bool(int(m00 > m11)&int(m00 > m22))) { 
-//   float S = sqrt(1.0 + m00 - m11 - m22) * 2; // S=4*qx 
-//   q.w = (m21 - m12) / S;
-//   q.x = 0.25 * S;
-//   q.y = (m01 + m10) / S; 
-//   q.z = (m02 + m20) / S; 
-// } else if (m11 > m22) { 
-//   float S = sqrt(1.0 + m11 - m00 - m22) * 2; // S=4*qy
-//   q.w = (m02 - m20) / S;
-//   q.x = (m01 + m10) / S; 
-//   q.y = 0.25 * S;
-//   q.z = (m12 + m21) / S; 
-// } else { 
-//   float S = sqrt(1.0 + m22 - m00 - m11) * 2; // S=4*qz
-//   q.w = (m10 - m01) / S;
-//   q.x = (m02 + m20) / S;
-//   q.y = (m12 + m21) / S;
-//   q.z = 0.25 * S;
-// }
-
-// #undef m00
-// #undef m01 
-// #undef m02 
-// #undef m10
-// #undef m11 
-// #undef m12
-// #undef m20 
-// #undef m21 
-// #undef m22 
-
-// 	return q;
 }
 
 mat4 rotationMatrix(vec3 axis, float angle)
@@ -171,22 +81,59 @@ vec3 rotate(vec3 axis, float angle, vec3 vec){
 
 const uint RIGHT = 0x0000ffff;
 const uint LEFT = 0xffff0000;
-    uint getLeft(uint field) {
-        return field >> 16; // >>> operator 0-fills from left
-    }
-	uint getRight(uint field) {
-        return field & RIGHT;
-    }
+uint getLeft(uint field) {
+	return field >> 16; // >>> operator 0-fills from left
+}
+uint getRight(uint field) {
+	return field & RIGHT;
+}
 
-	void setHighBits(inout uint o, uint left){
-		o = (left << 16) | (o & RIGHT);
+void setHighBits(inout uint o, uint left){
+	o = (left << 16) | (o & RIGHT);
+}
+void setLowBits(inout uint o, uint right){
+	o = (o & LEFT) | (right);
+}
+uint getHighBits(inout uint o){
+	return getLeft(o);
+}
+uint getLowBits(inout uint o){
+	return getRight(o);
+}
+
+#define M_PI 3.1415926535897932384626433832795
+float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio   
+float rand(in vec2 xy, in float seed){
+    xy += vec2(1);
+    return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
+}
+struct rng{
+	vec2 xy;
+	float s;
+	void setSeed(vec2 _xy, float _seed){
+		xy = _xy;
+		s = _seed;
 	}
-	void setLowBits(inout uint o, uint right){
-		o = (o & LEFT) | (right);
+	
+	float gen(){
+		float ret = rand(xy, s);
+		xy = xy + vec2(1.21212121,2.12121212);
+		s += 2.121212112f;
+		return ret;
 	}
-	uint getHighBits(inout uint o){
-		return getLeft(o);
-	}
-	uint getLowBits(inout uint o){
-		return getRight(o);
-	}
+};
+vec4 randVec4(inout rng g){
+	return vec4(
+    g.gen() - 0.5f,
+    g.gen() - 0.5f,
+    g.gen() - 0.5f,
+    g.gen() - 0.5f
+    );
+}
+vec3 randVec3(inout rng g){
+	return vec3(
+    g.gen() - 0.5f,
+    g.gen() - 0.5f,
+    g.gen() - 0.5f
+    );
+}

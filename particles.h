@@ -1,6 +1,7 @@
 #include "Component.h"
 #include "fast_list.h"
 #include <map>
+#include <unordered_map>
 #include "rendering.h"
 #include <fstream>
 using namespace std;
@@ -25,26 +26,138 @@ struct particle
     vec3 position2;
     float p1;
     vec3 velocity2;
-    float p2;
-    vec4 p3;
+    float l;
 };
-struct emitter_prototype
-{
+struct emitter_prototype{
     float emission_rate;
     float lifetime;
     float rotation_rate;
-    int id;
+    float dispersion;
 
-    vec4 color;
+    // vec4 color;
+    void color(vec4 c){
+        for(int i = 0; i < 100; ++i){
+            colorLife[i] = c;
+        }
+    }
+    void color(vec4 c1, vec4 c2){
+        vec4 step = (c2 - c1) / 100.f;
+        for(int i = 0; i < 100; ++i){
+            colorLife[i] = c1 + step * (float)i;
+        }
+    }
+    void size(float c){
+        for(int i = 0; i < 100; ++i){
+            sizeLife[i] = c;
+        }
+    }
+    void size(float c1, float c2){
+        float step = (c2 - c1) / 100.f;
+        for(int i = 0; i < 100; ++i){
+            sizeLife[i] = c1 + step * (float)i;
+        }
+    }
 
-    vec3 velocity;
+    float minSpeed;
+    float maxSpeed;
+    float lifetime2;
     int live;
 
     vec3 scale;
     int billboard;
 
-    vec3 p;
+    int velAlign;
+    float radius;
+    int p2;
     int trail;
+    vec4 colorLife[100];
+    float sizeLife[100];
+};
+struct colorArray{
+    struct key{
+        vec4 color;
+        float pos;
+    };
+    vector<key> keys;
+    colorArray& addKey(vec4 color, float position){
+        key k;
+        k.color = color;
+        k.pos = position;
+        keys.push_back(k);
+        return *this;
+    }
+    void setColorArray(vec4 *colors){
+        if(keys.size() == 0)
+            return;
+        key k = keys.front();
+        if(keys.size() == 1){
+            for(int i = 0; i < 100; ++i){
+                colors[i] = k.color;
+            }
+        }else{
+            int k1 = 0;
+            int k2 = 1;
+            for(int i = 0; i < keys[k1].pos * 100; ++i){
+                colors[i] = keys[k1].color;
+            }
+            while(k2 < keys.size()){
+                vec4 step = (keys[k2].color - keys[k1].color) / ((keys[k2].pos - keys[k1].pos) * 100);
+                int start = keys[k1].pos * 100;
+                int stop = keys[k2].pos * 100;
+                int j = 0;
+                for(int i = start; i < stop; i++,j++){
+                    colors[i] = keys[k1].color + step * (float)j;
+                }
+                k1 = k2++;
+            }
+            for(int i = keys[k1].pos * 100; i < 100; ++i){
+                colors[i] = keys[k1].color;
+            }
+        }
+    }
+};
+struct floatArray{
+    struct key{
+        float value;
+        float pos;
+    };
+    vector<key> keys;
+    floatArray& addKey(float v, float position){
+        key k;
+        k.value = v;
+        k.pos = position;
+        keys.push_back(k);
+        return *this;
+    }
+    void setFloatArray(float *floats){
+        if(keys.size() == 0)
+            return;
+        key k = keys.front();
+        if(keys.size() == 1){
+            for(int i = 0; i < 100; ++i){
+                floats[i] = k.value;
+            }
+        }else{
+            int k1 = 0;
+            int k2 = 1;
+            for(int i = 0; i < keys[k1].pos * 100; ++i){
+                floats[i] = keys[k1].value;
+            }
+            while(k2 < keys.size()){
+                float step = (keys[k2].value - keys[k1].value) / ((keys[k2].pos - keys[k1].pos) * 100);
+                int start = keys[k1].pos * 100;
+                int stop = keys[k2].pos * 100;
+                int j = 0;
+                for(int i = start; i < stop; i++,j++){
+                    floats[i] = keys[k1].value + step * (float)j;
+                }
+                k1 = k2++;
+            }
+            for(int i = keys[k1].pos * 100; i < 100; ++i){
+                floats[i] = keys[k1].value;
+            }
+        }
+    }
 };
 struct emitter
 {
@@ -72,6 +185,14 @@ struct _emission{
     vec3 scale;
     int last;
 };
+struct _burst{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    uint count;
+    vec3 scale;
+    int p1;
+};
 enum particleCounters
 {
     liveParticles = 0,
@@ -80,6 +201,8 @@ enum particleCounters
 gpu_vector<GLuint> *rng = new gpu_vector<GLuint>();
 gpu_vector<particle> *particles = new gpu_vector<particle>();
 gpu_vector_proxy<_emission> *emitted = new gpu_vector_proxy<_emission>();
+gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
+vector<_burst> particle_bursts;
 // gpu_vector<GLuint> live;
 gpu_vector_proxy<GLuint> *dead = new gpu_vector_proxy<GLuint>();
 gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
@@ -89,6 +212,7 @@ array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
 
+mutex burstLock;
 class emitter_prototype_
 {
     typename array_heap<emitter_prototype>::ref emitterPrototype;
@@ -105,6 +229,28 @@ public:
     emitter_prototype &operator*()
     {
         return emitterPrototype.data();
+    }
+    void burst(glm::vec3 pos, glm::vec3 dir, uint count){
+        _burst b;
+        b.direction = dir;
+        b.count = count;
+        b.position = pos;
+        b.scale = vec3(1);
+        b.emitter_prototype = getId();
+        burstLock.lock();
+        particle_bursts.push_back(b);
+        burstLock.unlock();
+    }
+    void burst(glm::vec3 pos, glm::vec3 dir,glm::vec3 scale, uint count){
+        _burst b;
+        b.direction = dir;
+        b.count = count;
+        b.position = pos;
+        b.scale = scale;
+        b.emitter_prototype = getId();
+        burstLock.lock();
+        particle_bursts.push_back(b);
+        burstLock.unlock();
     }
     friend emitter_prototype_ createNamedEmitter(string name);
     friend emitter_prototype_ getEmitterPrototypeByName(string name);
@@ -202,7 +348,7 @@ public:
     }
 
 };
-mutex particle_emitter::lock = mutex();
+mutex particle_emitter::lock;
 void initParticles()
 {
 
@@ -231,6 +377,7 @@ void initParticles()
     // particles.tryRealloc();
     // live.tryRealloc();
 
+    gpu_particle_bursts->ownStorage();
     particlesToDestroy->tryRealloc(MAX_PARTICLES);
     gpu_emitter_prototypes->storage = &emitter_prototypes_.data;
     // gpu_emitters->storage = &emitters.data;
@@ -244,10 +391,6 @@ Shader particleSortProgram2("res/shaders/particleUpdate.comp");
 Shader particleProgram("res/shaders/particleUpdate.comp");
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
-
-    gpu_emitter_prototypes->bufferData();
-    
-    
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     // run shader update
 
@@ -260,6 +403,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, gpu_emitters->bufferId);
     emitted->bindData(7);
     gpu_emitter_inits->bindData(8);
+    gpu_particle_bursts->bindData(9);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, rng->bufferId);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, dead->bufferId);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, atomicCounters->bufferId);
@@ -285,10 +429,12 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(emitters.size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-    // glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
-    // glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
-    // glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), gpu_particle_bursts->size());
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
+    glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);

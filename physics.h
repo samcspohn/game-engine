@@ -736,7 +736,7 @@ public:
 
 		int colCount = 0;
 		for(auto & i : collisionGraph[layer]){
-			if(collisionLayers[i].nodes.size() <= collisionLayers[layer].nodes.size())
+			// if(collisionLayers[i].nodes.size() <= collisionLayers[layer].nodes.size())
 				collisionLayers[i].query(cd.a, cd, colCount);
 		}
 		// Octree->query(cd.a, cd, colCount);

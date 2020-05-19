@@ -15,12 +15,12 @@
                 "clear": true
             },
             "command": "clang++",
-            "args": ["main.cpp", "-g", "-fpermissive", "-w", 
+            "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_demo.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o", 
+                "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
                 "-std=c++17",
                 "-lGL", "-lGLU",
-                "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", 
-                "-lXi", "-lSOIL", "-lassimp",
-                "-Ireactphysics3d"
+                "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", "-lXi", "-lSOIL", "-lassimp",
+                "-I./bullet", "-I./imgui"
                 ],
         },
         {
@@ -37,13 +37,11 @@
             "command": "clang++",
             "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_demo.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o",
                  "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
-                "-Os",
+                "-O3",
                 "-std=c++17",
                 "-lGL", "-lGLU",
                 "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", "-lXi", "-lSOIL", "-lassimp",
-                //"-lnanogui", "-lnanovg",
                 "-I./bullet", "-I./imgui"
-                //"-I/usr/include/eigen3"
                 ],
         }
     ]
