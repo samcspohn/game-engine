@@ -42,13 +42,11 @@ const uint burstCounter = 1;
 const uint emittedCounter = 2;
 
 uniform uint count;
+uniform uint burstOffset;
 uniform float deltaTime;
 uniform float time;
 uniform int max_particles;
 uniform uint stage;
-uniform vec3 cameraPosition;
-uniform vec3 cameraForward;
-uniform vec3 cameraUp;
 uniform vec3 floatingOrigin;
 shared uint garbage[130];
 
@@ -151,23 +149,7 @@ void emit(uint thread_id){
             int x = int(dead[i]);
             particle p;
             makeParticle(p,ep,generator,particle_count, transforms[e.transform].position,transforms[e.transform].rotation,transforms[e.transform].scale, e.emitter_prototype, dt, thread_id);
-            // p.position = transforms[e.transform].position;
 
-            // // p.rotation  = transforms[e.transform].rotation;
-            // p.scale = transforms[e.transform].scale * ep.scale;
-            // p.life = 1.f;
-            // p.l = ep.lifetime2 + generator.gen() * (ep.lifetime - ep.lifetime2);
-            // p.emitter = thread_id;
-            // p.emitter_prototype = e.emitter_prototype;
-            // vec3 random = rotate(vec3(1,0,0),generator.gen() * ep.dispersion,vec3(0,0,ep.minSpeed + generator.gen() * (ep.maxSpeed - ep.minSpeed)));
-            // random = rotate(vec3(0,0,1),generator.gen() * 2 * M_PI,random);
-            // p.velocity = vec3(rotate(identity(),transforms[e.transform].rotation) * vec4(random * transforms[e.transform].scale,1));
-            
-            // p.rotation = normalize(randVec4(generator));
-
-            // p.position += p.velocity * dt * count;
-            // p.life -= dt * count++ / p.l;
-            // set trail
             if(ep.trail == 1){
                 if(e.frame > 0){
                     particles[e.last].next = int(x);
@@ -197,51 +179,51 @@ void burst(uint thread_id){
 
     emitter_prototype ep = prototypes[e.emitter_prototype];
     
-    int new_particles_start = atomicAdd(atomicCounters[liveParticles],int(e.count));
-    int end = new_particles_start + int(e.count);
-    float dt = deltaTime;
-    dt /= float(e.count + 1);
-    float particle_count = 0.0;
-    vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
-    rng generator;
-    generator.setSeed(id,time);
-    for(int i = new_particles_start; i < end && i < max_particles; ++i){
-        int x = int(dead[i]);
+    int new_particles = atomicAdd(atomicCounters[liveParticles],int(e.count));
+    int burst_start = atomicAdd(atomicCounters[burstCounter],int(e.count));
+    int end = burst_start + int(e.count);
+    for(int i = burst_start; i < end && new_particles + i < max_particles; ++i){
+        burstParticles[i] = thread_id;
+    }
+}
+
+void makeBursts(uint thread_id){
+        _burst e = particleBursts[burstParticles[thread_id]];
+
+        emitter_prototype ep = prototypes[e.emitter_prototype];
+        int x = int(dead[burstOffset + thread_id]);
         particle p;
 
-        makeParticle(p,ep,generator,particle_count, e.position,lookAt(e.direction,vec3(0,1,0.000000001)),e.scale, e.emitter_prototype, dt, -1);
-        // p.position = e.position;
-        // p.rotation = normalize(randVec4(generator));
-        // // p.rotation  = transforms[e.transform].rotation;
-        // p.scale = e.scale * ep.scale;
-        // p.life = 1.f;
-        // p.l = ep.lifetime2 + generator.gen() * (ep.lifetime - ep.lifetime2);
-        // p.emitter = -1;
-        // p.emitter_prototype = e.emitter_prototype;
-        // vec3 random = rotate(vec3(1,0,0),generator.gen() * ep.dispersion,vec3(0,0,ep.minSpeed + generator.gen() * (ep.maxSpeed - ep.minSpeed)));
-        // random = rotate(vec3(0,0,1),generator.gen() * 2 * M_PI,random);
-        // p.velocity = vec3(rotate(identity(),lookAt(e.direction,vec3(0,1,0.000000001))) * vec4(e.scale * random,1));
-        
-        // p.position += p.velocity * dt * count;
-        // p.life -= dt * count++ / p.l;
-        
+        vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
+        rng generator;
+        generator.setSeed(id,time);
+
+        float p_count = 0;
+        makeParticle(p,ep,generator,p_count, e.position,lookAt(e.direction,vec3(0,1,0.000000001)),e.scale, e.emitter_prototype, deltaTime, -1);
         p.live = 1;
         particles[x] = p;
-    }
 }
 
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
-    if(stage == 2 && gid < count)
-        initEmitters(gid);
-    if(stage == 0 && gid < count) // only emitters
-        emit(gid);
-    if(stage == 3 && gid  < count){
-        burst(gid);
-    }
-    if(stage == 1 && gid < count){ //update particles
-        float dt = deltaTime;
-        update(gid, dt);
+    if(gid < count){
+        switch(stage){
+            case 2:
+                initEmitters(gid);
+                break;
+            case 0:
+                emit(gid);
+                break;
+            case 3:
+                burst(gid);
+                break;
+            case 4:
+                makeBursts(gid);
+                break;
+            case 1:
+                update(gid,deltaTime);
+                break;
+        }
     }
 }
