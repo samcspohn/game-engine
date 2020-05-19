@@ -185,7 +185,7 @@ void updateTiming()
 	double currentFrame = glfwGetTime();
 	Time.unscaledTime = currentFrame;
 	Time.unscaledDeltaTime = currentFrame - lastFrame;
-	Time.deltaTime = _min(Time.unscaledDeltaTime, 0.1f) * Time.timeScale;
+	Time.deltaTime = _min(Time.unscaledDeltaTime, 1.f / 10.f) * Time.timeScale;
 	Time.time += Time.deltaTime;
 	Time.timeBuffer.add(Time.unscaledDeltaTime);
 	lastFrame = currentFrame;
@@ -294,7 +294,6 @@ void renderThreadFunc()
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
 
-	renderThreadReady.exchange(true);
 	GPU_TRANSFORMS = new gpu_vector<_transform>();
 	GPU_TRANSFORMS->ownStorage();
 	// GPU_TRANSFORMS->storage = &TRANSFORMS.data;
@@ -306,8 +305,9 @@ void renderThreadFunc()
 
 	timer stopWatch;
 
+	
 	renderDone.store(true);
-	// ::proj = glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 1.f, 1e10f);
+	renderThreadReady.exchange(true);
 	while (true)
 	{
 		// log("render loop");
@@ -343,14 +343,10 @@ void renderThreadFunc()
 
 				uint emitterInitCount = emitterInits.size();
 				gpu_emitter_inits->bufferData(emitterInits);
+				gpu_emitter_prototypes->bufferData();
+				gpu_particle_bursts->bufferData();
 				glFlush();
 				
-
-				// glm::mat4 view;
-				// glm::mat4 rot;
-				// glm::mat4 proj;
-
-
 				_camera::initPrepRender(matProgram);
 				gpuDataLock.unlock();
 
@@ -402,25 +398,7 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 				ImGui::NewFrame();
 
 				ImGui::PushFont(font_default);
-				// // We specify a default position/size in case there's no data in the .ini file. Typically this isn't required! We only do it to make the Demo applications a little more welcoming.
-				// ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
-				// ImGui::SetNextWindowSize(ImVec2(100, 50), ImGuiCond_FirstUseEver);
 
-				// // Main body of the Demo window starts here.
-				// ImGuiWindowFlags flags = 0;
-				// flags |= ImGuiWindowFlags_NoTitleBar;
-				// flags |= ImGuiWindowFlags_NoMove;
-				// flags |= ImGuiWindowFlags_NoResize;
-				// // flags |= ImGuiWindowFlags_NoBackground;
-				// bool p_open = true;
-				// ImGui::Begin("Another Window", &p_open, flags);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-				// ImGui::Text(("fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime)).c_str());
-				// ImGui::Text(("missiles: " + FormatWithCommas(numCubes.load())).c_str());
-				// ImGui::Text(("particles: " + FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))).c_str());
-
-				// if (ImGui::Button("Close Me"))
-				// 	p_open = false;
-				// ImGui::End();
 				for(auto& i : gui::gui_windows){
 					i->render();
 				}
@@ -698,16 +676,29 @@ void run(btDynamicsWorld* World)
 		cleanup();
 		appendStat("game loop main",gameLoopMain.stop());
 
+		//////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////// Lock Transform ///////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
+
+		stopWatch.start();
+		renderLock.lock();
+		appendStat("wait for render",stopWatch.stop());
+
 		stopWatch.start();
 		gpuDataLock.lock();
 		gameLock.lock();
 		appendStat("wait for data", stopWatch.stop());
+
+
+		////////////////////////////////////// update camera data for frame ///////////////////
 		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
 		for(_camera& c : cameras->data.data){
 			c.view = c.GetViewMatrix();
 			c.rot = c.getRotationMatrix();
 			c.proj = c.getProjection();
 		}
+
+		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
 		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
@@ -715,48 +706,52 @@ void run(btDynamicsWorld* World)
 				j->second->_ids->storage->resize(j->second->ids.data.size());
 		
 
+		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
+		for (int i = 0; i < concurrency::numThreads; ++i)
+			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
+		unlockUpdate();
+
+		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
 		emitterInits.clear();
 		for (auto &i : emitter_inits)
 			emitterInits.push_back(i.second);
 		emitter_inits.clear();
 		appendStat("prepare memory", stopWatch.stop());
 
-		for (int i = 0; i < concurrency::numThreads; ++i)
-			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
-		unlockUpdate();
+		////////////////////////////////////// switch particle burst buffer //////////////////////////////////////
+		gpu_particle_bursts->storage->swap(particle_bursts);
+		particle_bursts.clear();
 
+
+		////////////////////////////////////// cull objects //////////////////////////////////////
 		lockUpdate();
 		for (int i = 0; i < concurrency::numThreads; ++i)
 			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::update, 1, 0));
 		unlockUpdate();
 
-		// this_thread::sleep_for(2ns);
 
 		waitForWork();
-		// syncThreads();
+
 		gameLock.unlock();
 		gpuDataLock.unlock();
 
-		// rendering
-		//        stopWatch.start();
+		//////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////// Unlock Transform ///////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
 		renderJob rj;
 		rj.work = [&] { return; };
 		rj.type = renderNum::render;
-		rj.proj = ::proj;																			//((_camera*)(cameras->front()))->getProjection();
-		rj.rot = glm::lookAt(vec3(0, 0, 0), player->transform->forward(), player->transform->up()); //glm::toMat4(glm::inverse(player->transform->getRotation()));// ((_camera*)(cameras->front()))->getRotationMatrix();
-		rj.view = glm::translate(-player->transform->getPosition());								// ((_camera*)(cameras->front()))->GetViewMatrix();
+		rj.proj = ::proj;
+		rj.rot = glm::lookAt(vec3(0, 0, 0), player->transform->forward(), player->transform->up()); 
+		rj.view = glm::translate(-player->transform->getPosition());
 
 		renderDone.store(false);
-		stopWatch.start();
-		renderLock.lock();
-		appendStat("wait for render",stopWatch.stop());
+
 		renderWork.push(rj);
 		renderLock.unlock();
 		appendStat("clean up", cleanupTime);
 		appendStat("game loop total",gameLoopTotal.stop());
-		//		appendStat("rendering", stopWatch.stop());
 
-		//        unlockUpdate();
 	}
 
 	log("end of program");
@@ -791,27 +786,27 @@ void run(btDynamicsWorld* World)
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
 }
 
-void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view)
-{
+// void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view)
+// {
 
-	float farplane = 1e32f;
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	glCullFace(GL_BACK);
-	for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-	{
-		Shader *currShader = i->second.begin()->second->s.s->shader;
-		currShader->Use();
-		for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-		{
-			glUseProgram(currShader->Program);
-			glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
-			glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farplane + 1));
-			glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1, glm::value_ptr(mainCamPos));
-			glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
-			glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
+// 	float farplane = 1e32f;
+// 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+// 	glCullFace(GL_BACK);
+// 	for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+// 	{
+// 		Shader *currShader = i->second.begin()->second->s.s->shader;
+// 		currShader->Use();
+// 		for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
+// 		{
+// 			glUseProgram(currShader->Program);
+// 			glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
+// 			glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farplane + 1));
+// 			glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1, glm::value_ptr(mainCamPos));
+// 			glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
+// 			glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
+// 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
 
-			j->second->m.m->model->Draw(*currShader, j->second->ids.size());
-		}
-	}
-}
+// 			j->second->m.m->model->Draw(*currShader, j->second->ids.size());
+// 		}
+// 	}
+// }

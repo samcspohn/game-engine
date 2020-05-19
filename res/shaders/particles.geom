@@ -23,6 +23,8 @@ out vec3 FragPos;
 out float logz;
 out vec4 col;
 out vec2 offset;
+out float _life_;
+flat out uint id;
 
 
 layout (points) in;
@@ -42,8 +44,10 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
         // TexCoord = texCoord;
         FragPos = vec3(model * vec4(point,1.0f));
         // protoID(rp);
-        col = prototypes[protoID(rp)].color;
+        // col = prototypes[protoID(rp)].color;
         col.a *= _life;
+        _life_ = _life;
+
         // col.a = 1;
         // logz = log2(logz) * 0.5 * FC;
         EmitVertex();
@@ -94,12 +98,13 @@ void main(){
             d rp = data[index];
 
             uint proto_id = protoID(rp);
+            id = proto_id;
             float life1 = life(rp);
             float life2 = life1;
 
             vec3 position = getPosition(rp) + cameraPos;
             vec2 s = getScale(rp);// * life1;
-            vec3 _scale = vec3(s.x,s.y,0);
+            vec3 _scale = vec3(s.x,s.y,0) * prototypes[proto_id].sizeLife[int((1.f - min(max(life1,0.01f),1.f)) * 100.f)];
             vec4 rotation = getRotation(rp);
             // _scale = (rotate(identity(),rotation) * vec4(_scale,1)).xyz;
             // float _life = life(rp);
@@ -108,7 +113,7 @@ void main(){
             mat4 mvp = projection * vRot * view * model;
 
             if(prototypes[proto_id].trail == 1)
-                life2 = life1 - 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
+                life1 = life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
 
             createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1);
             // offset = gl_Position.xy;

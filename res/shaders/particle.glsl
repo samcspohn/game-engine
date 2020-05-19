@@ -16,25 +16,30 @@ struct particle{
     vec3 position2;
     int visible;
     vec3 velocity2;
-    float p2;
-    vec4 p3;
+    float l;
 };
 struct emitter_prototype{
     float emission_rate;
     float lifetime;
     float rotation_rate;
-    int id;
+    float dispersion;
 
-    vec4 color;
+    // vec4 color;
 
-    vec3 velocity;
+    float minSpeed;
+    float maxSpeed;
+    float lifetime2;
     int live;
 
     vec3 scale;
     int billboard;
 
-    vec3 p;
+    int velAlign;
+    float radius;
+    int p2;
     int trail;
+    vec4 colorLife[100];
+    float sizeLife[100];
 };
 struct emitter{
     uint transform;
