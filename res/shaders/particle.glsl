@@ -69,8 +69,8 @@ struct d{
 	// uint qwx;
     // uint qyz;
 	uint scale_xy;
-	uint protoID;
-	uint key_life;
+	uint protoID_life;
+	// uint key_life;
 };
 
 
@@ -131,20 +131,20 @@ vec4 getRotation(inout d item){
 }
 
 uint protoID(inout d item){
-    return item.protoID >> 16;
+    return item.protoID_life >> 16;
 }
 void protoID(inout d item, uint id){
-    item.protoID = (item.protoID & 0x0000ffff) | (id << 16);
+    item.protoID_life = (item.protoID_life & 0x0000ffff) | (id << 16);
 }
-uint key(inout d item){
-    return item.key_life >> 16;
-}
-void key(inout d item, uint id){
-    item.key_life = (item.key_life & 0x0000ffff) | (id << 16);
-}
+// uint key(inout d item){
+//     return item.key_life >> 16;
+// }
+// void key(inout d item, uint id){
+//     item.key_life = (item.key_life & 0x0000ffff) | (id << 16);
+// }
 float life(inout d item){
-    return uintBitsToFloat((item.key_life & 0x0000ffff) << 16);
+    return uintBitsToFloat((item.protoID_life & 0x0000ffff) << 16);
 }
 void life(inout d item, float l){
-    item.key_life = (item.key_life & 0xffff0000) | (floatBitsToUint(l) >> 16);
+    item.protoID_life = (item.protoID_life & 0xffff0000) | (floatBitsToUint(l) >> 16);
 }

@@ -12,15 +12,13 @@ const uint BUCK = 1 << RADIX;
 // const uint block_sum_size = uint(sqrt(N_GROUPS * BUCK));
 const uint block_sum_size = 256;
 
-// layout(std430,binding = 0) buffer c{uint counts[];}; //5? long
-// layout(std430,binding = 1) buffer o{uint offsets[];}; //5? long
-// layout(std430,binding = 2) buffer d_{d data1[];};
-// layout(std430,binding = 6) buffer d__{d data2[];};
+
 layout(std430,binding = 0) buffer t{_transform transforms[];};
+layout(std430,binding = 13) buffer rp{uint renderParticles[];};
 layout(std430,binding = 1) buffer d_in{d _input[];};
 layout(std430,binding = 2) buffer d_out{d _output[];};
-// layout(std430,binding = 11) buffer keys_in{uint key_input[];};
-// layout(std430,binding = 12) buffer keys_out{uint key_output[];};
+layout(std430,binding = 11) buffer ki{uint keys_in[];};
+layout(std430,binding = 12) buffer ko{uint keys_out[];};
 layout(std430,binding = 3) buffer blk_sum{uint block_sums[];};
 layout(std430,binding = 4) buffer p{particle particles[];};
 layout(std430,binding = 5) buffer a{uint atomics[];};
@@ -52,208 +50,6 @@ uniform vec3 camPos;
 uniform vec3 cameraForward;
 uniform vec3 cameraUp;
 
-// void radix2(uint g_id){
-
-//     // __kernel void count(const __global int* _input,__global int* _output,__local int* local_histo,const int pass,const int nkeys)
-//     if(stage == 0)
-//     {
-//         uint i;
-//         // uint really_local_histo[BUCK];
-//         // for(i = 0; i < BUCK; i++){
-//         //     really_local_histo[i] = 0;
-//         // }
-//         uint bucks_size = (BUCK) / WG_SIZE;
-//         uint bucks_start = bucks_size * gl_LocalInvocationID.x;
-//         uint bucks_end = bucks_start + bucks_size;
-//         for(i = bucks_start; i < bucks_end; i++){
-//             local_histo[i] = 0;
-//         }
-
-//         barrier();
-//         // memoryBarrierShared();
-
-//         //Calculate elements to process per item
-//         uint size = nkeys / count;
-//         //Calculate where to start on the global array
-//         uint start = g_id * size + offset;
-//         uint end = start + size;
-//         if(g_id == count - 1){
-//             end = nkeys + offset;
-//         }
-        
-//         for(i = start; i < end; i++) {
-//             uint key = _input[i].key;
-//             key = ((key >> (pass * RADIX - 4)) & (BUCK - 1));
-//             atomicAdd(local_histo[key],1);
-//         }
-//         // memoryBarrierShared();
-//         barrier();
-//         for(i = bucks_start; i < bucks_end; i++) {
-//             histo[i * N_GROUPS + gl_WorkGroupID.x] = local_histo[i];
-//         }
-//         // if(g_id == count - 1)
-//         // histo[0] = nkeys;
-//     }
-
-
-//     if(stage == 11){
-//         // if(g_id == 0){
-//             for(uint i = 0; i < 256; i++){
-//                 uint start = i * 128;
-//                 uint end = start + 128;
-                
-//                 uint temp = histo[start];
-//                 histo[start] = 0;
-//                 for(uint j = start + 1; j < end; j++){
-//                     uint temp2 = histo[j];histo[i * N_GROUPS + gl_WorkGroupID.x];
-//                     temp += temp2;
-//                 }
-//                 block_sums[i] = temp;
-//             }
-
-//             uint temp = block_sums[0];
-//             block_sums[0] = 0;
-//             for(uint i = 1; i < 256; i++){
-//                 uint temp2 = block_sums[i];
-//                 block_sums[i] = temp;
-//                 temp += temp2;
-//             }
-
-//             // for(int i = 0; i < 256; i++){
-//             //     for(int j = 0; j < 128; j++){
-//             //         histo[i*128 + j] += block_sums[i];
-//             //     }
-//             // }
-//             for(int i = 0; i < 32768; i++){
-//                 histo[i] += block_sums[i/128];
-//             }
-
-
-//             // uint temp = histo[0];
-//             // histo[0] = 0;
-//             // uint end = BUCK * 16 * 128;
-//             // for(uint i = 1; i < end; i++){
-//             //     uint temp2 = histo[i];
-//             //     histo[i] = temp;
-//             //     temp += temp2;
-//             // }
-//         // }
-//     }
-
-//     // scan kernel 2
-//     if(stage == 1){
-//         uint start = g_id * block_sum_size;
-//         uint end = start + block_sum_size;
-        
-//         uint temp = histo[start];
-//         histo[start] = 0;
-//         for(uint i = start + 1; i < end; i++){
-//             uint temp2 = histo[i];
-//             histo[i] = temp;
-//             temp += temp2;
-//         }
-//         block_sums[g_id] = temp;
-//     }
-
-//     if(stage == 2){
-//         uint temp = block_sums[0];
-//         block_sums[0] = 0;
-//         for(uint i = 1; i < block_sum_size; i++){
-//             uint temp2 = block_sums[i];
-//             block_sums[i] = temp;
-//             temp += temp2;
-//         }
-//     }
-
-//     if(stage == 3){
-//         // uint group_id = gl_WorkGroupID.x;
-//         histo[g_id] += block_sums[g_id/block_sum_size];
-//     }
-
-
-
-//     /** REORDER KERNEL **/
-//     // __kernel void reorder(__global int* array, __global int* histo, __global int* _output, const int pass, const int nkeys, __local int* local_histo)
-//     if(stage == 4)
-//     {
-//         // uint g_id = gl_GlobalInvocationID.x;
-//         //Bring histo to local memory
-//         uint i;
-//         // uint really_local_histo[BUCK];
-//         // for(i = 0; i < BUCK; i++){
-//         //     really_local_histo[i] = histo[i * count + g_id];
-//         // }
-//         uint bucks_size = (BUCK) / WG_SIZE;
-//         uint bucks_start = bucks_size * gl_LocalInvocationID.x;
-//         uint bucks_end = bucks_start + bucks_size;
-//         for(i = bucks_start; i < bucks_end; i++) {
-//             local_histo[i] = histo[i * N_GROUPS + gl_WorkGroupID.x];
-//         }
-//         // memoryBarrierShared();
-        
-//         barrier();
-//         // memoryBarrierShared();
-
-//         //Write to global memory in order
-//         uint size = nkeys / count;
-//         uint start = g_id * size  + offset;
-//         uint end = start + size;
-//         if(g_id == count - 1){
-//             end = nkeys + offset;
-//         }
-        
-//         for(i = start; i < end; i++) {
-//                 d item = _input[i];
-//                 uint key = (item.key >> (pass * RADIX - 4)) & (BUCK - 1);
-//                 // uint pos = local_histo[key * l_size + l_id];
-//                 uint pos = atomicAdd(local_histo[key],1);
-//                 // if(pass == 7)
-//                 //     pos = nkeys - pos - 1;
-//                 _output[pos + offset] = item;
-//                 // _output[nkeys - i - 1] = item;
-//         }
-        
-//     }
-// }
-
-
-
-// void merge(uint id){
-//     uint start = id * breadth;
-//     uint end = start + breadth;
-//     if(start > numElements)
-//         return;
-//     if(end > numElements)
-//         end = numElements;
-//     uint dst = start;
-//     uint first = start;
-//     uint secondStart = start + breadth / 2;
-//     if(secondStart > end)
-//         secondStart = end;
-//     uint second = secondStart;
-
-//     while(dst < end && first < secondStart && second < end){
-//         if(data1[first].key > data1[second].key){
-//             data2[dst] = data1[first];
-//             first++;
-//         }else{
-//             data2[dst] = data1[second];
-//             second++;
-//         }
-//         dst++;
-//     }
-//     for(;first < secondStart;first++){
-//         data2[dst] = data1[first];
-//         dst++;
-//     }
-//     for(;second < end;second++){
-//         data2[dst] = data1[second];
-//         dst++;
-//     }
-//     for(uint i = start; i < end;i++){
-//         data1[i] = data2[i];
-//     }
-// }
 shared uint _keys[4096];
 shared uint buckets[2048]; // 12 bits
 shared uint ids[4096];
@@ -280,7 +76,8 @@ barrier();
         end = nkeys - globalOffset;
     }
     for(uint i = start; i < end; ++i){
-        uint k = key(_output[globalOffset + i]);
+        // uint k = key(_output[globalOffset + i]);
+        uint k = keys_out[globalOffset + i];
         k >>= 5;
         _keys[i] = k;
         ids[i] = globalOffset + i;
@@ -314,7 +111,10 @@ barrier();
 barrier();
 
     for(uint i = start; i < end; ++i){
-        _input[atomicAdd(buckets[_keys[i]],1)] = _output[ids[i]];
+        uint index = atomicAdd(buckets[_keys[i]],1);
+        _input[index] = _output[ids[i]];
+        keys_in[index] = keys_out[ids[i]];
+
     }
 }
 
@@ -356,7 +156,8 @@ void radix(uint g_id){
     }
     else if(stage == 4){
         d item = _input[g_id]; 
-        index = key(item);  
+        // index = key(item);
+        index = keys_in[g_id]; 
         _output[atomicAdd(histo[index],1)] = item;
         // uint off = count / 128;
         // _output[(gl_LocalInvocationID.x * off + gl_WorkGroupID.x) % count] = item;
@@ -404,81 +205,195 @@ void genPosition1(inout d item, vec3 a){
     setY(item, yAxisAngle);
     setZ(item, -length(a));
 }
-// void genPosition2(inout d item, vec3 a){
-//     vec3 newVec = vec3(a.x,a.y,-a.z);
-//     uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
-//     // rotateX(newVec,-xAxisAngle);
-//     setDX2(item, xAxisAngle);
-//     uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
-//     setDY2(item, yAxisAngle);
-//     setDZ2(item, -length(a));
-// }
+
+void makeRenderParticle(uint index){
+
+    uint id = renderParticles[index];
+    particle p = particles[id];
+    emitter_prototype proto = prototypes[p.emitter_prototype];
+    vec3 p1 = (vp * vec4(p.position,1)).xyz;
+    vec3 p2 = (vp * vec4(p.position2,1)).xyz;
+    d item;
+    uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
+    // key(item, _key);
+    keys_out[index] = _key;
+    // emitterID(item, p.emitter);
+    life(item, p.life);
+    protoID(item, p.emitter_prototype);
+    vec3 p11;
+    vec3 p21;
+    vec4 rot;
+    vec2 _scale;
+    if(prototypes[p.emitter_prototype].trail == 1){
+        p11 = p.position;
+        p21 = p.position2;
+        p11 = p11 + (p21 - p11) / 2;
+        _scale = vec2(p.scale.x, length(p.position - p.position2));
+    }else{
+        _scale = p.scale.xy;
+        p11 = p.position;
+    }
+    rot = p.rotation;
+    if(proto.billboard == 1)
+        rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
+    if(proto.trail == 1){
+        // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
+        vec3 y = p.position2 - p.position;
+        vec3 x = cross(y, p.position2 - camPos);
+        vec3 l = cross(x,y);
+        rot = lookAt(l,y);
+    }
+    p11 -= camPos;
+    setScale(item,_scale);
+    genPosition1(item, p11);
+    setRotation(item, rot);
+    // genPosition2(item, p21);
+
+    // item.id = gid;
+    atomicAdd(histo[_key],1);
+    // _input[index] = item;
+    _output[index] = item;
+}
+
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
     uint index;
-    if(gid >= count)
-        return;
-    if(stage == -2)
-        histo[gid] = 0;
-    if(stage == -1){
-        particle p = particles[gid];
-        emitter_prototype proto = prototypes[p.emitter_prototype];
-        vec3 p1 = (vp * vec4(p.position,1)).xyz;
-        vec3 p2 = (vp * vec4(p.position2,1)).xyz;
-        vec3 p3 = (p1 + p2) / 2;
-        float radius = length(p2 - p3) + prototypes[p.emitter_prototype].sizeLife[int((1.f - min(max(p.life,0.01f),1.f)) * 100.f)];
-        if(p.live == 1 && (p1.z > 0 || p2.z > 0)
-         && (abs(p1.x / p1.z) < 1.1 || abs(p2.x / p2.z) < 1.1)
-         && (abs(p1.y / p1.z) < 1.1 || abs(p2.y / p2.z) < 1.1)){
-            // && (abs(p3.x) - radius) / abs(p3.z) < 1.f && (abs(p3.y) - radius) / abs(p3.z) < 1.f){
-            index = atomicAdd(atomics[0],1);
-            d item;
-            uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
-            key(item, _key);
-            // emitterID(item, p.emitter);
-            life(item, p.life);
-            protoID(item, p.emitter_prototype);
-            vec3 p11;
-            vec3 p21;
-            vec4 rot;
-            vec2 _scale;
-            rot = p.rotation;
-            if(prototypes[p.emitter_prototype].trail == 1){
-                p11 = p.position;
-                p21 = p.position2;
-                p11 = p11 + (p21 - p11) / 2;
-                _scale = vec2(p.scale.x, length(p.position - p.position2));
-            }else{
-                _scale = p.scale.xy;
-                p11 = p.position;
-            }
-            if(proto.billboard == 1)
-                rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
-            if(proto.trail == 1){
-                // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
-                vec3 y = p.position2 - p.position;
-                vec3 x = cross(y, p.position2 - camPos);
-                vec3 l = cross(x,y);
-                rot = lookAt(l,y);
-            }
-            p11 -= camPos;
-            setScale(item,_scale);
-            genPosition1(item, p11);
-            setRotation(item, rot);
-            // genPosition2(item, p21);
+    if(gid < count){
+        switch(stage){
+            case -2:
+                histo[gid] = 0;
+                break;
+            case -1:
+                {
+                    particle p = particles[gid];
+                    emitter_prototype proto = prototypes[p.emitter_prototype];
+                    vec3 p1 = (vp * vec4(p.position,1)).xyz;
+                    vec3 p2 = (vp * vec4(p.position2,1)).xyz;
+                    // vec3 p3 = (p1 + p2) / 2;
+                    // float radius = length(p2 - p3) + prototypes[p.emitter_prototype].sizeLife[int((1.f - min(max(p.life,0.01f),1.f)) * 100.f)];
+                    if(p.live == 1 && (p1.z > 0 || p2.z > 0)
+                    && ((abs(p1.x / p1.z) < 1.1 || abs(p2.x / p2.z) < 1.1)
+                    || (abs(p1.y / p1.z) < 1.1 || abs(p2.y / p2.z) < 1.1))){
+                        // && (abs(p3.x) - radius) / abs(p3.z) < 1.f && (abs(p3.y) - radius) / abs(p3.z) < 1.f){
+                        index = atomicAdd(atomics[0],1);
+                        // renderParticles[index] = gid;
+                        d item;
+                        uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
+                        // key(item, _key);
+                        keys_out[index] = _key;
+                        // emitterID(item, p.emitter);
+                        life(item, p.life);
+                        protoID(item, p.emitter_prototype);
+                        vec3 p11;
+                        vec3 p21;
+                        vec4 rot;
+                        vec2 _scale;
+                        rot = p.rotation;
+                        if(prototypes[p.emitter_prototype].trail == 1){
+                            p11 = p.position;
+                            p21 = p.position2;
+                            p11 = p11 + (p21 - p11) / 2;
+                            _scale = vec2(p.scale.x, length(p.position - p.position2));
+                        }else{
+                            _scale = p.scale.xy;
+                            p11 = p.position;
+                        }
+                        if(proto.billboard == 1)
+                            rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
+                        if(proto.trail == 1){
+                            // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
+                            vec3 y = p.position2 - p.position;
+                            vec3 x = cross(y, p.position2 - camPos);
+                            vec3 l = cross(x,y);
+                            rot = lookAt(l,y);
+                        }
+                        p11 -= camPos;
+                        setScale(item,_scale);
+                        genPosition1(item, p11);
+                        setRotation(item, rot);
+                        // genPosition2(item, p21);
 
-            // item.id = gid;
-            atomicAdd(histo[_key],1);
-            // _input[index] = item;
-            _output[index] = item;
-            // _input[index].id = gid;
+                        // item.id = gid;
+                        atomicAdd(histo[_key],1);
+                        // _input[index] = item;
+                        _output[index] = item;
+                        // _input[index].id = gid;
+                    }
+                }
+                break;
+            case -3:
+                makeRenderParticle(gid);
+                break;
+            default:
+                radix(gid);
+                break;
         }
-    }
-    else{
-        // radix2(gid);
-        radix(gid);
-        // merge(gid);
-    }
+        // if(stage == -1){
+        //     particle p = particles[gid];
+        //     emitter_prototype proto = prototypes[p.emitter_prototype];
+        //     vec3 p1 = (vp * vec4(p.position,1)).xyz;
+        //     vec3 p2 = (vp * vec4(p.position2,1)).xyz;
+        //     // vec3 p3 = (p1 + p2) / 2;
+        //     // float radius = length(p2 - p3) + prototypes[p.emitter_prototype].sizeLife[int((1.f - min(max(p.life,0.01f),1.f)) * 100.f)];
+        //     if(p.live == 1 && (p1.z > 0 || p2.z > 0)
+        //     && ((abs(p1.x / p1.z) < 1.1 || abs(p2.x / p2.z) < 1.1)
+        //     || (abs(p1.y / p1.z) < 1.1 || abs(p2.y / p2.z) < 1.1))){
+        //         // && (abs(p3.x) - radius) / abs(p3.z) < 1.f && (abs(p3.y) - radius) / abs(p3.z) < 1.f){
+        //         index = atomicAdd(atomics[0],1);
+        //         renderParticles[index] = gid;
+                    
+        //         // d item;
+        //         // uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
+        //         // // key(item, _key);
+        //         // keys_out[index] = _key;
+        //         // // emitterID(item, p.emitter);
+        //         // life(item, p.life);
+        //         // protoID(item, p.emitter_prototype);
+        //         // vec3 p11;
+        //         // vec3 p21;
+        //         // vec4 rot;
+        //         // vec2 _scale;
+        //         // rot = p.rotation;
+        //         // if(prototypes[p.emitter_prototype].trail == 1){
+        //         //     p11 = p.position;
+        //         //     p21 = p.position2;
+        //         //     p11 = p11 + (p21 - p11) / 2;
+        //         //     _scale = vec2(p.scale.x, length(p.position - p.position2));
+        //         // }else{
+        //         //     _scale = p.scale.xy;
+        //         //     p11 = p.position;
+        //         // }
+        //         // if(proto.billboard == 1)
+        //         //     rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
+        //         // if(proto.trail == 1){
+        //         //     // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
+        //         //     vec3 y = p.position2 - p.position;
+        //         //     vec3 x = cross(y, p.position2 - camPos);
+        //         //     vec3 l = cross(x,y);
+        //         //     rot = lookAt(l,y);
+        //         // }
+        //         // p11 -= camPos;
+        //         // setScale(item,_scale);
+        //         // genPosition1(item, p11);
+        //         // setRotation(item, rot);
+        //         // // genPosition2(item, p21);
 
+        //         // // item.id = gid;
+        //         // atomicAdd(histo[_key],1);
+        //         // // _input[index] = item;
+        //         // _output[index] = item;
+        //         // // _input[index].id = gid;
+        //     }
+        // }
+        // if(stage == -3){
+        //     makeRenderParticle(gid)
+        // }
+        // else{
+        //     // radix2(gid);
+        //     radix(gid);
+        //     // merge(gid);
+        // }
+
+    }
 }
