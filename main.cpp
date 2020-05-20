@@ -332,8 +332,8 @@ public:
 
 
 			// // cout <<  Time.time << endl;
-			// cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))
-			//  << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
+			cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))
+			 << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
 
 			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 			missileCounter->contents = "missiles: " + FormatWithCommas(numCubes.load());
@@ -1086,16 +1086,16 @@ int main(int argc, char **argv)
 		// cout << "\r" << (float)i / (float)n << "    " << flush;
 	}
 
-	// create blob of bombs
-	go = new game_object(*CUBE);
-	for (int i = 0; i < n; i++)
-	{
-		go = new game_object(*go);
-		go->transform->translate(randomSphere() * 3.f);
-		if (fmod((float)i, (n / 100)) < 0.01)
-			cout << "\r" << (float)i / (float)n << "    " << flush;
-		go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
-	}
+	// // create blob of bombs
+	// go = new game_object(*CUBE);
+	// for (int i = 0; i < n; i++)
+	// {
+	// 	go = new game_object(*go);
+	// 	go->transform->translate(randomSphere() * 3.f);
+	// 	if (fmod((float)i, (n / 100)) < 0.01)
+	// 		cout << "\r" << (float)i / (float)n << "    " << flush;
+	// 	go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
+	// }
 
 
 
