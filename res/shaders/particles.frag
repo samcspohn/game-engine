@@ -24,4 +24,5 @@ void main()
 {   
     gl_FragDepth = log2(logz) * 0.5 * FC;
     color = prototypes[id].colorLife[int((1.f - min(max(_life_,0.01f),1.f)) * 100.f)];
+    // color.a = 1;
 }

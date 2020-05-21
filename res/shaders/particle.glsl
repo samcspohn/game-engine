@@ -13,6 +13,7 @@ struct particle{
     int next;
     int prev;
     float life2;
+    
     vec3 position2;
     int visible;
     vec3 velocity2;

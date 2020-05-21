@@ -330,16 +330,20 @@ public:
 
 		if (framecount++ > 1){
 
-
-			// // cout <<  Time.time << endl;
-			cout << "\rcubes: " << FormatWithCommas(numCubes.load()) << " particles: " << FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles))
-			 << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
+			pcMutex.lock();
+			cout << "\r"
+			// << "\rcubes: " << FormatWithCommas(numCubes.load()) 
+			<< " particles: " << FormatWithCommas(particleCount)
+			<< " actual particles: " << FormatWithCommas(actualParticles)
+			<< "               ";
+			// << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
 
 			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 			missileCounter->contents = "missiles: " + FormatWithCommas(numCubes.load());
-			particleCounter->contents = "particles: " + FormatWithCommas(atomicCounters->storage->at(particleCounters::liveParticles));
+			particleCounter->contents = "particles: " + FormatWithCommas(particleCount);
 			shipVelocity->contents = "speed: " + to_string(ship_vel);
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
+			pcMutex.unlock();
 		}
 
 		if (Input.getKeyDown(GLFW_KEY_R))
@@ -572,13 +576,19 @@ class gunManager : public component{
 class autoCubes : public component
 {
 public:
+	bool shouldFire;
 	gun* g;
 	void onStart(){
 		g = transform->gameObject->getComponent<gun>();
 	}
 	void update()
 	{
-		g->fire();
+		if(Input.getKey(GLFW_KEY_H))
+			shouldFire = false;
+		else if(Input.getKey(GLFW_KEY_J))
+			shouldFire = true;
+		if(shouldFire)
+			g->fire();
 	}
 	UPDATE(autoCubes, update);
 	COPY(autoCubes);
@@ -718,10 +728,10 @@ int main(int argc, char **argv)
 
 	colorArray ca;
 	ca.addKey(vec4(1),0.03)
-	.addKey(vec4(1,1,0.5f,1),0.06)
-	.addKey(vec4(1,0.8f,0.5f,0.9f),0.1)
-	.addKey(vec4(1,0.6f,0.5f,0.9f),0.13)
-	.addKey(vec4(0.65,0.65,0.65,0.6f),0.20)
+	.addKey(vec4(1,1,0.5f,1),0.05)
+	.addKey(vec4(1,0.8f,0.5f,0.9f),0.07)
+	// .addKey(vec4(1,0.6f,0.5f,0.9f),0.09)
+	.addKey(vec4(0.65,0.65,0.65,0.3f),0.09)
 	.addKey(vec4(0.65,0.65,0.65,0.0f),8.f / 9.f);
 
 	colorArray ca3;
@@ -1075,7 +1085,7 @@ int main(int argc, char **argv)
 	}
 
 	// create shooters
-	for (int i = 0; i < 300; ++i)
+	for (int i = 0; i < 200; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);

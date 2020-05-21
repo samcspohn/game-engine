@@ -514,6 +514,7 @@ void init()
 {
 	renderThreadReady.exchange(false);
 	renderThread = new thread(renderThreadFunc);
+	
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
