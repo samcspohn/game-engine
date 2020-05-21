@@ -105,7 +105,7 @@ uint getLowBits(inout uint o){
 float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio   
 float rand(in vec2 xy, in float seed){
     xy += vec2(1);
-    return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
+    return fract(tan(distance(xy*PHI, xy)*sin(seed))*xy.x);
 }
 struct rng{
 	vec2 xy;

@@ -386,6 +386,9 @@ Shader particleSortProgram("res/shaders/particle_sort.comp");
 // Shader particleSortProgram2("res/shaders/particle_sort2.comp");
 Shader particleSortProgram2("res/shaders/particleUpdate.comp");
 Shader particleProgram("res/shaders/particleUpdate.comp");
+int particleCount;
+int actualParticles;
+mutex pcMutex;
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -429,7 +432,9 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
     atomicCounters->retrieveData();
     (*atomicCounters)[1] = 0;
+    (*atomicCounters)[2] = 0;
     atomicCounters->bufferData();
+    glFlush();
 
     vector<uint> acs = *(atomicCounters->storage);
     
@@ -441,21 +446,35 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     atomicCounters->retrieveData();
-    vector<uint> acs2 = *(atomicCounters->storage);
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), (*atomicCounters)[1]);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 4);
     glDispatchCompute((*atomicCounters)[1] / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
+    
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+        
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), 1); // reset particle counter
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 6);
+    glDispatchCompute(1, 1, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES); // count particles
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 5);
+    glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     atomicCounters->retrieveData();
-    // (*atomicCounters)[2] = 0;
-    // atomicCounters->bufferData();
+    pcMutex.lock();
+    particleCount = atomicCounters->storage->at(0);
+    actualParticles = atomicCounters->storage->at(2);
+    pcMutex.unlock();
     
 }
 
