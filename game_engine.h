@@ -702,9 +702,9 @@ void run(btDynamicsWorld* World)
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
-		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
-				j->second->_ids->storage->resize(j->second->ids.data.size());
+		// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+		// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
+		// 		j->second->_ids->storage->resize(j->second->ids.data.size());
 		
 
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////

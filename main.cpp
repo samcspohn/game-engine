@@ -141,7 +141,7 @@ public:
 	{
 		rot = randomSphere();
 		hit = false;
-
+		numCubes.fetch_add(1);
 		myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
 	void setBullet(const bullet& _b){
@@ -228,7 +228,7 @@ public:
 					go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j,1)));
 				}
 			}
-			numCubes.fetch_add((int)reload);
+			// numCubes.fetch_add((int)reload);
 			// reload -= (int)reload;
 			return true;
 		}
@@ -912,6 +912,9 @@ int main(int argc, char **argv)
 	auto r_ = ship->addComponent<_renderer>();
 	r_->set(modelShader,_model("res/models/ship1/ship.obj"));
 	ship->addComponent<_ship>();
+	auto ship_col = ship->addComponent<collider>();
+	ship_col->dim = vec3(4,1,18);
+	ship_col->layer = 1;
 
 	vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
 	vec2(1.7,4.45),
@@ -1009,11 +1012,11 @@ int main(int argc, char **argv)
 
 	
 	game_object *CUBE = new game_object();
-	// CUBE->addComponent<_renderer>();
+	CUBE->addComponent<_renderer>();
 	// CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
 	// CUBE->getComponent<rigidBody>()->bounciness = .98f; //->gravity = false; //
 	CUBE->addComponent<collider>()->layer = 0;
-	// CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
+	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
 	auto pe2 = CUBE->addComponent<particle_emitter>();
 	// pe2->setPrototype(flameEmitterProto);
 	// auto pe3 = CUBE->addComponent<particle_emitter>();
@@ -1085,7 +1088,7 @@ int main(int argc, char **argv)
 	}
 
 	// create shooters
-	for (int i = 0; i < 200; ++i)
+	for (int i = 0; i < 20; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);
@@ -1097,15 +1100,15 @@ int main(int argc, char **argv)
 	}
 
 	// // create blob of bombs
-	// go = new game_object(*CUBE);
-	// for (int i = 0; i < n; i++)
-	// {
-	// 	go = new game_object(*go);
-	// 	go->transform->translate(randomSphere() * 3.f);
-	// 	if (fmod((float)i, (n / 100)) < 0.01)
-	// 		cout << "\r" << (float)i / (float)n << "    " << flush;
-	// 	go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
-	// }
+	go = new game_object(*CUBE);
+	for (int i = 0; i < n; i++)
+	{
+		go = new game_object(*go);
+		go->transform->translate(randomSphere() * 3.f);
+		if (fmod((float)i, (n / 100)) < 0.01)
+			cout << "\r" << (float)i / (float)n << "    " << flush;
+		go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
+	}
 
 
 
