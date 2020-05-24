@@ -699,6 +699,7 @@ public:
 	} _collider;
 	AABB a;
 	colDat cd;
+	glm::vec3 dim = vec3(1);
 	void update()
 	{
 		//octLock.lock();
@@ -706,9 +707,9 @@ public:
 		//	cout << "\ncreate tree\n";
 		//}
 		posInTree = 0;
-		glm::vec3 sc = transform->getScale();
+		glm::vec3 sc = transform->getScale() * dim;
 		glm::mat3 rot = glm::toMat3(transform->getRotation());
-		a = AABB(transform->getPosition(), r * transform->getScale() * 1.5f);
+		a = AABB(transform->getPosition(), vec3(1) * length(sc) * 1.5f);
 		cd.a = a;
 
 		cd.o.c = a.c;

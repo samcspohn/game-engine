@@ -9,6 +9,7 @@
 #include "game_object.h"
 #include "Component.h"
 #include "fast_list.h"
+#include <atomic>
 using namespace std;
 
 
@@ -143,10 +144,12 @@ public:
 int renderingId = 0;
 struct renderingMeta {
 	GLuint id = -1;
-	gpu_vector<GLuint>* _ids;
+	gpu_vector<GLuint>* _transformIds;
 	
-	fast_list<GLuint> ids = fast_list<GLuint>();
-	fast_list<GLuint> transformIds = fast_list<GLuint>();
+	// fast_list<GLuint> ids = fast_list<GLuint>();
+	// fast_list<GLuint> transformIds = fast_list<GLuint>();
+	// vector<GLuint> _transformIds;
+	// atomic<int> counter;
 	_shader s;
 	_model m;
 	renderingMeta() {
@@ -156,8 +159,8 @@ struct renderingMeta {
 	renderingMeta(_shader _s, _model _m) {
 		s = _s;
 		m = _m;
-		_ids = new gpu_vector<GLuint>();
-		_ids->ownStorage();
+		// _ids = new gpu_vector<GLuint>();
+		// _ids->ownStorage();
 	}
 
 	//renderingMeta operator=(const renderingMeta& other) {
@@ -167,9 +170,8 @@ struct renderingMeta {
 		s = other.s;
 		m = other.m;
 		//ids = fast_list<GLuint>(other.ids);
-		_ids = new gpu_vector<GLuint>();
-		;
-		_ids->storage = &ids.data;
+		// _ids = new gpu_vector<GLuint>();
+		// _ids->storage = &ids.data;
 	}
 	~renderingMeta() {
 
@@ -185,6 +187,7 @@ public:
 
 }renderingManager;
 
+class cullObjects;
 class _renderer : public component {
 	_shader shader;
 	_model model;
@@ -192,9 +195,10 @@ class _renderer : public component {
 	// fast_list<GLuint>::iterator idLoc;
 	renderingMeta* meta = 0;
 	// fast_list<__renderer>::iterator _Rloc;
-	fast_list<GLuint>::iterator transformIdRef;
+	// fast_list<GLuint>::iterator transformIdRef;
 
-
+	// friend _camera;
+	friend cullObjects;
 public:
 	_model getModel(){
 		return model;
@@ -215,9 +219,9 @@ public:
 		rendererLock.lock();
 		shader = s;
 		model = m;
-		if (!transformIdRef.isNull()) {
-			meta->transformIds.erase(transformIdRef);
-		}
+		// if (!transformIdRef.isNull()) {
+		// 	meta->counter.fetch_sub(1);
+		// }
 		auto r = renderingManager.shader_model_vector.find(s.s->name);
 		if (r == renderingManager.shader_model_vector.end()) {
 			renderingManager.shader_model_vector[s.s->name][m.m->name] = new renderingMeta(s, m);
@@ -231,7 +235,7 @@ public:
 		}
 
 		meta = (r->second[m.m->name]);
-		transformIdRef = meta->transformIds.push_back(transform->_T);
+		// transformIdRef = meta->counter.fetch_add(1);
 		rendererLock.unlock();
 
 	}
@@ -239,37 +243,37 @@ public:
 		shader = _meta->s;
 		model = _meta->m;
 		meta = _meta;
-		GLuint t = transform->_T;
-		if (!transformIdRef.isNull()) {
-			renderLock.lock();
-			meta->transformIds.erase(transformIdRef);
-		}
-		else
-			renderLock.lock();
-		transformIdRef = meta->transformIds.push_back(t);
-		renderLock.unlock();
+		// GLuint t = transform->_T;
+		// if (!transformIdRef.isNull()) {
+		// 	renderLock.lock();
+		// 	meta->counter.fetch_sub(1);
+		// }
+		// else
+		// 	renderLock.lock();
+		// meta->counter.fetch_add(1);
+		// renderLock.unlock();
 	}
 	_renderer(const _renderer& other) {
 //		if (other.meta != 0) {
 			shader = other.shader;
 			model = other.model;
 			meta = other.meta;
-			transformIdRef = fast_list<GLuint>::iterator();
+			fast_list<GLuint>::iterator();
 //		}
 	}
 	void onDestroy(){
-        if (meta != 0) {
-			rendererLock.lock();
-			meta->transformIds.erase(transformIdRef);
-			rendererLock.unlock();
-		}
+        // if (meta != 0) {
+		// 	rendererLock.lock();
+		// 	meta->transformIds.erase(transformIdRef);
+		// 	rendererLock.unlock();
+		// }
 	}
 //	~_renderer() {
 //	}
 
-	void updateTransformLoc(int loc) {
-		*transformIdRef = loc;
-	}
+	// void updateTransformLoc(int loc) {
+	// 	*transformIdRef = loc;
+	// }
 	COPY(_renderer);
 };
 

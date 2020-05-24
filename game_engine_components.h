@@ -210,6 +210,7 @@ private:
 Barrier cullObjectsBarrier(1);
 class cullObjects : public component
 {
+	
 	bool _registerEngineComponent()
 	{
 		return true;
@@ -217,6 +218,7 @@ class cullObjects : public component
 	void update()
 	{
 		componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
+		componentStorage<_renderer> * renderers = ((componentStorage<_renderer> *)allcomponents.at(typeid(_renderer).hash_code()));
 		deque<_camera>::iterator d = cameras->data.data.begin();
 		deque<bool>::iterator v = cameras->data.valid.begin();
 		for (; d != cameras->data.data.end(); d++, v++)
@@ -237,19 +239,30 @@ class cullObjects : public component
 						s->storage->clear();
 					}
 				}
-				// multi threaded culling / vector build
+
 				for (auto &i : renderingManager.shader_model_vector)
 				{
 					for (auto &j : i.second)
 					{
-						auto &vec = d->shader_model_culled[i.first][j.first]->storage;
-						for (auto &k : j.second->transformIds.data)
-						{
-							vec->push_back(k);
-						}
+						j.second->_transformIds = d->shader_model_culled[i.first][j.first];
+						// auto &vec = d->shader_model_culled[i.first][j.first]->storage;
+						// for (auto &k : j.second->transformIds.data)
+						// {
+						// 	vec->push_back(k);
+						// }
 						// std::sort(vec->begin(),vec->end());
 					}
 				}
+
+				typename deque<bool>::iterator valid = renderers->data.valid.begin();
+				for(_renderer& r : renderers->data.data){
+					if(*valid){
+						if(r.meta)
+							r.meta->_transformIds->storage->push_back(r.transform->_T);
+					}
+					valid++;
+				}
+				// multi threaded culling / vector build
 			}
 		}
 	}
@@ -278,17 +291,17 @@ class copyBuffers : public component
 			}
 
 			
-			for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-			{
-				for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-				{
+			// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+			// {
+			// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
+			// 	{
 
-					size_t from = j->second->ids.size() / numt * getThreadID();
-					size_t to = (getThreadID() != numt - 1 ? j->second->ids.size() / numt : j->second->ids.size() - from);
-					if (to > 0)
-						memcpy(&(j->second->_ids->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
-				}
-			}
+			// 		size_t from = j->second->ids.size() / numt * getThreadID();
+			// 		size_t to = (getThreadID() != numt - 1 ? j->second->ids.size() / numt : j->second->ids.size() - from);
+			// 		if (to > 0)
+			// 			memcpy(&(j->second->_ids->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
+			// 	}
+			// }
 		}
 		//		renderCounts[getThreadID()]++;
 	}
