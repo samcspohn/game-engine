@@ -571,20 +571,24 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;
-		int s = cb->size();
-		doWork(j,update_type::update);
-		if (doCleanUp)
-			cleanup();
+		if(cb->hasUpdate()){
+			int s = cb->size();
+			doWork(j,update_type::update);
+			if (doCleanUp)
+				cleanup();
+		}
 	}
 	// LATE UPDATE
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;
-		int s = cb->size();
+		if(cb->hasLateUpdate()){
+			int s = cb->size();
 
-		doWork(j,update_type::lateupdate);
-		if (doCleanUp)
-			cleanup();
+			doWork(j,update_type::lateupdate);
+			if (doCleanUp)
+				cleanup();
+		}
 	}
 
 }
