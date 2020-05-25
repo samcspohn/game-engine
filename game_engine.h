@@ -727,15 +727,15 @@ void run(btDynamicsWorld* World)
 		gpu_particle_bursts->storage->swap(particle_bursts);
 		particle_bursts.clear();
 
-
 		////////////////////////////////////// cull objects //////////////////////////////////////
+		stopWatch.start();
 		lockUpdate();
 		for (int i = 0; i < concurrency::numThreads; ++i)
 			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::update, 1, 0));
 		unlockUpdate();
 
-
 		waitForWork();
+		appendStat(allcomponents[typeid(cullObjects).hash_code()]->name + "--update", stopWatch.stop());
 
 		gameLock.unlock();
 		gpuDataLock.unlock();

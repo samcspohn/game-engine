@@ -177,9 +177,9 @@ public:
 		// myEmitters[1]->setPrototype(b.secondaryexplosion);
 		if(length(normal) == 0)
 			normal = randomSphere();
-		b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),35);
-		getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),100);
-		getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),20);
+		b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+		getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
+		getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// b.secondaryexplosion.burst(transform->getPosition(),normal,15);
 		// transform->gameObject->removeComponent<_renderer>();
 		hit = true;
@@ -1089,7 +1089,7 @@ int main(int argc, char **argv)
 	}
 
 	// create shooters
-	for (int i = 0; i < 20; ++i)
+	for (int i = 0; i < 300; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);
