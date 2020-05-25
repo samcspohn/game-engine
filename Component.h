@@ -59,9 +59,14 @@ struct compInfo
 
 class componentStorageBase
 {
+
 public:
+	bool h_update;
+	bool h_lateUpdate;
 	string name;
 	mutex lock;
+	bool hasUpdate(){return h_update;}
+	bool hasLateUpdate(){return h_lateUpdate;}
 	virtual void update(){};
 	virtual void update(int index, int size) {}
 	virtual void lateUpdate(int index, int size) {}
@@ -72,6 +77,7 @@ public:
 
 class component
 {
+	friend game_object;
 public:
 	int threadID;
 	virtual void onStart() {}
@@ -162,8 +168,13 @@ inline compInfo<t> addComponentToAll(const t &c)
 		componentLock.lock();
 		if (allcomponents.find(hash) == allcomponents.end())
 		{
-			allcomponents[hash] = (componentStorageBase *)(new componentStorage<t>());
-			allcomponents[hash]->name = typeid(t).name();
+			componentStorageBase * csb = (componentStorageBase *)(new componentStorage<t>());
+			// allcomponents[hash] = (componentStorageBase *)(new componentStorage<t>());
+			// auto& csb = allcomponents[hash];
+			allcomponents[hash] = csb;
+			csb->name = typeid(t).name();
+			csb->h_update = typeid(&t::_update) != typeid(&component::_update);
+			csb->h_lateUpdate = typeid(&t::_lateUpdate) != typeid(&component::_lateUpdate);
 			if (((component *)&c)->_registerEngineComponent())
 			{
 				gameEngineComponents.insert(allcomponents[hash]);

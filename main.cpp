@@ -569,6 +569,7 @@ class gunManager : public component{
 		}
 
 	}
+public:
 	UPDATE(gunManager,update);
 	COPY(gunManager);
 };

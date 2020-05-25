@@ -266,6 +266,7 @@ class cullObjects : public component
 			}
 		}
 	}
+public:
 	UPDATE(cullObjects, update);
 	COPY(cullObjects);
 };
@@ -305,6 +306,7 @@ class copyBuffers : public component
 		}
 		//		renderCounts[getThreadID()]++;
 	}
+public:
 	UPDATE(copyBuffers, update);
 	COPY(copyBuffers);
 };
