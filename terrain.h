@@ -116,7 +116,7 @@ public:
                 heightMap[x].push_back(noise[x][z]* 10.f + getNoise((float)x / 5.f,(float)z / 5.f) * 50.f + getNoise((float)x / 20.f,(float)z / 20.f) * 300.f);
             }
         }
-        
+
     }
     void generate(int _width, int _depth){
         
@@ -158,45 +158,8 @@ public:
                 model.m->model->meshes[0].normals[xz(x,z)] = glm::vec3(glm::normalize(a1 + a2 + a3 + a4 + a5 + a6));
             }
         }
-        // model.m->model->meshes.push_back(Mesh());
-        // model.m->model->meshes[1].vertices = vector<glm::vec3>(width * depth);
-        // vector<glm::vec3>& verts2 = model.m->model->meshes[1].vertices;
-
-        // for(int x = 0; x < width; x++){
-        //     for(int z = 0; z < depth; z++){
-        //         verts[x * width + z] = glm::vec3(x,heightMap[x][z], z + width);
-        //     }
-        // }
-
-        // model.m->model->meshes[0].indices = vector<GLuint>((width - 1) * (depth - 1) * 6);
-        // int k = 0;
-        // for(int i = 0; i < width - 1; i++){
-        //     for(int j = 0; j < depth - 1; j++){
-
-            
-        //     model.m->model->meshes[1].indices[k++] = xz(i,j);
-        //     model.m->model->meshes[1].indices[k++] = xz(i,j + 1);
-        //     model.m->model->meshes[1].indices[k++] = xz(i + 1,j + 1);
-        //     model.m->model->meshes[1].indices[k++] = xz(i,j);
-        //     model.m->model->meshes[1].indices[k++] = xz(i + 1,j + 1);
-        //     model.m->model->meshes[1].indices[k++] = xz(i + 1,j);
-        //     }
-        // }
-        // model.m->model->meshes[1].normals = vector<glm::vec3>(_width * _depth);
-        // for(int x = 1; x < width - 1; x++){
-        //     for(int z = 1; z < depth - 1; z++){
-        //         glm::vec3 p = model.m->model->meshes[1].vertices[xz(x,z)];
-        //         glm::vec3 a1 = glm::cross(p - model.m->model->meshes[1].vertices[xz(x,z - 1)],        p - model.m->model->meshes[1].vertices[xz(x - 1,z - 1)]);
-        //         glm::vec3 a2 = glm::cross(p - model.m->model->meshes[1].vertices[xz(x - 1,z - 1)],    p - model.m->model->meshes[1].vertices[xz(x - 1,z)]);
-        //         glm::vec3 a3 = glm::cross(p - model.m->model->meshes[1].vertices[xz(x + 1,z)],        p - model.m->model->meshes[1].vertices[xz(x,z - 1)]);
-        //         glm::vec3 a4 = glm::cross(p - model.m->model->meshes[1].vertices[xz(x - 1,z)],        p - model.m->model->meshes[1].vertices[xz(x,z + 1)]);
-        //         glm::vec3 a5 = glm::cross(p - model.m->model->meshes[1].vertices[xz(x + 1,z + 1)],    p - model.m->model->meshes[1].vertices[xz(x + 1,z)]);
-        //         glm::vec3 a6 = glm::cross(p - model.m->model->meshes[1].vertices[xz(x + 1,z + 1)],    p - model.m->model->meshes[1].vertices[xz(x + 1,z + 1)]);
-        //         model.m->model->meshes[1].normals[xz(x,z)] = glm::vec3(glm::normalize(a1 + a2 + a3 + a4 + a5 + a6));
-        //     }
-        // }
-        // model.m->model->meshes[1].reloadMesh();
         model.m->model->meshes[0].reloadMesh();
+        transform->gameObject->getComponent<_renderer>()->recalcBounds();
         generated = true;
     }
 };

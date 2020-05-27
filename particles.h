@@ -540,8 +540,15 @@ bool sort1 = true;
 class
 {
     GLuint VAO = 0;
-
+    
 public:
+    glm::mat3 camInv;
+    glm::vec3 camP;
+
+    void setCamCull(_camera* c){
+        camInv = glm::mat3(c->rot);// * glm::mat3(glm::translate(-camera->transform->getPosition()));
+		camP = c->pos;
+    }
     _shader particleShader;
     vector<uint> zeros;
 
@@ -603,7 +610,7 @@ public:
         output.close();
     }
     bool flip = true;
-    void sortParticles(mat4 vp, mat4 view, vec3 camPos)
+    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec2 screen)
     {
         gpuTimer t1;
         GLuint program;
@@ -623,9 +630,15 @@ public:
         GLuint wg_size = glGetUniformLocation(program, "wg_size");
         GLuint _offset = glGetUniformLocation(program, "offset");
         glUniformMatrix4fv(_view, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix3fv(glGetUniformLocation(program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
         glUniform3f(glGetUniformLocation(program, "camPos"), camPos.x, camPos.y, camPos.z);
+        glUniform3f(glGetUniformLocation(program, "camp"), camP.x, camP.y, camP.z);
         glUniform3f(glGetUniformLocation(program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
         glUniform3f(glGetUniformLocation(program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
+
+
+        glUniform1f(glGetUniformLocation(program, "x_size"),screen.x);
+        glUniform1f(glGetUniformLocation(program, "y_size"),screen.y);
         
         // glFlush();
         // data1->retrieveData();

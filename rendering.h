@@ -144,39 +144,56 @@ public:
 int renderingId = 0;
 struct renderingMeta {
 	GLuint id = -1;
-	gpu_vector<GLuint>* _transformIds;
-	
-	// fast_list<GLuint> ids = fast_list<GLuint>();
-	// fast_list<GLuint> transformIds = fast_list<GLuint>();
-	// vector<GLuint> _transformIds;
-	// atomic<int> counter;
+	vector<gpu_vector<GLuint>*> _transformIds;
+	glm::vec3 bounds;
+	float radius;
 	_shader s;
 	_model m;
-	renderingMeta() {
-		//_ids = new gpu_vector<GLuint>();
-		//_ids->storage = &ids.data;
+	void getBounds(){
+		if(m.m->model->ready){
+			bounds = glm::vec3(0);
+			for(auto& i : m.m->model->meshes){
+				for(auto &j : i.vertices){
+					bounds = glm::vec3(glm::max(abs(bounds.x),abs(j.x)),
+					glm::max(abs(bounds.y),abs(j.y)),
+					glm::max(abs(bounds.z),abs(j.z)));
+				}
+			}
+			radius = length(bounds);
+		}else{
+			renderJob rj;
+			rj.type = doFunc;
+			rj.work = [&]() { getBounds(); };
+			renderLock.lock();
+			renderWork.push(rj);
+			renderLock.unlock();
+		}
 	}
+	// renderingMeta() {
+	// }
 	renderingMeta(_shader _s, _model _m) {
 		s = _s;
 		m = _m;
-		// _ids = new gpu_vector<GLuint>();
-		// _ids->ownStorage();
+		if(m.m->model->ready)
+			getBounds();
+		else{
+			renderJob rj;
+			rj.type = doFunc;
+			rj.work = [&]() { getBounds(); };
+			renderLock.lock();
+			renderWork.push(rj);
+			renderLock.unlock();
+		}
 	}
 
-	//renderingMeta operator=(const renderingMeta& other) {
-	//	return renderingMeta(other);
-	//}
-	renderingMeta(const renderingMeta& other) {
-		s = other.s;
-		m = other.m;
-		//ids = fast_list<GLuint>(other.ids);
-		// _ids = new gpu_vector<GLuint>();
-		// _ids->storage = &ids.data;
-	}
 	~renderingMeta() {
 
 	}
-
+private:
+	renderingMeta(const renderingMeta& other) {
+		// s = other.s;
+		// m = other.m;
+	}
 };
 
 class {
@@ -191,15 +208,14 @@ class cullObjects;
 class _renderer : public component {
 	_shader shader;
 	_model model;
-	// array_heap<bool>::ref matrixLoc;
-	// fast_list<GLuint>::iterator idLoc;
 	renderingMeta* meta = 0;
-	// fast_list<__renderer>::iterator _Rloc;
-	// fast_list<GLuint>::iterator transformIdRef;
-
-	// friend _camera;
 	friend cullObjects;
 public:
+	void recalcBounds(){
+		if(meta != 0){
+			meta->getBounds();
+		}	
+	}
 	_model getModel(){
 		return model;
 	}
