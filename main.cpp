@@ -262,6 +262,7 @@ class player_sc : public component
 	gui::text* particleCounter;
 	gui::text* shipAcceleration;
 	gui::text* shipVelocity;
+	gui::text* lockedfrustum;
 public:
 	terrain *t;
 
@@ -292,6 +293,7 @@ public:
 		particleCounter = new gui::text();
 		shipAcceleration = new gui::text();
 		shipVelocity = new gui::text();
+		lockedfrustum = new gui::text();
 		info->name = "game info";
 		ImGuiWindowFlags flags = 0;
 		flags |= ImGuiWindowFlags_NoTitleBar;
@@ -304,6 +306,7 @@ public:
 		info->children.push_back(fps);
 		info->children.push_back(missileCounter);
 		info->children.push_back(particleCounter);
+		info->children.push_back(lockedfrustum);
 		info->children.push_back(shipAcceleration);
 		info->children.push_back(shipVelocity);
 
@@ -343,6 +346,7 @@ public:
 			particleCounter->contents = "particles: " + FormatWithCommas(particleCount);
 			shipVelocity->contents = "speed: " + to_string(ship_vel);
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
+			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
 			pcMutex.unlock();
 		}
 
@@ -889,7 +893,7 @@ int main(int argc, char **argv)
 
 	player = new game_object();
 	auto playerCam = player->addComponent<_camera>();
-	playerCam->fov = 60;
+	playerCam->fov = 80;
 	playerCam->farPlane = 1e32f;
 	player->addComponent<gun>();
 	player->addComponent<gun>();
@@ -956,7 +960,7 @@ int main(int argc, char **argv)
 	// t->width = t->depth = 1024;
 	int terrainWidth = 1025;
 	t->genHeightMap(terrainWidth,terrainWidth);
-	 ground->transform->translate(glm::vec3(0,-4000,0));
+	ground->transform->translate(glm::vec3(0,-4000,0));
 	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));
 
 	float minH = 10000;
@@ -1007,7 +1011,9 @@ int main(int argc, char **argv)
 	player->getComponent<player_sc>()->t = t;
 	ifstream config("config.txt");
 	int n;
+	int numshooters;
 	config >> n;
+	config >> numshooters;
 	numCubes = n;
 	srand(100);
 
@@ -1089,7 +1095,7 @@ int main(int argc, char **argv)
 	}
 
 	// create shooters
-	for (int i = 0; i < 300; ++i)
+	for (int i = 0; i < numshooters; ++i)
 	{
 		go = new game_object(*go);
 		go->transform->translate(randomSphere() * 1000.f);

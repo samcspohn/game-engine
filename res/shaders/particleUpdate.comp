@@ -130,6 +130,8 @@ void makeParticle(inout particle p, inout emitter_prototype ep, inout rng genera
     }
 
     p.position += p.velocity * dt * particle_count;
+    p.position2 = p.position;
+    p.velocity2 = p.velocity;
     p.life -= dt * particle_count++ / p.l;
 }
 

@@ -72,9 +72,9 @@ struct updateJob
 	componentStorageBase *componentStorage;
 	int size;
 	update_type ut;
-	barrier *_barrier;
+	Barrier *_barrier;
 	updateJob() {}
-	updateJob(componentStorageBase *csb, update_type _ut, int _size, barrier *b) : componentStorage(csb), size(_size), ut(_ut), _barrier(b) {}
+	updateJob(componentStorageBase *csb, update_type _ut, int _size, Barrier *b) : componentStorage(csb), size(_size), ut(_ut), _barrier(b) {}
 };
 
 atomic<int> numCubes(0);
@@ -377,7 +377,9 @@ void renderThreadFunc()
 					// sort particles
 					timer t;
 					t.start();
-					particle_renderer.sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos);
+					if(!c.lockFrustum)
+						particle_renderer.setCamCull(&c);
+					particle_renderer.sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
 					appendStat("particles sort", t.stop());
 					
 					// render particles
@@ -524,10 +526,10 @@ void init()
 	for (int i = 0; i < concurrency::numThreads; i++)
 	{
 		rootGameObject->addComponent<copyBuffers>();
+		rootGameObject->addComponent<cullObjects>();
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	gameEngineComponents.erase(copyWorkers);
-	rootGameObject->addComponent<cullObjects>();
 	gameEngineComponents.erase(allcomponents[typeid(cullObjects).hash_code()]);
 }
 void syncThreads()
@@ -697,12 +699,14 @@ void run(btDynamicsWorld* World)
 
 		////////////////////////////////////// update camera data for frame ///////////////////
 		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
+		
 		for(_camera& c : cameras->data.data){
 			c.view = c.GetViewMatrix();
 			c.rot = c.getRotationMatrix();
 			c.proj = c.getProjection();
+			c.screen = c.getScreen();
+			c.pos = c.transform->getPosition();
 		}
-
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
@@ -729,13 +733,31 @@ void run(btDynamicsWorld* World)
 
 		////////////////////////////////////// cull objects //////////////////////////////////////
 		stopWatch.start();
+		// componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
+		// deque<_camera>::iterator camera = cameras->data.data.front();
+
+		
+		if(Input.getKeyDown(GLFW_KEY_B)){
+			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
+		}
+		if(!cameras->data.data.front().lockFrustum){
+
+			cullObjects::setCam(&cameras->data.data.front());
+		}
+		
 		lockUpdate();
 		for (int i = 0; i < concurrency::numThreads; ++i)
 			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::update, 1, 0));
 		unlockUpdate();
-
 		waitForWork();
-		appendStat(allcomponents[typeid(cullObjects).hash_code()]->name + "--update", stopWatch.stop());
+
+		lockUpdate();
+		for (int i = 0; i < concurrency::numThreads; ++i)
+			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::lateupdate, concurrency::numThreads, 0));
+		unlockUpdate();
+		waitForWork();
+
+		appendStat("cull objects", stopWatch.stop());
 
 		gameLock.unlock();
 		gpuDataLock.unlock();
