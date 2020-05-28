@@ -104,6 +104,15 @@ struct rolling_buffer
 	{
 		return runningTotal / buffer.size();
 	}
+	float getStdDeviation(){
+		double standardDeviation = 0.0;
+		float mean = getAverageValue();
+		for(auto &i : buffer){
+        	standardDeviation += pow(i - mean, 2);
+		}
+		return standardDeviation / buffer.size();
+
+	}
 
 private:
 	int size;

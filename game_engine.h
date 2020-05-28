@@ -199,7 +199,7 @@ glm::mat4 getProjection()
 	return glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, (GLfloat).1f, (GLfloat)1e32f);
 }
 
-mutex gpuDataLock;
+
 int frameCounter = 0;
 void renderThreadFunc()
 {
@@ -331,11 +331,8 @@ void renderThreadFunc()
 				stopWatch.start();
 				updateTiming();
 
-				//////////////////////////////////////////////////////////////////////////////
-				/////////////////////////////// Lock Transform ///////////////////////////////
-				//////////////////////////////////////////////////////////////////////////////
+
 				auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
-				gpuDataLock.lock();
 
 				gt.start();
 				GPU_TRANSFORMS->bufferData();
@@ -348,11 +345,7 @@ void renderThreadFunc()
 				glFlush();
 				
 				_camera::initPrepRender(matProgram);
-				gpuDataLock.unlock();
 
-				//////////////////////////////////////////////////////////////////////////////
-				////////////////////////////// Unlock Transform //////////////////////////////
-				//////////////////////////////////////////////////////////////////////////////
 
 				gt.start();
 				updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
@@ -691,12 +684,6 @@ void run(btDynamicsWorld* World)
 		renderLock.lock();
 		appendStat("wait for render",stopWatch.stop());
 
-		stopWatch.start();
-		gpuDataLock.lock();
-		gameLock.lock();
-		appendStat("wait for data", stopWatch.stop());
-
-
 		////////////////////////////////////// update camera data for frame ///////////////////
 		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
 		
@@ -706,13 +693,17 @@ void run(btDynamicsWorld* World)
 			c.proj = c.getProjection();
 			c.screen = c.getScreen();
 			c.pos = c.transform->getPosition();
+			if(!c.lockFrustum){
+				c.camInv = glm::mat3(c.rot);// * glm::mat3(glm::translate(-camera->transform->getPosition()));
+				c.cullpos = c.pos;
+			}
 		}
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
 		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
-		// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
-		// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
-		// 		j->second->_ids->storage->resize(j->second->ids.data.size());
+		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
+				j->second->_transformIds->storage->resize(j->second->ids.data.size());
 		
 
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
@@ -721,46 +712,26 @@ void run(btDynamicsWorld* World)
 		unlockUpdate();
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
+		timer emitterTimer;
+		emitterTimer.start();
 		emitterInits.clear();
 		for (auto &i : emitter_inits)
 			emitterInits.push_back(i.second);
 		emitter_inits.clear();
-		appendStat("prepare memory", stopWatch.stop());
+		float emitTime = emitterTimer.stop();
+		appendStat("copy emitter inits", emitTime);
 
+		// copy emitter inits while copying transforms/renderers
+		waitForWork();
+		appendStat("copy buffers", stopWatch.stop());
 		////////////////////////////////////// switch particle burst buffer //////////////////////////////////////
 		gpu_particle_bursts->storage->swap(particle_bursts);
 		particle_bursts.clear();
 
 		////////////////////////////////////// cull objects //////////////////////////////////////
-		stopWatch.start();
-		// componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
-		// deque<_camera>::iterator camera = cameras->data.data.front();
-
-		
 		if(Input.getKeyDown(GLFW_KEY_B)){
 			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
 		}
-		if(!cameras->data.data.front().lockFrustum){
-
-			cullObjects::setCam(&cameras->data.data.front());
-		}
-		
-		lockUpdate();
-		for (int i = 0; i < concurrency::numThreads; ++i)
-			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::update, 1, 0));
-		unlockUpdate();
-		waitForWork();
-
-		lockUpdate();
-		for (int i = 0; i < concurrency::numThreads; ++i)
-			updateWork[i].push(updateJob(allcomponents[typeid(cullObjects).hash_code()], update_type::lateupdate, concurrency::numThreads, 0));
-		unlockUpdate();
-		waitForWork();
-
-		appendStat("cull objects", stopWatch.stop());
-
-		gameLock.unlock();
-		gpuDataLock.unlock();
 
 		//////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////// Unlock Transform ///////////////////////////////
@@ -807,8 +778,7 @@ void run(btDynamicsWorld* World)
 	componentStats.erase("");
 	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
 	{
-
-		cout << i->first << " : " << i->second.getAverageValue() << endl;
+		cout << i->first << " -- avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
 }
