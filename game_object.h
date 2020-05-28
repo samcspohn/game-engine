@@ -13,6 +13,37 @@ plf::list<compItr *> toRemove;
 plf::list<Transform *> toDestroy;
 
 class _renderer;
+class game_object_proto{
+public:
+	map<component *, ull> components;
+
+	game_object_proto(){}
+	// game_object_proto(const game_object_proto& other){
+	// 	for()
+	// }
+	template <class t>
+	t *addComponent()
+	{
+		component* ret = new t();
+		this->components.insert(std::pair(ret,typeid(t).hash_code()));
+		return (t*)ret;
+	}
+
+	template <typename t>
+	t *getComponent()
+	{
+		ull hash = typeid(t).hash_code();
+		for (auto &i : components)
+			if (i.second == hash)
+			{
+				return (t *)i.first;
+			}
+		return 0;
+	}
+	
+};
+
+
 class game_object
 {
 	mutex lock;
@@ -178,14 +209,28 @@ public:
 		gameLock.unlock();
 		for (auto &i : g.components)
 		{
-			i.second->getComponent()->_copy(this);
+			i.first->_copy(this);
+		}
+		for (auto &i : this->components)
+		{
+			i.first->onStart();
+		}
+	}
+	game_object(const game_object_proto &g) : lock()
+	{
+		gameLock.lock();
+		destroyed = false;
+		this->transform = new Transform(this);
+		gameLock.unlock();
+		for (auto &i : g.components)
+		{
+			i.first->_copy(this);
 		}
 		for (auto &i : this->components)
 		{
 			i.second->getComponent()->onStart();
 		}
 	}
-
 	void _destroy()
 	{
 		delete this;

@@ -104,7 +104,7 @@ public:
 		int index;
 		deque_heap<t>* a;
 		t* operator->() {
-			return &(a->data.at(index));
+			return &(a->data[index]);
 		}
 		 operator int() {
 			return index;

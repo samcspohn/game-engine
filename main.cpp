@@ -116,6 +116,7 @@ game_object *ground;
 
 
 struct bullet {
+	game_object_proto* proto;
 	emitter_prototype_ primarybullet;
 	// emitter_prototype_ secondarybullet;
 	emitter_prototype_ primaryexplosion;
@@ -132,7 +133,7 @@ public:
 	vec3 vel;
 	bullet b;
 	glm::vec3 rot;
-	particle_emitter* myEmitter;
+	// particle_emitter* myEmitter;
 	// glm::vec3 dir;
 	bool hit = false;
 	// double life;
@@ -142,11 +143,11 @@ public:
 		rot = randomSphere();
 		hit = false;
 		numCubes.fetch_add(1);
-		myEmitter = transform->gameObject->getComponent<particle_emitter>();
+		// myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
 	void setBullet(const bullet& _b){
 		b = _b;
-		myEmitter->setPrototype(b.primarybullet);
+		// myEmitter->setPrototype(b.primarybullet);
 		// myEmitters[1]->setPrototype(b.secondarybullet);
 	}
 	void update()
@@ -178,8 +179,8 @@ public:
 		if(length(normal) == 0)
 			normal = randomSphere();
 		b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
-		getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
+		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
+		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// b.secondaryexplosion.burst(transform->getPosition(),normal,15);
 		// transform->gameObject->removeComponent<_renderer>();
 		hit = true;
@@ -200,7 +201,7 @@ public:
 	float rof;
 	float speed;
 	float dispersion;
-	bullet ammo;
+	game_object_proto* ammo;
 	float size = 1;
 	void onStart(){
 		lastFire = Time.time;
@@ -219,11 +220,11 @@ public:
 			for (int i = 0; i < (int)reload; i++)
 			{
 				for(auto& j : barrels){
-					game_object *go = new game_object(*proto);
+					game_object *go = new game_object(*ammo);
 					go->transform->setScale(vec3(size));
 					// go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
 					go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * dispersion) * speed;
-					go->getComponent<missile>()->setBullet(ammo);
+					// go->getComponent<missile>()->setBullet(ammo);
 					// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
 					go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j,1)));
 				}
@@ -276,12 +277,12 @@ public:
 		// rb = transform->gameObject->getComponent<rigidBody>();
 		guns = transform->gameObject->getComponents<gun>();
 		// bomb = bullets["bomb"];
-		guns[0]->ammo = bullets["bomb"];
+		guns[0]->ammo = bullets["bomb"].proto;
 		guns[0]->rof = 1'000'00 / 60;
 		guns[0]->dispersion = 0.3f;
 		guns[0]->speed = 200;
 		// laser = bullets["laser"];
-		guns[1]->ammo = bullets["laser"];
+		guns[1]->ammo = bullets["laser"].proto;
 		guns[1]->rof = 1000 / 60;
 		guns[1]->dispersion = 0;
 		guns[1]->speed = 30000;
@@ -578,7 +579,7 @@ public:
 	COPY(gunManager);
 };
 
-class autoCubes : public component
+class autoShooter : public component
 {
 public:
 	bool shouldFire;
@@ -595,8 +596,8 @@ public:
 		if(shouldFire)
 			g->fire();
 	}
-	UPDATE(autoCubes, update);
-	COPY(autoCubes);
+	UPDATE(autoShooter, update);
+	COPY(autoShooter);
 };
 
 void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upright){
@@ -614,7 +615,7 @@ void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upri
 	vector<vec3> barrels = {vec3(-.56,0,2.3),vec3(0,0,2.3),vec3(0.56,0,2.3)};
 	auto g = guns->addComponent<gun>();
 	g->setBarrels(barrels);
-	g->ammo = bullets["bomb"];
+	g->ammo = bullets["bomb"].proto;
 	g->rof = 1.f / 5.f;
 	g->dispersion = 0.04f;
 	g->speed = 500;
@@ -828,6 +829,12 @@ int main(int argc, char **argv)
 	// bomb.secondarybullet = smokeEmitter;
 	bomb.primaryexplosion = expFlame;
 	// bomb.secondaryexplosion = emitterProto4;
+	game_object_proto* bomb_proto = new game_object_proto();
+	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
+	bomb_proto->addComponent<collider>()->layer = 0;
+	bomb_proto->addComponent<particle_emitter>();
+	bomb.proto = bomb_proto;
+	bomb_proto->addComponent<missile>()->setBullet(bomb);
 	bullets["bomb"] = bomb;
 
 	bullet laser;
@@ -853,7 +860,14 @@ int main(int argc, char **argv)
 	// laser.primaryexplosion->maxSpeed = 1000.f;
 
 	laser.primaryexplosion = getEmitterPrototypeByName("expflame");
+
+	game_object_proto* laser_proto = new game_object_proto();
+	laser_proto->addComponent<collider>()->layer = 0;
+	laser_proto->addComponent<particle_emitter>();
+	laser.proto = laser_proto;
+	laser_proto->addComponent<missile>()->setBullet(laser);
 	bullets["laser"] = laser;
+
 
 	emitter_prototype_ engineTrail = createNamedEmitter("engineTrail");
 	*engineTrail = *flameEmitterProto;
@@ -960,7 +974,7 @@ int main(int argc, char **argv)
 	// t->width = t->depth = 1024;
 	int terrainWidth = 1025;
 	t->genHeightMap(terrainWidth,terrainWidth);
-	ground->transform->translate(glm::vec3(0,-4000,0));
+	ground->transform->translate(glm::vec3(0,-4500,0));
 	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));
 
 	float minH = 10000;
@@ -1046,8 +1060,8 @@ int main(int argc, char **argv)
 	g->rof = 100;
 	g->dispersion = 0.5;
 	g->speed = 100;
-	g->ammo = bullets["bomb"];
-	shooter->addComponent<autoCubes>();
+	g->ammo = bullets["bomb"].proto;
+	shooter->addComponent<autoShooter>();
 	shooter->addComponent<collider>()->layer = 1;
 	shooter->transform->setScale(vec3(6));
 	game_object *go = new game_object(*shooter);
@@ -1120,6 +1134,8 @@ int main(int argc, char **argv)
 
 
 	run(world);
+
+	cout << endl << "missiles: " + FormatWithCommas(numCubes.load());
 	for(int i=0;i<bodies.size();i++)
 	{
 		world->removeCollisionObject(bodies[i]);

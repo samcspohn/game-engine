@@ -144,7 +144,8 @@ public:
 int renderingId = 0;
 struct renderingMeta {
 	GLuint id = -1;
-	vector<gpu_vector<GLuint>*> _transformIds;
+	gpu_vector<GLuint>* _transformIds;
+	fast_list<GLuint> ids;
 	glm::vec3 bounds;
 	float radius;
 	_shader s;
@@ -174,6 +175,8 @@ struct renderingMeta {
 	renderingMeta(_shader _s, _model _m) {
 		s = _s;
 		m = _m;
+		_transformIds = new gpu_vector<GLuint>();
+		_transformIds->ownStorage();
 		if(m.m->model->ready)
 			getBounds();
 		else{
@@ -204,12 +207,15 @@ public:
 
 }renderingManager;
 
+class btDynamicsWorld;
 class cullObjects;
 class _renderer : public component {
 	_shader shader;
 	_model model;
 	renderingMeta* meta = 0;
+	typename fast_list<GLuint>::iterator transformIdRef;
 	friend cullObjects;
+	friend void run(btDynamicsWorld* World);
 public:
 	void recalcBounds(){
 		if(meta != 0){
@@ -232,12 +238,15 @@ public:
 	_renderer() {}
 
 	void set(_shader s, _model m) {
-		rendererLock.lock();
 		shader = s;
 		model = m;
+		if(!transformIdRef.isNull()){
+			meta->ids.erase(transformIdRef);
+		}
 		// if (!transformIdRef.isNull()) {
 		// 	meta->counter.fetch_sub(1);
 		// }
+		rendererLock.lock();
 		auto r = renderingManager.shader_model_vector.find(s.s->name);
 		if (r == renderingManager.shader_model_vector.end()) {
 			renderingManager.shader_model_vector[s.s->name][m.m->name] = new renderingMeta(s, m);
@@ -249,16 +258,42 @@ public:
 			if (rm == r->second.end())
 				r->second[m.m->name] = new renderingMeta(s, m);
 		}
-
-		meta = (r->second[m.m->name]);
-		// transformIdRef = meta->counter.fetch_add(1);
 		rendererLock.unlock();
 
+		meta = (r->second[m.m->name]);
+		transformIdRef = meta->ids.push_back(transform->_T);
+		// transformIdRef = meta->counter.fetch_add(1);
+
 	}
+
+	void set_proto(_shader s, _model m) {
+		shader = s;
+		model = m;
+		rendererLock.lock();
+		auto r = renderingManager.shader_model_vector.find(s.s->name);
+		if (r == renderingManager.shader_model_vector.end()) {
+			renderingManager.shader_model_vector[s.s->name][m.m->name] = new renderingMeta(s, m);
+
+			r = renderingManager.shader_model_vector.find(s.s->name);
+		}
+		else {
+			auto rm = r->second.find(m.m->name);
+			if (rm == r->second.end())
+				r->second[m.m->name] = new renderingMeta(s, m);
+		}
+		rendererLock.unlock();
+
+		meta = (r->second[m.m->name]);
+	}
+
 	void set(renderingMeta* _meta){
 		shader = _meta->s;
 		model = _meta->m;
 		meta = _meta;
+		if(!transformIdRef.isNull()){
+			meta->ids.erase(transformIdRef);
+		}
+		transformIdRef = meta->ids.push_back(transform->_T);
 		// GLuint t = transform->_T;
 		// if (!transformIdRef.isNull()) {
 		// 	renderLock.lock();
@@ -278,6 +313,9 @@ public:
 //		}
 	}
 	void onDestroy(){
+		if(meta != 0){
+			meta->ids.erase(transformIdRef);
+		}
         // if (meta != 0) {
 		// 	rendererLock.lock();
 		// 	meta->transformIds.erase(transformIdRef);
