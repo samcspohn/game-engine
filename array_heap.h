@@ -103,8 +103,10 @@ public:
 	struct ref {
 		int index;
 		deque_heap<t>* a;
+		t* d;
 		t* operator->() {
-			return &(a->data[index]);
+			return d;
+			// return &(a->data.at(index));
 		}
 		 operator int() {
 			return index;
@@ -132,6 +134,7 @@ public:
 			ret.index = *avail.begin();
 			avail.erase(avail.begin());;
 			valid[ret.index] = true;
+			ret.d = &data[ret.index];
 			if (ret.index >= extent) {
 				extent = ret.index + 1;
 			}
@@ -139,6 +142,7 @@ public:
 		else {
 			ret.index = data.size();
 			data.push_back(t());
+			ret.d = &data.back();
 			valid.push_back(true);
 			++extent;
 		}
@@ -149,6 +153,7 @@ public:
 		if (r.a != this)
 			throw;
 		m.lock();
+		// delete r.d;
 		avail.push_front(r.index);
 		valid[r.index] = false;
 		m.unlock();
