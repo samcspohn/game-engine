@@ -264,6 +264,10 @@ class player_sc : public component
 	gui::text* shipAcceleration;
 	gui::text* shipVelocity;
 	gui::text* lockedfrustum;
+
+	gui::window* reticule;
+	gui::image* crosshair;
+	Texture crosshairtex;
 public:
 	terrain *t;
 
@@ -303,13 +307,26 @@ public:
 		// flags |= ImGuiWindowFlags_NoBackground;
 		info->flags = flags;
 		info->pos = ImVec2(20,20);
-		info->size = ImVec2(100,50);
+		info->size = ImVec2(200,100);
 		info->children.push_back(fps);
 		info->children.push_back(missileCounter);
 		info->children.push_back(particleCounter);
 		info->children.push_back(lockedfrustum);
 		info->children.push_back(shipAcceleration);
 		info->children.push_back(shipVelocity);
+		reticule = new gui::window();
+		flags |= ImGuiWindowFlags_NoBackground;
+		flags |= ImGuiWindowFlags_NoScrollbar;
+		flags &= ~ImGuiWindowFlags_NoMove;
+		reticule->flags = flags;
+		reticule->name = "reticule";
+		reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
+		reticule->size = ImVec2(480,480);
+		crosshair = new gui::image();
+		crosshair = new gui::image();
+		waitForRenderJob([&](){crosshairtex.load("res/images/crosshair.png");});
+		crosshair->img = crosshairtex;
+		reticule->adopt(crosshair);
 
 	}
 	void update()
@@ -319,7 +336,8 @@ public:
 		transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
 		transform->getParent()->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
 
-		transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
+		// transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
+		transform->gameObject->getComponent<_camera>()->fov -= Input.Mouse.getScroll();
 		// rotX += Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
 		// rotY += Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
 		// vec3 lookAtPoint = vec3(0,0,1);
@@ -349,6 +367,7 @@ public:
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
 			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
 			pcMutex.unlock();
+			reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
 		}
 
 		if (Input.getKeyDown(GLFW_KEY_R))
@@ -1028,7 +1047,6 @@ int main(int argc, char **argv)
 	int numshooters;
 	config >> n;
 	config >> numshooters;
-	numCubes = n;
 	srand(100);
 
 	

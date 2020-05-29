@@ -162,12 +162,7 @@ struct renderingMeta {
 			}
 			radius = length(bounds);
 		}else{
-			renderJob rj;
-			rj.type = doFunc;
-			rj.work = [&]() { getBounds(); };
-			renderLock.lock();
-			renderWork.push(rj);
-			renderLock.unlock();
+			enqueRenderJob([&]() { getBounds(); });
 		}
 	}
 	// renderingMeta() {
@@ -180,12 +175,13 @@ struct renderingMeta {
 		if(m.m->model->ready)
 			getBounds();
 		else{
-			renderJob rj;
-			rj.type = doFunc;
-			rj.work = [&]() { getBounds(); };
-			renderLock.lock();
-			renderWork.push(rj);
-			renderLock.unlock();
+			enqueRenderJob([&]() { getBounds(); });
+			// renderJob rj;
+			// rj.type = doFunc;
+			// rj.work = [&]() { getBounds(); };
+			// renderLock.lock();
+			// renderWork.push(rj);
+			// renderLock.unlock();
 		}
 	}
 

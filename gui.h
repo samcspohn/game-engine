@@ -5,6 +5,7 @@
 #include <vector>
 #include <list>
 #include <string>
+#include "texture.h"
 
 namespace gui{
 
@@ -28,9 +29,12 @@ public:
         gui_windows.push_back(this);
         itr = --gui_windows.end();
     }
+    void adopt(gui_base* g){
+        children.push_back(g);
+    }
     inline void render(){
-        ImGui::SetNextWindowPos(pos, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(size, ImGuiCond_Always);
 
         // // Main body of the Demo window starts here.
         // flags |= ImGuiWindowFlags_NoTitleBar;
@@ -56,4 +60,13 @@ public:
         ImGui::Text(contents.c_str());
     }
 };
+
+class image : public gui_base{
+public:
+    Texture img;
+    inline  void render(){
+        ImGui::Image(ImTextureID(img.id), ImVec2(img.dims.x, img.dims.y), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,0));
+    }
+};
+
 }

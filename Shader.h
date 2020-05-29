@@ -133,12 +133,13 @@ public:
 
 		this->computeFile = computePath;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
-		renderJob rj;
-		rj.type = doFunc;
-		rj.work = [&]() { _Shader(computeFile); };
-		renderLock.lock();
-		renderWork.push(rj);
-		renderLock.unlock();
+		enqueRenderJob([&]() { _Shader(computeFile); });
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { _Shader(computeFile); };
+		// renderLock.lock();
+		// renderWork.push(rj);
+		// renderLock.unlock();
 	}
 
 	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true) {
@@ -146,12 +147,13 @@ public:
 		this->fragmentFile = fragmentPath;
 		this->shadowMap = shadowMap;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
-		renderJob rj;
-		rj.type = doFunc;
-		rj.work = [&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); };
-		renderLock.lock();
-		renderWork.push(rj);
-		renderLock.unlock();
+		enqueRenderJob([&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); });
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); };
+		// renderLock.lock();
+		// renderWork.push(rj);
+		// renderLock.unlock();
 	}
 	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true) {
 		this->vertexFile = vertexPath;
@@ -160,12 +162,13 @@ public:
 		this->shadowMap = shadowMap;
 		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
 */
-		renderJob rj;
-		rj.type = doFunc;
-		rj.work = [&]() { _Shader(vertexFile,geometryFile, fragmentFile, this->shadowMap); };
-		renderLock.lock();
-		renderWork.push(rj);
-		renderLock.unlock();
+		enqueRenderJob([&]() { _Shader(vertexFile,geometryFile, fragmentFile, this->shadowMap); });
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { _Shader(vertexFile,geometryFile, fragmentFile, this->shadowMap); };
+		// renderLock.lock();
+		// renderWork.push(rj);
+		// renderLock.unlock();
 	}
 	GLuint loadFile(string file, GLenum ShaderType) {
 		std::string code;

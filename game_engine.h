@@ -315,14 +315,22 @@ void renderThreadFunc()
 		if (renderWork.size() > 0)
 		{
 			renderLock.lock();
-			renderJob rj = renderWork.front();
+			renderJob* rj = renderWork.front();
 			renderWork.pop();
-			switch (rj.type)
+			switch (rj->type)
 			{
 			case doFunc: //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				renderLock.unlock();
 
-				rj.work();
+				rj->work();
+
+				if(rj->completed == 0){
+					rj->completed = 1;
+					while(rj->completed != 2){
+						this_thread::sleep_for(1ns);
+					}
+				}
+				
 				break;
 			case renderNum::render:
 			{
@@ -429,10 +437,13 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 				renderThreadReady.exchange(false);
 
 				renderLock.unlock();
+				delete rj;
+
 				return;
 			default:
 				break;
 			}
+			delete rj;
 		}
 		// else
 		// {
@@ -736,13 +747,9 @@ void run(btDynamicsWorld* World)
 		//////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////// Unlock Transform ///////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
-		renderJob rj;
-		rj.work = [&] { return; };
-		rj.type = renderNum::render;
-		rj.proj = ::proj;
-		rj.rot = glm::lookAt(vec3(0, 0, 0), player->transform->forward(), player->transform->up()); 
-		rj.view = glm::translate(-player->transform->getPosition());
-
+		renderJob* rj = new renderJob();
+		rj->work = [&] { return; };
+		rj->type = renderNum::render;
 		renderDone.store(false);
 
 		renderWork.push(rj);
@@ -753,8 +760,8 @@ void run(btDynamicsWorld* World)
 	}
 
 	log("end of program");
-	renderJob rj;
-	rj.type = rquit;
+	renderJob* rj = new renderJob();
+	rj->type = rquit;
 
 	renderLock.lock();
 	renderWork.push(rj);

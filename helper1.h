@@ -162,12 +162,14 @@ enum renderNum
 };
 struct renderJob
 {
+	// renderJob(const renderJob& rj){
+	// 	this->type = rj.type;
+	// 	this->completed = -1;
+	// 	this->work = 0;
+	// }
+	// renderJob(){}
 	renderNum type;
-	int val1;
-	glm::mat4 proj;
-	glm::mat4 rot;
-	glm::mat4 view;
-	bool completed;
+	int completed;
 	std::function<void(void)> work = 0;
 };
 
@@ -254,17 +256,34 @@ vector<string> splitString(string s_, char delim)
 }
 
 std::mutex renderLock;
-std::queue<renderJob> renderWork = std::queue<renderJob>();
+std::queue<renderJob*> renderWork = std::queue<renderJob*>();
 
-void enqueRenderJob(void (*work)(void))
+inline void enqueRenderJob(std::function<void(void)> work)
 {
-	renderJob rj;
-	rj.type = renderNum::doFunc;
-	rj.work = [work]() { work(); };
+	renderJob* rj = new renderJob();
+	rj->type = renderNum::doFunc;
+	rj->work = [work]() { work(); };
+	rj->completed = -1;
+	renderLock.lock();
+	renderWork.push(rj);
+	renderLock.unlock();
+}
+
+inline void waitForRenderJob(std::function<void(void)> work)
+{
+	renderJob* rj = new renderJob();
+	rj->type = renderNum::doFunc;
+	rj->work = [work]() { work(); };
+	rj->completed = 0;
 
 	renderLock.lock();
 	renderWork.push(rj);
 	renderLock.unlock();
+
+	while(rj->completed != 1){
+		this_thread::sleep_for(1ns);
+	}
+	rj->completed = 2;
 }
 
 map<string, rolling_buffer> componentStats;

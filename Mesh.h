@@ -14,6 +14,7 @@
 #include <assimp/postprocess.h>
 #include "Shader.h"
 #include "helper1.h"
+#include "texture.h"
 using namespace std;
 
 //struct Vertex
@@ -26,12 +27,12 @@ using namespace std;
 //    glm::vec2 TexCoords;
 //};
 
-struct Texture
-{
-    GLuint id;
-    string type;
-    aiString path;
-};
+// struct Texture
+// {
+//     GLuint id;
+//     string type;
+//     aiString path;
+// };
 
 class Mesh
 {
@@ -46,12 +47,13 @@ public:
     /*  Functions  */
     // Constructor
     Mesh(){
-        renderLock.lock();
-		renderJob rj;
-		rj.type = doFunc;
-		rj.work = [&]() { this->setupMesh(); };
-		renderWork.push(rj);
-		renderLock.unlock();
+        enqueRenderJob([&]() { this->setupMesh(); });
+        // renderLock.lock();
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { this->setupMesh(); };
+		// renderWork.push(rj);
+		// renderLock.unlock();
     }
     Mesh( vector<glm::vec3> _vertices, vector<glm::vec2> _uvs, vector<glm::vec3> _normals,vector<GLuint> indices, vector<Texture> textures )
     {
@@ -126,12 +128,13 @@ public:
     }
     GLuint VAO = 0, VBO = 0, EBO = 0;
     void reloadMesh(){
-        renderLock.lock();
-		renderJob rj;
-		rj.type = doFunc;
-		rj.work = [&]() { this->setupMesh(); };
-		renderWork.push(rj);
-		renderLock.unlock();
+        enqueRenderJob([&]() { this->setupMesh(); });
+        // renderLock.lock();
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { this->setupMesh(); };
+		// renderWork.push(rj);
+		// renderLock.unlock();
     }
 private:
     /*  Render data  */
