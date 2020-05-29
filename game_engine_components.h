@@ -313,8 +313,8 @@ class copyBuffers : public component
 			{
 				int id = getThreadID();
 				int step = TRANSFORMS.size() / concurrency::numThreads;
-				deque<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
-				deque<_transform>::iterator to = from + step;
+				vector<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
+				vector<_transform>::iterator to = from + step;
 				if(getThreadID() == concurrency::numThreads - 1)
 					to = TRANSFORMS.data.end();
 				int itr = step * id;

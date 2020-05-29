@@ -41,8 +41,8 @@ struct _transform {
 //		rotation = normalize(rotation);
 	}
 };
-deque_heap<_transform> TRANSFORMS;// = array_heap<_transform>();
-deque_heap<_transform> STATIC_TRANSFORMS;// = array_heap<_transform>();
+array_heap<_transform> TRANSFORMS;// = array_heap<_transform>();
+array_heap<_transform> STATIC_TRANSFORMS;// = array_heap<_transform>();
 gpu_vector<_transform>* GPU_TRANSFORMS = nullptr;
 
 class game_object;
@@ -70,7 +70,7 @@ _transform& get_T(int index) {
 Transform* root;
 class Transform {
 public:
-	deque_heap<_transform>::ref _T;
+	array_heap<_transform>::ref _T;
 	game_object* gameObject;
 
 	void init() {
