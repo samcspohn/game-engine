@@ -27,7 +27,7 @@ class gpu_vector_base{
 	public:
 	virtual void deleteBuffer() = 0;
 };
-atomic<int> gpu_vector_base::idGenerator = 0;
+atomic<int> gpu_vector_base::idGenerator;
 map<int,gpu_vector_base*> gpu_buffers;
 
 template<typename t>
@@ -41,13 +41,14 @@ public:
 		return storage->at(i);
 	}
 	void init() {
-		renderLock.lock();
-		renderJob rj;
-		maxSize = 1;
-		rj.type = doFunc;
-		rj.work = [&]() { _init(); };
-		renderWork.push(rj);
-		renderLock.unlock();
+		enqueRenderJob([&]() { _init(); });
+		// renderLock.lock();
+		// renderJob rj;
+		// maxSize = 1;
+		// rj.type = doFunc;
+		// rj.work = [&]() { _init(); };
+		// renderWork.push(rj);
+		// renderLock.unlock();
 		//_init();
 	}
 	void ownStorage() {
@@ -154,12 +155,13 @@ public:
 		gpu_buffers.insert(std::pair(id,this));
 	}
 	void init() {
-		renderLock.lock();
-		renderJob rj;
-		rj.type = doFunc;
-		rj.work = [&]() { _init(); };
-		renderWork.push(rj);
-		renderLock.unlock();
+		enqueRenderJob([&]() { _init(); });
+		// renderLock.lock();
+		// renderJob rj;
+		// rj.type = doFunc;
+		// rj.work = [&]() { _init(); };
+		// renderWork.push(rj);
+		// renderLock.unlock();
 		//_init();
 	}
 
