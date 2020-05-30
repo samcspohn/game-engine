@@ -312,7 +312,7 @@ public:
 		// flags |= ImGuiWindowFlags_NoBackground;
 		info->flags = flags;
 		info->pos = ImVec2(20,20);
-		info->size = ImVec2(200,100);
+		info->size = ImVec2(200,150);
 		info->children.push_back(fps);
 		info->children.push_back(missileCounter);
 		info->children.push_back(particleCounter);
@@ -325,9 +325,7 @@ public:
 		flags &= ~ImGuiWindowFlags_NoMove;
 		reticule->flags = flags;
 		reticule->name = "reticule";
-		reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
-		reticule->size = ImVec2(480,480);
-		crosshair = new gui::image();
+		reticule->pos = ImVec2(0,0);
 		crosshair = new gui::image();
 		waitForRenderJob([&](){crosshairtex.load("res/images/crosshair.png");});
 		crosshair->img = crosshairtex;
@@ -376,7 +374,10 @@ public:
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
 			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
 			pcMutex.unlock();
-			reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
+			reticule->size = ImVec2(SCREEN_WIDTH,SCREEN_HEIGHT);
+			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
+
+			// reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
 		}
 
 		if (Input.getKeyDown(GLFW_KEY_R))
