@@ -25,7 +25,7 @@ public:
 	t *addComponent()
 	{
 		component* ret = new t();
-		this->components.insert(std::pair(ret,typeid(t).hash_code()));
+		this->components.insert(std::pair<component *, ull>(ret,typeid(t).hash_code()));
 		return (t*)ret;
 	}
 
