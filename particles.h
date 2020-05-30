@@ -258,7 +258,7 @@ public:
 
 emitter_prototype_ createNamedEmitter(string name)
 {
-    emitter_prototypes.insert(std::pair(name, emitter_prototypes_._new()));
+    emitter_prototypes.insert(std::pair<string, typename array_heap<emitter_prototype>::ref>(name, emitter_prototypes_._new()));
     emitter_prototype_ ret;
     ret.emitterPrototype = emitter_prototypes.at(name);
     return ret;

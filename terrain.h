@@ -39,7 +39,7 @@ public:
     int depth;
     bool generated = false;
     void onStart(){
-        terrains.insert(std::pair(0, transform->gameObject->getComponent<terrain>()));
+        terrains.insert(std::pair<int,terrain*>(0, transform->gameObject->getComponent<terrain>()));
         
     }
     void update(){

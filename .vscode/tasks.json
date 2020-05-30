@@ -4,6 +4,37 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "mk dbg dir",
+            "command": "mkdir", // Could be any other shell command
+            "args": ["debug","-p"],
+            "type": "shell"
+        },
+        {
+            "label": "mk rls dir",
+            "command": "mkdir", // Could be any other shell command
+            "args": ["release", "-p"],
+            "type": "shell"
+        },
+        {
+            "label": "cmakeRelease",
+            "dependsOn":"mk rls dir",
+            "options": {
+                "cwd": "${workspaceFolder}/release"
+            },
+            "command": "cmake -DBUILD_DEBUG=OFF ..", // Could be any other shell command
+            "type": "shell"
+        },
+        {
+            "label": "cmakeDebug",
+            "dependsOn":"mk dbg dir",
+            "options": {
+                "cwd": "${workspaceFolder}/debug"
+            },
+            "command": "cmake", // Could be any other shell command
+            "args":["-DBUILD_DEBUG=ON", ".."],
+            "type": "shell"
+        },
+        {
             "label": "build debug",
             "type": "shell",
             "presentation": {
@@ -14,14 +45,19 @@
                 "showReuseMessage": true,
                 "clear": true
             },
-            "command": "clang++",
-            "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_demo.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o", 
-                "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
-                "-std=c++17",
-                "-lGL", "-lGLU",
-                "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", "-lXi", "-lSOIL", "-lassimp",
-                "-I./bullet", "-I./imgui"
-                ],
+            "dependsOn":"cmakeDebug",
+            "options": {
+                "cwd": "${workspaceFolder}/debug"
+            },
+            "command": "make",
+            // "command": "clang++",
+            // "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_demo.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o", 
+            //     "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
+            //     "-std=c++17",
+            //     "-lGL", "-lGLU",
+            //     "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", "-lXi", "-lSOIL", "-lassimp",
+            //     "-I./bullet", "-I./imgui"
+            //     ],
         },
         {
             "label": "build release",
@@ -34,15 +70,21 @@
                 "showReuseMessage": true,
                 "clear": true
             },
-            "command": "clang++",
-            "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_demo.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o",
-                 "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
-                "-O3",
-                "-std=c++17",
-                "-lGL", "-lGLU",
-                "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", "-lXi", "-lSOIL", "-lassimp",
-                "-I./bullet", "-I./imgui"
-                ],
+            "dependsOn":"cmakeRelease",
+            "options": {
+                "cwd": "${workspaceFolder}/release"
+            },
+            "command": "make",
+            // "args":["--build", ".", "-D'BUILD_DEBUG=OFF'"]
+            // "command": "clang++",
+            // "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o",
+            //      "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive","-fstack-protector", "-w", 
+            //     "-O3",
+            //     "-std=c++17",
+            //     "-lGL", "-lGLU",
+            //     "-lGLEW", "-lglfw", "-lX11", "-lXxf86vm", "-lXrandr", "-lpthread", "-lXi", "-lSOIL", "-lassimp",
+            //     "-I./bullet", "-I./imgui"
+            //     ],
         }
     ]
 }

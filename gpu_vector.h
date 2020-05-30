@@ -35,7 +35,7 @@ class gpu_vector : public gpu_vector_base{
 public:
 	gpu_vector() {
 		id = this->gpu_vector_base::idGenerator.fetch_add(1);
-		gpu_buffers.insert(std::pair(id,this));
+		gpu_buffers.insert(std::pair<int,gpu_vector_base*>(id,this));
 	}
 	t& operator[](unsigned int i) {
 		return storage->at(i);
@@ -152,7 +152,7 @@ class gpu_vector_proxy : public gpu_vector_base{
 public:
 	gpu_vector_proxy() {
 		id = this->gpu_vector_base::idGenerator.fetch_add(1);
-		gpu_buffers.insert(std::pair(id,this));
+		gpu_buffers.insert(std::pair<int,gpu_vector_base*>(id,this));
 	}
 	void init() {
 		enqueRenderJob([&]() { _init(); });

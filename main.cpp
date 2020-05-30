@@ -155,7 +155,7 @@ public:
 		// if (!hit)
 		// {
 			transform->move(vel * Time.deltaTime);
-			transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
+			// transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 			vel += vec3(0, -9.81, 0) * Time.deltaTime;
 		// }
 		// else if (life < Time.time)
@@ -209,11 +209,14 @@ public:
 	void setBarrels(vector<vec3> b){
 		barrels = b;
 	}
+	bool isReloaded(){
+		return Time.time - lastFire > 1.f / rof;
+	}
 	bool fire()
 	{
 		
 		// reload += rof * Time.deltaTime;
-		if(Time.time - lastFire > 1 / rof){
+		if(Time.time - lastFire > 1.f / rof){
 
 			reload = glm::max(glm::min(Time.deltaTime * rof,rof / 15.f),1.f);
 			lastFire = Time.time;
@@ -256,6 +259,8 @@ class player_sc : public component
 	float rotationSpeed = 10.f;
 	float rotX;
 	float rotY;
+	float fov;
+	_camera* cam;
 	
 	gui::window* info;
 	gui::text* fps;
@@ -327,17 +332,21 @@ public:
 		waitForRenderJob([&](){crosshairtex.load("res/images/crosshair.png");});
 		crosshair->img = crosshairtex;
 		reticule->adopt(crosshair);
+		cam = transform->gameObject->getComponent<_camera>();
+		fov = cam->fov;
 
 	}
 	void update()
 	{
 
 		// rb->gravity = false;
-		transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
-		transform->getParent()->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f);
+		transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * fov / 80 * -0.01f);
+		transform->getParent()->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed  * fov / 80  * -0.01f);
 
 		// transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
-		transform->gameObject->getComponent<_camera>()->fov -= Input.Mouse.getScroll();
+		fov -= Input.Mouse.getScroll() * 5;
+		fov = glm::clamp(fov, 5.f,80.f);
+		transform->gameObject->getComponent<_camera>()->fov = fov;//Input.Mouse.getScroll();
 		// rotX += Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
 		// rotY += Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
 		// vec3 lookAtPoint = vec3(0,0,1);
@@ -501,6 +510,8 @@ class _turret : public component{
 	float guns_angle;
 	float turret_speed = radians(30.f);
 	float gun_speed = radians(30.f);
+	bool canFire;
+
 public:
 	float t_angles[3];
 	float g_angles[3][2];
@@ -520,7 +531,6 @@ public:
 		float angle = acos(targetPos.z);
 		float turn_angle = std::min(turret_speed * Time.deltaTime,angle) * (targetPos.x > 0 ? 1 : -1);
 		angle *= (targetPos.x > 0 ? 1 : -1);
-		bool canFire;
 
 		if((turret_angle + angle > 0 && turret_angle + angle - _pi > 0) || (turret_angle + angle < 0 && turret_angle + angle + _pi < 0)){
 			turn_angle = turret_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
@@ -563,15 +573,34 @@ public:
 		transform->rotate(vec3(0,1,0),turret_turn_angle);
 
 		canFire = canFire && abs(angle) < gun_speed * Time.deltaTime;
-		if(canFire && Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+		// if(canFire && Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+		// 	if(barrels->fire()){
+		// 		// cout << "fire" << endl;
+		// 		muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),20);
+		// 		getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),guns->forward(),vec3(0.2),60);
+
+		// 		// muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
+		// 	}
+		// }
+	}
+	bool onTarget(){
+		return canFire;
+	}
+	bool reloaded(){
+		return barrels->isReloaded();
+	}
+	bool fire(){
+		if(canFire){
 			if(barrels->fire()){
 				// cout << "fire" << endl;
 				muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),20);
 				getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),guns->forward(),vec3(0.2),60);
 
 				// muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
+				return true;
 			}
 		}
+		return false;
 	}
 	UPDATE(_turret,update);
 	COPY(_turret);
@@ -580,6 +609,27 @@ public:
 class gunManager : public component{
 
 	vector<_turret*> turrets;
+	int curr = 0;
+	double t;
+	double t_ = 0.2f;
+	void update(){
+		if(Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+			// for(auto& i : turrets){
+				if(Time.time > t){
+					for(auto& i : turrets){
+						if(i->reloaded() && i->onTarget()){
+							i->fire();
+							t = Time.time + t_;
+							curr = (curr + 1) % turrets.size();
+							break;
+						}
+					}
+				}
+			// }
+		}
+
+	}
+public:
 	void onStart(){
 		for(auto& i : transform->getChildren()){
 			auto tur = i->gameObject->getComponent<_turret>();
@@ -587,11 +637,6 @@ class gunManager : public component{
 				turrets.push_back(tur);
 			}
 		}
-	}
-	void update(){
-		if(Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-		}
-
 	}
 public:
 	UPDATE(gunManager,update);
@@ -934,7 +979,7 @@ int main(int argc, char **argv)
 	// player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
 	player->addComponent<player_sc>();
-	player->transform->translate(vec3(0, 5, -20));
+	player->transform->translate(vec3(0, 10, -35));
 
 	game_object* boom = new game_object();
 	boom->transform->Adopt(player->transform);
@@ -965,6 +1010,7 @@ int main(int argc, char **argv)
 	for(auto& i : MainGunPos_s){
 		makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0);
 	}
+	ship->addComponent<gunManager>();
 
 	game_object* engine = new game_object();
 	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
