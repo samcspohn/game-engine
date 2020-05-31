@@ -162,20 +162,13 @@ public:
 		// {
 		if(hit){
 
-			transform->gameObject->destroy();
 			numCubes.fetch_add(-1);
+			transform->gameObject->destroy();
 		}
 		// }
 	}
 	void onCollision(game_object *go,vec3 point, vec3 normal)
 	{
-		// cout << "collision" << endl;
-		if (proto == transform->gameObject)
-			return;
-
-		// vel = glm::reflect(vel,normal) * 0.99f;
-		// myEmitters[0]->setPrototype(b.primaryexplosion);
-		// myEmitters[1]->setPrototype(b.secondaryexplosion);
 		if(length(normal) == 0)
 			normal = randomSphere();
 		b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);

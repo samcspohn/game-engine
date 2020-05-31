@@ -545,9 +545,9 @@ public:
     glm::mat3 camInv;
     glm::vec3 camP;
 
-    void setCamCull(_camera* c){
-        camInv = glm::mat3(c->rot);// * glm::mat3(glm::translate(-camera->transform->getPosition()));
-		camP = c->pos;
+    void setCamCull(glm::mat3 ci, glm::vec3 cp){
+        camInv = ci;// * glm::mat3(glm::translate(-camera->transform->getPosition()));
+		camP = cp;
     }
     _shader particleShader;
     vector<uint> zeros;

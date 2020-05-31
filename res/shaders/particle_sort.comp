@@ -284,7 +284,7 @@ void main () {
                         index = atomicAdd(atomics[0],1);
                         // renderParticles[index] = gid;
                         d item;
-                        uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
+                        uint _key =  (~floatBitsToUint(p3.z) << 1) >> 16;
                         // key(item, _key);
                         keys_out[index] = _key;
                         // emitterID(item, p.emitter);

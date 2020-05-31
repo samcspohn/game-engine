@@ -145,7 +145,7 @@ int renderingId = 0;
 struct renderingMeta {
 	GLuint id = -1;
 	gpu_vector<GLuint>* _transformIds;
-	fast_list<GLuint> ids;
+	fast_list_deque<GLuint> ids;
 	glm::vec3 bounds;
 	float radius;
 	_shader s;
@@ -209,7 +209,7 @@ class _renderer : public component {
 	_shader shader;
 	_model model;
 	renderingMeta* meta = 0;
-	typename fast_list<GLuint>::iterator transformIdRef;
+	typename fast_list_deque<GLuint>::iterator transformIdRef;
 	friend cullObjects;
 	friend void run(btDynamicsWorld* World);
 public:
@@ -305,7 +305,7 @@ public:
 			shader = other.shader;
 			model = other.model;
 			meta = other.meta;
-			fast_list<GLuint>::iterator();
+			transformIdRef = fast_list_deque<GLuint>::iterator();
 //		}
 	}
 	void onDestroy(){

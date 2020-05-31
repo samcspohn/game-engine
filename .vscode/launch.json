@@ -4,50 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
         {
-            "name": "build",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceRoot}/build/game",
-            "args": ["1","0"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": true,
-            "MIMode":"gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "preLaunchTask": "build release",
-            // "miDebuggerPath": "/usr/bin/lldb-mi"
-        },
-        {
-            "name": "debug release",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceRoot}/release/game",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": true,
-            "MIMode":"gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            // "miDebuggerPath": "/usr/bin/lldb-mi"
-        },
-        {
-            "name": "build and debug release",
+            "name": "release",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/release/game",
@@ -68,7 +26,7 @@
             // "miDebuggerPath": "/usr/bin/lldb-mi"
         },
         {
-            "name": "build and debug",
+            "name": "debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/debug/game",

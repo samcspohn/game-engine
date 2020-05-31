@@ -129,7 +129,7 @@ public:
 	ref _new() {
 		ref ret;
 		ret.a = this;
-			m.lock();
+		m.lock();
 		if (avail.size() > 0) {
 			ret.index = *avail.begin();
 			avail.erase(avail.begin());;
@@ -146,7 +146,7 @@ public:
 			valid.push_back(true);
 			++extent;
 		}
-			m.unlock();
+		m.unlock();
 		return ret;
 	}
 	void _delete(ref r) {

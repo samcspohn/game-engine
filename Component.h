@@ -20,7 +20,7 @@ bool compareTransform(Transform *t1, Transform *t2);
 struct compItr
 {
 	ull hash;
-	map<component *, compItr *> *goComponents;
+	// map<component *, compItr *> *goComponents;
 	virtual void erase(){};
 	virtual component *getComponent(){};
 };
@@ -34,7 +34,7 @@ struct compItr_ : public compItr
 	{
 		//	    delete *id;
 		// (&(id.data()))->onDestroy();
-		goComponents->erase(getComponent());
+		// goComponents->erase(getComponent());
 		l->_delete(id);
 		delete this;
 	}

@@ -41,19 +41,24 @@ struct _transform {
 //		rotation = normalize(rotation);
 	}
 };
-array_heap<_transform> TRANSFORMS;// = array_heap<_transform>();
-array_heap<_transform> STATIC_TRANSFORMS;// = array_heap<_transform>();
+deque_heap<_transform> TRANSFORMS;// = array_heap<_transform>();
+deque_heap<_transform> STATIC_TRANSFORMS;// = array_heap<_transform>();
 gpu_vector<_transform>* GPU_TRANSFORMS = nullptr;
 
 class game_object;
 class {
+	mutex m;
 public:
 	vector<game_object*> data = vector<game_object*>();
 	game_object*& operator[](int index) {
+		if (index > TRANSFORMS.size())
+			throw;
 		if (index >= data.size()) {
-			if (index > TRANSFORMS.size())
-				throw;
-			data.resize(index + 1);
+			m.lock();
+			if (index >= data.size()) {
+				data.resize(index + 1);
+			}
+			m.unlock();
 		}
 		return data[index];
 	}
@@ -69,8 +74,9 @@ _transform& get_T(int index) {
 
 Transform* root;
 class Transform {
+	mutex m;
 public:
-	array_heap<_transform>::ref _T;
+	deque_heap<_transform>::ref _T;
 	game_object* gameObject;
 
 	void init() {
@@ -106,7 +112,6 @@ public:
 		glm::quat r = glm::toQuat(glm::lookAt(_T->position, lookatPoint, up));
 		_T->rotation = r;
 	}
-
 	glm::vec3 forward() {
 		return glm::normalize(_T->rotation * glm::vec3(0.0f, 0.0f, 1.0f));
 	}
@@ -116,38 +121,8 @@ public:
 	glm::vec3 up() {
 		return glm::normalize(_T->rotation * glm::vec3(0.0f, 1.0f, 0.0f));
 	}
-
 	glm::mat4 getModel() {
-
 		return (glm::translate(_T->position) * glm::scale(_T->scale))* glm::toMat4(_T->rotation);
-
-	}
-	void translate(glm::vec3 translation) {
-		_T->position += _T->rotation * translation;
-		for (auto a : children)
-			a->translate(translation, _T->rotation);
-	}
-	void translate(glm::vec3 translation, glm::quat r) {
-		_T->position += r * translation;
-		for (Transform* a : children)
-			a->translate(translation, r);
-	}
-	void setPosition(glm::vec3 pos) {
-		for (Transform* c : children)
-			c->translate(pos - _T->position, glm::quat());
-		_T->position = pos;
-	}
-	glm::vec3 getPosition() {
-		return _T->position;
-	}
-	void move(glm::vec3 lhs) {
-		setPosition(_T->position + lhs);
-	}
-
-	void scale(glm::vec3 scale) {
-		_T->scale *= scale;
-		for (Transform* a : children)
-			a->scaleChild(_T->position, scale);
 	}
 	glm::vec3 getScale() {
 		return _T->scale;
@@ -155,12 +130,15 @@ public:
 	void setScale(glm::vec3 scale) {
 		this->scale(scale / _T->scale);
 	}
-
-    void rotate(glm::vec3 axis, float radians) {
-		_T->rotation = glm::rotate(_T->rotation, radians, axis);
-		for (Transform* a : children)
-			a->rotateChild(axis, _T->position, _T->rotation, radians);
-		_T->rotation = normalize(_T->rotation);
+	glm::vec3 getPosition() {
+		return _T->position;
+	}
+	void setPosition(glm::vec3 pos) {
+		m.lock();
+		for (Transform* c : children)
+			c->translate(pos - _T->position, glm::quat());
+		_T->position = pos;
+		m.unlock();
 	}
 	glm::quat getRotation() {
 		return _T->rotation;
@@ -177,31 +155,12 @@ public:
 	void Adopt(Transform * transform) {
 	    if(transform->parent == this)
             return;
-		// if(children.find(transform) != children.end())
-		// 	return;
 		transform->orphan();
 		transform->parent = this;
-//		transform->_T->parent = _T;
-
-//		int _Tval = (transform->enabled ? transform->_T : switchAH(_T));
-//		if (children.size() == 0) {
-//			_T->childrenBegin = _Tval;
-//		}
-//		else {
-//			transform->_T->prevSibling = _T->childrenEnd;
-//			get_T(_T->childrenEnd).nextSibling = _Tval;
-//		}
-//		_T->childrenEnd = _Tval;
+		this->m.lock();
 		this->children.push_back(transform);
 		transform->childId = (--this->children.end());
-	}
-	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle) {
-		glm::vec3 ax = r * axis;
-		_T->position = pos + glm::rotate(_T->position - pos, angle, ax);
-		_T->rotation = glm::rotate(_T->rotation, angle, glm::inverse(_T->rotation) * ax);// glm::rotate(rotation, angle, axis);
-		for (Transform* a : children)
-			a->rotateChild(axis, pos, r, angle);
-		_T->rotation = normalize(_T->rotation);
+		this->m.unlock();
 	}
 
 	void _destroy() {
@@ -218,85 +177,57 @@ public:
 			--transforms_enabled;
 		delete this;
 	}
-
-	//void enable() {
-	//	if (!enabled) {
-	//		transformMutex.lock();
-
-	//		auto a = TRANSFORMS._new();
-	//		GO_T_refs[a] = gameObject;
-	//		a.data() = _T.data();
-	//		int _Tval = switchAH(_T);
-
-	//		//_T is in STATIC_TRANSFORMS
-
-	//		//parent
-	//		//parent children begin
-	//		//if (_T->parent != -1 && get_T(_T->parent).childrenBegin == _Tval)
-	//		//	get_T(_T->parent).childrenBegin = a;
-
-	//		////parent children end
-	//		//if (_T->parent != -1 && get_T(_T->parent).childrenEnd == _Tval)
-	//		//	get_T(_T->parent).childrenEnd = a;
-
-	//		//// siblings
-	//		////prevsibling
-	//		//if (_T->prevSibling != -1)
-	//		//	get_T(_T->prevSibling).nextSibling = a;
-
-	//		////nextsibling
-	//		//if (_T->nextSibling != -1)
-	//		//	get_T(_T->nextSibling).prevSibling = a;
-
-	//		////children
-	//		//for (int i = _T->childrenBegin; i != -1; i = get_T(i).nextSibling)
-	//		//	get_T(i).parent = a;
-
-	//		STATIC_TRANSFORMS._delete(_T);
-	//		_T = a;
-
-	//		++transforms_enabled;
-	//		enabled = true;
-	//		transformMutex.unlock();
-	//	}
-	//}
-	//void disable() {
-	//	if (enabled) {
-	//		transformMutex.lock();
-	//		--transforms_enabled;
-	//		auto a = STATIC_TRANSFORMS._new();
-	//		a.data() = _T.data();
-
-	//		////parent
-	//		////parent children begin
-	//		//if (_T->parent != -1 && get_T(_T->parent).childrenBegin == _T)
-	//		//	get_T(_T->parent).childrenBegin = switchAH(a);
-	//		//
-	//		////parent children end
-	//		//if (_T->parent != -1 && get_T(_T->parent).childrenEnd == _T)
-	//		//	get_T(_T->parent).childrenEnd = switchAH(a);
-
-	//		//// siblings
-	//		////prevsibling
-	//		//if (_T->prevSibling != -1)
-	//		//	get_T(_T->prevSibling).nextSibling = switchAH(a);
-	//		//
-	//		////nextsibling
-	//		//if (_T->nextSibling != -1)
-	//		//	get_T(_T->nextSibling).prevSibling = switchAH(a);
-	//		//
-	//		////children
-	//		//for (int i = _T->childrenBegin; i != -1; i = get_T(i).nextSibling)
-	//		//	get_T(i).parent = switchAH(a);
-
-
-	//		GO_T_refs[_T] = 0;
-	//		TRANSFORMS._delete(_T);
-	//		_T = a;
-	//		enabled = false;
-	//		transformMutex.unlock();
-	//	}
-	//}
+	
+	void move(glm::vec3 lhs) {
+		setPosition(_T->position + lhs);
+	}
+	void translate(glm::vec3 translation) {
+		m.lock();
+		_T->position += _T->rotation * translation;
+		for (auto a : children)
+			a->translate(translation, _T->rotation);
+		m.unlock();
+	}
+	void translate(glm::vec3 translation, glm::quat r) {
+		m.lock();
+		_T->position += r * translation;
+		for (Transform* a : children)
+			a->translate(translation, r);
+		m.unlock();
+	}
+	void scale(glm::vec3 scale) {
+		m.lock();
+		_T->scale *= scale;
+		for (Transform* a : children)
+			a->scaleChild(_T->position, scale);
+		m.unlock();
+	}
+	void scaleChild(glm::vec3 pos, glm::vec3 scale) {
+		m.lock();
+		_T->position = (_T->position - pos) * scale + pos;
+		_T->scale *= scale;
+		for (Transform* a : children)
+			a->scaleChild(pos, scale);
+		m.unlock();
+	}
+    void rotate(glm::vec3 axis, float radians) {
+		m.lock();
+		_T->rotation = glm::rotate(_T->rotation, radians, axis);
+		for (Transform* a : children)
+			a->rotateChild(axis, _T->position, _T->rotation, radians);
+		_T->rotation = normalize(_T->rotation);
+		m.unlock();
+	}
+	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle) {
+		m.lock();
+		glm::vec3 ax = r * axis;
+		_T->position = pos + glm::rotate(_T->position - pos, angle, ax);
+		_T->rotation = glm::rotate(_T->rotation, angle, glm::inverse(_T->rotation) * ax);// glm::rotate(rotation, angle, axis);
+		for (Transform* a : children)
+			a->rotateChild(axis, pos, r, angle);
+		_T->rotation = normalize(_T->rotation);
+		m.unlock();
+	}
 
 private:
 	bool enabled = true;
@@ -310,41 +241,14 @@ private:
 	}
 
 	void orphan() {
-		// || this->parent->children.find(this) == this->parent->children.end()
 		if (this->parent == 0 )
 			return;
-//		//todo add support for static parents
-//		_transform * parentT = &(TRANSFORMS[_T->parent]);
-//		if (parent->children.size() > 1) {
-//			if (parentT->childrenBegin == (enabled ? _T : switchAH(_T))) {//front of children
-//				get_T(_T->nextSibling).prevSibling = -1;
-//				parentT->childrenBegin = _T->nextSibling;
-//			}
-//			else if (parentT->childrenEnd == (enabled ? _T : switchAH(_T))) {
-//				get_T(_T->prevSibling).nextSibling = -1;
-//
-//				parentT->childrenEnd = _T->prevSibling;
-//			}
-//			else if (parent->children.size() > 2){
-//				get_T(_T->prevSibling).nextSibling = _T->nextSibling;
-//				get_T(_T->nextSibling).prevSibling = _T->prevSibling;
-//			}
-//		}
-//		else {
-//			parentT->childrenBegin = parentT->childrenEnd = -1;
-//		}
-//		_T->nextSibling = _T->prevSibling = -1;
-//		_T->parent = 0;
-
+		this->parent->m.lock();
 		this->parent->children.erase(childId);
+		this->parent->m.unlock();
 		this->parent = 0;
 	}
-	void scaleChild(glm::vec3 pos, glm::vec3 scale) {
-		_T->position = (_T->position - pos) * scale + pos;
-		_T->scale *= scale;
-		for (Transform* a : children)
-			a->scaleChild(pos, scale);
-	}
+
 
 };
 
