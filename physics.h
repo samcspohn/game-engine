@@ -635,16 +635,7 @@ float size(glm::vec3 a)
 	return a.x * a.y * a.z;
 }
 
-struct PosCol
-{
-	colDat a;
-	colDat b;
-	PosCol(){};
-	PosCol(colDat _a, colDat _b) : a(_a), b(_b){};
-};
-
-vector<vector<colDat>> posCol(concurrency::numThreads);
-
+mutex physLock;
 class collider : public component
 {
 	list<collider *>::iterator itr;
@@ -722,10 +713,10 @@ public:
 		cd.valid = true;
 		cd.rb = rb;
 		int depth = 0;
-		// leaveLock.lock();
+		// physLock.lock();
 		if(layer == 1)
 			collisionLayers[layer].insert(cd, depth);
-		// leaveLock.unlock();
+		// physLock.unlock();
 
 		//octLock.unlock();
 	}

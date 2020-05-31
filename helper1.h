@@ -288,8 +288,10 @@ inline void waitForRenderJob(std::function<void(void)> work)
 
 map<string, rolling_buffer> componentStats;
 
+mutex statLock;
 void appendStat(string name, float dtime)
 {
+	statLock.lock();
 	auto a = componentStats.find(name);
 	if (a != componentStats.end())
 		a->second.add(dtime);
@@ -298,6 +300,7 @@ void appendStat(string name, float dtime)
 		componentStats[name] = rolling_buffer(200);
 		componentStats[name].add(dtime);
 	}
+	statLock.unlock();
 }
 
 class gpuTimer

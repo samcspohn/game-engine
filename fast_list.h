@@ -172,6 +172,7 @@ public:
 template<typename t>
 class fast_list_deque {
 private:
+	mutex m;
 public:
 	deque<t> data = deque<t>();
 
@@ -246,7 +247,7 @@ public:
 	}
 
 	//////////// end iterator
-	fast_list_deque() {
+	fast_list_deque() : m() {
 		//iteratorMap[0] = new _itr(0, this);
 	}
 
@@ -264,19 +265,19 @@ public:
 		return data[0];
 	}
 	iterator push_back(t element) {
-		//m.lock();
+		m.lock();
 		data.push_back(element);
 		_itr* it = new _itr(data.size() - 1, this);
 		it->it = iterators.size();
 		iterators.push_back(it);
-		//m.unlock();
+		m.unlock();
 		return iterator(it);
 	}
 
 	void erase(iterator& itr) {
 		if (itr.itr->fl != this)
 			throw;
-		//m.lock();
+		m.lock();
 		size_t index = itr.itr->index;
 		data[index] = std::move(data.back());
 		iterators.back()->index = index;//itr->index
@@ -288,14 +289,16 @@ public:
 		data.pop_back();
 		delete itr.itr;
 
-		//m.unlock();
+		m.unlock();
 		//m.unlock();
 	}
 	void clear() {
+		m.lock();
 		for (typename deque<_itr*>::iterator i = iterators.begin(); i != iterators.end(); i++)
 			delete * i;
 		iterators.clear();
 		data.clear();
+		m.unlock();
 	}
 
 	void swap(unsigned int l, unsigned int r) {

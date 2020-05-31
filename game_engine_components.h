@@ -120,9 +120,7 @@ public:
 		MainCamForward = transform->forward();
 		mainCamUp = transform->up();
 		
-		glUniform3f(glGetUniformLocation(matProgram.Program, "camPos"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-		glUniform3f(glGetUniformLocation(matProgram.Program, "camForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
-		glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+		glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), pos.x, pos.y, pos.z);
 		glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), 1);
 
 		glUniformMatrix3fv(glGetUniformLocation(matProgram.Program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
@@ -170,7 +168,7 @@ public:
 				glUseProgram(currShader->Program);
 				glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
 				glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farPlane + 1));
-				glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1, glm::value_ptr(mainCamPos));
+				glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1, glm::value_ptr(pos));
 				glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
 				glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
 				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
@@ -310,16 +308,20 @@ class copyBuffers : public component
 		int numt = concurrency::numThreads;
 		if (getThreadID() < numt)
 		{
+			int id = getThreadID();
 			{
-				int id = getThreadID();
 				int step = TRANSFORMS.size() / concurrency::numThreads;
-				vector<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
-				vector<_transform>::iterator to = from + step;
-				if(getThreadID() == concurrency::numThreads - 1)
+				deque<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
+				deque<_transform>::iterator to = from + step;
+				vector<_transform>::iterator v = GPU_TRANSFORMS->storage->begin() + step * id;
+				if(id == concurrency::numThreads - 1)
 					to = TRANSFORMS.data.end();
 				int itr = step * id;
-				while (from != to)
-					GPU_TRANSFORMS->storage->at(itr++) = *from++;
+				while (from != to){
+					*v = *from;
+					++from;
+					++v;
+				}
 			}
 
 			
@@ -327,10 +329,20 @@ class copyBuffers : public component
 			{
 				for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
 				{
-					size_t from = j->second->ids.size() / numt * getThreadID();
-					size_t to = (getThreadID() != numt - 1 ? j->second->ids.size() / numt : j->second->ids.size() - from);
-					if (to > 0)
-						memcpy(&(j->second->_transformIds->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
+					int step = j->second->ids.size() / concurrency::numThreads;
+					typename deque<GLuint>::iterator from = j->second->ids.data.begin() + step  * id;
+					typename deque<GLuint>::iterator to = from + step;
+					typename vector<GLuint>::iterator v = j->second->_transformIds->storage->begin() + step * id;
+					if(id == concurrency::numThreads - 1){
+						to = j->second->ids.data.end();
+					}
+					while(from != to){
+						*v = *from;
+						++from;
+						++v;
+					}
+						// memcpy(&(j->second->_transformIds->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
+					
 				}
 			}
 		}

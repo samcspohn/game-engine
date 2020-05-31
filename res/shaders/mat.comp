@@ -27,8 +27,6 @@ layout(std430, binding = 3) buffer _m_buffs{matrix matrixes[];};
 layout(std430,binding = 5) buffer a{uint atomics[];};
 
 uniform uint num;
-uniform vec3 camPos;
-uniform vec3 camForward;
 uniform mat4 view;
 uniform mat4 vRot;
 uniform mat4 projection;
