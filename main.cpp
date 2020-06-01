@@ -14,43 +14,10 @@
 
 
 
-
-btITaskScheduler* taskSchedular;
-btDynamicsWorld* world;	//every physical object go to the world
-btCollisionDispatcherMt* dispatcherMt;	//what collision algorithm to use?
-btCollisionConfiguration* collisionConfig;	//what collision algorithm to use?
-btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other
-btConstraintSolver* solver;					//solve collisions, apply forces, impulses
-btConstraintSolverPoolMt *pool;
-std::vector<btRigidBody*> bodies;
 terrain* terr;
-
-// btDynamicsWorld* world;
-btDispatcher* dispatcher;
-// btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other	
-
 int numBoxes = 0;
 
-btRigidBody* addSphere(float rad,float x,float y,float z,float mass)
-{
-	btTransform t;	//position and rotation
-	t.setIdentity();
-	t.setOrigin(btVector3(x,y,z));	//put it to x,y,z coordinates
-	btBoxShape* sphere=new btBoxShape(btVector3(1,1,1));	//it's a sphere, so use sphereshape
-	// btSphereShape* sphere = new btSphereShape(rad);
-	btVector3 inertia(0,0,0);	//inertia is 0,0,0 for static object, else
-	if(mass!=0.0)
-		sphere->calculateLocalInertia(mass,inertia);	//it can be determined by this function (for all kind of shapes)
-	
-	btMotionState* motion=new btDefaultMotionState(t);	//set the position (and motion)
-	btRigidBody::btRigidBodyConstructionInfo info(mass,motion,sphere,inertia);	//create the constructioninfo, you can create multiple bodies with the same info
-	// info.m_restitution = 0.8;
-	btRigidBody* body=new btRigidBody(info);	//let's create the body itself
-	body->setActivationState(DISABLE_DEACTIVATION);
-	world->addRigidBody(body);	//and let the world know about it
-	bodies.push_back(body);	//to be easier to clean, I store them a vector
-	return body;
-}
+
 
 _transform renderSphere(btRigidBody* sphere)
 {
@@ -78,7 +45,7 @@ class physicsObject : public component{
 	btRigidBody* rb;
 	public:
 	void init(float x, float y, float z, vec3 force){
-		rb = addSphere(1,x,y,z,1);
+		rb = pm->addSphere(1,x,y,z,1);
 		rb->setLinearVelocity(btVector3(force.x,force.y,force.z));
 	}
 
@@ -289,6 +256,7 @@ public:
 		guns[1]->dispersion = 0;
 		guns[1]->speed = 30000;
 		guns[1]->size = 20;
+		guns[0]->setBarrels({vec3(0.f,-10.f,45.f)});
 
 		info = new gui::window();
 		fps = new gui::text();
@@ -368,7 +336,7 @@ public:
 			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
 			pcMutex.unlock();
 			reticule->size = ImVec2(SCREEN_WIDTH,SCREEN_HEIGHT);
-			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
+			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 200);
 
 			// reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
 		}
@@ -675,7 +643,7 @@ void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upri
 	g->setBarrels(barrels);
 	g->ammo = bullets["bomb"].proto;
 	g->rof = 1.f / 5.f;
-	g->dispersion = 0.04f;
+	g->dispersion = 0.01f;
 	g->speed = 500;
 	ship->Adopt(turret->transform);
 	turret->transform->translate(pos);
@@ -757,28 +725,7 @@ int main(int argc, char **argv)
 
 	hideMouse = false;
 	
-	//pretty much initialize everything logically
-	btDefaultCollisionConstructionInfo cci;
-	cci.m_defaultMaxPersistentManifoldPoolSize = 80000;
-	cci.m_defaultMaxCollisionAlgorithmPoolSize = 80000;
-	taskSchedular = btCreateDefaultTaskScheduler();
-	taskSchedular->setNumThreads(concurrency::numThreads);
-	btSetTaskScheduler(taskSchedular);
-	auto ts = btGetTaskScheduler();
-	cout << "bt threads: " << ts->getNumThreads() << endl;
-	collisionConfig=new btDefaultCollisionConfiguration(cci);
-	btConstraintSolver *solverMt = new btSequentialImpulseConstraintSolverMt();
-	// dispatcherMt=new btCollisionDispatcherMt(collisionConfig);
-	broadphase=new btDbvtBroadphase();
-	solver=new btSequentialImpulseConstraintSolver();
-	pool = new btConstraintSolverPoolMt(concurrency::numThreads);
-	// world=new btDiscreteDynamicsWorldMt(dispatcherMt,broadphase,pool,solver,collisionConfig);//btDiscreteDynamicsWorldMt(dispatcher,broadphase,solver,collisionConfig);
 	
-	dispatcher=new btCollisionDispatcher(collisionConfig);
-	world=new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfig);
-	world->setGravity(btVector3(0,-10,0));	//gravity on Earth
-	
-
 	::init();
 	
 	_shader particleShader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
@@ -906,16 +853,6 @@ int main(int argc, char **argv)
 	laser.primarybullet->scale = vec3(20.f);
 	laser.primarybullet->size(1.f);
 	laser.primarybullet->maxSpeed = 1.f;
-
-	// laser.primaryexplosion = createNamedEmitter("beamexplosion1");
-	// laser.primaryexplosion->dispersion = 3.14159f;
-	// laser.primaryexplosion->color(vec4(1,1,1,1),vec4(.1,.2,1,0.0));
-	// laser.primaryexplosion->scale = vec3(500);
-	// laser.primaryexplosion->lifetime = 3.f;
-	// laser.primaryexplosion->lifetime2 = 2.f;
-	// laser.primaryexplosion->emission_rate = 50.f;
-	// laser.primaryexplosion->trail = 0;
-	// laser.primaryexplosion->maxSpeed = 1000.f;
 
 	laser.primaryexplosion = getEmitterPrototypeByName("expflame");
 
@@ -1067,19 +1004,18 @@ int main(int argc, char **argv)
 	btTransform ter;
 	ter.setIdentity();
 	ter.setOrigin(btVector3(0,0,0));
-	// ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
-	btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
-	// btHeightfieldTerrainShape* heightField = new btHeightfieldTerrainShape(terrainWidth,terrainWidth, heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
-	// btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
-	// heightField->setLocalScaling(localScaling);
+	// btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
+	ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
+	btHeightfieldTerrainShape* heightField = new btHeightfieldTerrainShape(terrainWidth,terrainWidth, heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
+	btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
+	heightField->setLocalScaling(localScaling);
 	btMotionState* motion=new btDefaultMotionState(ter);
 	// btVector3 localInertia(0,0,0);
-	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,plane);
+	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
 	// info.m_restitution = 0.02;
 	btRigidBody* body=new btRigidBody(info);
-	world->addRigidBody(body);
-	bodies.push_back(body);
 
+	pm->addBody(body);
 
 	player->getComponent<player_sc>()->t = t;
 	ifstream config("config.txt");
@@ -1189,26 +1125,10 @@ int main(int argc, char **argv)
 		go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
 	}
 
-
-
-	run(world);
+	run();
 
 	cout << endl << "missiles: " + FormatWithCommas(numCubes.load());
-	for(int i=0;i<bodies.size();i++)
-	{
-		world->removeCollisionObject(bodies[i]);
-		btMotionState* motionState=bodies[i]->getMotionState();
-		btCollisionShape* shape=bodies[i]->getCollisionShape();
-		delete bodies[i];
-		delete shape;
-		delete motionState;
-	}
-	delete solverMt;
-	delete dispatcher;
-	delete collisionConfig;
-	delete solver;
-	delete broadphase;
-	delete world;
+	
 	delete[] heightData;
 
 

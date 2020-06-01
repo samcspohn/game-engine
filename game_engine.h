@@ -18,7 +18,6 @@
 #include "gpu_vector.h"
 #include "Input.h"
 #include <atomic>
-//#include "Component.h"
 #include "game_object.h"
 #include "rendering.h"
 #include "game_engine_components.h"
@@ -27,35 +26,7 @@
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "bullet/btBulletDynamicsCommon.h"
 #include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h"
-
-// #include <nanogui/opengl.h>
-// #include <nanogui/glutil.h>
-// #include <nanogui/screen.h>
-// #include <nanogui/window.h>
-// #include <nanogui/layout.h>
-// #include <nanogui/label.h>
-// #include <nanogui/checkbox.h>
-// #include <nanogui/button.h>
-// #include <nanogui/toolbutton.h>
-// #include <nanogui/popupbutton.h>
-// #include <nanogui/combobox.h>
-// #include <nanogui/progressbar.h>
-// #include <nanogui/entypo.h>
-// #include <nanogui/messagedialog.h>
-// #include <nanogui/textbox.h>
-// #include <nanogui/slider.h>
-// #include <nanogui/imagepanel.h>
-// #include <nanogui/imageview.h>
-// #include <nanogui/vscrollpanel.h>
-// #include <nanogui/colorwheel.h>
-// #include <nanogui/colorpicker.h>
-// #include <nanogui/graph.h>
-// #include <nanogui/tabwidget.h>
-
-// #define IMGUI_IMPL_OPENGL_LOADER_GLEW
-// #include "imgui/imgui.h"
-// #include "imgui/imgui_impl_glfw.h"
-// #include "imgui/imgui_impl_opengl3.h"
+#include "physics_.h"
 
 #include "gui.h"
 
@@ -96,6 +67,7 @@ vector<mutex> updateLocks(concurrency::numThreads);
 vector<queue<updateJob>> updateWork(concurrency::numThreads);
 
 componentStorageBase *copyWorkers;
+float maxGameDuration = INFINITY;
 
 /////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
@@ -298,16 +270,12 @@ void renderThreadFunc()
 
 	GPU_TRANSFORMS = new gpu_vector<_transform>();
 	GPU_TRANSFORMS->ownStorage();
-	// GPU_TRANSFORMS->storage = &TRANSFORMS.data;
-	// log("here");
-	// ids->init();
 
 	initParticles();
 	particle_renderer.init();
 
 	timer stopWatch;
 
-	
 	renderDone.store(true);
 	renderThreadReady.exchange(true);
 	while (true)
@@ -467,9 +435,6 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 	}
 }
 
-// scripting
-mutex antiBullshitDevice;
-
 void lockUpdate()
 {
 	for (auto &i : updateLocks)
@@ -481,41 +446,36 @@ void unlockUpdate()
 		i.unlock();
 }
 
-
-vector<size_t> threadCounters = vector<size_t>(concurrency::numThreads, 0);
-
-atomic<bool> makeOctree(false);
-// barrier _barrier;
-
-void componentUpdateThread(int index)
+void componentUpdateThread(int id)
 {
 	while (true)
 	{
-		updateLocks[index].lock();
-		if (updateWork[index].size() != 0)
+		updateLocks[id].lock();
+		if (updateWork[id].size() != 0)
 		{
-			updateJob uj = updateWork[index].front();
+			updateJob uj = updateWork[id].front();
 			if (uj.componentStorage == 0)
 				break;
 			if (uj.ut == update_type::update)
 			{
-				ComponentsUpdate(uj.componentStorage, index, uj.size);
+				ComponentsUpdate(uj.componentStorage, id, uj.size);
 			}
 			else if (uj.ut == update_type::lateupdate)
 			{
-				ComponentsLateUpdate(uj.componentStorage, index, uj.size);
+				ComponentsLateUpdate(uj.componentStorage, id, uj.size);
 			}
-			updateWork[index].pop();
+			updateWork[id].pop();
 		}
-		updateLocks[index].unlock();
+		updateLocks[id].unlock();
 		this_thread::sleep_for(1ns);
 	}
 }
+_physicsManager* pm;
 void init()
 {
 	renderThreadReady.exchange(false);
 	renderThread = new thread(renderThreadFunc);
-	
+	pm = new _physicsManager();
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
@@ -525,31 +485,11 @@ void init()
 	for (int i = 0; i < concurrency::numThreads; i++)
 	{
 		rootGameObject->addComponent<copyBuffers>();
-		rootGameObject->addComponent<cullObjects>();
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	gameEngineComponents.erase(copyWorkers);
-	gameEngineComponents.erase(allcomponents[typeid(cullObjects).hash_code()]);
 }
-void syncThreads()
-{
-	return;
-	bool isSynced = false;
-	while (!isSynced)
-	{
-		isSynced = true;
-		size_t currCount = threadCounters[0];
-		for (int i = 1; i < concurrency::numThreads; ++i)
-		{
-			if (threadCounters[i] != currCount)
-			{
-				isSynced = false;
-				break;
-			}
-		}
-		this_thread::sleep_for(1ns);
-	}
-}
+
 void doWork(componentStorageBase* cs,update_type type){
 	int s = cs->size();
 	timer stopWatch;
@@ -588,31 +528,26 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	}
 
 }
-
-
 void waitForWork(){
-	
-		bool working = true;
-		while (working)
+	bool working = true;
+	while (working)
+	{
+		working = false;
+		lockUpdate();
+		for (auto i : updateWork)
 		{
-			working = false;
-			lockUpdate();
-			for (auto i : updateWork)
+			if (i.size() > 0)
 			{
-				if (i.size() > 0)
-				{
-					working = true;
-					break;
-				}
+				working = true;
+				break;
 			}
-			unlockUpdate();
-			this_thread::sleep_for(1ns);
 		}
+		unlockUpdate();
+		this_thread::sleep_for(1ns);
+	}
 }
 
-
-float maxGameDuration = INFINITY;
-void run(btDynamicsWorld* World)
+void run()
 {
 	timer stopWatch;
 
@@ -668,7 +603,8 @@ void run(btDynamicsWorld* World)
 		waitForWork();
 		doLoopIteration(gameEngineComponents, false);
 
-		World->stepSimulation(Time.deltaTime, 1, 1.0 / 30.0);
+		pm->simulate(Time.deltaTime);
+		
 
 		waitForWork();
 		lockUpdate();
