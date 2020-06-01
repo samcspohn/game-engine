@@ -31,3 +31,7 @@
 
 debug
 release
+
+config.txt
+particle_perf*.txt
+imgui.ini
