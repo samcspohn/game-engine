@@ -1,4 +1,4 @@
-
+#define GLSLIFY 1
 struct particle{
     vec3 position;
     uint emitter;
@@ -60,7 +60,6 @@ struct emitterInit{
     int id;
 }; 
 
-
 struct d{
     // vec4 rot;
 	uint xy;
@@ -73,7 +72,6 @@ struct d{
 	uint protoID_life;
 	// uint key_life;
 };
-
 
 uint getX(inout d item){
     return getHighBits(item.xy);
@@ -110,7 +108,6 @@ void setRotation(inout d item, vec4 quat){
     // setLowBits(item.qwx,uint(quat.x * 32768 + 32768));
     // setHighBits(item.qyz,uint(quat.y * 32768 + 32768));
     // setLowBits(item.qyz,uint(quat.z * 32768 + 32768));
-
 
     setHighBits(item.qxy,uint(quat.x * 32768 + 32768));
     setLowBits(item.qxy,uint(quat.y * 32768 + 32768));

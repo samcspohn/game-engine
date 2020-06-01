@@ -1,4 +1,4 @@
-
+#define GLSLIFY 1
 mat4 translate(mat4 m, vec3 translation){
 		mat4 t = {{1,0,0,translation.x},
 		{0,1,0,translation.y,},

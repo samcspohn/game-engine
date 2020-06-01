@@ -991,7 +991,7 @@ int main(int argc, char **argv)
 	t->r = r;
 	terr = t;
 	// t->width = t->depth = 1024;
-	int terrainWidth = 1025;
+	int terrainWidth = 513;
 	t->genHeightMap(terrainWidth,terrainWidth);
 	ground->transform->translate(glm::vec3(0,-4500,0));
 	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));

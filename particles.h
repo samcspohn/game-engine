@@ -7,7 +7,7 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_PARTICLES 1024 * 1024 * 12
+#define MAX_PARTICLES 1024 * 512
 struct particle
 {
     vec3 position;
