@@ -14,7 +14,7 @@ const uint block_sum_size = 256;
 
 
 layout(std430,binding = 0) buffer t{_transform transforms[];};
-layout(std430,binding = 13) buffer rp{uint renderParticles[];};
+// layout(std430,binding = 13) buffer rp{uint renderParticles[];};
 layout(std430,binding = 1) buffer d_in{d _input[];};
 layout(std430,binding = 2) buffer d_out{d _output[];};
 layout(std430,binding = 11) buffer ki{uint keys_in[];};
@@ -210,54 +210,54 @@ void genPosition1(inout d item, vec3 a){
     setZ(item, -length(a));
 }
 
-void makeRenderParticle(uint index){
+// void makeRenderParticle(uint index){
 
-    uint id = renderParticles[index];
-    particle p = particles[id];
-    emitter_prototype proto = prototypes[p.emitter_prototype];
-    vec3 p1 = (vp * vec4(p.position,1)).xyz;
-    vec3 p2 = (vp * vec4(p.position2,1)).xyz;
-    d item;
-    uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
-    // key(item, _key);
-    keys_out[index] = _key;
-    // emitterID(item, p.emitter);
-    life(item, p.life);
-    protoID(item, p.emitter_prototype);
-    vec3 p11;
-    vec3 p21;
-    vec4 rot;
-    vec2 _scale;
-    if(prototypes[p.emitter_prototype].trail == 1){
-        p11 = p.position;
-        p21 = p.position2;
-        p11 = p11 + (p21 - p11) / 2;
-        _scale = vec2(p.scale.x, length(p.position - p.position2));
-    }else{
-        _scale = p.scale.xy;
-        p11 = p.position;
-    }
-    rot = p.rotation;
-    if(proto.billboard == 1)
-        rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
-    if(proto.trail == 1){
-        // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
-        vec3 y = p.position2 - p.position;
-        vec3 x = cross(y, p.position2 - camPos);
-        vec3 l = cross(x,y);
-        rot = lookAt(l,y);
-    }
-    p11 -= camPos;
-    setScale(item,_scale);
-    genPosition1(item, p11);
-    setRotation(item, rot);
-    // genPosition2(item, p21);
+//     uint id = renderParticles[index];
+//     particle p = particles[id];
+//     emitter_prototype proto = prototypes[p.emitter_prototype];
+//     vec3 p1 = (vp * vec4(p.position,1)).xyz;
+//     vec3 p2 = (vp * vec4(p.position2,1)).xyz;
+//     d item;
+//     uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
+//     // key(item, _key);
+//     keys_out[index] = _key;
+//     // emitterID(item, p.emitter);
+//     life(item, p.life);
+//     protoID(item, p.emitter_prototype);
+//     vec3 p11;
+//     vec3 p21;
+//     vec4 rot;
+//     vec2 _scale;
+//     if(prototypes[p.emitter_prototype].trail == 1){
+//         p11 = p.position;
+//         p21 = p.position2;
+//         p11 = p11 + (p21 - p11) / 2;
+//         _scale = vec2(p.scale.x, length(p.position - p.position2));
+//     }else{
+//         _scale = p.scale.xy;
+//         p11 = p.position;
+//     }
+//     rot = p.rotation;
+//     if(proto.billboard == 1)
+//         rot = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp) * proto.billboard;
+//     if(proto.trail == 1){
+//         // p.rotation = lookAt(-cameraForward, (cameraForward == vec3(0,0,1) || cameraForward == vec3(0,0,-1)) ? vec3(1,0,0) : cameraUp);
+//         vec3 y = p.position2 - p.position;
+//         vec3 x = cross(y, p.position2 - camPos);
+//         vec3 l = cross(x,y);
+//         rot = lookAt(l,y);
+//     }
+//     p11 -= camPos;
+//     setScale(item,_scale);
+//     genPosition1(item, p11);
+//     setRotation(item, rot);
+//     // genPosition2(item, p21);
 
-    // item.id = gid;
-    atomicAdd(histo[_key],1);
-    // _input[index] = item;
-    _output[index] = item;
-}
+//     // item.id = gid;
+//     atomicAdd(histo[_key],1);
+//     // _input[index] = item;
+//     _output[index] = item;
+// }
 
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
 void main () {
@@ -284,7 +284,7 @@ void main () {
                         index = atomicAdd(atomics[0],1);
                         // renderParticles[index] = gid;
                         d item;
-                        uint _key =  (~floatBitsToUint(p3.z) << 1) >> 16;
+                        uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
                         // key(item, _key);
                         keys_out[index] = _key;
                         // emitterID(item, p.emitter);
@@ -327,9 +327,9 @@ void main () {
                     }
                 }
                 break;
-            case -3:
-                makeRenderParticle(gid);
-                break;
+            // case -3:
+            //     makeRenderParticle(gid);
+            //     break;
             default:
                 radix(gid);
                 break;

@@ -108,32 +108,43 @@ float rand(in vec2 xy, in float seed){
     return fract(tan(distance(xy*PHI, xy)*sin(seed))*xy.x);
 }
 struct rng{
-	vec2 xy;
+	vec2 r;
 	float s;
-	void setSeed(vec2 _xy, float _seed){
-		xy = _xy;
-		s = _seed;
-	}
+	// void setSeed(vec2 rin, float seedin){
+	// 	r = rin;
+	// 	s = seedin;
+	// }
 	
-	float gen(){
-		float ret = rand(xy, s);
-		xy = xy + vec2(1.21212121,2.12121212);
-		s += 2.121212112f;
-		return ret;
-	}
+	// float gen(){
+	// 	float ret = rand(r, s);
+	// 	r = r + vec2(1.21212121,2.12121212);
+	// 	s += 2.121212112f;
+	// 	return ret;
+	// }
 };
+void setSeed(inout rng g, vec2 rin, float seedin){
+	g.r = rin;
+	g.s = seedin;
+}
+
+float gen(inout rng g){
+	float ret = rand(g.r, g.s);
+	g.r = g.r + vec2(1.21212121,2.12121212);
+	g.s += 2.121212112f;
+	return ret;
+}
 vec4 randVec4(inout rng g){
 	return vec4(
-    g.gen() - 0.5f,
-    g.gen() - 0.5f,
-    g.gen() - 0.5f,
-    g.gen() - 0.5f
+    gen(g) - 0.5f,
+    gen(g) - 0.5f,
+    gen(g) - 0.5f,
+    gen(g) - 0.5f
     );
 }
 vec3 randVec3(inout rng g){
 	return vec3(
-    g.gen() - 0.5f,
-    g.gen() - 0.5f,
-    g.gen() - 0.5f
+    gen(g) - 0.5f,
+    gen(g) - 0.5f,
+    gen(g) - 0.5f
     );
 }
