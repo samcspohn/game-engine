@@ -69,6 +69,10 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "ranges": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "stop_token": "cpp"
     }
 }

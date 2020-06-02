@@ -30,54 +30,59 @@ std::string FormatWithCommas(T value)
 	return ss.str();
 }
 
-
 class Barrier
-    {
-    private:
-        std::mutex m_mutex;
-        std::condition_variable m_cv;
+{
+private:
+	std::mutex m_mutex;
+	std::condition_variable m_cv;
 
-        size_t m_count;
-        const size_t m_initial;
+	size_t m_count;
+	const size_t m_initial;
 
-        enum State : unsigned char {
-            Up, Down
-        };
-        State m_state;
+	enum State : unsigned char
+	{
+		Up,
+		Down
+	};
+	State m_state;
 
-    public:
-        explicit Barrier(std::size_t count) : m_count{ count }, m_initial{ count }, m_state{ State::Down } { }
+public:
+	explicit Barrier(std::size_t count) : m_count{count}, m_initial{count}, m_state{State::Down} {}
 
-        /// Blocks until all N threads reach here
-        void Wait()
-        {
-            std::unique_lock<std::mutex> lock{ m_mutex };
+	/// Blocks until all N threads reach here
+	void Wait()
+	{
+		std::unique_lock<std::mutex> lock{m_mutex};
 
-            if (m_state == State::Down)
-            {
-                // Counting down the number of syncing threads
-                if (--m_count == 0) {
-                    m_state = State::Up;
-                    m_cv.notify_all();
-                }
-                else {
-                    m_cv.wait(lock, [this] { return m_state == State::Up; });
-                }
-            }
+		if (m_state == State::Down)
+		{
+			// Counting down the number of syncing threads
+			if (--m_count == 0)
+			{
+				m_state = State::Up;
+				m_cv.notify_all();
+			}
+			else
+			{
+				m_cv.wait(lock, [this] { return m_state == State::Up; });
+			}
+		}
 
-            else // (m_state == State::Up)
-            {
-                // Counting back up for Auto reset
-                if (++m_count == m_initial) {
-                    m_state = State::Down;
-                    m_cv.notify_all();
-                }
-                else {
-                    m_cv.wait(lock, [this] { return m_state == State::Down; });
-                }
-            }
-        }
-    };  
+		else // (m_state == State::Up)
+		{
+			// Counting back up for Auto reset
+			if (++m_count == m_initial)
+			{
+				m_state = State::Down;
+				m_cv.notify_all();
+			}
+			else
+			{
+				m_cv.wait(lock, [this] { return m_state == State::Down; });
+			}
+		}
+	}
+};
 struct rolling_buffer
 {
 	rolling_buffer()
@@ -104,14 +109,15 @@ struct rolling_buffer
 	{
 		return runningTotal / buffer.size();
 	}
-	float getStdDeviation(){
+	float getStdDeviation()
+	{
 		double standardDeviation = 0.0;
 		float mean = getAverageValue();
-		for(auto &i : buffer){
-        	standardDeviation += pow(i - mean, 2);
+		for (auto &i : buffer)
+		{
+			standardDeviation += pow(i - mean, 2);
 		}
 		return standardDeviation / buffer.size();
-
 	}
 
 private:
@@ -256,11 +262,11 @@ vector<string> splitString(string s_, char delim)
 }
 
 std::mutex renderLock;
-std::queue<renderJob*> renderWork = std::queue<renderJob*>();
+std::queue<renderJob *> renderWork = std::queue<renderJob *>();
 
 inline void enqueRenderJob(std::function<void(void)> work)
 {
-	renderJob* rj = new renderJob();
+	renderJob *rj = new renderJob();
 	rj->type = renderNum::doFunc;
 	rj->work = [work]() { work(); };
 	rj->completed = -1;
@@ -271,7 +277,7 @@ inline void enqueRenderJob(std::function<void(void)> work)
 
 inline void waitForRenderJob(std::function<void(void)> work)
 {
-	renderJob* rj = new renderJob();
+	renderJob *rj = new renderJob();
 	rj->type = renderNum::doFunc;
 	rj->work = [work]() { work(); };
 	rj->completed = 0;
@@ -280,7 +286,8 @@ inline void waitForRenderJob(std::function<void(void)> work)
 	renderWork.push(rj);
 	renderLock.unlock();
 
-	while(rj->completed != 1){
+	while (rj->completed != 1)
+	{
 		this_thread::sleep_for(1ns);
 	}
 	rj->completed = 2;
@@ -305,30 +312,43 @@ void appendStat(string name, float dtime)
 
 class gpuTimer
 {
-
+	// timer t;
 	GLuint64 startTime, stopTime;
 	unsigned int queryID[2];
+
 public:
+	gpuTimer()
+	{
+		startTime = -1;
+		stopTime = -1;
+		queryID[0] = -1;
+		queryID[1] = -1;
+	}
 	void start()
 	{
+		// t.start();
 		// generate two queries
+
 		glGenQueries(2, queryID);
 		glQueryCounter(queryID[0], GL_TIMESTAMP);
 	}
-	float stop() {
-		 glQueryCounter(queryID[1], GL_TIMESTAMP);
-        // wait until the results are available
-        GLint stopTimerAvailable = 0;
-        while (!stopTimerAvailable)
-        {
-            glGetQueryObjectiv(queryID[1],
-                               GL_QUERY_RESULT_AVAILABLE,
-                               &stopTimerAvailable);
-        }
+	float stop()
+	{
+		// glFlush();
+		// return t.stop();
+		glQueryCounter(queryID[1], GL_TIMESTAMP);
+		// wait until the results are available
+		GLint stopTimerAvailable = 0;
+		while (!stopTimerAvailable)
+		{
+			glGetQueryObjectiv(queryID[1],
+							   GL_QUERY_RESULT_AVAILABLE,
+							   &stopTimerAvailable);
+		}
 
-        // get query results
-        glGetQueryObjectui64v(queryID[0], GL_QUERY_RESULT, &startTime);
-        glGetQueryObjectui64v(queryID[1], GL_QUERY_RESULT, &stopTime);
+		// get query results
+		glGetQueryObjectui64v(queryID[0], GL_QUERY_RESULT, &startTime);
+		glGetQueryObjectui64v(queryID[1], GL_QUERY_RESULT, &stopTime);
 		return (float)(stopTime - startTime) / 1000000.0;
 	}
 };

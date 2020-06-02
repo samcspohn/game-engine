@@ -321,11 +321,11 @@ public:
 		if (framecount++ > 1){
 
 			pcMutex.lock();
-			cout << "\r"
-			// << "\rcubes: " << FormatWithCommas(numCubes.load()) 
-			<< " particles: " << FormatWithCommas(particleCount)
-			<< " actual particles: " << FormatWithCommas(actualParticles)
-			<< "               ";
+			// cout << "\r"
+			// // << "\rcubes: " << FormatWithCommas(numCubes.load()) 
+			// << " particles: " << FormatWithCommas(particleCount)
+			// << " actual particles: " << FormatWithCommas(actualParticles)
+			// << "               ";
 			// << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
 
 			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
@@ -645,6 +645,7 @@ void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upri
 	g->rof = 1.f / 5.f;
 	g->dispersion = 0.01f;
 	g->speed = 500;
+
 	ship->Adopt(turret->transform);
 	turret->transform->translate(pos);
 
@@ -837,6 +838,7 @@ int main(int argc, char **argv)
 	game_object_proto* bomb_proto = new game_object_proto();
 	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
 	bomb_proto->addComponent<collider>()->layer = 0;
+	bomb_proto->getComponent<collider>()->dim = vec3(0.4f);
 	bomb_proto->addComponent<particle_emitter>();
 	bomb.proto = bomb_proto;
 	bomb_proto->addComponent<missile>()->setBullet(bomb);
@@ -899,7 +901,6 @@ int main(int argc, char **argv)
 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z,vec3(0));
 	}
 
-
 	player = new game_object();
 	auto playerCam = player->addComponent<_camera>();
 	playerCam->fov = 80;
@@ -927,7 +928,7 @@ int main(int argc, char **argv)
 	r_->set(modelShader,_model("res/models/ship1/ship.obj"));
 	ship->addComponent<_ship>();
 	auto ship_col = ship->addComponent<collider>();
-	ship_col->dim = vec3(4,1,18);
+	ship_col->dim = vec3(2,1,18);
 	ship_col->layer = 1;
 
 	vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
@@ -1047,9 +1048,9 @@ int main(int argc, char **argv)
 	proto = CUBE;
 
 	game_object *shooter = new game_object();
-	shooter->transform->setRotation(lookAt(vec3(0),vec3(0,1,0),vec3(0,0,1)));
+	// shooter->transform->setRotation(lookAt(vec3(0),vec3(0,1,0),vec3(0,0,1)));
 	shooter->transform->move(vec3(0, 100, 0));
-	shooter->addComponent<_renderer>()->set(modelShader, cubeModel);
+	shooter->addComponent<_renderer>()->set(modelShader, _model("res/models/ship1/ship.obj"));
 	gun* g = shooter->addComponent<gun>();
 	g->rof = 100;
 	g->dispersion = 0.5;
@@ -1057,7 +1058,8 @@ int main(int argc, char **argv)
 	g->ammo = bullets["bomb"].proto;
 	shooter->addComponent<autoShooter>();
 	shooter->addComponent<collider>()->layer = 1;
-	shooter->transform->setScale(vec3(6));
+	shooter->getComponent<collider>()->dim = vec3(2,1,18);
+	// shooter->transform->setScale(vec3(6));
 	game_object *go = new game_object(*shooter);
 
 	auto nanosuitMan = new game_object(*CUBE);

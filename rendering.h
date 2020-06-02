@@ -19,11 +19,6 @@ struct matrix {
 	glm::mat4 normal;
 };
 gpu_vector_proxy<matrix>* GPU_MATRIXES;
-//gpu_vector<GLuint> ids;
-
-// array_heap<bool> GPU_MATRIXES_IDS = array_heap<bool>();
-
-
 
 class _renderer;
 struct __renderer {
@@ -35,10 +30,6 @@ struct __renderer {
 		matrixID = mid;
 	}
 };
-
-mutex rendererLock;
-// fast_list<__renderer> gpu_renderers = fast_list<__renderer>();
-// gpu_vector<__renderer>* GPU_RENDERERS;
 
 // model data
 struct _modelMeta {
@@ -56,7 +47,13 @@ struct _modelMeta {
 class {
 public:
 	map<string, _modelMeta*> models;
-
+	void destroy(){
+		while (models.size() > 0)
+		{
+			delete models.begin()->second;
+			models.erase(models.begin());
+		}
+	}
 }modelManager;
 
 class _model {
@@ -101,6 +98,13 @@ struct _shaderMeta {
 class {
 public:
 	map<string, _shaderMeta*> shaders = map<string, _shaderMeta*>();
+	void destroy(){
+		while (shaders.size() > 0)
+		{
+			delete shaders.begin()->second;
+			shaders.erase(shaders.begin());
+		}
+	}
 }shaderManager;
 
 class _shader {
@@ -165,8 +169,7 @@ struct renderingMeta {
 			enqueRenderJob([&]() { getBounds(); });
 		}
 	}
-	// renderingMeta() {
-	// }
+
 	renderingMeta(_shader _s, _model _m) {
 		s = _s;
 		m = _m;
@@ -176,32 +179,38 @@ struct renderingMeta {
 			getBounds();
 		else{
 			enqueRenderJob([&]() { getBounds(); });
-			// renderJob rj;
-			// rj.type = doFunc;
-			// rj.work = [&]() { getBounds(); };
-			// renderLock.lock();
-			// renderWork.push(rj);
-			// renderLock.unlock();
 		}
 	}
-
-	~renderingMeta() {
-
-	}
 private:
-	renderingMeta(const renderingMeta& other) {
-		// s = other.s;
-		// m = other.m;
-	}
+	renderingMeta(const renderingMeta& other) {}
 };
 
 class {
+	mutex m;
 public:
 	map<string, map<string, renderingMeta*> > shader_model_vector;
-	map<GLuint, renderingMeta*> renderingMetas;
-	mutex lock;
-
+	void destroy(){
+		while (shader_model_vector.size() > 0){
+			while(shader_model_vector.begin()->second.size() > 0)
+			{
+				delete shader_model_vector.begin()->second.begin()->second;
+				shader_model_vector.begin()->second.erase(shader_model_vector.begin()->second.begin());
+			}
+		}
+	}
+	void lock(){
+		m.lock();
+	}
+	void unlock(){
+		m.unlock();
+	}
 }renderingManager;
+
+void destroyRendering(){
+	shaderManager.destroy();
+	modelManager.destroy();
+	renderingManager.destroy();
+}
 
 class btDynamicsWorld;
 class cullObjects;
@@ -239,10 +248,7 @@ public:
 		if(!transformIdRef.isNull()){
 			meta->ids.erase(transformIdRef);
 		}
-		// if (!transformIdRef.isNull()) {
-		// 	meta->counter.fetch_sub(1);
-		// }
-		rendererLock.lock();
+		renderingManager.lock();
 		auto r = renderingManager.shader_model_vector.find(s.s->name);
 		if (r == renderingManager.shader_model_vector.end()) {
 			renderingManager.shader_model_vector[s.s->name][m.m->name] = new renderingMeta(s, m);
@@ -254,18 +260,16 @@ public:
 			if (rm == r->second.end())
 				r->second[m.m->name] = new renderingMeta(s, m);
 		}
-		rendererLock.unlock();
+		renderingManager.unlock();
 
 		meta = (r->second[m.m->name]);
 		transformIdRef = meta->ids.push_back(transform->_T);
-		// transformIdRef = meta->counter.fetch_add(1);
-
 	}
 
 	void set_proto(_shader s, _model m) {
 		shader = s;
 		model = m;
-		rendererLock.lock();
+		renderingManager.lock();
 		auto r = renderingManager.shader_model_vector.find(s.s->name);
 		if (r == renderingManager.shader_model_vector.end()) {
 			renderingManager.shader_model_vector[s.s->name][m.m->name] = new renderingMeta(s, m);
@@ -277,7 +281,7 @@ public:
 			if (rm == r->second.end())
 				r->second[m.m->name] = new renderingMeta(s, m);
 		}
-		rendererLock.unlock();
+		renderingManager.unlock();
 
 		meta = (r->second[m.m->name]);
 	}
@@ -290,44 +294,23 @@ public:
 			meta->ids.erase(transformIdRef);
 		}
 		transformIdRef = meta->ids.push_back(transform->_T);
-		// GLuint t = transform->_T;
-		// if (!transformIdRef.isNull()) {
-		// 	renderLock.lock();
-		// 	meta->counter.fetch_sub(1);
-		// }
-		// else
-		// 	renderLock.lock();
-		// meta->counter.fetch_add(1);
-		// renderLock.unlock();
 	}
 	_renderer(const _renderer& other) {
-//		if (other.meta != 0) {
-			shader = other.shader;
-			model = other.model;
-			meta = other.meta;
-			transformIdRef = fast_list_deque<GLuint>::iterator();
-//		}
+		shader = other.shader;
+		model = other.model;
+		meta = other.meta;
+		transformIdRef = fast_list_deque<GLuint>::iterator();
 	}
 	void onDestroy(){
 		if(meta != 0){
 			meta->ids.erase(transformIdRef);
 		}
-        // if (meta != 0) {
-		// 	rendererLock.lock();
-		// 	meta->transformIds.erase(transformIdRef);
-		// 	rendererLock.unlock();
-		// }
 	}
-//	~_renderer() {
-//	}
 
-	// void updateTransformLoc(int loc) {
-	// 	*transformIdRef = loc;
-	// }
 	COPY(_renderer);
 };
 
-class camera : public component
-{
+// class camera : public component
+// {
 	
-};
+// };

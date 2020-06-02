@@ -2,12 +2,8 @@
 #include <vector>
 #include <set>
 #include <array>
-
+#include <map>
 using namespace std;
-
-//#define ARRAY_HEAP_POINTERS
-#ifndef ARRAY_HEAP_POINTERS
-
 
 template<typename t>
 class array_heap {
@@ -51,7 +47,7 @@ public:
 		}
 		else {
 			ret.index = data.size();
-			data.push_back(t());
+			data.push_back({});
 			valid.push_back(true);
 			++extent;
 		}
@@ -85,10 +81,10 @@ public:
 	unsigned int size() {
 		return extent;
 	}
-	vector<t> data = vector<t>();
-	std::vector<bool> valid = std::vector<bool>();
+	vector<t> data;
+	std::vector<bool> valid;
 private:
-	deque<uint32_t> avail = deque<uint32_t> ();
+	deque<uint32_t> avail;
 	uint32_t extent = 0;
 };
 
@@ -108,7 +104,7 @@ public:
 			return d;
 			// return &(a->data.at(index));
 		}
-		 operator int() {
+		operator int() {
 			return index;
 		}
 		t& operator*() {
@@ -141,7 +137,7 @@ public:
 		}
 		else {
 			ret.index = data.size();
-			data.push_back(t());
+			data.push_back({});
 			ret.d = &data.back();
 			valid.push_back(true);
 			++extent;
@@ -156,6 +152,7 @@ public:
 		// delete r.d;
 		avail.push_front(r.index);
 		valid[r.index] = false;
+		// data[r.index].~t();
 		m.unlock();
 		//(*data)[r.index] = t();
 		// if (r.index == extent - 1) {
@@ -177,135 +174,105 @@ public:
 	unsigned int size() {
 		return extent;
 	}
-	deque<t> data = deque<t>();
-	std::deque<bool> valid = std::deque<bool>();
+	deque<t> data ;
+	std::deque<bool> valid;
 private:
-	deque<uint32_t> avail = deque<uint32_t> ();
+	deque<uint32_t> avail;
 	uint32_t extent = 0;
 };
 
-#else
-
-
-#define _vector_BLOCK_SIZE 1024
 template<typename t>
-class _vector {
-public:
-	vector<vector<t> > data = vector<vector<t> >();
-	size_t _size = 0;
-	_vector() {
-		data.push_back(vector<t>());
-		data.back().reserve(_vector_BLOCK_SIZE);
-	}
-	inline void push_back(const t& a) {
-		if (_size == data.size() * _vector_BLOCK_SIZE) {
-			data.push_back(vector<t>());
-			data.back().reserve(_vector_BLOCK_SIZE);
-		}
-		data.back().push_back(a);
-		++_size;
-	}
-	inline size_t size() {
-		return _size;
-	}
-	inline t& operator[](size_t i) {
-		return data[i / _vector_BLOCK_SIZE][i % _vector_BLOCK_SIZE];
-	}
-	inline t& at(size_t i) {
-		return (t&)data.at(i / _vector_BLOCK_SIZE).at(i % _vector_BLOCK_SIZE);
-	}
-	inline void resize(size_t size) {
-		data.resize(size / _vector_BLOCK_SIZE + 1);
-		data.back().reserve(_vector_BLOCK_SIZE);
-		data.back().resize(size % _vector_BLOCK_SIZE);
-		//size_t m = BLOCK_SIZE - size % BLOCK_SIZE;
-		//for(int i = 0;)
-		_size = size;
-	}
-};
-
-template<typename t>
-class array_heap {
-public:
-	struct ref {
-		int index;
-		array_heap<t>* a;
-		t* p;
+class heap2{
+	mutex m;
+	#define bit_shift 10
+	#define heap2BlockSize 1<<bit_shift
+	uint type_size = sizeof(m_element);
+	uint block_mask = ~0>>bit_shift;
+	struct m_element {
+		bool valid;
+		t data;
+	};
+	struct ref{
+		uint index;
+		heap2* a;
+		m_element* d;
 		t* operator->() {
-			return p;// &(a->data.at(index));
-		}
-		operator int() {
-			return index;
-		}
-		t& operator*() {
-			return *p;// (*a->data)[index];
-		}
-		t& data() {
-			return *p;// a->data.at(index);
+			return d->data;
 		}
 	};
-	friend array_heap::ref;
-	t& operator[](unsigned int i) {
-		if (i >= extent)
-			cout << "out of bounds" << endl;
-			// throw exception("out of bounds");
-		//if(!valid[i])
-		//	throw exception("invalid");
-		return data.at(i);
-	}
-	ref _new() {
+	struct m_block{
+		char* data;
+		m_block* next;
+		m_block* prev;
+		m_block(){
+			data = new char[type_size*heap2BlockSize];
+		}
+		m_element& operator[](uint i) {
+			return ((m_element*)data)[i];
+		}
+		m_element&at(uint i){
+			return ((m_element*)data)[i];
+		}
+		~m_block(){
+			delete[] data;
+		}
+	};
+	uint m_size;
+	std::map<uint,m_block*> index1;
+	std::map<uint,m_block*> index2;
+	std::map<uint,m_block*>* indexing;
 
+	deque<uint> avail;
+
+	heap2(){
+		m_size = 0;
+	}
+	t& operator[](unsigned int i){
+		return indexing->at(i>>bit_shift)->at(i&block_mask);
+	}
+	ref _new(){
 		ref ret;
 		ret.a = this;
+
+		m.lock();
 		if (avail.size() > 0) {
 			ret.index = *avail.begin();
 			avail.erase(avail.begin());;
-			valid[ret.index] = true;
-			if (ret.index >= extent) {
-				extent = ret.index + 1;
-			}
 		}
 		else {
-			ret.index = data.size();
-			data.push_back(t());
-			valid.push_back(true);
-			++extent;
+			ret.index = m_size;
+			if(ret.index>>bit_shift >= indexing->size()){
+				std::map<uint,m_block*>* temp;
+				if(indexing == &index1)
+					temp = &index2;
+				else
+					temp = &index1;
+				*temp = *indexing;
+				m_block* new_block = new m_block();
+				temp->insert(std::pair<uint,m_block*>(ret.index>>bit_shift,new_block));
+				indexing = temp;
+			}
+			++m_size;
 		}
-		ret.p = (t*)(&(data.at(ret.index)));
-
+		ret.d = indexing->at(ret.index>>bit_shift)[ret.index & block_mask];
+		ret.d->valid = false;
+		m.unlock();
+		ret.d->data.t();
 		return ret;
 	}
-	void _delete(ref r) {
-
+	void _del(ref r){
 		if (r.a != this)
 			throw;
-		//data[r.index].~t();
-		avail.emplace(r.index);
-		valid[r.index] = false;
-		//(*data)[r.index] = t();
-		if (r.index == extent - 1) {
-			for (; extent > 0 && !valid[extent - 1]; --extent) {
-				avail.erase(extent - 1);
-			}
-			//++extant;
-			data.resize(extent);
-			valid.resize(extent);
+		r.d->data.~t();
+		m.lock();
+		r.d->valid = false;
+		avail.push_front(r.index);
+		m.unlock();
+	}
+
+	~heap2(){
+		for(auto&i : *indexing){
+			delete i.second;
 		}
 	}
-
-	float density() {
-		if (extent == 0)
-			return INFINITY;
-		return 1 - (float)avail.size() / (float)extent;
-	}
-
-	unsigned int size() {
-		return extent;
-	}
-	_vector<t> data = _vector<t>();
-private:
-	set<uint32_t> avail = set<uint32_t>();
-	uint32_t extent;
-	std::vector<bool> valid = vector<bool>();
 };
-#endif // ARRAY_HEAP_POINTERS

@@ -85,6 +85,7 @@ public:
             delete motionState;
         }
         delete solverMt;
+        // delete dispatcherMt;
         delete dispatcher;
         delete collisionConfig;
         delete solver;

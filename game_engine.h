@@ -681,6 +681,7 @@ void run()
 
 	}
 
+	delete pm;
 	log("end of program");
 	renderJob* rj = new renderJob();
 	rj->type = rquit;
@@ -693,15 +694,15 @@ void run()
 	{
 		updateWork[i].push(updateJob(0, update_type::update, 0, 0));
 		workers[i]->join();
+		delete workers[i];
 	}
-	// endBarrier.wait();
-	// for (int i = 0; i < concurrency::numThreads; i++)
-	// {
-	// }
-
 	while (renderThreadReady.load())
 		this_thread::sleep_for(1ms);
 	renderThread->join();
+
+	rootGameObject->destroy();
+	destroyAllComponents();
+	destroyRendering();
 
 	cout << endl;
 	componentStats.erase("");

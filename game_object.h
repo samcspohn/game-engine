@@ -180,9 +180,10 @@ public:
 		}
 		// gameLock.unlock();
 		// gameLock.unlock();
-		for (auto &i : transform->getChildren())
+
+		while (transform->getChildren().size() > 0)
 		{
-			i->gameObject->destroy();
+			transform->getChildren().front()->gameObject->destroy();
 		}
 		transform->_destroy();
 		lock.unlock();
