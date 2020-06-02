@@ -2,8 +2,10 @@
 struct particle{
     vec3 position;
     uint emitter;
+
     vec3 scale;
     uint emitter_prototype;
+    
     vec4 rotation;
 
     vec3 velocity;

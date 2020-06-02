@@ -10,9 +10,7 @@ add orientation to emitters
 add previous position and rotation to emitter -- interpolate particle emissions
 
 add textures to particles
-add color/size/velocity over life
 
-add ui
 
 add lights/lighting
 add shadows
@@ -20,13 +18,18 @@ add shadows
 continue work on terrain.
 add texture mapping
 add tesselation
+add procedural textures
 
 
 remake collision engine
 
 add animations
+///////////////////////// in progress //////////////////////////
 
-improve low activity performance
+add ui
+
+add color/size/velocity over life
+
 
 //////////////////////////// done //////////////////////////////
 send 'wake' to activate new emitters. -- new stage to particle update.
@@ -39,3 +42,5 @@ add obb/sphere/point
 add camera component
 
 add 'force emit' to particle emitter
+
+improve low activity performance

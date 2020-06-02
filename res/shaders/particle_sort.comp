@@ -13,7 +13,7 @@ const uint BUCK = 1 << RADIX;
 const uint block_sum_size = 256;
 
 
-layout(std430,binding = 0) buffer t{_transform transforms[];};
+// layout(std430,binding = 0) buffer t{_transform transforms[];};
 // layout(std430,binding = 13) buffer rp{uint renderParticles[];};
 layout(std430,binding = 1) buffer d_in{d _input[];};
 layout(std430,binding = 2) buffer d_out{d _output[];};
@@ -26,7 +26,7 @@ layout(std430,binding = 6) buffer d_s{uint scan[];};
 layout(std430,binding = 7) buffer d_h{uint histo[];};
 layout(std430,binding = 9) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 10) buffer e{emitter emitters[];};
-layout(std430,binding = 13) buffer lp{uint livingParticles[];};
+layout(std430,binding = 0) buffer lp{uint livingParticles[];};
 
 uniform int stage;
 uniform mat4 vp;

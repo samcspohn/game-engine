@@ -192,6 +192,19 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
+	void retrieveData(vector<t>& storage){
+		storage.resize(maxSize);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+    	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * maxSize, storage.data());
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+	void retrieveData(vector<t>& storage, int _size){
+		storage.resize(_size);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+    	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * _size, storage.data());
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
 	bool tryRealloc(size_t size) {
 		bool ret = false;
 		if (!inited) {
@@ -199,13 +212,18 @@ public:
 			ret = true;
 		}
 		bool reallocBuff = false;
+		GLint _size = maxSize;
 		while (size > (float)maxSize) {
 			maxSize *= 2;
 			reallocBuff = true;
 			ret = true;
 		}
-		if (reallocBuff)
+		if (reallocBuff){
+			vector<t> currData;
+			retrieveData(currData,_size);
 			realloc();
+			bufferData(currData);
+		}
 		return ret;
 	}
 };

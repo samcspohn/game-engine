@@ -720,9 +720,7 @@ public:
 int main(int argc, char **argv)
 {
 	if (argc > 1)
-		sort1 = stoi(argv[1]);
-	if (argc > 2)
-		maxGameDuration = (float)stoi(argv[2]);
+		maxGameDuration = (float)stoi(argv[1]);
 
 	hideMouse = false;
 	
