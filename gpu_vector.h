@@ -42,14 +42,6 @@ public:
 	}
 	void init() {
 		enqueRenderJob([&]() { _init(); });
-		// renderLock.lock();
-		// renderJob rj;
-		// maxSize = 1;
-		// rj.type = doFunc;
-		// rj.work = [&]() { _init(); };
-		// renderWork.push(rj);
-		// renderLock.unlock();
-		//_init();
 	}
 	void ownStorage() {
 		if (ownsStorage)
@@ -83,8 +75,7 @@ public:
 	bool inited = false;
 	mutex lock;
 	GLint maxSize = 1;
-	GLuint bufferId;
-	GLuint binding;
+	GLuint bufferId = -1;
 	vector<t>* storage;
 
 	void realloc() {
@@ -110,8 +101,6 @@ public:
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * storage->size(), storage->data());//buffer data
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
-
-
 
 	bool tryRealloc() {
 		bool ret = false;
@@ -146,7 +135,7 @@ private:
 
 template<typename t>
 class gpu_vector_proxy : public gpu_vector_base{
-		~gpu_vector_proxy() {
+	~gpu_vector_proxy() {
 		glDeleteBuffers(1, &bufferId);
 	}
 public:
@@ -156,13 +145,6 @@ public:
 	}
 	void init() {
 		enqueRenderJob([&]() { _init(); });
-		// renderLock.lock();
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { _init(); };
-		// renderWork.push(rj);
-		// renderLock.unlock();
-		//_init();
 	}
 
 	void _init() {
@@ -184,8 +166,7 @@ public:
 	bool inited = false;
 	mutex lock;
 	GLint maxSize = 1;
-	GLuint bufferId;
-	GLuint binding;
+	GLuint bufferId = -1;
 
 	void realloc() {
 		glDeleteBuffers(1, &bufferId);

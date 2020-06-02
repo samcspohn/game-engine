@@ -105,31 +105,12 @@ class componentStorage : public componentStorageBase
 public:
 	deque_heap<t> data;
 
-	componentStorage()
-	{
-		//		data = listThing2<t>();
-	}
+	componentStorage(){}
 	int size()
 	{
 		return data.size();
 	}
 
-	// void sort()
-	// {
-	// 	float unsorted = 0;
-	// 	while (unsorted > 0)
-	// 	{
-	// 		unsorted = 0;
-	// 		for (unsigned int i = 0; i < data.data.size() - 1; ++i)
-	// 		{
-	// 			if (compareTransform(((component *)&data.data[i])->transform, ((component *)&data.data[i + 1])->transform))
-	// 			{
-	// 				data.swap(i, i + 1);
-	// 				unsorted += 1;
-	// 			}
-	// 		}
-	// 	}
-	// }
 	void update()
 	{
 		((component *)&(data.data.front()))->_update(0, 0, data.size());
@@ -199,6 +180,13 @@ inline compInfo<t> addComponentToAll(const t &c)
 	return ret;
 }
 
+void destroyAllComponents(){
+	while (allcomponents.size() > 0){
+		delete allcomponents.begin()->second;
+		allcomponents.erase(allcomponents.begin());
+	}
+
+}
 void ComponentsUpdate(componentStorageBase *csbase, int i, int size)
 {
 	csbase->update(i, size);
