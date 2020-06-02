@@ -34,4 +34,9 @@ release
 
 config.txt
 particle_perf*.txt
+*-compiled.glsl
+*-compiled.comp
+*-compiled.frag
+*-compiled.geom
+*-compiled.vert
 imgui.ini
