@@ -117,7 +117,7 @@ struct rolling_buffer
 		{
 			standardDeviation += pow(i - mean, 2);
 		}
-		return standardDeviation / buffer.size();
+		return glm::sqrt(standardDeviation / buffer.size());
 	}
 
 private:
