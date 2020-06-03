@@ -1,11 +1,10 @@
 
-struct particle{
+struct particle
+{
     vec3 position;
     uint emitter;
-
     vec3 scale;
     uint emitter_prototype;
-    
     vec4 rotation;
 
     vec3 velocity;
@@ -15,9 +14,8 @@ struct particle{
     int next;
     int prev;
     float life2;
-    
     vec3 position2;
-    int visible;
+    float p1;
     vec3 velocity2;
     float l;
 };
@@ -54,26 +52,36 @@ struct emitter{
     int last;
     int frame;
 };
-
 struct emitterInit{
     uint transformID;
     uint emitterProtoID;
     int live;
     int id;
 }; 
-
+struct _emission{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    int emitterID;
+    vec3 scale;
+    int last;
+};
+struct _burst{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    uint count;
+    vec3 scale;
+    int p1;
+};
 
 struct d{
-    // vec4 rot;
 	uint xy;
     float z;
     uint qxy;
     uint qzw;
-	// uint qwx;
-    // uint qyz;
 	uint scale_xy;
 	uint protoID_life;
-	// uint key_life;
 };
 
 

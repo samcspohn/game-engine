@@ -1,9 +1,10 @@
 
-make emitter array dynamic. currently max 4mil
 
 add sound
 
 add lighting
+
+add procedural mesh
 
 let particles emit particles
 add orientation to emitters
@@ -30,6 +31,7 @@ add ui
 
 add color/size/velocity over life
 
+improve low activity performance
 
 //////////////////////////// done //////////////////////////////
 send 'wake' to activate new emitters. -- new stage to particle update.
@@ -43,4 +45,5 @@ add camera component
 
 add 'force emit' to particle emitter
 
-improve low activity performance
+
+make emitter array dynamic. currently max 4mil

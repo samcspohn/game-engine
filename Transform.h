@@ -27,10 +27,6 @@ struct _transform {
 	glm::vec3 position; GLint id = -1;
 	glm::vec3 scale = glm::vec3(1); GLint parent = 0;
 	glm::quat rotation = glm::quat(1,0,0,0);
-	GLint childrenBegin = -1;
-	GLint childrenEnd = -1;
-	GLint prevSibling = -1;
-	GLint nextSibling = -1;
 	void translate(glm::vec3 translation) {
 		position += rotation * translation;
 	}
