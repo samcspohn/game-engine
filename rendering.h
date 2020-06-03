@@ -196,6 +196,7 @@ public:
 				delete shader_model_vector.begin()->second.begin()->second;
 				shader_model_vector.begin()->second.erase(shader_model_vector.begin()->second.begin());
 			}
+			shader_model_vector.erase(shader_model_vector.begin());
 		}
 	}
 	void lock(){
