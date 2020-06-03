@@ -7,24 +7,6 @@
 #include "transform.glsl"
 
 
-struct _emission{
-    vec3 position;
-    uint emitter_prototype;
-    vec3 direction;
-    int emitterID;
-    vec3 scale;
-    int last;
-};
-
-struct _burst{
-    vec3 position;
-    uint emitter_prototype;
-    vec3 direction;
-    uint count;
-    vec3 scale;
-    int p1;
-};
-
 layout(std430,binding = 0) buffer t{_transform transforms[];};
 layout(std430,binding = 1) buffer ac{int atomicCounters[];};
 layout(std430,binding = 2) buffer p{particle particles[];};
@@ -72,11 +54,8 @@ void update(uint index, float dt){
     {
         int index = atomicAdd(atomicCounters[liveParticles],-1);
         dead[index - 1] = id;
-        // uint index = atomicAdd(garbage[0],1);
-        // garbage[index + 2] = id;
         p.live = 0;
         p.next = p.prev = -1;
-        // return;
     }
 
     particles[id] = p;
@@ -139,6 +118,8 @@ void emit(uint thread_id){
         
         int new_particles_start = atomicAdd(atomicCounters[liveParticles],emission);
         int end = new_particles_start + emission;
+        new_particles_start = min(new_particles_start,max_particles);
+        end = min(end,max_particles);
         float dt = deltaTime;
         dt /= float(emission + 1);
         float particle_count = 0.0;
@@ -191,7 +172,11 @@ void burst(uint thread_id){
     int new_particles = atomicAdd(atomicCounters[liveParticles],int(e.count));
     int burst_start = atomicAdd(atomicCounters[burstCounter],int(e.count));
     int end = burst_start + int(e.count);
-    for(int i = burst_start; i < end && new_particles + i < max_particles; ++i){
+    burst_start = min(burst_start,max_particles);
+    end = min(end,max_particles);
+    atomicMin(atomicCounters[liveParticles],max_particles);
+    
+    for(int i = burst_start; i < end; ++i){
         burstParticles[i] = thread_id;
     }
 }
@@ -248,6 +233,10 @@ void main () {
             case 6:
                 atomicCounters[2] = 0;
                 break;
+            case 7:
+                min(atomicCounters[liveParticles],max_particles);
+                break;
+
         }
     }
 }

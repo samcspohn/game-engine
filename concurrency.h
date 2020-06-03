@@ -4,7 +4,7 @@
 namespace concurrency {
 	size_t numThreads = ([](){size_t nthreads = thread::hardware_concurrency(); 
 	if(nthreads <= 8)
-		return nthreads;
+		return nthreads - 1;
 	else
 		return nthreads - 2;
 	})();

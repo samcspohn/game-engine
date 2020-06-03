@@ -25,18 +25,20 @@ layout(std430,binding = 1) buffer r{__renderer renderers[];};
 layout(std430,binding = 4) buffer i{uint ids[];};
 layout(std430, binding = 3) buffer _m_buffs{matrix matrixes[];};
 layout(std430,binding = 5) buffer a{uint atomics[];};
+layout(std430,binding = 6) buffer it{uint transformIds[];};
+layout(std430,binding = 7) buffer ttc{_transform transformsToCopy[];};
 
+uniform int stage;
 uniform uint num;
+uniform float radius;
+uniform vec3 cullPos;
+uniform vec2 screen;
+uniform vec3 floatingOrigin;
+uniform mat3 camInv;
 uniform mat4 view;
 uniform mat4 vRot;
 uniform mat4 projection;
-uniform vec3 floatingOrigin;
-uniform int stage;
 
-uniform float radius;
-uniform mat3 camInv;
-uniform vec3 cullPos;
-uniform vec2 screen;
 //vector(transforms, _transform, 0);
 
 
@@ -44,35 +46,38 @@ bool planeIntersect(float plane[4], vec3 point) {
 	return point.x*plane[0] + point.y * plane[1] + point.z * plane[2] + plane[3] < 0;
 }
 
-
+void updateTransforms(uint id){
+	transforms[transformIds[id]] = transformsToCopy[id];
+}
 layout( local_size_x = 64,  local_size_y = 1, local_size_z = 1) in;
 void main () {
 
 	uint gid = gl_GlobalInvocationID.x;
-	if(gid >= num)
-		return;
-	//plane
-		// float a, b, c, d;
-		// a = camForward.x;
-		// b = camForward.y;
-		// c = camForward.z;
-		// d = a * -camPos.x + b * -camPos.y + c * -camPos.z;
-		// float plane[] = { a,b,c,d };
+	if(gid < num){
+		switch(stage){
+			case -1:
+				updateTransforms(gid);
+				break;
+			default:
+			{
+				_transform transform = transforms[ids[gid]];
+				vec3 p = camInv * (transform.position - cullPos);
+				float _radius = radius * length(transform.scale);
+				//	uint renderid = renderers[gid].renderer;
+				if(p.z - _radius < 0.f
+					&& (abs(p.x) - _radius) / abs(p.z) < screen.x
+					&& (abs(p.y) - _radius) / abs(p.z) < screen.y){
 
-		_transform transform = transforms[ids[gid]];
-		vec3 p = camInv * (transform.position - cullPos);
-		float _radius = radius * length(transform.scale);
-		//	uint renderid = renderers[gid].renderer;
-		if(p.z - _radius < 0.f
-			&& (abs(p.x) - _radius) / abs(p.z) < screen.x
-			&& (abs(p.y) - _radius) / abs(p.z) < screen.y){
+					uint buffsid = atomicAdd(atomics[0],1);
 
-			uint buffsid = atomicAdd(atomics[0],1);
+					matrixes[buffsid].model = translate(identity(),transform.position) * rotate(identity(),transform.rotation) * scale(identity(),transform.scale);
+					matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
 
-			matrixes[buffsid].model = translate(identity(),transform.position) * rotate(identity(),transform.rotation) * scale(identity(),transform.scale);
-			matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
-
-			matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(identity(),transform.rotation)))));
+					matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(identity(),transform.rotation)))));
+				}
+			}
+			break;
 		}
 
+	}
 }

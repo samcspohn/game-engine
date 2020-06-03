@@ -34,7 +34,7 @@ struct terrainHit{
 class terrain : public component{
 public:
     COPY(terrain);
-    _renderer* r;
+    _renderer* r = 0;
     int width;
     int depth;
     bool generated = false;
@@ -43,6 +43,8 @@ public:
         
     }
     void update(){
+        if(r == 0)
+            return;
         _model model = r->getModel();
         if(!generated && model.m != 0 && model.m->model->ready)
             generate(width,depth);

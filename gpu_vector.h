@@ -18,9 +18,11 @@
 #include <algorithm>
 #include "helper1.h"
 #include <map>
+#include "Shader.h"
 
 using namespace std;
 
+Shader bufferCopy("res/shaders/copy.comp");
 class gpu_vector_base{
 	protected:
 	static atomic<int> idGenerator;
@@ -175,6 +177,22 @@ public:
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
+	void realloc(uint oldSize) {
+		GLuint newId;
+		glGenBuffers(1, &newId);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, newId);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		glBindBuffer(GL_COPY_READ_BUFFER,bufferId);
+		glBindBuffer(GL_COPY_WRITE_BUFFER,newId);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER,GL_COPY_WRITE_BUFFER,0,0,sizeof(t)*oldSize);
+
+		glDeleteBuffers(1, &bufferId);
+		this->bufferId = newId;
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	}
 	void bufferData(vector<t>& data) {
 		lock.lock();
 		if (!inited)
@@ -219,10 +237,7 @@ public:
 			ret = true;
 		}
 		if (reallocBuff){
-			vector<t> currData;
-			retrieveData(currData,_size);
-			realloc();
-			bufferData(currData);
+			realloc(_size);
 		}
 		return ret;
 	}

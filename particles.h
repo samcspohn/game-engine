@@ -159,13 +159,13 @@ struct floatArray{
         }
     }
 };
-struct emitter
-{
+struct emitter{
     uint transform;
     uint emitter_prototype;
     float emission;
     int live;
 
+    vec2 p;
     int last;
     int frame;
 };
@@ -267,7 +267,7 @@ emitter_prototype_ getEmitterPrototypeByName(string name)
     return ret;
 }
 
-array_heap<emitter> emitters;
+array_heap<emitter> EMITTERS;
 gpu_vector_proxy<emitter> *gpu_emitters = new gpu_vector_proxy<emitter>();
 gpu_vector_proxy<emitterInit> *gpu_emitter_inits = new gpu_vector_proxy<emitterInit>();
 vector<emitterInit> emitterInits;
@@ -299,7 +299,7 @@ public:
 
     void onStart()
     {
-        this->emitter = emitters._new();
+        this->emitter = EMITTERS._new();
         this->emitter->transform = transform->_T.index;
         this->emitter->live = 1;
         this->emitter->emission = 1;
@@ -320,7 +320,7 @@ public:
     {
         this->emitter->live = 0;
         this->emitter->emission = 0;
-        emitters._delete(this->emitter);
+        EMITTERS._delete(this->emitter);
 
         emitterInit ei;
         ei.emitterProtoID = prototype.getId();
@@ -361,7 +361,7 @@ void initParticles()
     burstParticles->tryRealloc(MAX_PARTICLES);
     particlesToDestroy->tryRealloc(MAX_PARTICLES);
     gpu_emitter_prototypes->storage = &emitter_prototypes_.data;
-    gpu_emitters->tryRealloc(1024 * 1024 * 4);
+    // gpu_emitters->tryRealloc(1024 * 1024 * 4);
 }
 
 Shader particleSortProgram("res/shaders/particle_sort.comp");
@@ -373,24 +373,21 @@ int actualParticles;
 mutex pcMutex;
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    // run shader update
 
-    glUseProgram(particleProgram.Program);
-
-    // glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(rj.view));
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, particles->bufferId);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, gpu_emitter_prototypes->bufferId);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, gpu_emitters->bufferId);
+    particleProgram.Use();
+    //prepate program. bind variables
+    GPU_TRANSFORMS->bindData(0);
+    atomicCounters->bindData(1);
+    particles->bindData(2);
+    gpu_emitter_prototypes->bindData(3);
+    gpu_emitters->tryRealloc(EMITTERS.size());
+    gpu_emitters->bindData(4);
+    burstParticles->bindData(5);
+    dead->bindData(6);
     emitted->bindData(7);
     gpu_emitter_inits->bindData(8);
     gpu_particle_bursts->bindData(9);
-    burstParticles->bindData(5);
     livingParticles->bindData(10);
-    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, rng->bufferId);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, dead->bufferId);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, atomicCounters->bufferId);
 
     float t = Time.time;
     int32 max_particles = MAX_PARTICLES;
@@ -403,14 +400,21 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     GLuint fo = glGetUniformLocation(particleProgram.Program, "floatingOrigin");
     glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
 
+
+    // run program
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), emitterInitCount);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 2);
     glDispatchCompute(emitterInitCount / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), emitters.size());
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), EMITTERS.size());
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 0);
-    glDispatchCompute(emitters.size() / 128 + 1, 1, 1);
+    glDispatchCompute(EMITTERS.size() / 128 + 1, 1, 1);
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), 1); // if particle emissions exceed buffer
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 7);
+    glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     atomicCounters->retrieveData();
@@ -428,7 +432,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(gpu_particle_bursts->size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-    atomicCounters->retrieveData();
+    atomicCounters->retrieveData(); // replace with dispatch indirect
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), (*atomicCounters)[1]);
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 4);
@@ -456,58 +460,31 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(actualParticles / 128 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        
-
-    
 }
 
-struct d
-{
-    // vec4 rot;
+
+struct d{
 	uint xy;
     float z;
-	// uint qwx;
-    // uint qyz;
     uint qxy;
     uint qzw;
 	uint scale_xy;
-	uint protoID;
-	uint key_life;
+	uint protoID_life;
 };
-struct renderParticle
-{
-    vec3 pos1;
-    uint emitterID;
-    vec3 pos2;
-    uint emitterProtoID;
-    vec3 scale;
-    float life;
-};
+
 #define COUNTER_THREADS 4096
 #define BUCKETS 65536
 #define buffer_depth 1
 
-#define WG_SIZE 128
 #define N_GROUPS 256
 #define RADIX 12
 #define BUCK (1 << RADIX)
 #define BITS 32
 #define BLOCK_SUM_SIZE 256
 // sqrt(N_GROUPS * BUCK)
-gpu_vector_proxy<uint> *counts = new gpu_vector_proxy<uint>();
-gpu_vector_proxy<uint> *offsets = new gpu_vector_proxy<uint>();
 gpu_vector_proxy<uint> *keys_in = new gpu_vector_proxy<uint>();
 gpu_vector_proxy<uint> *keys_out = new gpu_vector_proxy<uint>();
-gpu_vector_proxy<uint> *renderParticles = new gpu_vector_proxy<uint>();
-gpu_vector<d> *data1 = new gpu_vector<d>();
-gpu_vector_proxy<d> *data2 = new gpu_vector_proxy<d>();
 gpu_vector<uint> *atomics = new gpu_vector<uint>();
-
-gpu_vector_proxy<uint> *gpu_init = new gpu_vector_proxy<uint>();
-gpu_vector_proxy<d> *gpu_init2 = new gpu_vector_proxy<d>();
-gpu_vector_proxy<uint> *localCount = new gpu_vector_proxy<uint>();
-
 vector<int> counters_(BUCKETS);
 vector<int> offsets_(BUCKETS);
 
@@ -520,32 +497,29 @@ gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
 class
 {
     GLuint VAO = 0;
-    
 public:
     glm::mat3 camInv;
     glm::vec3 camP;
 
-    void setCamCull(glm::mat3 ci, glm::vec3 cp){
-        camInv = ci;// * glm::mat3(glm::translate(-camera->transform->getPosition()));
-		camP = cp;
-    }
     _shader particleShader;
     vector<uint> zeros;
 
     vector<d> res;
     ofstream output;
     rolling_buffer time;
+
+    void setCamCull(glm::mat3 ci, glm::vec3 cp){
+        camInv = ci;
+		camP = cp;
+    }
     void init()
     {
         time = rolling_buffer(1000);
         output = ofstream("particle_perf.txt", ios_base::app);
-
         if (zeros.size() == 0)
         {
             zeros = vector<uint>(BUCKETS);
         }
-
-
         atomics->ownStorage();
         atomics->storage->push_back(0);
         particleShader = _shader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
@@ -555,10 +529,8 @@ public:
             glGenVertexArrays(1, &this->VAO);
         }
 
-
         keys_in->tryRealloc(MAX_PARTICLES);
         keys_out->tryRealloc(MAX_PARTICLES);
-        renderParticles->tryRealloc(MAX_PARTICLES);
         input->ownStorage();
         input->storage->resize(MAX_PARTICLES);
         _output->ownStorage();
@@ -568,9 +540,7 @@ public:
         scan->ownStorage();
         scan->storage->resize(BUCK * N_GROUPS);
         histo->ownStorage();
-
         histo->storage->resize(65536);
-
         input->bufferData();
         _output->bufferData();
         block_sums->bufferData();
@@ -591,19 +561,15 @@ public:
         particleSortProgram.Use();
         program = particleSortProgram.Program;
 
-        GLuint _vp = glGetUniformLocation(program, "vp");
-        GLuint _view = glGetUniformLocation(program, "view");
+
         GLuint stage = glGetUniformLocation(program, "stage");
         GLuint count = glGetUniformLocation(program, "count");
         GLuint max_particles = glGetUniformLocation(program, "max_particles");
         GLuint num_elements = glGetUniformLocation(program, "numElements");
         GLuint breadth = glGetUniformLocation(program, "breadth");
-        glUniformMatrix4fv(_vp, 1, GL_FALSE, glm::value_ptr(vp));
         GLuint nkeys = glGetUniformLocation(program, "nkeys");
         GLuint _pass = glGetUniformLocation(program, "pass");
-        GLuint wg_size = glGetUniformLocation(program, "wg_size");
-        GLuint _offset = glGetUniformLocation(program, "offset");
-        glUniformMatrix4fv(_view, 1, GL_FALSE, glm::value_ptr(view));
+
         glUniformMatrix3fv(glGetUniformLocation(program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
         glUniform3f(glGetUniformLocation(program, "camPos"), camPos.x, camPos.y, camPos.z);
         glUniform3f(glGetUniformLocation(program, "camp"), camP.x, camP.y, camP.z);
@@ -629,7 +595,6 @@ public:
         scan->bindData(6);
         histo->bindData(7);
         gpu_emitter_prototypes->bindData(9);
-        gpu_emitters->bindData(10);
 
         gt2.start();
         glUniform1i(stage, -2);

@@ -9,7 +9,7 @@ project(game_engine)
 
 include_directories(${CMAKE_SOURCE_DIR}/imgui)
 add_subdirectory(imgui)
-
+# add_subdirectory(bullet)
 # add_library(game libBulletSoftBody.a)
 # add_library(game libBulletDynamics.a)
 # add_library(game libBulletCollision.a)

@@ -47,8 +47,8 @@ public:
 		}
 		else {
 			ret.index = data.size();
-			data.push_back({});
-			valid.push_back(true);
+			data.emplace_back();
+			valid.emplace_back(true);
 			++extent;
 		}
 		m.unlock();
@@ -58,7 +58,7 @@ public:
 		if (r.a != this)
 			throw;
 		m.lock();
-		avail.push_front(r.index);
+		avail.emplace_front(r.index);
 		valid[r.index] = false;
 		// //(*data)[r.index] = t();
 		// if (r.index == extent - 1) {
@@ -137,9 +137,9 @@ public:
 		}
 		else {
 			ret.index = data.size();
-			data.push_back({});
+			data.emplace_back();
 			ret.d = &data.back();
-			valid.push_back(true);
+			valid.emplace_back(true);
 			++extent;
 		}
 		m.unlock();
@@ -150,7 +150,7 @@ public:
 			throw;
 		m.lock();
 		// delete r.d;
-		avail.push_front(r.index);
+		avail.emplace_front(r.index);
 		valid[r.index] = false;
 		// data[r.index].~t();
 		m.unlock();
@@ -266,7 +266,7 @@ class heap2{
 		r.d->data.~t();
 		m.lock();
 		r.d->valid = false;
-		avail.push_front(r.index);
+		avail.emplace_front(r.index);
 		m.unlock();
 	}
 

@@ -411,40 +411,40 @@ public:
 	COPY(player_sc);
 };
 
-class nbody : public component
-{
-	//    glm::vec3 vel;
-	rigidBody *rb;
+// class nbody : public component
+// {
+// 	//    glm::vec3 vel;
+// 	rigidBody *rb;
 
-public:
-	void onStart()
-	{
-		rb = transform->gameObject->getComponent<rigidBody>();
-	}
-	void update()
-	{
-		deque<nbody> &v = COMPONENT_LIST(nbody)->data.data;
-		glm::vec3 acc(0);
-		//        cout << v.size();
-		for (auto &i : v)
-		{
-			glm::vec3 dir = i.transform->getPosition() - transform->getPosition();
-			float r = glm::length2(dir);
-			if (r < 0.1f || r > 5000.f)
-				continue;
-			if (!vecIsNan(dir))
-				acc += 10.f * glm::normalize(dir) / r;
-		}
-		if (vecIsNan(acc * Time.deltaTime))
-		{
-			acc = glm::vec3(0);
-		}
-		rb->setVelocity(rb->getVelocity() + acc * Time.deltaTime);
-		//        transform->move(vel * Time.deltaTime);
-	}
-	UPDATE(nbody, update);
-	COPY(nbody);
-};
+// public:
+// 	void onStart()
+// 	{
+// 		rb = transform->gameObject->getComponent<rigidBody>();
+// 	}
+// 	void update()
+// 	{
+// 		deque<nbody> &v = COMPONENT_LIST(nbody)->data.data;
+// 		glm::vec3 acc(0);
+// 		//        cout << v.size();
+// 		for (auto &i : v)
+// 		{
+// 			glm::vec3 dir = i.transform->getPosition() - transform->getPosition();
+// 			float r = glm::length2(dir);
+// 			if (r < 0.1f || r > 5000.f)
+// 				continue;
+// 			if (!vecIsNan(dir))
+// 				acc += 10.f * glm::normalize(dir) / r;
+// 		}
+// 		if (vecIsNan(acc * Time.deltaTime))
+// 		{
+// 			acc = glm::vec3(0);
+// 		}
+// 		rb->setVelocity(rb->getVelocity() + acc * Time.deltaTime);
+// 		//        transform->move(vel * Time.deltaTime);
+// 	}
+// 	UPDATE(nbody, update);
+// 	COPY(nbody);
+// };
 class spinner : public component
 {
 	vec3 axis;
@@ -1048,7 +1048,8 @@ int main(int argc, char **argv)
 	game_object *shooter = new game_object();
 	// shooter->transform->setRotation(lookAt(vec3(0),vec3(0,1,0),vec3(0,0,1)));
 	shooter->transform->move(vec3(0, 100, 0));
-	shooter->addComponent<_renderer>()->set(modelShader, _model("res/models/ship1/ship.obj"));
+	shooter->addComponent<_renderer>()->set(modelShader, cubeModel);
+	// shooter->addComponent<_renderer>()->set(modelShader, _model("res/models/ship1/ship.obj"));
 	gun* g = shooter->addComponent<gun>();
 	g->rof = 100;
 	g->dispersion = 0.5;
