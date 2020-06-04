@@ -1,12 +1,12 @@
 #pragma once
+#include "Component.h"
 #include "Transform.h"
 #include <map>
-#include "Component.h"
 #include <set>
 #include <unordered_set>
 #include "plf_list.h"
 #include "fast_list.h"
-//#include "physics.h"
+
 using namespace std;
 
 class _renderer;
@@ -245,4 +245,3 @@ public:
 	Transform *transform;
 };
 
-game_object *rootGameObject;

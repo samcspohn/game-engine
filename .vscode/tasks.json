@@ -49,7 +49,7 @@
             "options": {
                 "cwd": "${workspaceFolder}/debug"
             },
-            "command": "make",
+            "command": "make -j 64",
             // "command": "clang++",
             // "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_demo.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o", 
             //     "libBulletSoftBody.a", "libBulletDynamics.a", "libBulletCollision.a", "libLinearMath.a", "-g", "-fpermissive", "-w", 
@@ -74,7 +74,7 @@
             "options": {
                 "cwd": "${workspaceFolder}/release"
             },
-            "command": "make",
+            "command": "make -j 64",
             // "args":["--build", ".", "-D'BUILD_DEBUG=OFF'"]
             // "command": "clang++",
             // "args": ["main.cpp","imgui/imgui_impl_glfw.o", "imgui/imgui_impl_opengl3.o", "imgui/imgui.o", "imgui/imgui_draw.o", "imgui/imgui_widgets.o",

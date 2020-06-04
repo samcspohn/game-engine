@@ -18,19 +18,17 @@
 #include <algorithm>
 #include "helper1.h"
 #include <map>
-#include "Shader.h"
 
 using namespace std;
 
-Shader bufferCopy("res/shaders/copy.comp");
+
 class gpu_vector_base{
 	protected:
 	static atomic<int> idGenerator;
 	public:
 	virtual void deleteBuffer() = 0;
 };
-atomic<int> gpu_vector_base::idGenerator;
-map<int,gpu_vector_base*> gpu_buffers;
+extern map<int,gpu_vector_base*> gpu_buffers;
 
 template<typename t>
 class gpu_vector : public gpu_vector_base{

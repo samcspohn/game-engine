@@ -320,25 +320,14 @@ public:
 
 		if (framecount++ > 1){
 
-			pcMutex.lock();
-			// cout << "\r"
-			// // << "\rcubes: " << FormatWithCommas(numCubes.load()) 
-			// << " particles: " << FormatWithCommas(particleCount)
-			// << " actual particles: " << FormatWithCommas(actualParticles)
-			// << "               ";
-			// << " num boxes: " << FormatWithCommas(numBoxes) << "  fps: " << 1.f / Time.unscaledSmoothDeltaTime << "";
-
 			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 			missileCounter->contents = "missiles: " + FormatWithCommas(numCubes.load());
-			particleCounter->contents = "particles: " + FormatWithCommas(particleCount);
+			particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
 			shipVelocity->contents = "speed: " + to_string(ship_vel);
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
 			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
-			pcMutex.unlock();
 			reticule->size = ImVec2(SCREEN_WIDTH,SCREEN_HEIGHT);
 			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 200);
-
-			// reticule->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 240);
 		}
 
 		if (Input.getKeyDown(GLFW_KEY_R))

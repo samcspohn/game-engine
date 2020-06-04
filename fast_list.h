@@ -5,6 +5,8 @@
 #include<set>
 #include <map>
 #include <algorithm>
+#include <iostream>
+#include <mutex>
 #include "Component.h"
 using namespace std;
 

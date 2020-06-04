@@ -14,7 +14,9 @@ add_subdirectory(imgui)
 # add_library(game libBulletDynamics.a)
 # add_library(game libBulletCollision.a)
 # add_library(game libLinearMath.a)
-add_executable(game main.cpp)
+file(GLOB SOURCES "*.cpp")
+ 
+add_executable(game ${SOURCES})
 
 target_link_libraries(game imgui)
 target_link_libraries(game imgui_glfw)

@@ -10,7 +10,6 @@
 #include <iostream>
 #include <assimp/postprocess.h>
 #include <chrono>
-#include "include.h"
 #include "Model.h"
 #include "Shader.h"
 #include <thread>
@@ -43,12 +42,12 @@ struct updateJob
 	componentStorageBase *componentStorage;
 	int size;
 	update_type ut;
-	Barrier *_barrier;
 	updateJob() {}
-	updateJob(componentStorageBase *csb, update_type _ut, int _size, Barrier *b) : componentStorage(csb), size(_size), ut(_ut), _barrier(b) {}
+	updateJob(componentStorageBase *csb, update_type _ut, int _size) : componentStorage(csb), size(_size), ut(_ut) {}
 };
 
 atomic<int> numCubes(0);
+game_object *rootGameObject;
 
 GLFWwindow *window;
 GLdouble lastFrame = 0;
@@ -269,7 +268,7 @@ void renderThreadFunc()
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
 	initTransform();
 	initParticles();
-	particle_renderer.init();
+	particle_renderer::init();
 
 	timer stopWatch;
 
@@ -333,9 +332,7 @@ void renderThreadFunc()
 				appendStat("transforms buffer", gt.stop());
 
 				uint emitterInitCount = emitterInits.size();
-				gpu_emitter_inits->bufferData(emitterInits);
-				gpu_emitter_prototypes->bufferData();
-				gpu_particle_bursts->bufferData();
+				prepParticles();
 				glFlush();
 				
 				_camera::initPrepRender(matProgram);
@@ -364,8 +361,8 @@ void renderThreadFunc()
 					timer t;
 					t.start();
 					if(!c.lockFrustum)
-						particle_renderer.setCamCull(c.camInv,c.cullpos);
-					particle_renderer.sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
+						particle_renderer::setCamCull(c.camInv,c.cullpos);
+					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
 					appendStat("particles sort", t.stop());
 				}
 				renderLock.unlock();
@@ -387,7 +384,7 @@ void renderThreadFunc()
 					gt.start();
 					glDisable(GL_CULL_FACE);
 					glDepthMask(GL_FALSE);
-					particle_renderer.drawParticles(r_d[k].view, r_d[k].rot, r_d[k].proj);
+					particle_renderer::drawParticles(r_d[k].view, r_d[k].rot, r_d[k].proj);
 					appendStat("render particles", gt.stop());
 					glDepthMask(GL_TRUE);
 				}
@@ -420,7 +417,7 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 			}
 				break;
 			case rquit:
-				particle_renderer.end();
+				particle_renderer::end();
 				while (gpu_buffers.size() > 0)
 				{
 					(gpu_buffers.begin()->second)->deleteBuffer();
@@ -514,7 +511,7 @@ void doWork(componentStorageBase* cs,update_type type){
 	stopWatch.start();
 	lockUpdate();
 	for (int i = 0; i < concurrency::numThreads; ++i)
-		updateWork[i].push(updateJob(cs, type, s, 0));
+		updateWork[i].push(updateJob(cs, type, s));
 	unlockUpdate();
 	this_thread::sleep_for(1ns);
 	lockUpdate();
@@ -652,14 +649,14 @@ void run()
 		}
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
-		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
 			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
 				j->second->_transformIds->storage->resize(j->second->ids.size());
 		
 
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
 		for (int i = 0; i < concurrency::numThreads; ++i)
-			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads, 0));
+			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads));
 		unlockUpdate();
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
@@ -676,8 +673,7 @@ void run()
 		waitForWork();
 		appendStat("copy buffers", stopWatch.stop());
 		////////////////////////////////////// switch particle burst buffer //////////////////////////////////////
-		gpu_particle_bursts->storage->swap(particle_bursts);
-		particle_bursts.clear();
+		swapBurstBuffer();
 
 		////////////////////////////////////// cull objects //////////////////////////////////////
 		if(Input.getKeyDown(GLFW_KEY_B)){
@@ -709,7 +705,7 @@ void run()
 
 	for (int i = 0; i < concurrency::numThreads; i++)
 	{
-		updateWork[i].push(updateJob(0, update_type::update, 0, 0));
+		updateWork[i].push(updateJob(0, update_type::update, 0));
 		workers[i]->join();
 		delete workers[i];
 	}
