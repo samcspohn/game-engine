@@ -3,11 +3,11 @@
 #include <map>
 #include <list>
 #include <typeinfo>
-#include "Transform.h"
+#include <glm/glm.hpp>
 #include "concurrency.h"
 #include "plf_list.h"
 #include <stdexcept>
-#include "listThing2.h"
+
 #include "fast_list.h"
 #include "array_heap.h"
 
@@ -21,8 +21,8 @@ struct compItr
 {
 	ull hash;
 	// map<component *, compItr *> *goComponents;
-	virtual void erase(){};
-	virtual component *getComponent(){};
+	virtual void erase();
+	virtual component *getComponent();
 };
 
 template <typename t>
@@ -80,23 +80,17 @@ class component
 	friend game_object;
 public:
 	int threadID;
-	virtual void onStart() {}
-	virtual void onDestroy() {}
+	virtual void onStart();
+	virtual void onDestroy();
 
-	virtual bool _registerEngineComponent() { return false; };
-	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal){};
-	virtual void _update(int index, unsigned int _start, unsigned int _end){};
-	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end){};
+	virtual bool _registerEngineComponent();
+	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal);
+	virtual void _update(int index, unsigned int _start, unsigned int _end);
+	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
 	virtual void _copy(game_object *go) = 0;
 	Transform *transform;
-	int getThreadID()
-	{
-		return threadID;
-	}
-	ull getHash()
-	{
-		return typeid(*this).hash_code();
-	}
+	int getThreadID();
+	ull getHash();
 };
 
 template <typename t>
@@ -133,10 +127,10 @@ public:
 	}
 };
 
-std::map<ull, componentStorageBase *> allcomponents;
-std::set<componentStorageBase *> gameEngineComponents;
-std::set<componentStorageBase *> gameComponents;
-std::mutex componentLock;
+extern std::map<ull, componentStorageBase *> allcomponents;
+extern std::set<componentStorageBase *> gameEngineComponents;
+extern std::set<componentStorageBase *> gameComponents;
+extern std::mutex componentLock;
 template <typename t>
 inline compInfo<t> addComponentToAll(const t &c)
 {
@@ -180,27 +174,13 @@ inline compInfo<t> addComponentToAll(const t &c)
 	return ret;
 }
 
-void destroyAllComponents(){
-	while (allcomponents.size() > 0){
-		delete allcomponents.begin()->second;
-		allcomponents.erase(allcomponents.begin());
-	}
-
-}
-void ComponentsUpdate(componentStorageBase *csbase, int i, int size)
-{
-	csbase->update(i, size);
-}
-
-void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size)
-{
-	csbase->lateUpdate(i, size);
-}
-
+void destroyAllComponents();
+void ComponentsUpdate(componentStorageBase *csbase, int i, int size);
+void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size);
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
 
 #define COPY(component_type)                     \
-	void _copy(game_object *go)                  \
+	void component_type::_copy(game_object *go)                  \
 	{                                            \
 		go->dupComponent(component_type(*this)); \
 	}

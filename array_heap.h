@@ -3,7 +3,11 @@
 #include <set>
 #include <array>
 #include <map>
+#include <deque>
+#include <mutex>
+#include <math.h>
 using namespace std;
+
 
 template<typename t>
 class array_heap {
@@ -84,8 +88,8 @@ public:
 	vector<t> data;
 	std::vector<bool> valid;
 private:
-	deque<uint32_t> avail;
-	uint32_t extent = 0;
+	deque<uint> avail;
+	uint extent = 0;
 };
 
 
@@ -177,8 +181,8 @@ public:
 	deque<t> data ;
 	std::deque<bool> valid;
 private:
-	deque<uint32_t> avail;
-	uint32_t extent = 0;
+	deque<uint> avail;
+	uint extent = 0;
 };
 
 template<typename t>

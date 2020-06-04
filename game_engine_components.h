@@ -13,12 +13,10 @@
 #include "rendering.h"
 #include "array_heap.h"
 #include "Transform.h"
+#include "helper1.h"
 #include <vector>
 
 using namespace std;
-
-const GLint WIDTH = 768, HEIGHT = 432;
-int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 class barrier
 {
@@ -98,7 +96,7 @@ public:
 		auto v = cameras->data.valid.begin();
 		for (; d != cameras->data.data.end(); d++, v++)
 		{
-			for (auto &i : renderingManager.shader_model_vector)
+			for (auto &i : renderingManager::shader_model_vector)
 			{
 				for (auto &j : i.second)
 				{
@@ -129,15 +127,15 @@ public:
 		glUniformMatrix3fv(glGetUniformLocation(matProgram.Program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
 		glUniform3f(glGetUniformLocation(matProgram.Program, "cullPos"), cullpos.x, cullpos.y, cullpos.z);
 		glUniform2f(glGetUniformLocation(matProgram.Program, "screen"), screen.x, screen.y);
-		for (auto &i : renderingManager.shader_model_vector)
+		for (auto &i : renderingManager::shader_model_vector)
 		{
 			for (auto &j : i.second)
 			{
 				camAtomics->storage->clear();
 				camAtomics->storage->push_back(0);
 				camAtomics->bufferData();
-				renderingManager.shader_model_vector[i.first][j.first]->_transformIds->bindData(4);
-				uint size = renderingManager.shader_model_vector[i.first][j.first]->_transformIds->size();
+				renderingManager::shader_model_vector[i.first][j.first]->_transformIds->bindData(4);
+				uint size = renderingManager::shader_model_vector[i.first][j.first]->_transformIds->size();
 				gpu_vector_proxy<matrix>* mat = mats[i.first][j.first];
 				if(mat == 0){
 					mat = new gpu_vector_proxy<matrix>();
@@ -146,7 +144,7 @@ public:
 				mat->tryRealloc(size);
 				mat->bindData(3); 
 
-				glUniform1f(glGetUniformLocation(matProgram.Program, "radius"), renderingManager.shader_model_vector[i.first][j.first]->radius);
+				glUniform1f(glGetUniformLocation(matProgram.Program, "radius"), renderingManager::shader_model_vector[i.first][j.first]->radius);
 				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), size);
 				glDispatchCompute(size / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
@@ -162,7 +160,7 @@ public:
 	{
 		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		glCullFace(GL_BACK);
-		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
 		{
 			Shader *currShader = i->second.begin()->second->s.s->shader;
 			currShader->Use();
@@ -257,7 +255,7 @@ class copyBuffers : public component
 			}
 
 			
-			for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
+			for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
 			{
 				for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
 				{
