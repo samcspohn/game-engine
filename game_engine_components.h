@@ -54,6 +54,9 @@ struct _frustum
 	plane bottom;
 };
 
+vector<vector<GLuint>> transformIdThreadcache;
+vector<vector<_transform>> transformThreadcache;
+
 gpu_vector<GLuint>* camAtomics = new gpu_vector<GLuint>();
 class _camera : public component
 {
@@ -112,7 +115,7 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "vRot"), 1, GL_FALSE, glm::value_ptr(rot));
 		glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPU_TRANSFORMS->bufferId);
+		GPU_TRANSFORMS->bindData(0);
 		camAtomics->bindData(5);
 
 		// change to this cameras data
@@ -191,21 +194,6 @@ public:
 	{
 		return glm::perspective(glm::radians(this->fov), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.0001f, farPlane);
 	}
-	//void onStart() {
-	//	if (!inited) {
-	//		transform->gameObject->removeComponent(transform->gameObject->getcomponent<floatingOrigin>());
-	//		inited = true;
-	//	}
-	//}
-	//void lateUpdate() {
-	//	if (Input.getKeyDown(GLFW_KEY_L))
-	//		lockFrustum = !lockFrustum;
-	//	if (!lockFrustum) {
-	//		mainCamFrust = getFrustum();
-	//		mainCamPos = transform->getPosition();
-	//		MainCamForward = transform->forward();
-	//	}
-	//}
 	_frustum getFrustum()
 	{
 		glm::mat4 m = getProjection() * getRotationMatrix() * GetViewMatrix();
@@ -247,16 +235,24 @@ class copyBuffers : public component
 			int id = getThreadID();
 			{
 				int step = TRANSFORMS.size() / concurrency::numThreads;
+				uint i = step * id;
 				deque<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
+				deque<bool>::iterator v = TRANSFORMS.valid.begin() + step * id;
 				deque<_transform>::iterator to = from + step;
-				vector<_transform>::iterator v = GPU_TRANSFORMS->storage->begin() + step * id;
+				transformIdThreadcache[id].clear();
+				transformIdThreadcache[id].reserve(step + 1);
+				transformThreadcache[id].clear();
+				transformThreadcache[id].reserve(step + 1);
 				if(id == concurrency::numThreads - 1)
 					to = TRANSFORMS.data.end();
-				int itr = step * id;
 				while (from != to){
-					*v = *from;
+					if(*v){
+						transformIdThreadcache[id].emplace_back(i);
+						transformThreadcache[id].emplace_back(*from);
+					}
 					++from;
 					++v;
+					++i;
 				}
 			}
 

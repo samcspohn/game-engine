@@ -267,10 +267,7 @@ void renderThreadFunc()
 
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
-
-	GPU_TRANSFORMS = new gpu_vector<_transform>();
-	GPU_TRANSFORMS->ownStorage();
-
+	initTransform();
 	initParticles();
 	particle_renderer.init();
 
@@ -312,8 +309,27 @@ void renderThreadFunc()
 
 				auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
 
+				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
+				GPU_TRANSFORMS_UPDATES->tryRealloc(TRANSFORMS.size());
+				transformIds->tryRealloc(TRANSFORMS.size());
 				gt.start();
-				GPU_TRANSFORMS->bufferData();
+
+				GLuint offset = 0;
+				for(int i = 0; i < transformIdThreadcache.size(); ++i){
+					transformIds->bufferData(transformIdThreadcache[i],offset,transformIdThreadcache[i].size());
+					GPU_TRANSFORMS_UPDATES->bufferData(transformThreadcache[i],offset,transformThreadcache[i].size());
+					offset += transformIdThreadcache[i].size();
+				}
+
+				matProgram.Use();
+				GPU_TRANSFORMS->bindData(0);
+				transformIds->bindData(6);
+				GPU_TRANSFORMS_UPDATES->bindData(7);
+
+				glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), -1);
+				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), offset);
+				glDispatchCompute(offset / 64 + 1, 1, 1);
+				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				appendStat("transforms buffer", gt.stop());
 
 				uint emitterInitCount = emitterInits.size();
@@ -473,6 +489,8 @@ void componentUpdateThread(int id)
 _physicsManager* pm;
 void init()
 {
+	transformIdThreadcache = vector<vector<GLuint>>(concurrency::numThreads);
+	transformThreadcache = vector<vector<_transform>>(concurrency::numThreads);
 	renderThreadReady.exchange(false);
 	renderThread = new thread(renderThreadFunc);
 	pm = new _physicsManager();
@@ -634,7 +652,6 @@ void run()
 		}
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
-		GPU_TRANSFORMS->storage->resize(TRANSFORMS.size());
 		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager.shader_model_vector.begin(); i != renderingManager.shader_model_vector.end(); i++)
 			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
 				j->second->_transformIds->storage->resize(j->second->ids.size());

@@ -178,7 +178,7 @@ public:
 		// reload += rof * Time.deltaTime;
 		if(Time.time - lastFire > 1.f / rof){
 
-			reload = glm::max(glm::min(Time.deltaTime * rof,rof / 15.f),1.f);
+			reload = glm::max(Time.deltaTime * rof,1.f);
 			lastFire = Time.time;
 			for (int i = 0; i < (int)reload; i++)
 			{

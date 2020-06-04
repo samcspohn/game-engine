@@ -380,7 +380,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     atomicCounters->bindData(1);
     particles->bindData(2);
     gpu_emitter_prototypes->bindData(3);
-    gpu_emitters->tryRealloc(EMITTERS.size());
+    gpu_emitters->resize(EMITTERS.size());
     gpu_emitters->bindData(4);
     burstParticles->bindData(5);
     dead->bindData(6);
