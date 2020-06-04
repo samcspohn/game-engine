@@ -37,9 +37,18 @@ struct _transform {
 //		rotation = normalize(rotation);
 	}
 };
-deque_heap<_transform> TRANSFORMS;// = array_heap<_transform>();
-deque_heap<_transform> STATIC_TRANSFORMS;// = array_heap<_transform>();
-gpu_vector<_transform>* GPU_TRANSFORMS = nullptr;
+atomic<int> GPU_TRANSFORMS_UPDATES_itr;
+deque_heap<_transform> TRANSFORMS;
+deque_heap<_transform> STATIC_TRANSFORMS;
+gpu_vector_proxy<_transform>* GPU_TRANSFORMS;
+gpu_vector_proxy<GLuint>* transformIds;
+gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
+
+void initTransform(){
+	GPU_TRANSFORMS = new gpu_vector_proxy<_transform>();
+	GPU_TRANSFORMS_UPDATES = new gpu_vector_proxy<_transform>();
+	transformIds = new gpu_vector_proxy<GLuint>();
+}
 
 class game_object;
 class {

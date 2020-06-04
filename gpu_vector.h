@@ -40,6 +40,9 @@ public:
 		gpu_buffers.insert(std::pair<int,gpu_vector_base*>(id,this));
 	}
 	t& operator[](unsigned int i) {
+		return (*storage)[i];
+	}
+	t& at(uint i){
 		return storage->at(i);
 	}
 	void init() {
@@ -209,6 +212,11 @@ public:
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * data.size(), data.data());//buffer data
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
+	void bufferData(vector<t>& data, GLuint offset,GLuint size){
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * offset, sizeof(t) * size, data.data());//buffer data
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
 
 	void retrieveData(vector<t>& storage){
 		storage.resize(maxSize);
@@ -222,7 +230,27 @@ public:
     	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * _size, storage.data());
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
+	void grow(size_t size){
+		if (!inited) {
+			_init();
+		}
+		bool reallocBuff = false;
+		GLint _size = maxSize;
+		while (size > (float)maxSize) {
+			maxSize *= 2;
+			reallocBuff = true;
+		}
+		if (reallocBuff){
+			realloc(_size);
+		}
+	}
 
+	// increases max size if size is greater and copys contents to new buffer
+	void resize(size_t size){
+		grow(size);
+	}
+
+	// increases max size if size is greater.
 	bool tryRealloc(size_t size) {
 		bool ret = false;
 		if (!inited) {
@@ -230,14 +258,13 @@ public:
 			ret = true;
 		}
 		bool reallocBuff = false;
-		GLint _size = maxSize;
 		while (size > (float)maxSize) {
 			maxSize *= 2;
 			reallocBuff = true;
 			ret = true;
 		}
 		if (reallocBuff){
-			realloc(_size);
+			realloc();
 		}
 		return ret;
 	}
