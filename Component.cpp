@@ -6,40 +6,20 @@ void compItr::erase(){};
 component* compItr::getComponent(){};
 
 
-
-// class componentStorageBase
-// {
-// public:
-// 	bool h_update;
-// 	bool h_lateUpdate;
-// 	string name;
-// 	mutex lock;
-// 	bool hasUpdate(){return h_update;}
-// 	bool hasLateUpdate(){return h_lateUpdate;}
-// 	virtual void update(){};
-// 	virtual void update(int index, int size) {}
-// 	virtual void lateUpdate(int index, int size) {}
-
-// 	virtual int size(){};
-// 	virtual void sort(){};
-// };
-
-
-	void component::onStart() {}
-	void component::onDestroy() {}
-
-	bool component::_registerEngineComponent() { return false; };
-	void component::onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal){};
-	void component::_update(int index, unsigned int _start, unsigned int _end){};
-	void component::_lateUpdate(int index, unsigned int _start, unsigned int _end){};
-	int component::getThreadID()
-	{
-		return threadID;
-	}
-	ull component::getHash()
-	{
-		return typeid(*this).hash_code();
-	}
+void component::onStart() {}
+void component::onDestroy() {}
+bool component::_registerEngineComponent() { return false; };
+void component::onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal){};
+void component::_update(int index, unsigned int _start, unsigned int _end){};
+void component::_lateUpdate(int index, unsigned int _start, unsigned int _end){};
+int component::getThreadID()
+{
+	return threadID;
+}
+ull component::getHash()
+{
+	return typeid(*this).hash_code();
+}
 
 
 std::map<ull, componentStorageBase *> allcomponents;

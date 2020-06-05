@@ -38,6 +38,8 @@ target_link_libraries(game pthread)
 target_link_libraries(game Xi)
 target_link_libraries(game SOIL)
 target_link_libraries(game assimp)
+target_link_libraries(game alut)
+target_link_libraries(game openal)
 
 target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}

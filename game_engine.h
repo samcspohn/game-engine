@@ -26,7 +26,7 @@
 #include "bullet/btBulletDynamicsCommon.h"
 #include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h"
 #include "physics_.h"
-
+#include "audio.h"
 #include "gui.h"
 
 using namespace glm;
@@ -488,6 +488,8 @@ void init()
 {
 	transformIdThreadcache = vector<vector<GLuint>>(concurrency::numThreads);
 	transformThreadcache = vector<vector<_transform>>(concurrency::numThreads);
+
+	audioManager::init();
 	renderThreadReady.exchange(false);
 	renderThread = new thread(renderThreadFunc);
 	pm = new _physicsManager();
@@ -716,6 +718,7 @@ void run()
 	rootGameObject->destroy();
 	destroyAllComponents();
 	destroyRendering();
+	audioManager::destroy();
 
 	cout << endl;
 	componentStats.erase("");
