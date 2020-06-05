@@ -17,7 +17,7 @@
 terrain* terr;
 int numBoxes = 0;
 
-
+audio gunSound;
 
 _transform renderSphere(btRigidBody* sphere)
 {
@@ -103,6 +103,7 @@ public:
 	// particle_emitter* myEmitter;
 	// glm::vec3 dir;
 	bool hit = false;
+	// audiosource* sound;
 	// double life;
 	missile() {}
 	void onStart()
@@ -110,6 +111,7 @@ public:
 		rot = randomSphere();
 		hit = false;
 		numCubes.fetch_add(1);
+		// sound = transform->gameObject->getComponent<audiosource>();
 		// myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
 	void setBullet(const bullet& _b){
@@ -136,17 +138,15 @@ public:
 	}
 	void onCollision(game_object *go,vec3 point, vec3 normal)
 	{
-		if(length(normal) == 0)
-			normal = randomSphere();
-		b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
-		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
-		// b.secondaryexplosion.burst(transform->getPosition(),normal,15);
-		// transform->gameObject->removeComponent<_renderer>();
-		hit = true;
-		// life = Time.time + 0.01;
-		// transform->gameObject->destroy();
-		// numCubes.fetch_add(-1);
+		if(!hit){
+			if(length(normal) == 0)
+				normal = randomSphere();
+			b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+			// sound->play(transform->getPosition());
+			// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
+			// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
+			hit = true;
+		}
 	}
 	UPDATE(missile, update);
 	COPY(missile);
@@ -457,21 +457,26 @@ class _turret : public component{
 	emitter_prototype_ muzzelFlash;
 	// emitter_prototype_ muzzelSmoke;
 	gun* barrels;
+	audiosource* sound;
 	float turret_angle;
 	float guns_angle;
-	float turret_speed = radians(30.f);
-	float gun_speed = radians(30.f);
 	bool canFire;
 
 public:
+	float turret_speed = radians(30.f);
+	float gun_speed = radians(30.f);
 	float t_angles[3];
 	float g_angles[3][2];
 	void setTarget(Transform* t){
 		target = t;
 	}
+	float getRateOfFire(){
+		return barrels->rof;
+	}
 	void onStart(){
 		guns = transform->getChildren().front();
 		barrels = guns->gameObject->getComponent<gun>();
+		sound = transform->gameObject->getComponent<audiosource>();
 		muzzelFlash = getEmitterPrototypeByName("muzzelFlash");
 		// muzzelSmoke = getEmitterPrototypeByName("muzzelSmoke");
 	}
@@ -546,7 +551,7 @@ public:
 				// cout << "fire" << endl;
 				muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),20);
 				getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),guns->forward(),vec3(0.2),60);
-
+				sound->play();
 				// muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
 				return true;
 			}
@@ -562,7 +567,7 @@ class gunManager : public component{
 	vector<_turret*> turrets;
 	int curr = 0;
 	double t;
-	double t_ = 0.2f;
+	double t_;
 	void update(){
 		if(Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
 			// for(auto& i : turrets){
@@ -588,6 +593,7 @@ public:
 				turrets.push_back(tur);
 			}
 		}
+		t_ = (1.f / turrets[0]->getRateOfFire()) / turrets.size();
 	}
 public:
 	UPDATE(gunManager,update);
@@ -619,7 +625,9 @@ void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upri
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
 	_model turretm("res/models/ship1/maingun.obj");
 	_model gunsm("res/models/ship1/3guns.obj");
+	
 	game_object* turret = new game_object();
+	turret->addComponent<audiosource>()->set(gunSound);
 	auto r = turret->addComponent<_renderer>();
 	r->set(modelShader,turretm);
 	game_object* guns = new game_object();
@@ -631,7 +639,7 @@ void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upri
 	auto g = guns->addComponent<gun>();
 	g->setBarrels(barrels);
 	g->ammo = bullets["bomb"].proto;
-	g->rof = 1.f / 5.f;
+	g->rof = 1.f / 4.f;
 	g->dispersion = 0.01f;
 	g->speed = 500;
 
@@ -656,16 +664,18 @@ void makeGun(Transform* ship,vec3 pos,Transform* target, bool forward, bool upri
 	t->g_angles[1][1] = radians(3.f);
 	t->g_angles[2][0] = radians(-80.f);
 	t->g_angles[2][1] = radians(20.f);
+	t->turret_speed = glm::radians(100.f);
+	t->gun_speed = glm::radians(100.f);
 }
 
 class _ship : public component{
 	vec3 vel;
+public:
 	float accel;
 	float thrust;
 	float maxReverse;
 	float maxForward;
 	float rotationSpeed;
-public:
 	void onStart(){
 		accel = 0;
 		thrust = 20;
@@ -676,7 +686,7 @@ public:
 	void update(){
 		transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
 		transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
-		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_E) - Input.getKey(GLFW_KEY_Q)) * Time.deltaTime * rotationSpeed);
+		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
 
 		vel -= vel * 0.4f * Time.deltaTime;
 		vel += transform->forward() * accel * 0.4f * Time.deltaTime;
@@ -685,7 +695,7 @@ public:
 		// if(length(vel) > maxForward){
 		// 	vel = normalize(vel) * maxForward;
 		// }
-		accel = glm::clamp(accel + (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * thrust * Time.deltaTime,-maxReverse,maxForward);
+		accel = glm::clamp(accel + (Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F)) * thrust * Time.deltaTime,-maxReverse,maxForward);
 		// cout << " accel: " << accel << endl;
 		transform->getParent()->move(vel * Time.deltaTime);
 		// vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
@@ -715,6 +725,7 @@ int main(int argc, char **argv)
 	
 	
 	::init();
+	gunSound = audio("res/audio/explosion1.wav");
 	
 	_shader particleShader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
@@ -826,6 +837,7 @@ int main(int argc, char **argv)
 	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
 	bomb_proto->addComponent<collider>()->layer = 0;
 	bomb_proto->getComponent<collider>()->dim = vec3(0.4f);
+	// bomb_proto->addComponent<audiosource>()->set(gunSound);
 	bomb_proto->addComponent<particle_emitter>();
 	bomb.proto = bomb_proto;
 	bomb_proto->addComponent<missile>()->setBullet(bomb);
@@ -913,7 +925,7 @@ int main(int argc, char **argv)
 	game_object* ship = new game_object();
 	auto r_ = ship->addComponent<_renderer>();
 	r_->set(modelShader,_model("res/models/ship1/ship.obj"));
-	ship->addComponent<_ship>();
+	ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
 	auto ship_col = ship->addComponent<collider>();
 	ship_col->dim = vec3(2,1,18);
 	ship_col->layer = 1;
@@ -1014,19 +1026,7 @@ int main(int argc, char **argv)
 	srand(100);
 
 	
-	game_object *CUBE = new game_object();
-	CUBE->addComponent<_renderer>();
-	// CUBE->addComponent<rigidBody>()->setVelocity(vec3(0));
-	// CUBE->getComponent<rigidBody>()->bounciness = .98f; //->gravity = false; //
-	CUBE->addComponent<collider>()->layer = 0;
-	CUBE->getComponent<_renderer>()->set(modelShader, cubeModel);
-	auto pe2 = CUBE->addComponent<particle_emitter>();
-	// pe2->setPrototype(flameEmitterProto);
-	// auto pe3 = CUBE->addComponent<particle_emitter>();
-	// pe3->setPrototype(smokeEmitter);
-	CUBE->addComponent<missile>()->setBullet(bomb);
-
-	
+	game_object *CUBE = new game_object(*bomb_proto);
 
 	////////////////////////////////////////////////
 

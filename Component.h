@@ -7,15 +7,31 @@
 #include "concurrency.h"
 #include "plf_list.h"
 #include <stdexcept>
-
+// #include "game_object.h"
 #include "fast_list.h"
 #include "array_heap.h"
 
 #define ull unsigned long long
 class game_object;
 class Transform;
-class component;
 bool compareTransform(Transform *t1, Transform *t2);
+class component
+{
+	friend game_object;
+public:
+	int threadID;
+	virtual void onStart();
+	virtual void onDestroy();
+
+	virtual bool _registerEngineComponent();
+	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal);
+	virtual void _update(int index, unsigned int _start, unsigned int _end);
+	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
+	virtual void _copy(game_object *go) = 0;
+	Transform *transform;
+	int getThreadID();
+	ull getHash();
+};
 
 struct compItr
 {
@@ -75,23 +91,7 @@ public:
 	virtual void sort(){};
 };
 
-class component
-{
-	friend game_object;
-public:
-	int threadID;
-	virtual void onStart();
-	virtual void onDestroy();
 
-	virtual bool _registerEngineComponent();
-	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal);
-	virtual void _update(int index, unsigned int _start, unsigned int _end);
-	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
-	virtual void _copy(game_object *go) = 0;
-	Transform *transform;
-	int getThreadID();
-	ull getHash();
-};
 
 template <typename t>
 class componentStorage : public componentStorageBase
@@ -180,7 +180,7 @@ void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size);
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
 
 #define COPY(component_type)                     \
-	void component_type::_copy(game_object *go)                  \
+	void _copy(game_object *go)                  \
 	{                                            \
 		go->dupComponent(component_type(*this)); \
 	}
