@@ -22,9 +22,6 @@
 #include "game_engine_components.h"
 #include "physics.h"
 #include "particles.h"
-#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
-#include "bullet/btBulletDynamicsCommon.h"
-#include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h"
 #include "physics_.h"
 #include "audio.h"
 #include "gui.h"
@@ -163,7 +160,6 @@ void updateTiming()
 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
 	eventsPollDone = true;
 }
-void cam_render(glm::mat4 rot, glm::mat4 proj, glm::mat4 view);
 
 glm::mat4 getProjection()
 {
@@ -448,6 +444,8 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 	}
 }
 
+
+
 void lockUpdate()
 {
 	for (auto &i : updateLocks)
@@ -483,29 +481,7 @@ void componentUpdateThread(int id)
 		this_thread::sleep_for(1ns);
 	}
 }
-_physicsManager* pm;
-void init()
-{
-	transformIdThreadcache = vector<vector<GLuint>>(concurrency::numThreads);
-	transformThreadcache = vector<vector<_transform>>(concurrency::numThreads);
 
-	audioManager::init();
-	renderThreadReady.exchange(false);
-	renderThread = new thread(renderThreadFunc);
-	pm = new _physicsManager();
-
-	while (!renderThreadReady.load())
-		this_thread::sleep_for(1ms);
-
-	root = new Transform(0);
-	rootGameObject = new game_object(root);
-	for (int i = 0; i < concurrency::numThreads; i++)
-	{
-		rootGameObject->addComponent<copyBuffers>();
-	}
-	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
-	gameEngineComponents.erase(copyWorkers);
-}
 
 void doWork(componentStorageBase* cs,update_type type){
 	int s = cs->size();
@@ -564,6 +540,29 @@ void waitForWork(){
 	}
 }
 
+void init()
+{
+	transformIdThreadcache = vector<vector<GLuint>>(concurrency::numThreads);
+	transformThreadcache = vector<vector<_transform>>(concurrency::numThreads);
+
+	audioManager::init();
+	renderThreadReady.exchange(false);
+	renderThread = new thread(renderThreadFunc);
+	pm = new _physicsManager();
+
+	while (!renderThreadReady.load())
+		this_thread::sleep_for(1ms);
+
+	root = new Transform(0);
+	rootGameObject = new game_object(root);
+	for (int i = 0; i < concurrency::numThreads; i++)
+	{
+		rootGameObject->addComponent<copyBuffers>();
+	}
+	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
+	gameEngineComponents.erase(copyWorkers);
+}
+
 void run()
 {
 	timer stopWatch;
@@ -620,8 +619,10 @@ void run()
 		waitForWork();
 		doLoopIteration(gameEngineComponents, false);
 
+		stopWatch.start();
 		pm->simulate(Time.deltaTime);
-		
+
+		appendStat("physics simulation",stopWatch.stop());
 
 		waitForWork();
 		lockUpdate();
@@ -696,7 +697,6 @@ void run()
 
 	}
 
-	delete pm;
 	log("end of program");
 	renderJob* rj = new renderJob();
 	rj->type = rquit;
@@ -719,7 +719,8 @@ void run()
 	destroyAllComponents();
 	destroyRendering();
 	audioManager::destroy();
-
+	pm->destroy();
+	delete pm;
 	cout << endl;
 	componentStats.erase("");
 	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
@@ -727,4 +728,5 @@ void run()
 		cout << i->first << " -- avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
+
 }
