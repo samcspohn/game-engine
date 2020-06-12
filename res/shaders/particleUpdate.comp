@@ -174,7 +174,7 @@ void burst(uint thread_id){
     int end = burst_start + int(e.count);
     burst_start = min(burst_start,max_particles);
     end = min(end,max_particles);
-    atomicMin(atomicCounters[liveParticles],max_particles);
+    // atomicMin(atomicCounters[liveParticles],max_particles);
     
     for(int i = burst_start; i < end; ++i){
         burstParticles[i] = thread_id;

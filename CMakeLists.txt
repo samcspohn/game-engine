@@ -9,6 +9,10 @@ project(game_engine)
 
 include_directories(${CMAKE_SOURCE_DIR}/imgui)
 add_subdirectory(imgui)
+set(BULLET2_MULTITHREADING ON)
+include_directories(${CMAKE_SOURCE_DIR}/bullet)
+add_subdirectory(bullet)
+
 # add_subdirectory(bullet)
 # add_library(game libBulletSoftBody.a)
 # add_library(game libBulletDynamics.a)
@@ -23,10 +27,10 @@ target_link_libraries(game imgui_glfw)
 target_link_libraries(game imgui_opengl3)
 target_link_libraries(game imgui_draw)
 target_link_libraries(game imgui_widgets)
-target_link_libraries(game ${CMAKE_SOURCE_DIR}/libBulletSoftBody.a)
-target_link_libraries(game ${CMAKE_SOURCE_DIR}/libBulletDynamics.a)
-target_link_libraries(game ${CMAKE_SOURCE_DIR}/libBulletCollision.a)
-target_link_libraries(game ${CMAKE_SOURCE_DIR}/libLinearMath.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletSoftBody/libBulletSoftBody.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletDynamics/libBulletDynamics.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletCollision/libBulletCollision.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/LinearMath/libLinearMath.a)
 target_link_libraries(game GL)
 target_link_libraries(game GLU)
 target_link_libraries(game GLEW)
@@ -40,10 +44,11 @@ target_link_libraries(game SOIL)
 target_link_libraries(game assimp)
 target_link_libraries(game alut)
 target_link_libraries(game openal)
+target_link_libraries(game ode)
 
 target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}
-                           ${CMAKE_SOURCE_DIR}/bullet
+                           ${CMAKE_SOURCE_DIR}/bullet/src
                            ${CMAKE_SOURCE_DIR}/imgui
                            )
 

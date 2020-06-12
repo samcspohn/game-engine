@@ -6,70 +6,14 @@
 
 #include <iomanip>
 #include <locale>
-#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
-#include "bullet/btBulletDynamicsCommon.h"
-#include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h"
-#include "bullet/BulletCollision/CollisionDispatch/btCollisionDispatcherMt.h"
-#include "bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolverMt.h"
-
-
+#include "bullet/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 
 terrain* terr;
 int numBoxes = 0;
 
 audio gunSound;
-
-_transform renderSphere(btRigidBody* sphere)
-{
-	// if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
-	// 	return;
-	// glColor3f(1,0,0);
-	// float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
-	btTransform _t;
-	sphere->getMotionState()->getWorldTransform(_t);	//get the transform
-	mat4 mat; 
-	_t.getOpenGLMatrix(glm::value_ptr(mat));	//OpenGL matrix stores the rotation and orientation
-	
-	_transform t;
-	glm::vec3 skew;
-	glm::vec4 perspective;
-	glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
-	return t;
-}
-
 game_object* physObj;
-
-
-class physicsObject : public component{
-
-	btRigidBody* rb;
-	public:
-	void init(float x, float y, float z, vec3 force){
-		rb = pm->addSphere(1,x,y,z,1);
-		rb->setLinearVelocity(btVector3(force.x,force.y,force.z));
-	}
-
-	void update(){
-		_transform _t = renderSphere(rb);
-		transform->setPosition(_t.position);
-		transform->setRotation(_t.rotation);
-		transform->setScale(_t.scale);
-		terrainHit hit = terr->getHeight(_t.position.x,_t.position.z);
-		if(_t.position.y < hit.height){
-			btTransform t = rb->getWorldTransform();
-			btVector3 v = t.getOrigin();
-			v.setY(hit.height + 1);
-			t.setOrigin(v);
-			rb->setWorldTransform(t);
-			rb->setLinearVelocity(btVector3(0,0,0));
-			// rb->applyForce(btVector3(0,0.1,0),btVector3(v.getX(),v.getY() - 0.9,v.getZ()));
-		}
-		// get transform from btTransform
-	}
-	UPDATE(physicsObject, update);
-	COPY(physicsObject);
-};
-
+// int colCount = 0;
 
 
 using namespace glm;
@@ -110,7 +54,7 @@ public:
 	{
 		rot = randomSphere();
 		hit = false;
-		numCubes.fetch_add(1);
+		// numCubes.fetch_add(1);
 		// sound = transform->gameObject->getComponent<audiosource>();
 		// myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
@@ -121,32 +65,35 @@ public:
 	}
 	void update()
 	{
-		// if (!hit)
-		// {
 			transform->move(vel * Time.deltaTime);
 			// transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 			vel += vec3(0, -9.81, 0) * Time.deltaTime;
-		// }
-		// else if (life < Time.time)
-		// {
+
 		if(hit){
 
-			numCubes.fetch_add(-1);
+			// numCubes.fetch_add(-1);
+			// colCount++;
+			// // if(length(normal) == 0)
+			// vec3 normal;
+			// 	normal = randomSphere();
+			// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
 			transform->gameObject->destroy();
 		}
-		// }
+
 	}
 	void onCollision(game_object *go,vec3 point, vec3 normal)
 	{
-		if(!hit){
+		// if(!hit && go->getComponent<missile>() == 0){
+			// colCount++;
 			if(length(normal) == 0)
 				normal = randomSphere();
 			b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+			// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
 			// sound->play(transform->getPosition());
 			// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 			// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 			hit = true;
-		}
+		// }
 	}
 	UPDATE(missile, update);
 	COPY(missile);
@@ -185,11 +132,9 @@ public:
 				for(auto& j : barrels){
 					game_object *go = new game_object(*ammo);
 					go->transform->setScale(vec3(size));
-					// go->getComponent<rigidBody>()->setVelocity(transform->forward() * 100.f + randomSphere() * randf() * 30.f);
-					go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * dispersion) * speed;
-					// go->getComponent<missile>()->setBullet(ammo);
-					// go->getComponent<cube_sc>()->dir = transform->forward() * 60.f + randomSphere() * randf() * 20.f;
 					go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j,1)));
+					// go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
+					go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * dispersion) * speed;
 				}
 			}
 			// numCubes.fetch_add((int)reload);
@@ -229,7 +174,7 @@ class player_sc : public component
 	gui::text* shipAcceleration;
 	gui::text* shipVelocity;
 	gui::text* lockedfrustum;
-
+	gui::text* colCounter;
 	gui::window* reticule;
 	gui::image* crosshair;
 	Texture crosshairtex;
@@ -247,7 +192,7 @@ public:
 		guns = transform->gameObject->getComponents<gun>();
 		// bomb = bullets["bomb"];
 		guns[0]->ammo = bullets["bomb"].proto;
-		guns[0]->rof = 1'000'00 / 60;
+		guns[0]->rof = 3'000 / 60;
 		guns[0]->dispersion = 0.3f;
 		guns[0]->speed = 200;
 		// laser = bullets["laser"];
@@ -265,6 +210,7 @@ public:
 		shipAcceleration = new gui::text();
 		shipVelocity = new gui::text();
 		lockedfrustum = new gui::text();
+		colCounter = new gui::text();
 		info->name = "game info";
 		ImGuiWindowFlags flags = 0;
 		flags |= ImGuiWindowFlags_NoTitleBar;
@@ -280,6 +226,7 @@ public:
 		info->children.push_back(lockedfrustum);
 		info->children.push_back(shipAcceleration);
 		info->children.push_back(shipVelocity);
+		info->adopt(colCounter);
 		reticule = new gui::window();
 		flags |= ImGuiWindowFlags_NoBackground;
 		flags |= ImGuiWindowFlags_NoScrollbar;
@@ -328,6 +275,7 @@ public:
 			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
 			reticule->size = ImVec2(SCREEN_WIDTH,SCREEN_HEIGHT);
 			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 200);
+			colCounter->contents = "collisions: " + to_string(colCount);
 		}
 
 		if (Input.getKeyDown(GLFW_KEY_R))
@@ -383,15 +331,21 @@ public:
 			cursorReleased = true;
 		}
 		// if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-		// 	// for(int i = 0; i <= Time.deltaTime * 100; i++){
-		// 	// 	numBoxes++;
-		// 	// 	auto g = new game_object(*physObj);
-		// 	// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
-		// 	// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
-		// 	// }
-		// 	guns[0]->fire();
+		// 	for(int i = 0; i <= Time.deltaTime * 100; i++){
+		// 		numBoxes++;
+		// 		auto g = new game_object(*physObj);
+		// 		vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+		// 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+		// 	}
+		// 	// guns[0]->fire();
 		// }
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT)){
+			// for(int i = 0; i <= Time.deltaTime * 100; i++){
+			// 	numBoxes++;
+			// 	auto g = new game_object(*physObj);
+			// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+			// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+			// }
 			guns[0]->fire();
 		}
 
@@ -752,6 +706,17 @@ int main(int argc, char **argv)
 	.addKey(vec4(0.75,0.65,0.54,0.6f),0.30)
 	.addKey(vec4(0.75,0.65,0.54,0.0f),1.f);
 
+	colorArray ca2;
+	ca2.addKey(vec4(1),0.1)
+	.addKey(vec4(1,1,0.9f,1),0.15)
+	.addKey(vec4(1,0.8f,0.5f,0.9f),0.2)
+	.addKey(vec4(1,0.5f,0.5f,0.9f),0.25)
+	.addKey(vec4(0.5,0.5f,0.5f,0.6f),0.3)
+	.addKey(vec4(0.5,0.5f,0.5f,0.0f),1);
+
+	floatArray fa;
+	fa.addKey(0.f,0.f).addKey(0.4f,0.02f).addKey(2.0,1.0);
+
 	emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
 	flameEmitterProto->dispersion = 3.14159f;
 	flameEmitterProto->emission_rate = 2.f;
@@ -764,17 +729,6 @@ int main(int argc, char **argv)
 	flameEmitterProto->billboard = 1;
 	flameEmitterProto->trail = 1;
 	ca.setColorArray(flameEmitterProto->colorLife);
-
-	colorArray ca2;
-	ca2.addKey(vec4(1),0.1)
-	.addKey(vec4(1,1,0.9f,1),0.15)
-	.addKey(vec4(1,0.8f,0.5f,0.9f),0.2)
-	.addKey(vec4(1,0.5f,0.5f,0.9f),0.25)
-	.addKey(vec4(0.5,0.5f,0.5f,0.6f),0.3)
-	.addKey(vec4(0.5,0.5f,0.5f,0.0f),1);
-
-	floatArray fa;
-	fa.addKey(0.f,0.f).addKey(0.4f,0.02f).addKey(2.0,1.0);
 
 	emitter_prototype_ _muzzelFlash = createNamedEmitter("muzzelFlash");
 	_muzzelFlash->dispersion = 0.5f;
@@ -813,7 +767,6 @@ int main(int argc, char **argv)
 	shockWave->trail = 0;
 	shockWave->color(vec4(1,1,1,0.6),vec4(1,1,1,0));
 
-
 	emitter_prototype_ debris = createNamedEmitter("debris");
 	debris->dispersion = 3.14159f / 2.f;
 	// debris->emission_rate = 50.f;
@@ -828,21 +781,6 @@ int main(int argc, char **argv)
 	// debris->color(vec4(0.82,0.7,0.54,0.6),vec4(0.82,0.7,0.54,0));
 	ca3.setColorArray(debris->colorLife);
 	
-	bullet bomb;
-	bomb.primarybullet = flameEmitterProto;
-	// bomb.secondarybullet = smokeEmitter;
-	bomb.primaryexplosion = expFlame;
-	// bomb.secondaryexplosion = emitterProto4;
-	game_object_proto* bomb_proto = new game_object_proto();
-	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
-	bomb_proto->addComponent<collider>()->layer = 0;
-	bomb_proto->getComponent<collider>()->dim = vec3(0.4f);
-	// bomb_proto->addComponent<audiosource>()->set(gunSound);
-	bomb_proto->addComponent<particle_emitter>();
-	bomb.proto = bomb_proto;
-	bomb_proto->addComponent<missile>()->setBullet(bomb);
-	bullets["bomb"] = bomb;
-
 	bullet laser;
 	laser.primarybullet = createNamedEmitter("laserbeam");
 	laser.primarybullet->dispersion = 3.14159f;
@@ -854,16 +792,7 @@ int main(int argc, char **argv)
 	laser.primarybullet->scale = vec3(20.f);
 	laser.primarybullet->size(1.f);
 	laser.primarybullet->maxSpeed = 1.f;
-
 	laser.primaryexplosion = getEmitterPrototypeByName("expflame");
-
-	game_object_proto* laser_proto = new game_object_proto();
-	laser_proto->addComponent<collider>()->layer = 0;
-	laser_proto->addComponent<particle_emitter>();
-	laser.proto = laser_proto;
-	laser_proto->addComponent<missile>()->setBullet(laser);
-	bullets["laser"] = laser;
-
 
 	emitter_prototype_ engineTrail = createNamedEmitter("engineTrail");
 	*engineTrail = *flameEmitterProto;
@@ -888,16 +817,41 @@ int main(int argc, char **argv)
 	engineFlame->scale = vec3(2.f);
 	engineFlame->trail = 0;
 
+	bullet bomb;
+	bomb.primarybullet = flameEmitterProto;
+	bomb.primaryexplosion = expFlame;
+
+	game_object_proto* bomb_proto = new game_object_proto();
+	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
+	bomb_proto->addComponent<collider>()->layer = 0;
+	bomb_proto->getComponent<collider>()->dim = vec3(0.4f);
+	// bomb_proto->addComponent<physicsObject>();
+	// bomb_proto->addComponent<audiosource>()->set(gunSound);
+	bomb_proto->addComponent<particle_emitter>();
+	bomb.proto = bomb_proto;
+	bomb_proto->addComponent<missile>()->setBullet(bomb);
+	bullets["bomb"] = bomb;
+
+	game_object_proto* laser_proto = new game_object_proto();
+	laser_proto->addComponent<collider>()->layer = 0;
+	laser_proto->addComponent<particle_emitter>();
+	laser.proto = laser_proto;
+	laser_proto->addComponent<missile>()->setBullet(laser);
+	bullets["laser"] = laser;
+
 	//////////////////////////////////////////////////////////
+
+
 
 	physObj = new game_object();
 	physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
-	physObj->addComponent<physicsObject>()->init(0,20,0,vec3(0));
+	physObj->addComponent<physicsObject>()->init(vec3(0));
 	numBoxes += 61;
 	for(int i = 0; i < 60; i++){
 		auto g = new game_object(*physObj);
 		vec3 r = randomSphere() * 500.f * randf() + vec3(0,500,0);
-		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z,vec3(0));
+		g->transform->setPosition(r);
+		g->getComponent<physicsObject>()->init(vec3(0));
 	}
 
 	player = new game_object();
@@ -987,18 +941,6 @@ int main(int argc, char **argv)
 				maxH = t->heightMap[i][j];
 		}
 	}
-	// for(auto &i : t->heightMap){
-	// 	for(auto &j : i){
-	// 		// convertFromFloat(&heightData[x*4],j,PHY_FLOAT);
-	// 		heightData[x] = j;
-	// 		if(minH > j)
-	// 			minH = j;
-	// 		else if(maxH < j)
-	// 			maxH = j;
-	// 		x++;
-	// 	}
-	// }
-
 
 	//similar to createSphere
 	btTransform ter;
@@ -1014,7 +956,8 @@ int main(int argc, char **argv)
 	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
 	// info.m_restitution = 0.02;
 	btRigidBody* body=new btRigidBody(info);
-
+	body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+	body->setUserPointer(ground);
 	pm->addBody(body);
 
 	player->getComponent<player_sc>()->t = t;
@@ -1027,6 +970,7 @@ int main(int argc, char **argv)
 
 	
 	game_object *CUBE = new game_object(*bomb_proto);
+	// CUBE->getComponent<physicsObject>()->init(vec3(100));
 
 	////////////////////////////////////////////////
 
@@ -1104,16 +1048,16 @@ int main(int argc, char **argv)
 		// cout << "\r" << (float)i / (float)n << "    " << flush;
 	}
 
-	// // create blob of bombs
-	go = new game_object(*CUBE);
-	for (int i = 0; i < n; i++)
-	{
-		go = new game_object(*go);
-		go->transform->translate(randomSphere() * 3.f);
-		if (fmod((float)i, (n / 100)) < 0.01)
-			cout << "\r" << (float)i / (float)n << "    " << flush;
-		go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
-	}
+	// // // create blob of bombs
+	// go = new game_object(*CUBE);
+	// for (int i = 0; i < n; i++)
+	// {
+	// 	go = new game_object(*go);
+	// 	go->transform->translate(randomSphere() * 3.f);
+	// 	if (fmod((float)i, (n / 100)) < 0.01)
+	// 		cout << "\r" << (float)i / (float)n << "    " << flush;
+	// 	go->getComponent<missile>()->vel = randomSphere() * randf() * 100.f;
+	// }
 
 	run();
 
@@ -1121,6 +1065,6 @@ int main(int argc, char **argv)
 	
 	delete[] heightData;
 
-
+	
 	return 0;
 }

@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <climits>
-const GLint WIDTH = 768, HEIGHT = 432;
+const GLint WIDTH = 1920, HEIGHT = 1080;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 void log(string log = ""){

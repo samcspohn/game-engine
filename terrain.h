@@ -2,6 +2,7 @@
 #include "rendering.h"
 #include "concurrency.h"
 #include <map>
+#include <glm/glm.hpp>
 
 using namespace glm;
 
@@ -42,15 +43,15 @@ public:
         terrains.insert(std::pair<int,terrain*>(0, transform->gameObject->getComponent<terrain>()));
         
     }
-    void update(){
-        if(r == 0)
-            return;
-        _model model = r->getModel();
-        if(!generated && model.m != 0 && model.m->model->ready)
-            generate(width,depth);
-        // model.m->model->meshes[0].reloadMesh();
-    }
-    UPDATE(terrain,update);
+    // void update(){
+    //     if(r == 0)
+    //         return;
+    //     _model model = r->getModel();
+    //     if(!generated && model.m != 0 && model.m->model->ready)
+    //         generate(width,depth);
+    //     // model.m->model->meshes[0].reloadMesh();
+    // }
+    // UPDATE(terrain,update);
 
     int xz(int x, int z){
         return x * width + z;
@@ -118,12 +119,19 @@ public:
                 heightMap[x].push_back(noise[x][z]* 10.f + getNoise((float)x / 5.f,(float)z / 5.f) * 50.f + getNoise((float)x / 20.f,(float)z / 20.f) * 300.f);
             }
         }
-
+        generated = true;
+        enqueRenderJob([&](){this->generate();});
     }
-    void generate(int _width, int _depth){
+    void generate(){
         
+        if(r == 0)
+            return;
         _model model = r->getModel();
-        model.m->model->meshes[0].vertices = vector<glm::vec3>(_width * _depth);
+        if(!(model.m->model->ready)){
+            enqueRenderJob([&](){this->generate();});
+        }
+            
+        model.m->model->meshes[0].vertices = vector<glm::vec3>(width * depth);
 
         vector<glm::vec3>& verts = model.m->model->meshes[0].vertices;
 
@@ -147,7 +155,7 @@ public:
             model.m->model->meshes[0].indices[k++] = xz(i + 1,j);
             }
         }
-        model.m->model->meshes[0].normals = vector<glm::vec3>(_width * _depth);
+        model.m->model->meshes[0].normals = vector<glm::vec3>(width * depth);
         for(int x = 1; x < width - 1; x++){
             for(int z = 1; z < depth - 1; z++){
                 glm::vec3 p = model.m->model->meshes[0].vertices[xz(x,z)];
