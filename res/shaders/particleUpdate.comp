@@ -213,28 +213,28 @@ void main () {
     if(gid < count){
         switch(stage){
             case 0:
-                emit(gid);
-                break;
-            case 1:
-                update(gid,deltaTime);
-                break;
-            case 2:
                 initEmitters(gid);
                 break;
-            case 3:
+            case 1:
+                emit(gid);
+                break;
+            case 2:
                 burst(gid);
                 break;
-            case 4:
+            case 3:
                 makeBursts(gid);
                 break;
-            case 5:
-                countParticles(gid);
+            case 4:
+                atomicMin(atomicCounters[liveParticles],max_particles);
                 break;
-            case 6:
+            case 5:
                 atomicCounters[2] = 0;
                 break;
+            case 6:
+                countParticles(gid);
+                break;
             case 7:
-                min(atomicCounters[liveParticles],max_particles);
+                update(gid,deltaTime);
                 break;
 
         }
