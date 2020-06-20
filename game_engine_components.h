@@ -225,6 +225,7 @@ class copyBuffers : public component
 	{
 		return true;
 	}
+public:
 	void update()
 	{
 		int numt = concurrency::numThreads;
@@ -279,6 +280,6 @@ class copyBuffers : public component
 		//		renderCounts[getThreadID()]++;
 	}
 public:
-	UPDATE(copyBuffers, update);
+	//UPDATE(copyBuffers, update);
 	COPY(copyBuffers);
 };

@@ -25,8 +25,10 @@ public:
 
 	virtual bool _registerEngineComponent();
 	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal);
-	virtual void _update(int index, unsigned int _start, unsigned int _end);
-	virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
+	virtual void update();
+	virtual void lateUpdate();
+	// virtual void _update(int index, unsigned int _start, unsigned int _end);
+	// virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
 	virtual void _copy(game_object *go) = 0;
 	Transform *transform;
 	int getThreadID();
@@ -105,17 +107,27 @@ public:
 		return data.size();
 	}
 
-	void update()
-	{
-		((component *)&(data.data.front()))->_update(0, 0, data.size());
-	}
+	// void update()
+	// {
+	// 	((component *)&(data.data.front()))->_update(0, 0, data.size());
+	// }
 	void update(int index, int size)
 	{
 		unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
 		unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
 		if (index == concurrency::numThreads - 1)
 			_end = size;
-		((component *)&(data.data.front()))->_update(index, _start, _end);
+		// ((component *)&(data.data.front()))->_update(index, _start, _end);
+		auto start = data.data.begin() + _start;
+		auto valid = data.valid.begin() + _start;
+		auto end = data.data.begin() + _end;
+		for(; start != end; ++start, ++valid){
+			if(*valid){
+				start->threadID = index;
+				start->update();
+			}
+		}
+
 	}
 	void lateUpdate(int index, int size)
 	{
@@ -123,7 +135,16 @@ public:
 		unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
 		if (index == concurrency::numThreads - 1)
 			_end = size;
-		((component *)&(data.data.front()))->_lateUpdate(index, _start, _end);
+		// ((component *)&(data.data.front()))->_lateUpdate(index, _start, _end);
+		auto start = data.data.begin() + _start;
+		auto valid = data.valid.begin() + _start;
+		auto end = data.data.begin() + _end;
+		for(; start != end; ++start, ++valid){
+			if(*valid){
+				start->threadID = index;
+				start->lateUpdate();
+			}
+		}
 	}
 };
 
@@ -148,8 +169,8 @@ inline compInfo<t> addComponentToAll(const t &c)
 			// auto& csb = allcomponents[hash];
 			allcomponents[hash] = csb;
 			csb->name = typeid(t).name();
-			csb->h_update = typeid(&t::_update) != typeid(&component::_update);
-			csb->h_lateUpdate = typeid(&t::_lateUpdate) != typeid(&component::_lateUpdate);
+			csb->h_update = typeid(&t::update) != typeid(&component::update);
+			csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
 			if (((component *)&c)->_registerEngineComponent())
 			{
 				gameEngineComponents.insert(allcomponents[hash]);
@@ -184,7 +205,7 @@ void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size);
 	{                                            \
 		go->dupComponent(component_type(*this)); \
 	}
-//#define UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
+//#define //UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
 //    listThing2<component_type>::node* i = COMPONENT_LIST(component_type)->data[_start];\
 //    listThing2<component_type>::node* end;\
 //    bool isEnd = _end >= COMPONENT_LIST(component_type)->data.accessor.size();\
@@ -195,38 +216,38 @@ void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size);
 //	for (i; i != end; i = i->next) { i->value.threadID = index; i->value.update_function();  } \
 //    if(isEnd){ end->value.threadID = index; end->value.update_function(); }\
 // }
-#define UPDATE(component_type, update_function)                                                         \
-	void _update(int index, unsigned int _start, unsigned int _end)                                     \
-	{                                                                                                   \
-		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
-		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
-		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
-		for (i; i != end; ++i, ++val)                                                                   \
-		{                                                                                               \
-			if (*val)                                                                                   \
-			{                                                                                           \
-				(*i).threadID = index;                                                                  \
-				(*i).update_function();                                                                 \
-			}                                                                                           \
-		}                                                                                               \
-	}
-#define LATE_UPDATE(component_type, late_update_function)                                               \
-	void _lateUpdate(int index, unsigned int _start, unsigned int _end)                                 \
-	{                                                                                                   \
-		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
-		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
-		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
-		for (i; i != end; ++i, ++val)                                                                   \
-		{                                                                                               \
-			if (*val)                                                                                   \
-			{                                                                                           \
-				(*i).threadID = index;                                                                  \
-				(*i).late_update_function();                                                            \
-			}                                                                                           \
-		}                                                                                               \
-	}
+// #define //UPDATE(component_type, update_function)                                                         \
+// 	void _update(int index, unsigned int _start, unsigned int _end)                                     \
+// 	{                                                                                                   \
+// 		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
+// 		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
+// 		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
+// 		for (i; i != end; ++i, ++val)                                                                   \
+// 		{                                                                                               \
+// 			if (*val)                                                                                   \
+// 			{                                                                                           \
+// 				(*i).threadID = index;                                                                  \
+// 				(*i).update_function();                                                                 \
+// 			}                                                                                           \
+// 		}                                                                                               \
+// 	}
+// #define LATE_UPDATE(component_type, late_update_function)                                               \
+// 	void _lateUpdate(int index, unsigned int _start, unsigned int _end)                                 \
+// 	{                                                                                                   \
+// 		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
+// 		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
+// 		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
+// 		for (i; i != end; ++i, ++val)                                                                   \
+// 		{                                                                                               \
+// 			if (*val)                                                                                   \
+// 			{                                                                                           \
+// 				(*i).threadID = index;                                                                  \
+// 				(*i).late_update_function();                                                            \
+// 			}                                                                                           \
+// 		}                                                                                               \
+// 	}
 
-//#define UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
+//#define //UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
 //    vector<component_type>& d = COMPONENT_LIST(component_type)->data.data;\
 //    for (int i = index; i < _end; i += concurrency::numThreads) { d[i].threadID = index; d[i].update_function();  }\
 //}

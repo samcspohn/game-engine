@@ -51,7 +51,7 @@ public:
     //         generate(width,depth);
     //     // model.m->model->meshes[0].reloadMesh();
     // }
-    // UPDATE(terrain,update);
+    // //UPDATE(terrain,update);
 
     int xz(int x, int z){
         return x * width + z;

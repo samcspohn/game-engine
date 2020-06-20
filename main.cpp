@@ -95,7 +95,7 @@ public:
 			hit = true;
 		// }
 	}
-	UPDATE(missile, update);
+	//UPDATE(missile, update);
 	COPY(missile);
 };
 
@@ -143,7 +143,7 @@ public:
 		}
 		return false;
 	}
-	// UPDATE(gun, update);
+	// //UPDATE(gun, update);
 	COPY(gun);
 };
 
@@ -350,7 +350,7 @@ public:
 		}
 
 	}
-	UPDATE(player_sc, update);
+	//UPDATE(player_sc, update);
 	COPY(player_sc);
 };
 
@@ -385,7 +385,7 @@ public:
 // 		rb->setVelocity(rb->getVelocity() + acc * Time.deltaTime);
 // 		//        transform->move(vel * Time.deltaTime);
 // 	}
-// 	UPDATE(nbody, update);
+// 	//UPDATE(nbody, update);
 // 	COPY(nbody);
 // };
 class spinner : public component
@@ -398,7 +398,7 @@ class spinner : public component
 	void onStart(){
 		axis = normalize(randomSphere());
 	}
-	UPDATE(spinner,update);
+	//UPDATE(spinner,update);
 	COPY(spinner);
 };
 
@@ -512,7 +512,7 @@ public:
 		}
 		return false;
 	}
-	UPDATE(_turret,update);
+	//UPDATE(_turret,update);
 	COPY(_turret);
 };
 
@@ -522,6 +522,7 @@ class gunManager : public component{
 	int curr = 0;
 	double t;
 	double t_;
+public:
 	void update(){
 		if(Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
 			// for(auto& i : turrets){
@@ -550,7 +551,7 @@ public:
 		t_ = (1.f / turrets[0]->getRateOfFire()) / turrets.size();
 	}
 public:
-	UPDATE(gunManager,update);
+	//UPDATE(gunManager,update);
 	COPY(gunManager);
 };
 
@@ -571,7 +572,7 @@ public:
 		if(shouldFire)
 			g->fire();
 	}
-	UPDATE(autoShooter, update);
+	//UPDATE(autoShooter, update);
 	COPY(autoShooter);
 };
 
@@ -656,7 +657,7 @@ public:
 		//  + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up()
 		//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 	}
-	UPDATE(_ship,update);
+	//UPDATE(_ship,update);
 	COPY(_ship);
 };
 
@@ -666,7 +667,7 @@ public:
 	void update(){
 		transform->setPosition(t->getPosition());
 	}
-	UPDATE(_boom,update);
+	//UPDATE(_boom,update);
 	COPY(_boom);
 };
 

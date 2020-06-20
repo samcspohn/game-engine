@@ -359,19 +359,16 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
     // run program
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), emitterInitCount);
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 2);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 0);
     glDispatchCompute(emitterInitCount / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), EMITTERS.size());
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 0);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
     glDispatchCompute(EMITTERS.size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), 1); // if particle emissions exceed buffer
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 7);
-    glDispatchCompute(1, 1, 1);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
 
     atomicCounters->retrieveData();
     (*atomicCounters)[1] = 0;
@@ -384,25 +381,30 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "burstOffset"), (*atomicCounters)[0]);
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), gpu_particle_bursts->size());
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 2);
     glDispatchCompute(gpu_particle_bursts->size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
     atomicCounters->retrieveData(); // replace with dispatch indirect
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), (*atomicCounters)[1]);
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 4);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 3);
     glDispatchCompute((*atomicCounters)[1] / 128 + 1, 1, 1);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), 1); // if particle emissions exceed buffer
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 4);
+    glDispatchCompute(1, 1, 1);
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), 1); // reset particle counter
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 6);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 5);
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES); // count particles
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 5);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 6);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     
@@ -413,7 +415,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     pcMutex.unlock();
 
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), actualParticles);
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 1);
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 7);
     glDispatchCompute(actualParticles / 128 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }

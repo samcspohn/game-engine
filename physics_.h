@@ -260,7 +260,7 @@ class physicsObject : public component{
 		delete motionState;
 		argggh.unlock();
 	}
-	UPDATE(physicsObject, update);
+	//UPDATE(physicsObject, update);
 	COPY(physicsObject);
 };
 

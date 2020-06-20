@@ -501,7 +501,7 @@ void doWork(componentStorageBase* cs,update_type type){
 }
 void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 {
-	// UPDATE
+	// //UPDATE
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;
@@ -510,7 +510,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 			doWork(j,update_type::update);
 		}
 	}
-	// LATE UPDATE
+	// LATE //UPDATE
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;

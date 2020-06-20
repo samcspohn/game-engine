@@ -225,7 +225,7 @@ public:
 		if(gravity)
 			vel += Time.deltaTime * glm::vec3(0, -9.81f, 0);
 	}
-	UPDATE(rigidBody, update);
+	//UPDATE(rigidBody, update);
 	COPY(rigidBody);
 
 	int id;
@@ -749,8 +749,8 @@ public:
 		}
 	}
 
-	UPDATE(collider, update);
-	LATE_UPDATE(collider, lateUpdate);
+	//UPDATE(collider, update);
+	// LATE_UPDATE(collider, lateUpdate);
 
 private:
 };
