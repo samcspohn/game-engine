@@ -855,7 +855,7 @@ int main(int argc, char **argv)
 		g->getComponent<physicsObject>()->init(vec3(0));
 	}
 
-	player = new game_object();
+	game_object* player = new game_object();
 	auto playerCam = player->addComponent<_camera>();
 	playerCam->fov = 80;
 	playerCam->farPlane = 1e32f;
