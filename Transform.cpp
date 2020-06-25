@@ -93,11 +93,11 @@ glm::vec3 Transform::getPosition() {
 	return _T->position;
 }
 void Transform::setPosition(glm::vec3 pos) {
-	m.lock();
+	// m.lock();
 	for (Transform* c : children)
 		c->translate(pos - _T->position, glm::quat());
 	_T->position = pos;
-	m.unlock();
+	// m.unlock();
 }
 glm::quat Transform::getRotation() {
 	return _T->rotation;
@@ -137,54 +137,54 @@ void Transform::_destroy() {
 }
 
 void Transform::move(glm::vec3 lhs) {
-	setPosition(_T->position + lhs);
+	_T->position += lhs;
 }
 void Transform::translate(glm::vec3 translation) {
-	m.lock();
+	// m.lock();
 	_T->position += _T->rotation * translation;
 	for (auto a : children)
 		a->translate(translation, _T->rotation);
-	m.unlock();
+	// m.unlock();
 }
 void Transform::translate(glm::vec3 translation, glm::quat r) {
-	m.lock();
+	// m.lock();
 	_T->position += r * translation;
 	for (Transform* a : children)
 		a->translate(translation, r);
-	m.unlock();
+	// m.unlock();
 }
 void Transform::scale(glm::vec3 scale) {
-	m.lock();
+	// m.lock();
 	_T->scale *= scale;
 	for (Transform* a : children)
 		a->scaleChild(_T->position, scale);
-	m.unlock();
+	// m.unlock();
 }
 void Transform::scaleChild(glm::vec3 pos, glm::vec3 scale) {
-	m.lock();
+	// m.lock();
 	_T->position = (_T->position - pos) * scale + pos;
 	_T->scale *= scale;
 	for (Transform* a : children)
 		a->scaleChild(pos, scale);
-	m.unlock();
+	// m.unlock();
 }
 void Transform::rotate(glm::vec3 axis, float radians) {
-	m.lock();
+	// m.lock();
 	_T->rotation = glm::rotate(_T->rotation, radians, axis);
 	for (Transform* a : children)
 		a->rotateChild(axis, _T->position, _T->rotation, radians);
 	_T->rotation = normalize(_T->rotation);
-	m.unlock();
+	// m.unlock();
 }
 void Transform::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle) {
-	m.lock();
+	// m.lock();
 	glm::vec3 ax = r * axis;
 	_T->position = pos + glm::rotate(_T->position - pos, angle, ax);
 	_T->rotation = glm::rotate(_T->rotation, angle, glm::inverse(_T->rotation) * ax);// glm::rotate(rotation, angle, axis);
 	for (Transform* a : children)
 		a->rotateChild(axis, pos, r, angle);
 	_T->rotation = normalize(_T->rotation);
-	m.unlock();
+	// m.unlock();
 }
 
 
