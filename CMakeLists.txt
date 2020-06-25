@@ -51,14 +51,14 @@ target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}/bullet/src
                            ${CMAKE_SOURCE_DIR}/imgui
                            )
-# FIND_PACKAGE( OpenMP)
-# if(OPENMP_FOUND)
-#     message("OPENMP FOUND")
-#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-# endif()
-# include_directories(SYSTEM ${OpenMP_INCLUDE_PATH})
+FIND_PACKAGE( OpenMP)
+if(OPENMP_FOUND)
+    message("OPENMP FOUND")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+include_directories(SYSTEM ${OpenMP_INCLUDE_PATH})
 add_custom_command(
     TARGET game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -76,7 +76,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 option(BUILD_DEBUG "build un-optimized with debugger info" ON)
 if(BUILD_DEBUG)
-    target_compile_options(game PUBLIC -w -g -fpermissive )
+    target_compile_options(game PUBLIC -w -g -fpermissive -fopenmp)
 else()
-    target_compile_options(game PUBLIC -w -g -fpermissive -O3)
+    target_compile_options(game PUBLIC -w -g -fpermissive -fopenmp -O3)
 endif()
