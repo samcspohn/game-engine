@@ -43,18 +43,18 @@ public:
 	// rigidBody *rb;
 	vec3 vel;
 	bullet b;
-	glm::vec3 rot;
+	// glm::vec3 rot;
 	// particle_emitter* myEmitter;
 	// glm::vec3 dir;
-	bool hit = false;
+	// bool hit = false;
 	// audiosource* sound;
 	// double life;
 	missile() {}
 	void onStart()
 	{
-		rot = randomSphere();
-		hit = false;
-		// numCubes.fetch_add(1);
+		// rot = randomSphere();
+		// hit = false;
+		numCubes.fetch_add(1);
 		// sound = transform->gameObject->getComponent<audiosource>();
 		// myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
@@ -69,16 +69,16 @@ public:
 			// transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 			vel += vec3(0, -9.81, 0) * Time.deltaTime;
 
-		if(hit){
+		// if(hit){
 
-			// numCubes.fetch_add(-1);
-			// colCount++;
-			// // if(length(normal) == 0)
-			// vec3 normal;
-			// 	normal = randomSphere();
-			// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-			transform->gameObject->destroy();
-		}
+		// 	numCubes.fetch_add(-1);
+		// 	// colCount++;
+		// 	// // if(length(normal) == 0)
+		// 	// vec3 normal;
+		// 	// 	normal = randomSphere();
+		// 	// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+		// 	transform->gameObject->destroy();
+		// }
 
 	}
 	void onCollision(game_object *go,vec3 point, vec3 normal)
@@ -88,11 +88,14 @@ public:
 			if(length(normal) == 0)
 				normal = randomSphere();
 			b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+			numCubes.fetch_add(-1);
+			transform->gameObject->destroy();
+
 			// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
 			// sound->play(transform->getPosition());
 			// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 			// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
-			hit = true;
+			// hit = true;
 		// }
 	}
 	//UPDATE(missile, update);

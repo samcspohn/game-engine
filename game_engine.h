@@ -1,6 +1,7 @@
 
 #pragma once
 #include "renderthread.h"
+#include <omp.h>
 // #include <GL/glew.h>
 // #include <GLFW/glfw3.h>
 // #include <glm/glm.hpp>
@@ -46,16 +47,6 @@ struct updateJob
 
 atomic<int> numCubes(0);
 game_object *rootGameObject;
-
-// GLFWwindow *window;
-// GLdouble lastFrame = 0;
-// Shader *shadowShader;
-// Shader *OmniShadowShader;
-
-// bool hideMouse = true;
-// atomic<bool> renderDone(false);
-// atomic<bool> renderThreadReady(false);
-
 glm::mat4 proj;
 thread *renderThread;
 // bool recieveMouse = true;
@@ -65,450 +56,76 @@ vector<queue<updateJob>> updateWork(concurrency::numThreads);
 
 componentStorageBase *copyWorkers;
 float maxGameDuration = INFINITY;
-
-// /////////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
-// /////////////////////////////////////////////////////////////////////////////////////
-
-// void window_close_callback(GLFWwindow *window)
+// void lockUpdate()
 // {
-// 	//if (!time_to_close)
-// 	glfwSetWindowShouldClose(window, GLFW_TRUE);
+// 	for (auto &i : updateLocks)
+// 		i.lock();
 // }
-// void mouseFrameBegin()
+// void unlockUpdate()
 // {
-// 	Input.Mouse.xOffset = Input.Mouse.yOffset = Input.Mouse.mouseScroll = 0;
-// }
-// void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
-// {
-// 	if (button >= 0 && button < 1024)
-// 	{
-// 		if (action == GLFW_PRESS)
-// 		{
-// 			Input.Mouse.mouseButtons[button] = true;
-// 		}
-// 		else if (action == GLFW_RELEASE)
-// 		{
-// 			Input.Mouse.mouseButtons[button] = false;
-// 		}
-// 	}
+// 	for (auto &i : updateLocks)
+// 		i.unlock();
 // }
 
-// void MouseCallback(GLFWwindow *window, double xPos, double yPos)
+// void componentUpdateThread(int id)
 // {
-// 	if (recieveMouse)
-// 	{
-// 		if (Input.Mouse.firstMouse)
-// 		{
-// 			Input.Mouse.lastX = xPos;
-// 			Input.Mouse.lastY = yPos;
-// 			Input.Mouse.firstMouse = false;
-// 		}
-
-// 		Input.Mouse.xOffset = xPos - Input.Mouse.lastX;
-// 		Input.Mouse.yOffset = Input.Mouse.lastY - yPos;
-
-// 		Input.Mouse.lastX = xPos;
-// 		Input.Mouse.lastY = yPos;
-// 	}
-// 	//camera.ProcessMouseMovement(xOffset, yOffset);
-// }
-// void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
-// {
-
-// 	if (key >= 0 && key < 1024)
-// 	{
-// 		if (action == GLFW_PRESS)
-// 		{
-// 			Input.keys[key] = true;
-// 			Input.keyDowns[key] = true;
-// 		}
-// 		else if (action == GLFW_RELEASE)
-// 		{
-// 			Input.keys[key] = false;
-// 		}
-// 	}
-// }
-// void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
-// {
-// 	Input.Mouse.mouseScroll = yOffset;
-// 	//camera.ProcessMouseScroll(yOffset);
-// }
-// void window_size_callback(GLFWwindow *window, int width, int height)
-// {
-// 	glfwSetWindowSize(window, width, height);
-// }
-// void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-// {
-// 	SCREEN_WIDTH = width;
-// 	SCREEN_HEIGHT = height;
-// 	glViewport(0, 0, width, height);
-// }
-// bool eventsPollDone;
-// void updateTiming()
-// {
-// 	Input.resetKeyDowns();
-// 	mouseFrameBegin();
-// 	glfwPollEvents();
-
-// 	double currentFrame = glfwGetTime();
-// 	Time.unscaledTime = currentFrame;
-// 	Time.unscaledDeltaTime = currentFrame - lastFrame;
-// 	Time.deltaTime = _min(Time.unscaledDeltaTime, 1.f / 10.f) * Time.timeScale;
-// 	Time.time += Time.deltaTime;
-// 	Time.timeBuffer.add(Time.unscaledDeltaTime);
-// 	lastFrame = currentFrame;
-// 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
-// 	eventsPollDone = true;
-// }
-
-// glm::mat4 getProjection()
-// {
-// 	return glm::perspective(glm::radians(60.f), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, (GLfloat).1f, (GLfloat)1e32f);
-// }
-
-// struct renderData{
-// 	glm::mat4 vp; glm::mat4 view; glm::vec3 camPos; glm::vec2 screen; glm::vec3 cullPos; glm::mat3 camInv; glm::mat4 rot; glm::mat4 proj;
-// };
-// int frameCounter = 0;
-// void renderThreadFunc()
-// {
-
-// 	glfwInit();
-
-// 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-// 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-// 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-// 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-// 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-// 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-
-// 	window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
-// 	if (window == nullptr)
-// 	{
-// 		cout << "failed to create GLFW window" << endl;
-// 		glfwTerminate();
-
-// 		throw EXIT_FAILURE;
-// 	}
-
-// /////////////////////////////////////////////////////////////
-// ///////////////////////// GUI ////////////////////////////////
-// /////////////////////////////////////////////////////////////
-
-// 	IMGUI_CHECKVERSION();
-//     ImGui::CreateContext();
-//     ImGuiIO& io = ImGui::GetIO(); (void)io;
-//     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-//     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-
-
-
-//     // Setup style
-//     ImGui::StyleColorsDark();
-//     //ImGui::StyleColorsClassic();
-//     // ImGui::StyleColorsLight();
-
-// 	auto font_default = io.Fonts->AddFontDefault();
-
-//     ImGui_ImplGlfw_InitForOpenGL(window, true);
-//     ImGui_ImplOpenGL3_Init("#version 130");
-
-// /////////////////////////////////////////////////////////////
-// /////////////////////////////////////////////////////////////
-// /////////////////////////////////////////////////////////////
-
-// 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-// 	if (hideMouse)
-// 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-// 	glfwSetWindowSizeCallback(window, window_size_callback);
-// 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-// 	glfwSetKeyCallback(window, KeyCallback);
-// 	glfwSetCursorPosCallback(window, MouseCallback);
-// 	glfwSetScrollCallback(window, ScrollCallback);
-// 	glfwSetMouseButtonCallback(window, mouse_button_callback);
-// 	glfwSetWindowCloseCallback(window, window_close_callback);
-
-// 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-
-// 	glfwMakeContextCurrent(window);
-// 	glfwSwapInterval(0);
-// 	//glewExperimental = GL_TRUE;
-
-// 	if (glewInit() != GLEW_OK)
-// 	{
-// 		cout << "failed to initialize GLEW" << endl;
-
-// 		throw EXIT_FAILURE;
-// 	}
-
-// 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-// 	glEnable(GLEW_ARB_compute_shader);
-// 	glEnable(GL_DEPTH_TEST);
-// 	glEnable(GL_DEPTH32F_STENCIL8);
-// 	glEnable(GL_DEPTH_CLAMP);
-
-// 	glEnable(GL_CULL_FACE);
-// 	glEnable(GL_BLEND);
-// 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-// 	Shader matProgram("res/shaders/mat.comp");
-
-// 	GLint max_buffers;
-// 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
-// 	cout << max_buffers << endl;
-
-// 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
-// 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
-// 	initTransform();
-// 	initParticles();
-// 	particle_renderer::init();
-
-// 	timer stopWatch;
-
-// 	renderDone.store(true);
-// 	renderThreadReady.exchange(true);
 // 	while (true)
 // 	{
-// 		// log("render loop");
-// 		// log(to_string(renderWork.size()));
-// 		if (renderWork.size() > 0)
+// 		updateLocks[id].lock();
+// 		if (updateWork[id].size() != 0)
 // 		{
-// 			renderLock.lock();
-// 			renderJob* rj = renderWork.front();
-// 			renderWork.pop();
-// 			switch (rj->type)
+// 			updateJob uj = updateWork[id].front();
+// 			if (uj.componentStorage == 0)
+// 				break;
+// 			if (uj.ut == update_type::update)
 // 			{
-// 			case doFunc: //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-// 				renderLock.unlock();
-
-// 				rj->work();
-
-// 				if(rj->completed == 0){
-// 					rj->completed = 1;
-// 					while(rj->completed != 2){
-// 						this_thread::sleep_for(1ns);
-// 					}
-// 				}
-				
-// 				break;
-// 			case renderNum::render:
+// 				uj.componentStorage->update(id, uj.size);
+// 			}
+// 			else if (uj.ut == update_type::lateupdate)
 // 			{
-// 				gpuTimer gt;
-
-// 				stopWatch.start();
-// 				updateTiming();
-
-
-// 				auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
-
-// 				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
-// 				GPU_TRANSFORMS_UPDATES->tryRealloc(TRANSFORMS.size());
-// 				transformIds->tryRealloc(TRANSFORMS.size());
-// 				gt.start();
-
-// 				GLuint offset = 0;
-// 				for(int i = 0; i < transformIdThreadcache.size(); ++i){
-// 					transformIds->bufferData(transformIdThreadcache[i],offset,transformIdThreadcache[i].size());
-// 					GPU_TRANSFORMS_UPDATES->bufferData(transformThreadcache[i],offset,transformThreadcache[i].size());
-// 					offset += transformIdThreadcache[i].size();
-// 				}
-
-// 				matProgram.Use();
-// 				GPU_TRANSFORMS->bindData(0);
-// 				transformIds->bindData(6);
-// 				GPU_TRANSFORMS_UPDATES->bindData(7);
-
-// 				glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), -1);
-// 				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), offset);
-// 				glDispatchCompute(offset / 64 + 1, 1, 1);
-// 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-// 				appendStat("transforms buffer", gt.stop());
-
-// 				uint emitterInitCount = emitterInits.size();
-// 				prepParticles();
-// 				glFlush();
-				
-// 				_camera::initPrepRender(matProgram);
-
-
-// 				gt.start();
-// 				updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
-// 				appendStat("particles compute", gt.stop());
-// 				vector<renderData> r_d;
-// 				for(_camera& c : cameras->data.data){
-// 					gt.start();
-// 					c.prepRender(matProgram);
-// 					appendStat("matrix compute", gt.stop());
-// 					r_d.push_back(renderData());
-// 					r_d.back().vp = c.proj * c.rot * c.view;
-// 					r_d.back().rot = c.rot;
-// 					r_d.back().view = c.view;
-// 					r_d.back().camPos = c.pos;
-// 					r_d.back().screen = c.screen;
-// 					r_d.back().cullPos = c.cullpos;
-// 					r_d.back().camInv = c.camInv;
-// 					r_d.back().proj = c.proj;
-
-
-// 					// sort particles
-// 					timer t;
-// 					t.start();
-// 					if(!c.lockFrustum)
-// 						particle_renderer::setCamCull(c.camInv,c.cullpos);
-// 					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
-// 					appendStat("particles sort", t.stop());
-// 				}
-// 				renderLock.unlock();
-
-// 				// cam_render(rj.rot, rj.proj, rj.view);
-// 				glClearColor(0.6f, 0.7f, 1.f, 1.0f);
-// 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				
-// 				int k = 0;
-// 				for(_camera& c : cameras->data.data){
-// 					glEnable(GL_CULL_FACE);
-// 					glDepthMask(GL_TRUE);
-// 					gt.start();
-// 					c.render();
-// 					appendStat("render cam", gt.stop());
-
-					
-// 					// render particle
-// 					gt.start();
-// 					glDisable(GL_CULL_FACE);
-// 					glDepthMask(GL_FALSE);
-// 					particle_renderer::drawParticles(r_d[k].view, r_d[k].rot, r_d[k].proj);
-// 					appendStat("render particles", gt.stop());
-// 					glDepthMask(GL_TRUE);
-// 				}
-
-// /////////////////////////////////////////////////////////////
-// ///////////////////////// GUI ////////////////////////////////
-// /////////////////////////////////////////////////////////////
-// IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
-// 				ImGui_ImplOpenGL3_NewFrame();
-// 				ImGui_ImplGlfw_NewFrame();
-// 				ImGui::NewFrame();
-
-// 				ImGui::PushFont(font_default);
-
-// 				for(auto& i : gui::gui_windows){
-// 					i->render();
-// 				}
-// 				ImGui::PopFont();
-// 				// Rendering
-// 				ImGui::Render();
-// 				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-// /////////////////////////////////////////////////////////////
-// ///////////////////////// GUI ////////////////////////////////
-// /////////////////////////////////////////////////////////////
-
-// 				glfwSwapBuffers(window);
-// 				glFlush();
-// 				appendStat("render", stopWatch.stop());
-// 				//renderDone.store(true);
+// 				uj.componentStorage->lateUpdate(id, uj.size);
 // 			}
-// 				break;
-// 			case rquit:
-// 				particle_renderer::end();
-// 				while (gpu_buffers.size() > 0)
-// 				{
-// 					(gpu_buffers.begin()->second)->deleteBuffer();
-// 				}
-
-// 			// Cleanup
-// 				ImGui_ImplOpenGL3_Shutdown();
-// 				ImGui_ImplGlfw_Shutdown();
-// 				ImGui::DestroyContext();
-				
-// 				glFlush();
-// 				glfwTerminate();
-// 				renderThreadReady.exchange(false);
-
-// 				renderLock.unlock();
-// 				delete rj;
-
-// 				return;
-// 			default:
-// 				break;
-// 			}
-// 			delete rj;
+// 			updateWork[id].pop();
 // 		}
-// 		// else
-// 		// {
-// 			this_thread::sleep_for(1ns);
-// 		// }
+// 		updateLocks[id].unlock();
+// 		this_thread::sleep_for(1ns);
 // 	}
 // }
 
 
-
-void lockUpdate()
-{
-	for (auto &i : updateLocks)
-		i.lock();
-}
-void unlockUpdate()
-{
-	for (auto &i : updateLocks)
-		i.unlock();
-}
-
-void componentUpdateThread(int id)
-{
-	while (true)
-	{
-		updateLocks[id].lock();
-		if (updateWork[id].size() != 0)
-		{
-			updateJob uj = updateWork[id].front();
-			if (uj.componentStorage == 0)
-				break;
-			if (uj.ut == update_type::update)
-			{
-				ComponentsUpdate(uj.componentStorage, id, uj.size);
-			}
-			else if (uj.ut == update_type::lateupdate)
-			{
-				ComponentsLateUpdate(uj.componentStorage, id, uj.size);
-			}
-			updateWork[id].pop();
-		}
-		updateLocks[id].unlock();
-		this_thread::sleep_for(1ns);
-	}
-}
-
-
-void doWork(componentStorageBase* cs,update_type type){
-	int s = cs->size();
-	timer stopWatch;
-	stopWatch.start();
-	lockUpdate();
-	for (int i = 0; i < concurrency::numThreads; ++i)
-		updateWork[i].push(updateJob(cs, type, s));
-	unlockUpdate();
-	this_thread::sleep_for(1ns);
-	lockUpdate();
-	unlockUpdate();
-	if (type == update_type::update)
-		appendStat(cs->name + "--update", stopWatch.stop());
-	else if (type == update_type::lateupdate)
-		appendStat(cs->name + "--late_update", stopWatch.stop());
-}
+// void doWork(componentStorageBase* cs,update_type type){
+// 	int s = cs->size();
+// 	timer stopWatch;
+// 	stopWatch.start();
+// 	lockUpdate();
+// 	for (int i = 0; i < concurrency::numThreads; ++i)
+// 		updateWork[i].push(updateJob(cs, type, s));
+// 	unlockUpdate();
+// 	this_thread::sleep_for(1ns);
+// 	lockUpdate();
+// 	unlockUpdate();
+// 	if (type == update_type::update)
+// 		appendStat(cs->name + "--update", stopWatch.stop());
+// 	else if (type == update_type::lateupdate)
+// 		appendStat(cs->name + "--late_update", stopWatch.stop());
+// }
 void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 {
+	timer stopWatch;
+
 	// //UPDATE
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;
 		if(cb->hasUpdate()){
-			int s = cb->size();
-			doWork(j,update_type::update);
+			stopWatch.start();
+			// int size = cb->size();
+			// #pragma omp parallel
+			// {
+				// int id = omp_get_thread_num();
+				cb->update();
+			// }
+			appendStat(cb->name + "--update", stopWatch.stop());
 		}
 	}
 	// LATE //UPDATE
@@ -516,35 +133,39 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	{
 		componentStorageBase *cb = j;
 		if(cb->hasLateUpdate()){
-			int s = cb->size();
-			doWork(j,update_type::lateupdate);
+			stopWatch.start();
+			// int size = cb->size();
+			// #pragma omp parallel
+			// {
+				// int id = omp_get_thread_num();
+				cb->lateUpdate();
+			// }
+			appendStat(cb->name + "--late_update", stopWatch.stop());
 		}
 	}
 
 }
-void waitForWork(){
-	bool working = true;
-	while (working)
-	{
-		working = false;
-		lockUpdate();
-		for (auto i : updateWork)
-		{
-			if (i.size() > 0)
-			{
-				working = true;
-				break;
-			}
-		}
-		unlockUpdate();
-		this_thread::sleep_for(1ns);
-	}
-}
+// void waitForWork(){
+// 	bool working = true;
+// 	while (working)
+// 	{
+// 		working = false;
+// 		lockUpdate();
+// 		for (auto i : updateWork)
+// 		{
+// 			if (i.size() > 0)
+// 			{
+// 				working = true;
+// 				break;
+// 			}
+// 		}
+// 		unlockUpdate();
+// 		this_thread::sleep_for(1ns);
+// 	}
+// }
 
 void init()
 {
-	transformIdThreadcache = vector<vector<GLuint>>(concurrency::numThreads);
-	transformThreadcache = vector<vector<_transform>>(concurrency::numThreads);
 
 	audioManager::init();
 	renderThreadReady.exchange(false);
@@ -561,6 +182,8 @@ void init()
 		rootGameObject->addComponent<copyBuffers>();
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
+	transformIdThreadcache = vector<vector<GLuint>>(copyWorkers->size());
+	transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
 	gameEngineComponents.erase(copyWorkers);
 }
 
@@ -568,9 +191,9 @@ void run()
 {
 	timer stopWatch;
 
-	vector<thread *> workers;
-	for (int i = 0; i < concurrency::numThreads; i++)
-		workers.push_back(new thread(componentUpdateThread, i));
+	// vector<thread *> workers;
+	// for (int i = 0; i < concurrency::numThreads; i++)
+	// 	workers.push_back(new thread(componentUpdateThread, i));
 
 	componentStorageBase *colliders;
 	for (auto &j : allcomponents)
@@ -587,7 +210,7 @@ void run()
 		}
 	}
 	eventsPollDone = true;
-	unlockUpdate();
+	// unlockUpdate();
 
 	for(auto & i : collisionGraph)
 		collisionLayers[i.first].clear();
@@ -611,13 +234,13 @@ void run()
 		// scripting
 		doLoopIteration(gameComponents);
 
-		lockUpdate();
+		// lockUpdate();
 		for(auto & i : collisionGraph)
 			collisionLayers[i.first].clear();
 		// Octree->clear();
 
-		unlockUpdate();
-		waitForWork();
+		// unlockUpdate();
+		// waitForWork();
 		doLoopIteration(gameEngineComponents, false);
 
 		stopWatch.start();
@@ -625,8 +248,8 @@ void run()
 
 		appendStat("physics simulation",stopWatch.stop());
 
-		waitForWork();
-		lockUpdate();
+		// waitForWork();
+		// lockUpdate();
 		appendStat("game loop main",gameLoopMain.stop());
 
 		//////////////////////////////////////////////////////////////////////////////
@@ -659,9 +282,16 @@ void run()
 		
 
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
-		for (int i = 0; i < concurrency::numThreads; ++i)
-			updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads));
-		unlockUpdate();
+		copyWorkers->update();
+		// int size = copyWorkers->size();
+		// #pragma omp parallel
+		// {
+		// 	int id = omp_get_thread_num();
+		// 	copyWorkers->update(id, size);
+		// }
+		// for (int i = 0; i < concurrency::numThreads; ++i)
+		// 	updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads));
+		// unlockUpdate();
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
 		timer emitterTimer;
@@ -674,7 +304,7 @@ void run()
 		appendStat("copy emitter inits", emitTime);
 
 		// copy emitter inits while copying transforms/renderers
-		waitForWork();
+		// waitForWork();
 		appendStat("copy buffers", stopWatch.stop());
 		////////////////////////////////////// switch particle burst buffer //////////////////////////////////////
 		swapBurstBuffer();
@@ -706,12 +336,12 @@ void run()
 	renderWork.push(rj);
 	renderLock.unlock();
 
-	for (int i = 0; i < concurrency::numThreads; i++)
-	{
-		updateWork[i].push(updateJob(0, update_type::update, 0));
-		workers[i]->join();
-		delete workers[i];
-	}
+	// for (int i = 0; i < concurrency::numThreads; i++)
+	// {
+	// 	updateWork[i].push(updateJob(0, update_type::update, 0));
+	// 	workers[i]->join();
+	// 	delete workers[i];
+	// }
 	while (renderThreadReady.load())
 		this_thread::sleep_for(1ms);
 	renderThread->join();

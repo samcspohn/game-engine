@@ -10,16 +10,16 @@
 // #include "game_object.h"
 #include "fast_list.h"
 #include "array_heap.h"
-
+#include <omp.h>
 #define ull unsigned long long
 class game_object;
+
+// bool compareTransform(Transform *t1, Transform *t2);
 class Transform;
-bool compareTransform(Transform *t1, Transform *t2);
 class component
 {
 	friend game_object;
 public:
-	int threadID;
 	virtual void onStart();
 	virtual void onDestroy();
 
@@ -30,7 +30,7 @@ public:
 	// virtual void _update(int index, unsigned int _start, unsigned int _end);
 	// virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
 	virtual void _copy(game_object *go) = 0;
-	Transform *transform;
+	Transform* transform;
 	int getThreadID();
 	ull getHash();
 };
@@ -86,6 +86,7 @@ public:
 	bool hasUpdate(){return h_update;}
 	bool hasLateUpdate(){return h_lateUpdate;}
 	virtual void update(){};
+	virtual void lateUpdate(){};
 	virtual void update(int index, int size) {}
 	virtual void lateUpdate(int index, int size) {}
 
@@ -123,11 +124,31 @@ public:
 		auto end = data.data.begin() + _end;
 		for(; start != end; ++start, ++valid){
 			if(*valid){
-				start->threadID = index;
 				start->update();
 			}
 		}
 
+	}
+
+	void update()
+	{
+		int size = this->size();
+		#pragma omp parallel for
+		for(int i = 0; i < size; ++i){
+			if(data.valid[i]){
+				data.data[i].update();
+			}
+		}
+
+	}
+	void lateUpdate(){
+		int size = this->size();
+		#pragma omp parallel for
+		for(int i = 0; i < size; ++i){
+			if(data.valid[i]){
+				data.data[i].lateUpdate();
+			}
+		}
 	}
 	void lateUpdate(int index, int size)
 	{
@@ -141,7 +162,6 @@ public:
 		auto end = data.data.begin() + _end;
 		for(; start != end; ++start, ++valid){
 			if(*valid){
-				start->threadID = index;
 				start->lateUpdate();
 			}
 		}
@@ -196,8 +216,6 @@ inline compInfo<t> addComponentToAll(const t &c)
 }
 
 void destroyAllComponents();
-void ComponentsUpdate(componentStorageBase *csbase, int i, int size);
-void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size);
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
 
 #define COPY(component_type)                     \
@@ -205,49 +223,3 @@ void ComponentsLateUpdate(componentStorageBase *csbase, int i, int size);
 	{                                            \
 		go->dupComponent(component_type(*this)); \
 	}
-//#define //UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
-//    listThing2<component_type>::node* i = COMPONENT_LIST(component_type)->data[_start];\
-//    listThing2<component_type>::node* end;\
-//    bool isEnd = _end >= COMPONENT_LIST(component_type)->data.accessor.size();\
-//    if(isEnd)\
-//        end = COMPONENT_LIST(component_type)->data[_end - 1];\
-//    else\
-//        end = COMPONENT_LIST(component_type)->data[_end];\
-//	for (i; i != end; i = i->next) { i->value.threadID = index; i->value.update_function();  } \
-//    if(isEnd){ end->value.threadID = index; end->value.update_function(); }\
-// }
-// #define //UPDATE(component_type, update_function)                                                         \
-// 	void _update(int index, unsigned int _start, unsigned int _end)                                     \
-// 	{                                                                                                   \
-// 		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
-// 		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
-// 		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
-// 		for (i; i != end; ++i, ++val)                                                                   \
-// 		{                                                                                               \
-// 			if (*val)                                                                                   \
-// 			{                                                                                           \
-// 				(*i).threadID = index;                                                                  \
-// 				(*i).update_function();                                                                 \
-// 			}                                                                                           \
-// 		}                                                                                               \
-// 	}
-// #define LATE_UPDATE(component_type, late_update_function)                                               \
-// 	void _lateUpdate(int index, unsigned int _start, unsigned int _end)                                 \
-// 	{                                                                                                   \
-// 		deque<component_type>::iterator i = COMPONENT_LIST(component_type)->data.data.begin() + _start; \
-// 		deque<component_type>::iterator end = COMPONENT_LIST(component_type)->data.data.begin() + _end; \
-// 		deque<bool>::iterator val = COMPONENT_LIST(component_type)->data.valid.begin() + _start;        \
-// 		for (i; i != end; ++i, ++val)                                                                   \
-// 		{                                                                                               \
-// 			if (*val)                                                                                   \
-// 			{                                                                                           \
-// 				(*i).threadID = index;                                                                  \
-// 				(*i).late_update_function();                                                            \
-// 			}                                                                                           \
-// 		}                                                                                               \
-// 	}
-
-//#define //UPDATE(component_type, update_function) void _update(int index, unsigned int _start, unsigned int _end){ \
-//    vector<component_type>& d = COMPONENT_LIST(component_type)->data.data;\
-//    for (int i = index; i < _end; i += concurrency::numThreads) { d[i].threadID = index; d[i].update_function();  }\
-//}
