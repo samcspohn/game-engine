@@ -2,6 +2,7 @@
 #pragma once
 #include "renderthread.h"
 #include <omp.h>
+#include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
 // #include <GLFW/glfw3.h>
 // #include <glm/glm.hpp>
@@ -124,8 +125,16 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 			// {
 				// int id = omp_get_thread_num();
 				cb->update();
+				// int size = cb->size();
+				// #pragma omp parallel for
+				// for(int i = 0; i < size; ++i){
+				// 	if(cb->getv(i)){
+				// 		cb->get(i)->update();
+				// 	}
+				// }
 			// }
-			appendStat(cb->name + "--update", stopWatch.stop());
+			float dur = stopWatch.stop();
+			appendStat(cb->name + "--update", dur);
 		}
 	}
 	// LATE //UPDATE
@@ -166,6 +175,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 
 void init()
 {
+	tbb::task_scheduler_init init;
 
 	audioManager::init();
 	renderThreadReady.exchange(false);
@@ -179,7 +189,7 @@ void init()
 	rootGameObject = new game_object(root);
 	for (int i = 0; i < concurrency::numThreads; i++)
 	{
-		rootGameObject->addComponent<copyBuffers>();
+		rootGameObject->addComponent<copyBuffers>()->id = i;
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	transformIdThreadcache = vector<vector<GLuint>>(copyWorkers->size());
@@ -190,7 +200,6 @@ void init()
 void run()
 {
 	timer stopWatch;
-
 	// vector<thread *> workers;
 	// for (int i = 0; i < concurrency::numThreads; i++)
 	// 	workers.push_back(new thread(componentUpdateThread, i));
