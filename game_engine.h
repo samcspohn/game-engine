@@ -179,7 +179,7 @@ void init()
 	rootGameObject = new game_object(root);
 	for (int i = 0; i < concurrency::numThreads; i++)
 	{
-		rootGameObject->addComponent<copyBuffers>();
+		rootGameObject->addComponent<copyBuffers>()->id = i;
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	transformIdThreadcache = vector<vector<GLuint>>(copyWorkers->size());
