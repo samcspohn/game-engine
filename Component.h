@@ -10,7 +10,9 @@
 // #include "game_object.h"
 #include "fast_list.h"
 #include "array_heap.h"
+#include "helper1.h"
 #include <omp.h>
+#include <tbb/tbb.h>
 #define ull unsigned long long
 class game_object;
 
@@ -79,6 +81,8 @@ class componentStorageBase
 {
 
 public:
+	rolling_buffer duration;
+	timer T;
 	bool h_update;
 	bool h_lateUpdate;
 	string name;
@@ -89,7 +93,8 @@ public:
 	virtual void lateUpdate(){};
 	virtual void update(int index, int size) {}
 	virtual void lateUpdate(int index, int size) {}
-
+	virtual component* get(int i){}
+	virtual bool getv(int i){}
 	virtual int size(){};
 	virtual void sort(){};
 };
@@ -102,7 +107,9 @@ class componentStorage : public componentStorageBase
 public:
 	deque_heap<t> data;
 
-	componentStorage(){}
+	componentStorage(){
+		duration = rolling_buffer(30);
+	}
 	int size()
 	{
 		return data.size();
@@ -112,6 +119,14 @@ public:
 	// {
 	// 	((component *)&(data.data.front()))->_update(0, 0, data.size());
 	// }
+
+	virtual component* get(int i){
+		return (component*)&(data.data[i]);
+	}
+	virtual bool getv(int i){
+		return data.valid[i];
+	}
+
 	void update(int index, int size)
 	{
 		unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
@@ -133,22 +148,53 @@ public:
 	void update()
 	{
 		int size = this->size();
-		#pragma omp parallel for
-		for(int i = 0; i < size; ++i){
-			if(data.valid[i]){
-				data.data[i].update();
+		T.start();
+		// tbb::parallel_for_each(data.data.begin(),data.data.begin() + size,[&](t& e){e.update();});
+		tbb::parallel_for(
+			tbb::blocked_range<size_t>(0,size),
+			[&](const tbb::blocked_range<size_t>& r) {
+				for (size_t i=r.begin();i<r.end();++i){
+					if(data.valid[i]){
+						data.data[i].update();
+					}
+				}
 			}
-		}
+		);
 
+		// if(duration.getAverageValue() > 1.0){
+		// 	#pragma omp parallel for schedule(guided)
+		// 	for(int i = 0; i < size; ++i){
+		// 		if(data.valid[i]){
+		// 			data.data[i].update();
+		// 		}
+		// 	}
+		// }else{
+		// 	for(int i = 0; i < size; ++i){
+		// 		if(data.valid[i]){
+		// 			data.data[i].update();
+		// 		}
+		// 	}
+		// }
+		duration.add(T.stop());
 	}
 	void lateUpdate(){
 		int size = this->size();
-		#pragma omp parallel for
-		for(int i = 0; i < size; ++i){
-			if(data.valid[i]){
-				data.data[i].lateUpdate();
+		// #pragma omp parallel for
+		// for(int i = 0; i < size; ++i){
+		// 	if(data.valid[i]){
+		// 		data.data[i].lateUpdate();
+		// 	}
+		// }
+		tbb::parallel_for(
+			tbb::blocked_range<size_t>(0,size),
+			[&](const tbb::blocked_range<size_t>& r) {
+				for (size_t i=r.begin();i<r.end();++i){
+					if(data.valid[i]){
+						data.data[i].lateUpdate();
+					}
+				}
 			}
-		}
+		);
 	}
 	void lateUpdate(int index, int size)
 	{

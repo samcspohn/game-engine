@@ -226,12 +226,13 @@ class copyBuffers : public component
 		return true;
 	}
 public:
+	int id;
 	void update()
 	{
 		int numt = concurrency::numThreads;
-		if (getThreadID() < numt)
+		if (id < numt)
 		{
-			int id = getThreadID();
+			// int id = getThreadID();
 			{
 				int step = TRANSFORMS.size() / concurrency::numThreads;
 				uint i = step * id;
