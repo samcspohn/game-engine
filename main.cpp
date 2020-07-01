@@ -655,7 +655,7 @@ public:
 		// }
 		accel = glm::clamp(accel + (Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F)) * thrust * Time.deltaTime,-maxReverse,maxForward);
 		// cout << " accel: " << accel << endl;
-		transform->getParent()->move(vel * Time.deltaTime);
+		transform->getParent()->move(vel * Time.deltaTime,true);
 		// vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
 		//  + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up()
 		//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());

@@ -136,8 +136,12 @@ void Transform::_destroy() {
 	delete this;
 }
 
-void Transform::move(glm::vec3 lhs) {
-	_T->position += lhs;
+void Transform::move(glm::vec3 movement, bool hasChildren = false) {
+	_T->position += movement;
+	if(hasChildren){
+		for (auto a : children)
+		a->translate(movement, glm::quat(1,0,0,0));
+	}
 }
 void Transform::translate(glm::vec3 translation) {
 	// m.lock();

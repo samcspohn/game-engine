@@ -71,7 +71,7 @@ public:
 
 	void _destroy();
 	
-	void move(glm::vec3 lhs);
+	void move(glm::vec3 movement, bool hasChildren = false);
 	void translate(glm::vec3 translation);
 	void translate(glm::vec3 translation, glm::quat r);
 	void scale(glm::vec3 scale);
