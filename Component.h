@@ -12,7 +12,10 @@
 #include "array_heap.h"
 #include "helper1.h"
 #include <omp.h>
-#include <tbb/tbb.h>
+// #include <tbb/tbb.h>
+#include "tbb/blocked_range.h"
+#include "tbb/parallel_for.h"
+#include "tbb/partitioner.h"
 #define ull unsigned long long
 class game_object;
 
@@ -79,10 +82,9 @@ struct compInfo
 
 class componentStorageBase
 {
-
 public:
-	rolling_buffer duration;
-	timer T;
+  	tbb::affinity_partitioner update_ap;
+	tbb::affinity_partitioner lateupdate_ap;
 	bool h_update;
 	bool h_lateUpdate;
 	string name;
@@ -91,8 +93,6 @@ public:
 	bool hasLateUpdate(){return h_lateUpdate;}
 	virtual void update(){};
 	virtual void lateUpdate(){};
-	virtual void update(int index, int size) {}
-	virtual void lateUpdate(int index, int size) {}
 	virtual component* get(int i){}
 	virtual bool getv(int i){}
 	virtual int size(){};
@@ -108,17 +108,11 @@ public:
 	deque_heap<t> data;
 
 	componentStorage(){
-		duration = rolling_buffer(30);
 	}
 	int size()
 	{
 		return data.size();
 	}
-
-	// void update()
-	// {
-	// 	((component *)&(data.data.front()))->_update(0, 0, data.size());
-	// }
 
 	virtual component* get(int i){
 		return (component*)&(data.data[i]);
@@ -127,90 +121,39 @@ public:
 		return data.valid[i];
 	}
 
-	void update(int index, int size)
-	{
-		unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
-		unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
-		if (index == concurrency::numThreads - 1)
-			_end = size;
-		// ((component *)&(data.data.front()))->_update(index, _start, _end);
-		auto start = data.data.begin() + _start;
-		auto valid = data.valid.begin() + _start;
-		auto end = data.data.begin() + _end;
-		for(; start != end; ++start, ++valid){
-			if(*valid){
-				start->update();
-			}
-		}
-
-	}
-
 	void update()
 	{
 		int size = this->size();
-		T.start();
-		// tbb::parallel_for_each(data.data.begin(),data.data.begin() + size,[&](t& e){e.update();});
+		int grain = size/concurrency::numThreads /concurrency::numThreads;
+		grain = glm::max(grain,1);
 		tbb::parallel_for(
-			tbb::blocked_range<size_t>(0,size),
+			tbb::blocked_range<size_t>(0,size, grain),
 			[&](const tbb::blocked_range<size_t>& r) {
 				for (size_t i=r.begin();i<r.end();++i){
 					if(data.valid[i]){
 						data.data[i].update();
 					}
 				}
-			}
+			},
+			this->update_ap
 		);
 
-		// if(duration.getAverageValue() > 1.0){
-		// 	#pragma omp parallel for schedule(guided)
-		// 	for(int i = 0; i < size; ++i){
-		// 		if(data.valid[i]){
-		// 			data.data[i].update();
-		// 		}
-		// 	}
-		// }else{
-		// 	for(int i = 0; i < size; ++i){
-		// 		if(data.valid[i]){
-		// 			data.data[i].update();
-		// 		}
-		// 	}
-		// }
-		duration.add(T.stop());
 	}
 	void lateUpdate(){
 		int size = this->size();
-		// #pragma omp parallel for
-		// for(int i = 0; i < size; ++i){
-		// 	if(data.valid[i]){
-		// 		data.data[i].lateUpdate();
-		// 	}
-		// }
+		int grain = size/concurrency::numThreads /concurrency::numThreads;
+		grain = glm::max(grain,1);
 		tbb::parallel_for(
-			tbb::blocked_range<size_t>(0,size),
+			tbb::blocked_range<size_t>(0,size,grain),
 			[&](const tbb::blocked_range<size_t>& r) {
 				for (size_t i=r.begin();i<r.end();++i){
 					if(data.valid[i]){
 						data.data[i].lateUpdate();
 					}
 				}
-			}
+			},
+			this->lateupdate_ap
 		);
-	}
-	void lateUpdate(int index, int size)
-	{
-		unsigned int _start = (unsigned int)((float)size / (float)concurrency::numThreads * (float)index);
-		unsigned int _end = (unsigned int)((float)size / (float)concurrency::numThreads * (float)(index + 1));
-		if (index == concurrency::numThreads - 1)
-			_end = size;
-		// ((component *)&(data.data.front()))->_lateUpdate(index, _start, _end);
-		auto start = data.data.begin() + _start;
-		auto valid = data.valid.begin() + _start;
-		auto end = data.data.begin() + _end;
-		for(; start != end; ++start, ++valid){
-			if(*valid){
-				start->lateUpdate();
-			}
-		}
 	}
 };
 

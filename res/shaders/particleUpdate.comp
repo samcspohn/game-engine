@@ -38,24 +38,24 @@ void update(uint index, float dt){
     uint id = livingParticles[index];
     particle p = particles[id];
     emitter_prototype proto = prototypes[p.emitter_prototype];
-    p.position += p.velocity * dt;
+    p.position += get(p.velocity) * dt;
 
     if(p.next < -1){
         if(emitters[-p.next - 2].last == id)
             p.position2 = transforms[emitters[-p.next - 2].transform].position;
     }else{
-        p.position2 += p.velocity2 * dt;
+        p.position2 += get(p.velocity2) * dt;
     }
 
     p.life -= dt / p.l;
-    p.life2 -= dt / p.l;
+    // p.life2 -= dt / p.l;
 
     if(p.life <= 0.f)
     {
         int index = atomicAdd(atomicCounters[liveParticles],-1);
         dead[index - 1] = id;
-        p.live = 0;
-        p.next = p.prev = -1;
+        // p.live = 0;
+        p.next = -1;//p.prev = -1;
     }
 
     particles[id] = p;
@@ -67,8 +67,7 @@ void initEmitters(uint id){
     if(e.frame > 0 && e.last != -1){
         particles[e.last].next = -1;
         particles[e.last].position2 = transforms[e.transform].position;
-        particles[e.last].velocity2 = vec3(0);//p.velocity;
-        particles[e.last].life2 = 1;
+        set(particles[e.last].velocity2,vec3(0));
     }
     e.emitter_prototype = ei.emitterProtoID;
     e.transform = ei.transformID;
@@ -83,23 +82,24 @@ void makeParticle(inout particle p, inout emitter_prototype ep, inout rng genera
 
     p.position = tpos + normalize(randVec3(generator)) * tscale * ep.radius;
     // p.rotation  = transforms[e.transform].rotation;
-    p.scale = tscale * ep.scale;
+    p.scale = tscale.xy * ep.scale;
     p.life = 1.f;
     p.l = max(ep.lifetime2 + gen(generator) * abs(ep.lifetime - ep.lifetime2),0.0001f);
-    p.emitter = eId;
+    // p.emitter = eId;
     p.emitter_prototype = epId;
     vec3 random = rotate(vec3(1,0,0),gen(generator) * ep.dispersion,vec3(0,0,ep.minSpeed + gen(generator) * (ep.maxSpeed - ep.minSpeed)));
     random = rotate(vec3(0,0,1),gen(generator) * 2 * M_PI,random);
-    p.velocity = vec3(rotate(identity(), trot) * vec4(random * tscale,1));
+    vec3 vel = vec3(rotate(identity(), trot) * vec4(random * tscale,1));
+    set(p.velocity,vel);
     
     if(ep.velAlign == 1){
-        vec3 dir = cross(p.velocity,randVec3(generator));
-        p.rotation = lookAt(dir,p.velocity);
+        vec3 dir = cross(vel,randVec3(generator));
+        set(p.rotation,lookAt(dir,vel));
     }else{
-        p.rotation = normalize(randVec4(generator));
+        set(p.rotation,normalize(randVec4(generator)));
     }
 
-    p.position += p.velocity * dt * particle_count;
+    p.position += vel * dt * particle_count;
     p.position2 = p.position;
     p.velocity2 = p.velocity;
     p.life -= dt * particle_count++ / p.l;
@@ -145,14 +145,14 @@ void emit(uint thread_id){
                     particles[e.last].next = int(x);
                     particles[e.last].position2 = p.position;
                     particles[e.last].velocity2 = p.velocity;
-                    particles[e.last].life2 = p.life;
+                    // particles[e.last].life2 = p.life;
                 }
                 p.next = -int(thread_id) - 2;
-                p.prev = e.last;
+                // p.prev = e.last;
                 e.last = int(x);
             }
 
-            p.live = 1;
+            // p.live = 1;
             particles[x] = p;
         }
         e.emission -= float(uint(e.emission));
@@ -194,7 +194,7 @@ void makeBursts(uint thread_id){
 
         float p_count = 0;
         makeParticle(p,ep,generator,p_count, e.position,lookAt(e.direction,vec3(0,1,0.000001)),e.scale, e.emitter_prototype, deltaTime, -1);
-        p.live = 1;
+        // p.live = 1;
         particles[x] = p;
 }
 

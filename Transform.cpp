@@ -111,6 +111,7 @@ list<Transform*>& Transform::getChildren() {
 Transform* Transform::getParent() {
 	return parent;
 }
+mutex m;
 void Transform::Adopt(Transform * transform) {
 	if(transform->parent == this)
 		return;
