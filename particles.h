@@ -47,9 +47,10 @@ struct emitter_prototype{
     float lifetime2;
     int live;
 
-    vec3 scale;
+    vec2 scale;
     int billboard;
-
+    int p3;
+    
     int velAlign;
     float radius;
     int p2;

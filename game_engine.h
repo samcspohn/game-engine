@@ -2,7 +2,7 @@
 #pragma once
 #include "renderthread.h"
 #include <omp.h>
-#include "tbb/task_scheduler_init.h"
+// #include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
 // #include <GLFW/glfw3.h>
 // #include <glm/glm.hpp>
@@ -57,59 +57,7 @@ vector<queue<updateJob>> updateWork(concurrency::numThreads);
 
 componentStorageBase *copyWorkers;
 float maxGameDuration = INFINITY;
-// void lockUpdate()
-// {
-// 	for (auto &i : updateLocks)
-// 		i.lock();
-// }
-// void unlockUpdate()
-// {
-// 	for (auto &i : updateLocks)
-// 		i.unlock();
-// }
 
-// void componentUpdateThread(int id)
-// {
-// 	while (true)
-// 	{
-// 		updateLocks[id].lock();
-// 		if (updateWork[id].size() != 0)
-// 		{
-// 			updateJob uj = updateWork[id].front();
-// 			if (uj.componentStorage == 0)
-// 				break;
-// 			if (uj.ut == update_type::update)
-// 			{
-// 				uj.componentStorage->update(id, uj.size);
-// 			}
-// 			else if (uj.ut == update_type::lateupdate)
-// 			{
-// 				uj.componentStorage->lateUpdate(id, uj.size);
-// 			}
-// 			updateWork[id].pop();
-// 		}
-// 		updateLocks[id].unlock();
-// 		this_thread::sleep_for(1ns);
-// 	}
-// }
-
-
-// void doWork(componentStorageBase* cs,update_type type){
-// 	int s = cs->size();
-// 	timer stopWatch;
-// 	stopWatch.start();
-// 	lockUpdate();
-// 	for (int i = 0; i < concurrency::numThreads; ++i)
-// 		updateWork[i].push(updateJob(cs, type, s));
-// 	unlockUpdate();
-// 	this_thread::sleep_for(1ns);
-// 	lockUpdate();
-// 	unlockUpdate();
-// 	if (type == update_type::update)
-// 		appendStat(cs->name + "--update", stopWatch.stop());
-// 	else if (type == update_type::lateupdate)
-// 		appendStat(cs->name + "--late_update", stopWatch.stop());
-// }
 void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 {
 	timer stopWatch;
@@ -175,7 +123,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 
 void init()
 {
-	tbb::task_scheduler_init init;
+	// tbb::task_scheduler_init init;
 
 	audioManager::init();
 	renderThreadReady.exchange(false);
@@ -200,24 +148,7 @@ void init()
 void run()
 {
 	timer stopWatch;
-	// vector<thread *> workers;
-	// for (int i = 0; i < concurrency::numThreads; i++)
-	// 	workers.push_back(new thread(componentUpdateThread, i));
-
-	componentStorageBase *colliders;
-	for (auto &j : allcomponents)
-	{
-		if (j.first == typeid(copyBuffers).hash_code())
-		{
-			copyWorkers = j.second;
-			continue;
-		}
-		if (j.first == typeid(collider).hash_code())
-		{
-			colliders = j.second;
-			continue;
-		}
-	}
+	copyWorkers = COMPONENT_LIST(copyBuffers);
 	eventsPollDone = true;
 	// unlockUpdate();
 
@@ -243,27 +174,16 @@ void run()
 		// scripting
 		doLoopIteration(gameComponents);
 
-		// lockUpdate();
 		for(auto & i : collisionGraph)
 			collisionLayers[i.first].clear();
-		// Octree->clear();
 
-		// unlockUpdate();
-		// waitForWork();
 		doLoopIteration(gameEngineComponents, false);
 
 		stopWatch.start();
 		pm->simulate(Time.deltaTime);
-
 		appendStat("physics simulation",stopWatch.stop());
 
-		// waitForWork();
-		// lockUpdate();
 		appendStat("game loop main",gameLoopMain.stop());
-
-		//////////////////////////////////////////////////////////////////////////////
-		/////////////////////////////// Lock Transform ///////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////
 
 		stopWatch.start();
 		renderLock.lock();
@@ -279,7 +199,7 @@ void run()
 			c.screen = c.getScreen();
 			c.pos = c.transform->getPosition();
 			if(!c.lockFrustum){
-				c.camInv = glm::mat3(c.rot);// * glm::mat3(glm::translate(-camera->transform->getPosition()));
+				c.camInv = glm::mat3(c.rot);
 				c.cullpos = c.pos;
 			}
 		}
@@ -292,15 +212,7 @@ void run()
 
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
 		copyWorkers->update();
-		// int size = copyWorkers->size();
-		// #pragma omp parallel
-		// {
-		// 	int id = omp_get_thread_num();
-		// 	copyWorkers->update(id, size);
-		// }
-		// for (int i = 0; i < concurrency::numThreads; ++i)
-		// 	updateWork[i].push(updateJob(copyWorkers, update_type::update, concurrency::numThreads));
-		// unlockUpdate();
+		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
 		timer emitterTimer;
@@ -314,7 +226,6 @@ void run()
 
 		// copy emitter inits while copying transforms/renderers
 		// waitForWork();
-		appendStat("copy buffers", stopWatch.stop());
 		////////////////////////////////////// switch particle burst buffer //////////////////////////////////////
 		swapBurstBuffer();
 
@@ -323,9 +234,6 @@ void run()
 			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
 		}
 
-		//////////////////////////////////////////////////////////////////////////////
-		/////////////////////////////// Unlock Transform ///////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////
 		renderJob* rj = new renderJob();
 		rj->work = [&] { return; };
 		rj->type = renderNum::render;

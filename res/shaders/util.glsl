@@ -110,17 +110,7 @@ float rand(in vec2 xy, in float seed){
 struct rng{
 	vec2 r;
 	float s;
-	// void setSeed(vec2 rin, float seedin){
-	// 	r = rin;
-	// 	s = seedin;
-	// }
-	
-	// float gen(){
-	// 	float ret = rand(r, s);
-	// 	r = r + vec2(1.21212121,2.12121212);
-	// 	s += 2.121212112f;
-	// 	return ret;
-	// }
+
 };
 void setSeed(inout rng g, vec2 rin, float seedin){
 	g.r = rin;
@@ -147,4 +137,76 @@ vec3 randVec3(inout rng g){
     gen(g) - 0.5f,
     gen(g) - 0.5f
     );
+}
+
+struct smquat{
+	uvec2 d;
+};
+
+vec4 get(inout smquat q){
+	return normalize(vec4((float(getHighBits(q.d.x)) - 32768) / 32768,
+                (float(getLowBits(q.d.x)) - 32768) / 32768,
+                (float(getHighBits(q.d.y)) - 32768) / 32768,
+                (float(getLowBits(q.d.y)) - 32768) / 32768));
+}
+
+void set(inout smquat q,vec4 quat){
+	quat = normalize(quat);
+    setHighBits(q.d.x,uint(quat.x * 32768 + 32768));
+    setLowBits(q.d.x,uint(quat.y * 32768 + 32768));
+    setHighBits(q.d.y,uint(quat.z * 32768 + 32768));
+    setLowBits(q.d.y,uint(quat.w * 32768 + 32768));
+}
+
+struct smvec3{
+	uint xy;
+	float z;
+};
+
+uint getAngle(vec3 a, vec3 b,vec2 quadrant){
+    float angle = acos(dot(normalize(a),normalize(b)));
+    if(quadrant.x > 0){
+        angle = 6.28318530718 - angle;
+    }
+    return uint((angle / 6.28318530718) * 65536);
+}
+
+void set(inout smvec3 v, vec3 a){
+	vec3 newVec = vec3(a.x,a.y,-a.z);
+    uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
+    
+    // setX(item, xAxisAngle);
+	setHighBits(v.xy, xAxisAngle);
+    uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
+    // setY(item, yAxisAngle);
+	setLowBits(v.xy,yAxisAngle);
+	v.z = -length(a);
+}
+
+void rotateX(inout vec3 vec, float angle){
+    float y = vec.y;
+    float z = vec.z;
+    vec.y = y * cos(angle) - z * sin(angle);
+    vec.z = y * sin(angle) + z * cos(angle);
+}
+
+void rotateY(inout vec3 vec, float angle){
+    float x = vec.x;
+    float z = vec.z;
+    vec.x = x * cos(angle) + z * sin(angle);
+    vec.z = -x * sin(angle) + z * cos(angle);
+}
+
+float getAngle(uint a){
+    return float(a) / 65536 * 6.28318530718;
+}
+
+vec3 get(inout smvec3 v){
+	float anglex = getAngle(getHighBits(v.xy));
+    float angley = getAngle(getLowBits(v.xy));
+    vec3 p = vec3(0,0, v.z);
+    rotateX(p,-anglex);
+    rotateY(p,angley);
+    // p.z = getDZ1(item);
+    return p;
 }

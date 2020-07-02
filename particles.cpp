@@ -12,25 +12,30 @@
 using namespace std;
 using namespace glm;
 
-
+struct smquat{
+	uvec2 d;
+};
+struct smvec3{
+	uint xy;
+	float z;
+};
 struct particle
 {
     vec3 position;
-    uint emitter;
-    vec3 scale;
+    // uint emitter;
+
+    vec2 scale;
     uint emitter_prototype;
-    vec4 rotation;
-
-    vec3 velocity;
-    int live;
-
     float life;
-    int next;
-    int prev;
-    float life2;
+
+    smquat rotation; // 2ints
+    smvec3 velocity; // 2ints
+    
     vec3 position2;
-    float p1;
-    vec3 velocity2;
+    int next;
+    
+    smvec3 velocity2; // 2ints
+    float p1;    
     float l;
 };
 
@@ -544,14 +549,17 @@ namespace particle_renderer
         livingParticles->bindData(0);
         input->bindData(1);
         _output->bindData(2);
-        keys_in->bindData(11);
-        keys_out->bindData(12);
         block_sums->bindData(3);
         particles->bindData(4);
         atomics->bindData(5);
         scan->bindData(6);
         histo->bindData(7);
-        gpu_emitter_prototypes->bindData(9);
+        gpu_emitter_prototypes->bindData(8);
+        keys_in->bindData(9);
+        keys_out->bindData(10);
+        // gpu_emitters->bindData(11);
+        // GPU_TRANSFORMS->bindData(12);
+
 
         gt2.start();
         glUniform1i(stage, -2);
