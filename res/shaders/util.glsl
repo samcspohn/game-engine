@@ -152,10 +152,8 @@ vec4 get(inout smquat q){
 
 void set(inout smquat q,vec4 quat){
 	quat = normalize(quat);
-    setHighBits(q.d.x,uint(quat.x * 32768 + 32768));
-    setLowBits(q.d.x,uint(quat.y * 32768 + 32768));
-    setHighBits(q.d.y,uint(quat.z * 32768 + 32768));
-    setLowBits(q.d.y,uint(quat.w * 32768 + 32768));
+	q.d.x = (uint(quat.x * 32768 + 32768) << 16) | uint(quat.y * 32768 + 32768);
+	q.d.y = (uint(quat.z * 32768 + 32768) << 16) | uint(quat.w * 32768 + 32768);
 }
 
 struct smvec3{
@@ -175,11 +173,8 @@ void set(inout smvec3 v, vec3 a){
 	vec3 newVec = vec3(a.x,a.y,-a.z);
     uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
     
-    // setX(item, xAxisAngle);
-	setHighBits(v.xy, xAxisAngle);
     uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
-    // setY(item, yAxisAngle);
-	setLowBits(v.xy,yAxisAngle);
+	v.xy = (xAxisAngle << 16) | yAxisAngle;
 	v.z = -length(a);
 }
 
@@ -207,6 +202,5 @@ vec3 get(inout smvec3 v){
     vec3 p = vec3(0,0, v.z);
     rotateX(p,-anglex);
     rotateY(p,angley);
-    // p.z = getDZ1(item);
     return p;
 }
