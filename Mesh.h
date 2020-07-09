@@ -192,4 +192,54 @@ private:
     }
 };
 
+class lightVolume{
+    public:
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+    vector<glm::vec3> vertices;
+    vector<GLuint> indices;
+
+    void setupMesh( )
+    {
+        // Create buffers/arrays
+        if(this->VAO == 0){
+            glGenVertexArrays( 1, &this->VAO );
+            glGenBuffers( 1, &this->VBO );
+            glGenBuffers( 1, &this->EBO );
+        }
+        
+        glBindVertexArray( this->VAO );
+        // Load data into vertex buffers
+        glBindBuffer( GL_ARRAY_BUFFER, this->VBO );
+        // A great thing about structs is that their memory layout is sequential for all its items.
+        // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
+        // again translates to 3/2 floats which translates to a byte array.
+
+		int offset = 0;
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), 0, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec3) * vertices.size(), vertices.data());
+		
+
+		//glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+		offset = 0;
+		// postion attribute
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)offset);
+		
+        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, this->EBO );
+        glBufferData( GL_ELEMENT_ARRAY_BUFFER, this->indices.size( ) * sizeof( GLuint ), &this->indices[0], GL_STATIC_DRAW );
+        
+        glBindVertexArray( 0 );
+        
+    }
+     // Render the mesh
+    void Draw(size_t number)
+    {
+        // Draw mesh
+        glBindVertexArray( this->VAO );
+		glDrawElementsInstanced(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0, number); // instanced
+		glBindBuffer(GL_ARRAY_BUFFER,0);
+		glBindVertexArray( 0 );
+    }
+};
+
 

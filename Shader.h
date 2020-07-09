@@ -126,8 +126,22 @@ public:
 	string fragmentFile;
 	string computeFile;
 	bool shadowMap;
+	void use(){
+		glUseProgram(Program);
+	}
 	// Constructor generates the shader on the fly
-
+    void setVec3(const std::string &name, const glm::vec3 &value) const
+    { 
+        glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, &value[0]); 
+    }
+	void setFloat(const std::string &name, float value) const
+    { 
+        glUniform1f(glGetUniformLocation(Program, name.c_str()), value); 
+    }
+	void setInt(const std::string &name, int value) const
+    { 
+        glUniform1i(glGetUniformLocation(Program, name.c_str()), value); 
+    }
 	Shader(const string computePath) {
 
 		this->computeFile = computePath;
