@@ -228,9 +228,8 @@ void main()
     gNormal = vec4(normalize(Normal),1);
     // and the diffuse per-fragment color
     gAlbedoSpec.rgb = texture(material.texture_diffuse0,TexCoord).rgb;
-    // gAlbedoSpec.rgb  = FragPos;
-    gAlbedoSpec.a = 1;
+    // gAlbedoSpec.a = 0.5;
     // store specular intensity in gAlbedoSpec's alpha component
-    // gAlbedoSpec.a = texture(material.texture_specular0,TexCoord).r;
+    gAlbedoSpec.a = texture(material.texture_specular0,TexCoord).r;
 	gl_FragDepth = log2(logz) * 0.5 * FC;
 }

@@ -250,8 +250,7 @@ void renderThreadFunc()
 	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
 
 	Shader matProgram("res/shaders/mat.comp");
 	Shader shaderLightingPass("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
@@ -450,12 +449,12 @@ void renderThreadFunc()
 		
 					gt.start();
 
+					glDisable(GL_BLEND);
 					glEnable(GL_DEPTH_TEST);
 					glDepthFunc(GL_LESS);    
 					glDepthMask(GL_TRUE);
 					glEnable(GL_CULL_FACE);
 					glCullFace(GL_BACK);
-					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 					c.render();
 
 					appendStat("render cam", gt.stop());
@@ -490,7 +489,7 @@ void renderThreadFunc()
 					// glEnable(GL_DEPTH_CLAMP);
 					glDisable(GL_DEPTH_TEST);  
 					// glDisable(GL_CULL_FACE);
-					// glDepthFunc(GL_LEQUAL);  
+					// glDepthFunc(GL_LEQUAL); 
 					glCullFace(GL_FRONT);  
 					glDepthMask(GL_FALSE);
 					glEnable(GL_BLEND);
@@ -506,7 +505,8 @@ void renderThreadFunc()
 					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
 					glActiveTexture(GL_TEXTURE2);
 					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
-					
+					glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
+
 					glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
 					for(int i = 0; i < lightPos.size(); i++){
 						SetLightingUniforms(c.farPlane,c.pos,c.proj * c.rot * c.view, i);
@@ -517,8 +517,11 @@ void renderThreadFunc()
 
 					// // render particle
 					// gt.start();
+					// glEnable(GL_BLEND);
+					// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 					// glDisable(GL_CULL_FACE);
 					// glDepthMask(GL_FALSE);
+					// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 					// particle_renderer::drawParticles(r_d[k].view, r_d[k].rot, r_d[k].proj);
 					// appendStat("render particles", gt.stop());
 					// glDepthMask(GL_TRUE);
