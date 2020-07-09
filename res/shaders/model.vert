@@ -61,7 +61,7 @@ void main()
 //	DirLightSpacePos = dirLightTransform * model * vec4(position, 1.0);
 
 	TexCoord = texCoord;
-	FragPos = vec3(model * vec4(position,1.0f));
+	FragPos = (model * vec4(position,1.0f)).xyz;
 	Normal = mat3(normalMat) * normal;
 //	}
 }
