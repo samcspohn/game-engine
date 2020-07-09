@@ -126,4 +126,12 @@ public:
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+	void blitDepth(GLuint dest, int dest_width, int dest_height){
+        glBindFramebuffer( GL_READ_FRAMEBUFFER, FramebufferName);
+        glBindFramebuffer( GL_DRAW_FRAMEBUFFER, dest);
+
+        glBlitFramebuffer(0, 0, scr_width, scr_height, 0, 0, dest_width, dest_height,
+                GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 };

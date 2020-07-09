@@ -317,13 +317,18 @@ void renderThreadFunc()
 	lv.vertices = lightVolumeModel.meshes[0].vertices;
 	lv.setupMesh();
 
-	auto SetLightingUniforms = [&](float farPlane, glm::vec3 viewPos, glm::mat4 vp, int i){
-		glm::mat4 mvp = vp * glm::translate(lightPos[i].xyz()) * glm::scale(glm::vec3(10));
+	auto SetLightingUniforms = [&](float farPlane, glm::vec3 viewPos, glm::mat4 view, glm::mat4 proj, int i){
+		glm::mat4 mv = view * glm::translate(lightPos[i].xyz()) * glm::scale(glm::vec3(10));
 		glUniformMatrix4fv(
-			glGetUniformLocation(shaderLightingPass.Program, "mvp"),
+			glGetUniformLocation(shaderLightingPass.Program, "mv"),
 			1,
 			GL_FALSE,
-			glm::value_ptr(mvp));
+			glm::value_ptr(mv));
+		glUniformMatrix4fv(
+			glGetUniformLocation(shaderLightingPass.Program, "proj"),
+			1,
+			GL_FALSE,
+			glm::value_ptr(proj));
 		glUniform1f(
 			glGetUniformLocation(shaderLightingPass.Program, "FC"),
 			2.0 / log2(farPlane + 1));
@@ -460,7 +465,6 @@ void renderThreadFunc()
 					appendStat("render cam", gt.stop());
 
 					// // 2. lighting pass
-					// gBuffer.blit(0,SCREEN_WIDTH,SCREEN_HEIGHT);
 					glBindFramebuffer(GL_FRAMEBUFFER, 0);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -485,12 +489,13 @@ void renderThreadFunc()
 					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
 					renderQuad();
 					
+					gBuffer.blitDepth(0,SCREEN_WIDTH,SCREEN_HEIGHT);
 
 					// glEnable(GL_DEPTH_CLAMP);
-					glDisable(GL_DEPTH_TEST);  
+					// glDisable(GL_DEPTH_TEST);  
 					// glDisable(GL_CULL_FACE);
 					// glDepthFunc(GL_LEQUAL); 
-					glCullFace(GL_FRONT);  
+					// glCullFace(GL_FRONT);  
 					glDepthMask(GL_FALSE);
 					glEnable(GL_BLEND);
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -509,7 +514,7 @@ void renderThreadFunc()
 
 					glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
 					for(int i = 0; i < lightPos.size(); i++){
-						SetLightingUniforms(c.farPlane,c.pos,c.proj * c.rot * c.view, i);
+						SetLightingUniforms(c.farPlane,c.pos,c.rot * c.view,c.proj, i);
 						lv.Draw(1);
 					}
 					glDepthMask(GL_TRUE);
