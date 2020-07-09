@@ -3,7 +3,7 @@
 
 out vec4 FragColor;
   
-in vec2 TexCoords;
+// in vec2 TexCoords;
 
 uniform float FC;
 
@@ -12,13 +12,14 @@ uniform vec3 lightColor;
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
+uniform vec2 WindowSize;
 
 uniform vec3 viewPos;
 in float logz;
 
 void main()
 {             
-    // vec2 TexCoords = gl_FragCoord.xy / vec2(1920,1080);
+    vec2 TexCoords = gl_FragCoord.xy / WindowSize;
     // retrieve data from G-buffer
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
     vec3 Normal = texture(gNormal, TexCoords).rgb;
