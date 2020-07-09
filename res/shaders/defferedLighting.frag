@@ -49,6 +49,6 @@ void main()
     
     FragColor = vec4(lighting, 1.0);// + vec4(0.03,0,0,0);
     // FragColor = vec4(1,0,0,1);
-	// gl_FragDepth = log2(logz) * 0.5 * FC;
+	gl_FragDepth = log2(logz) * 0.5 * FC;
 
 }  
