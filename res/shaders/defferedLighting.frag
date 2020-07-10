@@ -12,14 +12,20 @@ uniform vec3 lightColor;
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
+uniform sampler2D gDepth;
 uniform vec2 WindowSize;
 
 uniform vec3 viewPos;
 in float logz;
 
 void main()
-{             
+{
+    float d = log2(logz) * 0.5 * FC;
+	gl_FragDepth = d;
     vec2 TexCoords = gl_FragCoord.xy / WindowSize;
+    float depth = texture(gDepth, TexCoords).r;
+    // if(d * 0.5 > depth)
+    //     discard;
     // retrieve data from G-buffer
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
     vec3 Normal = texture(gNormal, TexCoords).rgb;
@@ -48,7 +54,8 @@ void main()
     
     
     FragColor = vec4(lighting, 1.0);// + vec4(0.03,0,0,0);
+    // if(d * 0.5 > depth)
+    FragColor = FragColor + vec4(0.03,0,0,0) * int(pow(d,1.5) - 0.3f > depth);
     // FragColor = vec4(1,0,0,1);
-	gl_FragDepth = log2(logz) * 0.5 * FC;
 
 }  

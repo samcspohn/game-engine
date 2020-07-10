@@ -492,7 +492,7 @@ void renderThreadFunc()
 					gBuffer.blitDepth(0,SCREEN_WIDTH,SCREEN_HEIGHT);
 
 					// glEnable(GL_DEPTH_CLAMP);
-					// glDisable(GL_DEPTH_TEST);  
+					glDisable(GL_DEPTH_TEST);  
 					// glDisable(GL_CULL_FACE);
 					// glDepthFunc(GL_LEQUAL); 
 					// glCullFace(GL_FRONT);  
@@ -510,6 +510,8 @@ void renderThreadFunc()
 					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
 					glActiveTexture(GL_TEXTURE2);
 					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
+					glActiveTexture(GL_TEXTURE3);
+					glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
 					glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
 
 					glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
