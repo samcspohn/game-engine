@@ -244,9 +244,9 @@ void renderThreadFunc()
 
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	glEnable(GLEW_ARB_compute_shader);
+	// glEnable(GLEW_ARB_compute_shader);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH32F_STENCIL8);
+	glEnable(GL_DEPTH_COMPONENT32);
 	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_CULL_FACE);
@@ -260,6 +260,7 @@ void renderThreadFunc()
     shaderLightingPass.setInt("gAlbedoSpec", 0);
     shaderLightingPass.setInt("gPosition", 1);
     shaderLightingPass.setInt("gNormal", 2);
+	shaderLightingPass.setInt("gDepth", 3);
 
 
 	quadShader.use();
@@ -287,8 +288,8 @@ void renderThreadFunc()
 	// 	lightPos.push_back(randomSphere() * glm::sqrt(randf()) * 20.f);
 	// 	lightPos.back().y = fmod(lightPos.back().y,3.f);
 	// }
-	for(int i = 0; i < 10; i++){
-		for(int j = 0; j < 10; j++){
+	for(int i = 0; i < 10; i += 1){
+		for(int j = 0; j < 10; j += 1){
 			lightPos.push_back(glm::vec4(i * 2 - 10,-0.5, j * 2 - 10,1));
 		}
 	}
@@ -318,7 +319,7 @@ void renderThreadFunc()
 	lv.setupMesh();
 
 	auto SetLightingUniforms = [&](float farPlane, glm::vec3 viewPos, glm::mat4 view, glm::mat4 proj, int i){
-		glm::mat4 mv = view * glm::translate(lightPos[i].xyz()) * glm::scale(glm::vec3(10));
+		glm::mat4 mv = view * glm::translate(lightPos[i].xyz()) * glm::scale(glm::vec3(8));
 		glUniformMatrix4fv(
 			glGetUniformLocation(shaderLightingPass.Program, "mv"),
 			1,
@@ -460,6 +461,7 @@ void renderThreadFunc()
 					glDepthMask(GL_TRUE);
 					glEnable(GL_CULL_FACE);
 					glCullFace(GL_BACK);
+
 					c.render();
 
 					appendStat("render cam", gt.stop());
@@ -495,7 +497,7 @@ void renderThreadFunc()
 					glDisable(GL_DEPTH_TEST);  
 					// glDisable(GL_CULL_FACE);
 					// glDepthFunc(GL_LEQUAL); 
-					// glCullFace(GL_FRONT);  
+					glCullFace(GL_FRONT);  
 					glDepthMask(GL_FALSE);
 					glEnable(GL_BLEND);
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE);

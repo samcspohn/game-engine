@@ -49,7 +49,7 @@ public:
 			}
 			if(rboDepth != -1){
 				glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, scr_width, scr_height);
+				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, scr_width, scr_height);
 				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 			}
 			return true;
@@ -88,7 +88,7 @@ public:
 	void addDepthBuffer(){
 		glGenRenderbuffers(1, &rboDepth);
 		glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, scr_width, scr_height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, scr_width, scr_height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 	}
 	

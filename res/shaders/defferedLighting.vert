@@ -19,15 +19,15 @@ void main()
 {
 	// uint id = gl_InstanceID;
 
-	vec3 pos = vec3(mv * vec4(position,1));
-	if(pos.z >= 0){
-		pos.z = -1e-12f;
-	}
-	gl_Position = proj * vec4(pos,1);
-	logz = 1.0 + gl_Position.w;
-	gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+	// vec3 pos = vec3(mv * vec4(position,1));
+	// if(pos.z >= 0){
+	// 	pos.z = -1e-12f;
+	// }
+	gl_Position = proj * mv * vec4(position,1);
 	// gl_Position.z = clamp(gl_Position.z, 0,-gl_Position.z);
 	// gl_Position.w = clamp(gl_Position.w, 1,0);
+	logz = 1.0 + gl_Position.w;
+	gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
 	// TexCoords = ((gl_Position.xy / gl_Position.w) + vec2(1)) / 2;
 	
 }
