@@ -50,8 +50,10 @@ int main(int argc, char **argv)
     game_object* player = new game_object();
 	auto playerCam = player->addComponent<_camera>();
 	playerCam->fov = 80;
-	playerCam->farPlane = 1000.f;
+    // playerCam->nearPlane = 1.f;
+	playerCam->farPlane = 100.f;
     player->addComponent<player_sc>();
+    player->transform->translate(vec3(0,4,-20));
 
     auto cube = new game_object();
     cube->addComponent<_renderer>()->set(modelShader,cubeModel);
