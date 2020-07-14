@@ -6,9 +6,20 @@ mat4 translate(mat4 m, vec3 translation){
 		,{0,0,0,1}};
 		return m * transpose(t);
 }
+mat4 translate(vec3 translation){
+		mat4 t = {{1,0,0,translation.x},
+		{0,1,0,translation.y,},
+		{0,0,1,translation.z}
+		,{0,0,0,1}};
+		return transpose(t);
+}
 mat4 scale(mat4 m, vec3 scale){
 	mat4 s = {{scale.x,0,0,0}, {0,scale.y,0,0},{0,0,scale.z,0},{0,0,0,1}};
 	return m * transpose(s);
+}
+mat4 scale(vec3 scale){
+	mat4 s = {{scale.x,0,0,0}, {0,scale.y,0,0},{0,0,scale.z,0},{0,0,0,1}};
+	return transpose(s);
 }
 
 mat4 rotate(mat4 m, vec4 q){
@@ -19,7 +30,14 @@ mat4 rotate(mat4 m, vec4 q){
 	r[3][3] = 1;
 	return m * r;
 }
-
+mat4 rotate(vec4 q){
+	mat4 r1 = {{q.w,q.z,-q.y,q.x},{-q.z,q.w,q.x,q.y},{q.y,-q.x,q.w,q.z},{-q.x,-q.y,-q.z,q.w}};
+	mat4 r2 = {{q.w,q.z,-q.y,-q.x},{-q.z,q.w,q.x,-q.y},{q.y,-q.x,q.w,-q.z},{q.x,q.y,q.z,q.w}};
+	mat4 r = r1 * r2;
+	r[0][3] = r[1][3] = r[2][3] = r[3][0] = r[3][1] = r[3][2] = 0;
+	r[3][3] = 1;
+	return r;
+}
 mat4 identity(){
 	mat4 i = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
 	return i;

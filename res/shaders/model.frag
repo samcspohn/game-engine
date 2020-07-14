@@ -194,10 +194,10 @@ void main()
 
 	vec3 diffuseColor = texture(material.texture_diffuse0,TexCoord).rgb;
 // 	vec3 specColor = texture(material.texture_specular0,TexCoord).rgb;
-// 	if(diffuseColor == vec3(0,0,0)){
-// 		 diffuseColor = vec3(1,1,1);
-// 		 specColor = vec3(1,1,1);
-// 	}
+	if(diffuseColor == vec3(0,0,0)){
+		 diffuseColor = vec3(1,1,1);
+		//  specColor = vec3(1,1,1);
+	}
 // 	vec3 norm = normalize(Normal);
 // 	vec3 viewDir = normalize(viewPos - FragPos);
 // 	DirLight dl;
@@ -227,7 +227,7 @@ void main()
     // also store the per-fragment normals into the gbuffer
     gNormal = vec4(normalize(Normal),1);
     // and the diffuse per-fragment color
-    gAlbedoSpec.rgb = texture(material.texture_diffuse0,TexCoord).rgb;
+    gAlbedoSpec.rgb = diffuseColor;//texture(material.texture_diffuse0,TexCoord).rgb;
     // gAlbedoSpec.a = 0.5;
     // store specular intensity in gAlbedoSpec's alpha component
     gAlbedoSpec.a = texture(material.texture_specular0,TexCoord).r;

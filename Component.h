@@ -80,11 +80,11 @@ struct compInfo
 	compItr *CompItr;
 };
 
+extern tbb::affinity_partitioner update_ap;
+
 class componentStorageBase
 {
 public:
-  	tbb::affinity_partitioner update_ap;
-	tbb::affinity_partitioner lateupdate_ap;
 	bool h_update;
 	bool h_lateUpdate;
 	string name;
@@ -114,10 +114,10 @@ public:
 		return data.size();
 	}
 
-	virtual component* get(int i){
+	component* get(int i){
 		return (component*)&(data.data[i]);
 	}
-	virtual bool getv(int i){
+	bool getv(int i){
 		return data.valid[i];
 	}
 
@@ -135,7 +135,7 @@ public:
 					}
 				}
 			},
-			this->update_ap
+			update_ap
 		);
 
 	}
@@ -152,7 +152,7 @@ public:
 					}
 				}
 			},
-			this->lateupdate_ap
+			update_ap
 		);
 	}
 };

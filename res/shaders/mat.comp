@@ -10,11 +10,7 @@
 
 #define vector(name, type ,_binding) layout(std430,binding = _binding) buffer _name{uint size; type name[];}
 
-struct matrix{
-	mat4 mvp;
-	mat4 model;
-	mat4 normal;
-};
+
 struct __renderer {
 	uint transform;
 	uint id;
@@ -70,10 +66,10 @@ void main () {
 
 					uint buffsid = atomicAdd(atomics[0],1);
 
-					matrixes[buffsid].model = translate(identity(),transform.position) * rotate(identity(),transform.rotation) * scale(identity(),transform.scale);
+					matrixes[buffsid].model = translate(transform.position) * rotate(transform.rotation) * scale(transform.scale);
 					matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
 
-					matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(identity(),transform.rotation)))));
+					matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(transform.rotation)))));
 				}
 			}
 			break;

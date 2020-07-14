@@ -1,5 +1,6 @@
 #version 430 core
 #extension GL_ARB_shader_storage_buffer_object : enable
+#include "transform.glsl"
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoord;
@@ -8,11 +9,6 @@ layout (location = 2) in vec3 normal;
 #define vector(name, type ,_binding) layout(std430,binding = _binding) buffer _{uint size; type name[];}
 
 
-struct matrix{
-	mat4 mvp;
-	mat4 model;
-	mat4 normal;
-};
 
 mat4 identity(){
 	mat4 i = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};

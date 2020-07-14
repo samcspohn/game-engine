@@ -22,6 +22,7 @@ ull component::getHash()
 	return typeid(*this).hash_code();
 }
 
+tbb::affinity_partitioner update_ap;
 
 std::map<ull, componentStorageBase *> allcomponents;
 std::set<componentStorageBase *> gameEngineComponents;
