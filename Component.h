@@ -164,30 +164,21 @@ extern std::mutex componentLock;
 template <typename t>
 inline compInfo<t> addComponentToAll(const t &c)
 {
-
 	ull hash = typeid(t).hash_code();
-
 	if (allcomponents.find(hash) == allcomponents.end())
 	{
-
 		componentLock.lock();
 		if (allcomponents.find(hash) == allcomponents.end())
 		{
 			componentStorageBase * csb = (componentStorageBase *)(new componentStorage<t>());
-			// allcomponents[hash] = (componentStorageBase *)(new componentStorage<t>());
-			// auto& csb = allcomponents[hash];
 			allcomponents[hash] = csb;
 			csb->name = typeid(t).name();
 			csb->h_update = typeid(&t::update) != typeid(&component::update);
 			csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
 			if (((component *)&c)->_registerEngineComponent())
-			{
 				gameEngineComponents.insert(allcomponents[hash]);
-			}
 			else
-			{
 				gameComponents.insert(allcomponents[hash]);
-			}
 		}
 		componentLock.unlock();
 	}
