@@ -142,6 +142,10 @@ public:
     { 
         glUniform1i(glGetUniformLocation(Program, name.c_str()), value); 
     }
+	void setUint(const std::string &name, int value) const
+    { 
+        glUniform1ui(glGetUniformLocation(Program, name.c_str()), value); 
+    }
 	Shader(const string computePath) {
 
 		this->computeFile = computePath;
