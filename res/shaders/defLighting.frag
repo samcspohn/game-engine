@@ -36,20 +36,23 @@ void main()
     vec3 Color = vec3(1,1,1);
     // for(int i = 0; i < 100; ++i)
     // {
-    //     // diffuse
-    //     vec3 lightDir = normalize(lights[i].xyz - FragPos);
-    //     vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * Color;
-    //     // specular
-    //     vec3 halfwayDir = normalize(lightDir + viewDir);  
-    //     float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-    //     vec3 specular = Color * spec * Specular;
-    //     // attenuation
-    //     float distance = length(lights[i].xyz - FragPos);
-    //     float attenuation = 1.0 / (1.0 + Linear * distance + Quadratic * distance * distance);
-    //     diffuse *= attenuation;
-    //     specular *= attenuation;
-    //     lighting += diffuse + specular;        
+        // // diffuse
+        // vec3 lightDir = normalize(lights[i].xyz - FragPos);
+        // vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * Color;
+        // // specular
+        // vec3 halfwayDir = normalize(lightDir + viewDir);  
+        // float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+        // vec3 specular = Color * spec * Specular;
+        // // attenuation
+        // float distance = length(lights[i].xyz - FragPos);
+        // float attenuation = 1.0 / (1.0 + Linear * distance + Quadratic * distance * distance);
+        // diffuse *= attenuation;
+        // specular *= attenuation;
+        // lighting += diffuse + specular;        
     // }
+    if(FragPos ==vec3(0)){
+        lighting = vec3(0.5,0.6,1.0);
+    }
     FragColor = vec4(lighting, 1.0);
 
 }

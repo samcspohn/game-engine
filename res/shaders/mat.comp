@@ -69,7 +69,7 @@ void main () {
 					matrixes[buffsid].model = translate(transform.position) * rotate(transform.rotation) * scale(transform.scale);
 					matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
 
-					matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(transform.rotation)))));
+					matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(transform.rotation) * scale(transform.scale)))));
 				}
 			}
 			break;

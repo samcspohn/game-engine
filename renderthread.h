@@ -478,9 +478,6 @@ void renderThreadFunc()
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 					
-
-					// gpu_lights->bindData(0);
-					// gpu_lights->bufferData(lightPos);
 					quadShader.use();
 					glUniform3fv(
 						glGetUniformLocation(quadShader.Program, "viewPos"),
@@ -527,12 +524,10 @@ void renderThreadFunc()
 					glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
 
 					glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
-					// for(int i = 0; i < lightPos.size(); i++){
 					SetLightingUniforms(c.farPlane,c.pos,c.rot * c.view,c.proj);
 					lv.Draw(plm.pointLights.size());
-					// }
+
 					glDepthMask(GL_TRUE);
-					// glDisable(GL_DEPTH_CLAMP);
 
 					// render particle
 					gt.start();
