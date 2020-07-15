@@ -846,10 +846,10 @@ int main(int argc, char **argv)
 
     game_object* light = new game_object();
     light->transform->setPosition(glm::vec3(30000));
-    light->addComponent<Light>()->setColor(glm::vec3(5000));
+    light->addComponent<Light>()->setColor(glm::vec3(30000));
     light->getComponent<Light>()->setConstant(1.f);
     light->getComponent<Light>()->setlinear(0.000014f);
-    light->getComponent<Light>()->setQuadratic(0.0000007f);
+    light->getComponent<Light>()->setQuadratic(0.000007f);
 
 	physObj = new game_object();
 	physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
@@ -1046,6 +1046,7 @@ int main(int argc, char **argv)
 	{
 		proto2 = new game_object(*proto2);
 		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));
+		proto2->transform->scale(vec3(2,1,1));
 		proto2->transform->translate(glm::vec3(pow(10.f, (float)(i + 1))) * 3.f);
 		proto2->transform->rotate(randomSphere(),randf() * 1.5);
 	}
