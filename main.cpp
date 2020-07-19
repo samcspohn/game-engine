@@ -256,17 +256,7 @@ public:
 		fov -= Input.Mouse.getScroll() * 5;
 		fov = glm::clamp(fov, 5.f,80.f);
 		transform->gameObject->getComponent<_camera>()->fov = fov;//Input.Mouse.getScroll();
-		// rotX += Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
-		// rotY += Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * -0.01f;
-		// vec3 lookAtPoint = vec3(0,0,1);
-		// lookAtPoint = rotateY(lookAtPoint,rotX);
-		// lookAtPoint = rotateX(lookAtPoint,rotY);
-		// transform->setRotation(lookAt(vec3(0),lookAtPoint,vec3(0,1,0)));
 
-		// transform->setRotation(lookAt(vec3(0),transform->forward(),vec3(0,1,0)));
-		// transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * Time.unscaledDeltaTime * -1.f);
-
-		// glm::vec3 currVel = rb->getVelocity();
 
 		if (framecount++ > 1){
 
@@ -302,26 +292,7 @@ public:
 			Time.timeScale = 1;
 		}
 
-		// terrainHit h = t->getHeight(transform->getPosition().x, transform->getPosition().z);
-
-		// 		rb->gravity = false;
-		// 		vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right() + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up() + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
-		// 		if (inputVel.x != 0 || inputVel.z != 0)
-		// 			inputVel = normalize(inputVel);
-		// 		rb->setVelocity(currVel + inputVel * speed * 5.f);
-		// 		glm::vec3 vel = rb->getVelocity();
-		// 		rb->setVelocity(glm::vec3(vel.x, vel.y, vel.z) * 0.3f);
-		
-		// if (Input.getKeyDown(GLFW_KEY_SPACE) && jumped)
-		// { // pressing jump while airborne begins flight
-		// 	flying = true;
-		// }
-		// if (Input.getKeyDown(GLFW_KEY_SPACE))
-		// { // jump
-		// 	glm::vec3 vel = rb->getVelocity();
-		// 	jumped = true;
-		// 	rb->setVelocity(vec3(vel.x * .5f, .5f * speed, vel.z * .5f));
-		// }
+	
 
 		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
 		{
@@ -674,6 +645,41 @@ public:
 	COPY(_boom);
 };
 
+
+class player_sc2 : public component {
+	float speed = 3.f;
+public:
+    bool cursorReleased = false;
+    void update(){
+        transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+		transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+        transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+        transform->rotate(vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime * -0.4f);
+        transform->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime * -0.4f);
+
+        if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cursorReleased = false;
+		}
+		else if (Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursorReleased = true;
+		}
+		if(Input.getKeyDown(GLFW_KEY_R)){
+			speed *= 2;
+		}
+		if(Input.getKeyDown(GLFW_KEY_F)){
+			speed /= 2;
+		}
+    }
+    COPY(player_sc2);
+    
+};
+
+
 int main(int argc, char **argv)
 {
 	if (argc > 1)
@@ -690,6 +696,7 @@ int main(int argc, char **argv)
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
 	_model terrainModel("res/models/terrain/terrain.obj");
+	_model tree("res/models/Spruce_obj/Spruce.obj");
 
 	collisionGraph[0] = {1};
 	collisionGraph[1] = {0,1};
@@ -872,64 +879,70 @@ int main(int argc, char **argv)
 	// player->addComponent<collider>()->layer = 1;
 	// player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
-	player->addComponent<player_sc>();
+	player->addComponent<player_sc2>();
 	player->transform->translate(vec3(0, 10, -35));
 
-	game_object* boom = new game_object();
-	boom->transform->Adopt(player->transform);
-	// auto b = boom->addComponent<_boom>();
 
-	auto pointer = new game_object();
-	pointer->transform->setPosition(player->transform->getPosition());
-	player->transform->Adopt(pointer->transform);
-	pointer->transform->translate(vec3(0,0,5000));
-	pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
+	////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////
+	// game_object* boom = new game_object();
+	// boom->transform->Adopt(player->transform);
+	// // auto b = boom->addComponent<_boom>();
 
-	game_object* ship = new game_object();
-	auto r_ = ship->addComponent<_renderer>();
-	_model shipModel = _model("res/models/ship1/ship.obj");
-	r_->set(modelShader,shipModel);
-	ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
-	auto ship_col = ship->addComponent<collider>();
-	ship_col->dim = vec3(2,1,18);
-	ship_col->layer = 1;
+	// auto pointer = new game_object();
+	// pointer->transform->setPosition(player->transform->getPosition());
+	// player->transform->Adopt(pointer->transform);
+	// pointer->transform->translate(vec3(0,0,5000));
+	// pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
 
-	vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
-	vec2(1.7,4.45),
-	vec2(1.7,-5.2),
-	vec2(1.2,-8.2),
-	vec2(-1.2,5.85),
-	vec2(-1.7,3.05),
-	vec2(-1.7,-4.25),
-	vec2(-1.2,-7.1)};
-	for(auto& i : MainGunPos_s){
-		makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0);
-	}
-	ship->addComponent<gunManager>();
+	// game_object* ship = new game_object();
+	// auto r_ = ship->addComponent<_renderer>();
+	// _model shipModel = _model("res/models/ship1/ship.obj");
+	// r_->set(modelShader,shipModel);
+	// ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
+	// auto ship_col = ship->addComponent<collider>();
+	// ship_col->dim = vec3(2,1,18);
+	// ship_col->layer = 1;
 
-	ship->addComponent<Light>();
-	ship->getComponent<Light>()->setColor(vec3(100,0,0));
-    ship->getComponent<Light>()->setConstant(1.f);
-    ship->getComponent<Light>()->setlinear(0.01f);
-    ship->getComponent<Light>()->setQuadratic(0.0032f);
-	ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
-	ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
+	// vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
+	// vec2(1.7,4.45),
+	// vec2(1.7,-5.2),
+	// vec2(1.2,-8.2),
+	// vec2(-1.2,5.85),
+	// vec2(-1.7,3.05),
+	// vec2(-1.7,-4.25),
+	// vec2(-1.2,-7.1)};
+	// for(auto& i : MainGunPos_s){
+	// 	makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0);
+	// }
+	// ship->addComponent<gunManager>();
 
-	game_object* engine = new game_object();
-	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
-	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineFlame"));
-	engine->transform->translate(vec3(0,0,-10));
-	ship->transform->Adopt(engine->transform);
-	engine = new game_object(*engine);
-	engine->transform->translate(vec3(-2.2,0,6));
-	engine = new game_object(*engine);
-	engine->transform->translate(vec3(2.2 * 2,0,0));
+	// ship->addComponent<Light>();
+	// ship->getComponent<Light>()->setColor(vec3(100,0,0));
+    // ship->getComponent<Light>()->setConstant(1.f);
+    // ship->getComponent<Light>()->setlinear(0.01f);
+    // ship->getComponent<Light>()->setQuadratic(0.0032f);
+	// ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
+	// ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
+
+	// game_object* engine = new game_object();
+	// engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
+	// engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineFlame"));
+	// engine->transform->translate(vec3(0,0,-10));
+	// ship->transform->Adopt(engine->transform);
+	// engine = new game_object(*engine);
+	// engine->transform->translate(vec3(-2.2,0,6));
+	// engine = new game_object(*engine);
+	// engine->transform->translate(vec3(2.2 * 2,0,0));
 	
 
-	game_object* ship_container = new game_object();
-	ship_container->transform->Adopt(ship->transform);
-	ship_container->transform->Adopt(boom->transform);
-
+	// game_object* ship_container = new game_object();
+	// ship_container->transform->Adopt(ship->transform);
+	// ship_container->transform->Adopt(boom->transform);
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
 	// ship->transform->Adopt(boom->transform);
 
 	// ship->transform->setScale(vec3(10));
@@ -948,6 +961,21 @@ int main(int argc, char **argv)
 	t->genHeightMap(terrainWidth,terrainWidth);
 	ground->transform->translate(glm::vec3(0,-4500,0));
 	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));
+
+	game_object* tree_go = new game_object();
+	tree_go->addComponent<_renderer>()->set(modelShader,tree);
+	tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
+	for(int i = -100; i < 100; i++){
+		for(int j = -100; j < 100; j++){
+			float x = (i + randf()) * 20.f;
+			float z = (j + randf()) * 20.f;
+			terrainHit h = t->getHeight(x, z);
+			if(dot(h.normal, vec3(0,1,0)) > 0.85){
+				tree_go = new game_object(*tree_go);
+				tree_go->transform->setPosition(vec3(x,h.height,z));
+			}
+		}	
+	}
 
 	float minH = 10000;
 	float maxH = -10000;
@@ -982,7 +1010,7 @@ int main(int argc, char **argv)
 	body->setUserPointer(ground);
 	pm->addBody(body);
 
-	player->getComponent<player_sc>()->t = t;
+	// player->getComponent<player_sc>()->t = t;
 	ifstream config("config.txt");
 	int n;
 	int numshooters;
