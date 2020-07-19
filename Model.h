@@ -33,20 +33,34 @@ class Model
 public:
 
 	string modelPath;
-	bool ready = false;
+    bool loaded = false;
+	bool ready(){
+        if(!loaded)
+            return false;
+        for(auto& i : this->meshes){
+            if(!i.ready)
+                return false;
+        }
+        return true;
+    }
     /*  Functions   */
     // Constructor, expects a filepath to a 3D model.
-    Model(string path )
+    Model(string path)
     {
 		modelPath = path;
-		//loadModel(modelPath);
         enqueRenderJob([&]() { loadModel(modelPath); });
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { loadModel(modelPath); };
-		// renderLock.lock();
-		// renderWork.push(rj);
-		// renderLock.unlock();
+    }
+    Model(const Model& M){
+        // enqueRenderJob([&](){
+        this->directory = M.directory;
+        this->textures_loaded = M.textures_loaded;
+        for(auto& i : M.meshes){
+            this->meshes.push_back(Mesh(i));
+        }
+        // });
+    }
+    Model(){
+        loaded = true;
     }
     
     // Draws the model, and thus all its meshes
@@ -74,7 +88,7 @@ private:
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel( string path )
     {
-        if(ready)
+        if(meshes.size() > 0)
             return;
 		numVerts = 0;
         // Read file via ASSIMP
@@ -92,7 +106,7 @@ private:
         
         // Process ASSIMP's root node recursively
         this->processNode( scene->mRootNode, scene );
-		ready = true;
+        loaded = true;
     }
     
     
@@ -245,31 +259,3 @@ private:
         return textures;
     }
 };
-
-// GLint TextureFromFile( const char *path, string directory )
-// {
-//     //Generate texture ID and load texture data
-//     string filename = string( path );
-//     filename = directory + '/' + filename;
-//     GLuint textureID;
-//     glGenTextures( 1, &textureID );
-    
-//     int width, height;
-    
-//     unsigned char *image = SOIL_load_image( filename.c_str( ), &width, &height, 0, SOIL_LOAD_RGB );
-    
-//     // Assign texture to ID
-//     glBindTexture( GL_TEXTURE_2D, textureID );
-//     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image );
-//     glGenerateMipmap( GL_TEXTURE_2D );
-    
-//     // Parameters
-//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//     glBindTexture( GL_TEXTURE_2D, 0 );
-//     SOIL_free_image_data( image );
-    
-//     return textureID;
-// }

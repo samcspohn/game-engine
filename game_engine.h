@@ -246,12 +246,6 @@ void run()
 	}
 
 	log("end of program");
-	renderJob* rj = new renderJob();
-	rj->type = rquit;
-
-	renderLock.lock();
-	renderWork.push(rj);
-	renderLock.unlock();
 
 	// for (int i = 0; i < concurrency::numThreads; i++)
 	// {
@@ -259,14 +253,22 @@ void run()
 	// 	workers[i]->join();
 	// 	delete workers[i];
 	// }
+
+	waitForRenderJob([&](){});
+
+	rootGameObject->destroy();
+	destroyAllComponents();
+	audioManager::destroy();
+
+	renderJob* rj = new renderJob();
+	rj->type = rquit;
+	renderLock.lock();
+	renderWork.push(rj);
+	renderLock.unlock();
 	while (renderThreadReady.load())
 		this_thread::sleep_for(1ms);
 	renderThread->join();
 
-	rootGameObject->destroy();
-	destroyAllComponents();
-	destroyRendering();
-	audioManager::destroy();
 	pm->destroy();
 	delete pm;
 	cout << endl;

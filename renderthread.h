@@ -455,8 +455,18 @@ void renderThreadFunc()
 
 					// 1. geometry pass: render all geometric/color data to g-buffer 
 					glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-					gBuffer.resize(SCREEN_WIDTH,SCREEN_HEIGHT);
 					gBuffer.use();
+					if(gBuffer.resize(SCREEN_WIDTH,SCREEN_HEIGHT)){
+						gBuffer.destroy();
+						gBuffer.scr_width = SCREEN_WIDTH;
+						gBuffer.scr_height = SCREEN_HEIGHT;
+						gBuffer.init();
+						gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
+						gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
+						gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
+						gBuffer.addDepthBuffer();
+						gBuffer.finalize();
+					}
 					// colors.use();
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
@@ -527,6 +537,13 @@ void renderThreadFunc()
 					SetLightingUniforms(c.farPlane,c.pos,c.rot * c.view,c.proj);
 					lv.Draw(plm.pointLights.size());
 
+					// Always good practice to set everything back to defaults once configured.
+					for ( GLuint i = 0; i < 4; i++ )
+					{
+						glActiveTexture( GL_TEXTURE0 + i );
+						glBindTexture( GL_TEXTURE_2D, 0 );
+					}
+
 					glDepthMask(GL_TRUE);
 
 					// render particle
@@ -576,8 +593,10 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 				{
 					(gpu_buffers.begin()->second)->deleteBuffer();
 				}
+				destroyRendering();
 
-			// Cleanup
+
+				// Cleanup gui
 				ImGui_ImplOpenGL3_Shutdown();
 				ImGui_ImplGlfw_Shutdown();
 				ImGui::DestroyContext();

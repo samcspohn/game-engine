@@ -5,6 +5,7 @@ layout(depth_less) out float gl_FragDepth;
 
 struct Material{
 	sampler2D texture_diffuse0;
+	sampler2D texture_diffuse1;
 	sampler2D texture_specular0;
 	sampler2D texture_normal0;
 	float shininess;
@@ -44,22 +45,20 @@ void main()
 //	color.rgb = vec3(gl_FragCoord.z);
 //	color.rgb = (normalize(Normal) + vec3(1)) / 2;
 
-	vec3 diffuseColor = texture(material.texture_diffuse0,TexCoord).rgb;
+	vec3 diffuseColor0 = texture(material.texture_diffuse0,TexCoord).rgb;
+	vec3 diffuseColor1 = texture(material.texture_diffuse1,TexCoord).rgb;
 // 	vec3 specColor = texture(material.texture_specular0,TexCoord).rgb;
-	if(diffuseColor == vec3(0,0,0)){
-		 diffuseColor = vec3(1,1,1);
+	if(diffuseColor0 == vec3(0,0,0)){
+		 diffuseColor0 = vec3(1,1,1);
 		//  specColor = vec3(1,1,1);
 	}
+	float r = dot(normalize(Normal), vec3(0,1,0));
+	r = clamp(r * 5 - 4,0,1);
 
 	// color.a = 1.0f;
-    // store the fragment position vector in the first gbuffer texture
     gPosition = vec4(FragPos,1);
-    // also store the per-fragment normals into the gbuffer
     gNormal = vec4(normalize(Normal),1);
-    // and the diffuse per-fragment color
-    gAlbedoSpec.rgb = diffuseColor;//texture(material.texture_diffuse0,TexCoord).rgb;
-    // gAlbedoSpec.a = 0.5;
-    // store specular intensity in gAlbedoSpec's alpha component
-    gAlbedoSpec.a = texture(material.texture_specular0,TexCoord).r;
+    gAlbedoSpec.rgb = diffuseColor0 * r + diffuseColor1 * (1 - r);;
+    gAlbedoSpec.a = 0;//texture(material.texture_specular0,TexCoord).r;
 	gl_FragDepth = log2(logz) * 0.5 * FC;
 }

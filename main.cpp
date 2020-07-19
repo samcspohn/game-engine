@@ -686,6 +686,7 @@ int main(int argc, char **argv)
 	gunSound = audio("res/audio/explosion1.wav");
 	
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
+	_shader terrainShader("res/shaders/model.vert", "res/shaders/terrain.frag");
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
 	_model terrainModel("res/models/terrain/terrain.obj");
@@ -886,7 +887,8 @@ int main(int argc, char **argv)
 
 	game_object* ship = new game_object();
 	auto r_ = ship->addComponent<_renderer>();
-	r_->set(modelShader,_model("res/models/ship1/ship.obj"));
+	_model shipModel = _model("res/models/ship1/ship.obj");
+	r_->set(modelShader,shipModel);
 	ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
 	auto ship_col = ship->addComponent<collider>();
 	ship_col->dim = vec3(2,1,18);
@@ -905,6 +907,14 @@ int main(int argc, char **argv)
 	}
 	ship->addComponent<gunManager>();
 
+	ship->addComponent<Light>();
+	ship->getComponent<Light>()->setColor(vec3(100,0,0));
+    ship->getComponent<Light>()->setConstant(1.f);
+    ship->getComponent<Light>()->setlinear(0.01f);
+    ship->getComponent<Light>()->setQuadratic(0.0032f);
+	ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
+	ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
+
 	game_object* engine = new game_object();
 	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
 	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineFlame"));
@@ -915,14 +925,10 @@ int main(int argc, char **argv)
 	engine = new game_object(*engine);
 	engine->transform->translate(vec3(2.2 * 2,0,0));
 	
+
 	game_object* ship_container = new game_object();
 	ship_container->transform->Adopt(ship->transform);
 	ship_container->transform->Adopt(boom->transform);
-    ship_container->addComponent<Light>();
-	ship_container->getComponent<Light>()->setColor(vec3(0,0,1));
-    ship_container->getComponent<Light>()->setConstant(1.f);
-    ship_container->getComponent<Light>()->setlinear(0.01f);
-    ship_container->getComponent<Light>()->setQuadratic(0.0032f);
 
 	// ship->transform->Adopt(boom->transform);
 
@@ -931,7 +937,9 @@ int main(int argc, char **argv)
 	ground = new game_object();
 	ground->transform->scale(vec3(20));
 	auto r = ground->addComponent<_renderer>();
-	r->set(modelShader, terrainModel);
+	_model groundModel = _model();
+	groundModel.makeUnique();
+	r->set(terrainShader, groundModel);
 	auto t = ground->addComponent<terrain>();
 	t->r = r;
 	terr = t;
@@ -1047,7 +1055,7 @@ int main(int argc, char **argv)
 		proto2 = new game_object(*proto2);
 		proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));
 		proto2->transform->scale(vec3(2,1,1));
-		proto2->transform->translate(glm::vec3(pow(10.f, (float)(i + 1))) * 3.f);
+		proto2->transform->translate(glm::vec3(pow(10.f, (float)(i + 1))) * 4.f);
 		proto2->transform->rotate(randomSphere(),randf() * 1.5);
 	}
 

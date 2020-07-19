@@ -8,10 +8,16 @@ class _renderer;
 
 // model data
 
-_modelMeta::_modelMeta() {}
+atomic<int> uniqueMeshIdGenerator;
+
+_modelMeta::_modelMeta() {
+	model = new Model();
+	getBounds();
+}
 _modelMeta::_modelMeta(string file) {
 	name = file;
 	model = new Model(file);
+	getBounds();
 }
 _modelMeta::~_modelMeta() {
 	delete model;
@@ -30,7 +36,9 @@ namespace modelManager{
 };
 
 
-_model::_model() {};
+_model::_model() {
+	// this->makeUnique();
+};
 _model::_model(string fileName) {
 	auto mm = modelManager::models.find(fileName);
 	if (mm != modelManager::models.end()) {
@@ -41,8 +49,20 @@ _model::_model(string fileName) {
 		m = modelManager::models.at(fileName);
 	}
 }
-	
 
+vector<Mesh>& _model::meshes(){
+	return m->model->meshes;
+}
+Mesh& _model::mesh(){
+	return m->model->meshes[0];
+}
+void _model::makeUnique(){
+	int id = uniqueMeshIdGenerator.fetch_add(1);
+	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0 };
+	modelManager::models[idStr] = new _modelMeta();
+	m = modelManager::models.at(idStr);
+	m->unique = true;
+}
 
 
 //shader data
@@ -111,10 +131,10 @@ _shader::_shader(string vertex, string geom,  string fragment) {
 
 
 int renderingId = 0;
-void renderingMeta::getBounds(){
-	if(m.m->model->ready){
+void _modelMeta::getBounds(){
+	if(this->model->ready()){
 		bounds = glm::vec3(0);
-		for(auto& i : m.m->model->meshes){
+		for(auto& i : this->model->meshes){
 			for(auto &j : i.vertices){
 				bounds = glm::vec3(glm::max(abs(bounds.x),abs(j.x)),
 				glm::max(abs(bounds.y),abs(j.y)),
@@ -131,11 +151,11 @@ renderingMeta::renderingMeta(_shader _s, _model _m) {
 	m = _m;
 	_transformIds = new gpu_vector<GLuint>();
 	_transformIds->ownStorage();
-	if(m.m->model->ready)
-		getBounds();
-	else{
-		enqueRenderJob([&]() { getBounds(); });
-	}
+	// if(m.m->model->ready())
+		// m.m->getBounds();
+	// else{
+	// 	enqueRenderJob([&]() { getBounds(); });
+	// }
 }
 renderingMeta::renderingMeta(const renderingMeta& other) {}
 
@@ -166,9 +186,9 @@ void destroyRendering(){
 	renderingManager::destroy();
 }
 
-void _renderer::recalcBounds(){
-	if(meta != 0){
-		meta->getBounds();
+void _model::recalcBounds(){
+	if(m != 0){
+		m->getBounds();
 	}	
 }
 _model _renderer::getModel(){
@@ -233,11 +253,17 @@ void _renderer::set_proto(_shader s, _model m) {
 void _renderer::set(renderingMeta* _meta){
 	shader = _meta->s;
 	model = _meta->m;
-	meta = _meta;
-	if(!transformIdRef.isNull()){
-		meta->ids.erase(transformIdRef);
+	if(model.m->unique){
+		model.makeUnique();
+		this->set(shader,model);
 	}
-	transformIdRef = meta->ids.push_back(transform->_T);
+	else{
+		meta = _meta;
+		if(!transformIdRef.isNull()){
+			meta->ids.erase(transformIdRef);
+		}
+		transformIdRef = meta->ids.push_back(transform->_T);
+	}
 }
 _renderer::_renderer(const _renderer& other) {
 	shader = other.shader;
