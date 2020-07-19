@@ -144,7 +144,7 @@ public:
 				mat->tryRealloc(size);
 				mat->bindData(3); 
 
-				glUniform1f(glGetUniformLocation(matProgram.Program, "radius"), renderingManager::shader_model_vector[i.first][j.first]->radius);
+				glUniform1f(glGetUniformLocation(matProgram.Program, "radius"), renderingManager::shader_model_vector[i.first][j.first]->m.m->radius);
 				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), size);
 				glDispatchCompute(size / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);

@@ -47,13 +47,7 @@ public:
     /*  Functions  */
     // Constructor
     Mesh(){
-        enqueRenderJob([&]() { this->setupMesh(); });
-        // renderLock.lock();
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { this->setupMesh(); };
-		// renderWork.push(rj);
-		// renderLock.unlock();
+        // enqueRenderJob([&]() { this->setupMesh(); });
     }
     Mesh( vector<glm::vec3> _vertices, vector<glm::vec2> _uvs, vector<glm::vec3> _normals,vector<GLuint> indices, vector<Texture> textures )
     {
@@ -62,18 +56,22 @@ public:
 		this->normals = _normals;
         this->indices = indices;
         this->textures = textures;
-        
-        // Now that we have all the required data, set the vertex buffers and its attribute pointers.
-        // renderLock.lock();
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { this->setupMesh(); };
-		// renderWork.push(rj);
-		// renderLock.unlock();
-        // enqueRenderJob(this->setupMesh);
         this->setupMesh( );
     }
-    
+    Mesh(const Mesh& M){
+        this->ready = false;
+        this->vertices = M.vertices;
+		this->uvs = M.uvs;
+		this->normals = M.normals;
+        this->indices = M.indices;
+        this->textures = M.textures;
+        this->setupMesh( );
+    }
+    ~Mesh(){
+        glDeleteBuffers(1,&this->EBO);
+        glDeleteBuffers(1,&this->VBO);
+        glDeleteVertexArrays(1, &this->VAO);
+    }
     // Render the mesh
     void Draw( Shader shader, /*GLuint instVBO, GLuint rotVBO,*/ size_t number)
     {
@@ -106,6 +104,7 @@ public:
             // Now set the sampler to the correct texture unit
 			GLint texname = glGetUniformLocation(shader.Program, ("material." + name + number).c_str());
             glUniform1i(texname, i );
+            // shader.setInt("material." + name + number,i);
             // And finally bind the texture
             glBindTexture( GL_TEXTURE_2D, this->textures[i].id );
         }
@@ -129,12 +128,6 @@ public:
     GLuint VAO = 0, VBO = 0, EBO = 0;
     void reloadMesh(){
         enqueRenderJob([&]() { this->setupMesh(); });
-        // renderLock.lock();
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { this->setupMesh(); };
-		// renderWork.push(rj);
-		// renderLock.unlock();
     }
 private:
     /*  Render data  */

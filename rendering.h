@@ -29,6 +29,10 @@ struct _modelMeta {
 	~_modelMeta();
 	string name;
 	Model* model = 0;
+	glm::vec3 bounds;
+	float radius;
+	void getBounds();
+	bool unique = false;
 };
 namespace modelManager {
 	extern map<string, _modelMeta*> models;
@@ -40,6 +44,10 @@ public:
 	_model();
 	_model(string fileName);
 	_modelMeta* m = 0;
+	vector<Mesh>& meshes();
+	Mesh& mesh();
+	void makeUnique();
+	void recalcBounds();
 };
 
 
@@ -48,7 +56,7 @@ struct _shaderMeta {
 	_shaderMeta();
 	_shaderMeta(string compute);
 	_shaderMeta(string vertex, string fragment);
-	_shaderMeta( string vertex, string geom,string fragment);
+	_shaderMeta( string vertex, string geom, string fragment);
 	~_shaderMeta();
 	string name;
 	Shader* shader = 0;
@@ -73,14 +81,11 @@ public:
 
 extern int renderingId;
 struct renderingMeta {
-	GLuint id = -1;
 	gpu_vector<GLuint>* _transformIds;
 	fast_list_deque<GLuint> ids;
-	glm::vec3 bounds;
-	float radius;
+	
 	_shader s;
 	_model m;
-	void getBounds();
 
 	renderingMeta(_shader _s, _model _m);
 private:
@@ -105,7 +110,6 @@ class _renderer : public component {
 	typename fast_list_deque<GLuint>::iterator transformIdRef;
 	friend void run();
 public:
-	void recalcBounds();
 	_model getModel();
 	void onStart();
 	_renderer();

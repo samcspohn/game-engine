@@ -43,16 +43,6 @@ public:
         terrains.insert(std::pair<int,terrain*>(0, transform->gameObject->getComponent<terrain>()));
         
     }
-    // void update(){
-    //     if(r == 0)
-    //         return;
-    //     _model model = r->getModel();
-    //     if(!generated && model.m != 0 && model.m->model->ready)
-    //         generate(width,depth);
-    //     // model.m->model->meshes[0].reloadMesh();
-    // }
-    // //UPDATE(terrain,update);
-
     int xz(int x, int z){
         return x * width + z;
     }
@@ -90,7 +80,6 @@ public:
         width = _width;
         depth = _depth;
 
-
         for(int x = 0; x < width; x++){
             noise.push_back(vector<float>());
             for(int z = 0; z < depth; z++){
@@ -127,49 +116,67 @@ public:
         if(r == 0)
             return;
         _model model = r->getModel();
-        if(!(model.m->model->ready)){
-            enqueRenderJob([&](){this->generate();});
-        }
+        // if(!(model.m->model->ready)){
+        //     enqueRenderJob([&](){this->generate();});
+        //     return;
+        // }
+        model.meshes().push_back(Mesh());
             
-        model.m->model->meshes[0].vertices = vector<glm::vec3>(width * depth);
+        model.mesh().vertices = vector<glm::vec3>(width * depth);
 
-        vector<glm::vec3>& verts = model.m->model->meshes[0].vertices;
+        vector<glm::vec3>& verts = model.mesh().vertices;
+        vector<glm::vec2>& uvs = model.mesh().uvs;
+        uvs = vector<glm::vec2>(width * depth);
 
+        Texture grass;
+        grass.type = "texture_diffuse";
+        grass.load("res/images/grass_texture_tiled.png");
+        model.mesh().textures.push_back(grass);
+
+        Texture rock;
+        rock.type = "texture_diffuse";
+        rock.load("res/images/rock.jpg");
+        model.mesh().textures.push_back(rock);
+
+        glm::vec2 uv;
         for(int x = 0; x < width; x++){
+            uv.y = (float)!(bool)(int)uv.y;
             for(int z = 0; z < depth; z++){
                 verts[x * width + z] = glm::vec3(x - (width - 1) / 2.0,heightMap[x][z], z - (depth - 1) / 2.0);
+                uvs[x * width + z] = uv;
+                uv.x = (float)!(bool)(int)uv.x;
             }
         }
 
-        model.m->model->meshes[0].indices = vector<GLuint>((width - 1) * (depth - 1) * 6);
+        model.mesh().indices = vector<GLuint>((width - 1) * (depth - 1) * 6);
         int k = 0;
         for(int i = 0; i < width - 1; i++){
             for(int j = 0; j < depth - 1; j++){
 
             
-            model.m->model->meshes[0].indices[k++] = xz(i,j);
-            model.m->model->meshes[0].indices[k++] = xz(i,j + 1);
-            model.m->model->meshes[0].indices[k++] = xz(i + 1,j + 1);
-            model.m->model->meshes[0].indices[k++] = xz(i,j);
-            model.m->model->meshes[0].indices[k++] = xz(i + 1,j + 1);
-            model.m->model->meshes[0].indices[k++] = xz(i + 1,j);
+            model.mesh().indices[k++] = xz(i,j);
+            model.mesh().indices[k++] = xz(i,j + 1);
+            model.mesh().indices[k++] = xz(i + 1,j + 1);
+            model.mesh().indices[k++] = xz(i,j);
+            model.mesh().indices[k++] = xz(i + 1,j + 1);
+            model.mesh().indices[k++] = xz(i + 1,j);
             }
         }
-        model.m->model->meshes[0].normals = vector<glm::vec3>(width * depth);
+        model.mesh().normals = vector<glm::vec3>(width * depth);
         for(int x = 1; x < width - 1; x++){
             for(int z = 1; z < depth - 1; z++){
-                glm::vec3 p = model.m->model->meshes[0].vertices[xz(x,z)];
-                glm::vec3 a1 = glm::cross(p - model.m->model->meshes[0].vertices[xz(x,z - 1)],        p - model.m->model->meshes[0].vertices[xz(x - 1,z - 1)]);
-                glm::vec3 a2 = glm::cross(p - model.m->model->meshes[0].vertices[xz(x - 1,z - 1)],    p - model.m->model->meshes[0].vertices[xz(x - 1,z)]);
-                glm::vec3 a3 = glm::cross(p - model.m->model->meshes[0].vertices[xz(x + 1,z)],        p - model.m->model->meshes[0].vertices[xz(x,z - 1)]);
-                glm::vec3 a4 = glm::cross(p - model.m->model->meshes[0].vertices[xz(x - 1,z)],        p - model.m->model->meshes[0].vertices[xz(x,z + 1)]);
-                glm::vec3 a5 = glm::cross(p - model.m->model->meshes[0].vertices[xz(x + 1,z + 1)],    p - model.m->model->meshes[0].vertices[xz(x + 1,z)]);
-                glm::vec3 a6 = glm::cross(p - model.m->model->meshes[0].vertices[xz(x + 1,z + 1)],    p - model.m->model->meshes[0].vertices[xz(x + 1,z + 1)]);
-                model.m->model->meshes[0].normals[xz(x,z)] = glm::vec3(glm::normalize(a1 + a2 + a3 + a4 + a5 + a6));
+                glm::vec3 p = model.mesh().vertices[xz(x,z)];
+                glm::vec3 a1 = glm::cross(p - model.mesh().vertices[xz(x,z - 1)],        p - model.mesh().vertices[xz(x - 1,z - 1)]);
+                glm::vec3 a2 = glm::cross(p - model.mesh().vertices[xz(x - 1,z - 1)],    p - model.mesh().vertices[xz(x - 1,z)]);
+                glm::vec3 a3 = glm::cross(p - model.mesh().vertices[xz(x + 1,z)],        p - model.mesh().vertices[xz(x,z - 1)]);
+                glm::vec3 a4 = glm::cross(p - model.mesh().vertices[xz(x - 1,z)],        p - model.mesh().vertices[xz(x,z + 1)]);
+                glm::vec3 a5 = glm::cross(p - model.mesh().vertices[xz(x + 1,z + 1)],    p - model.mesh().vertices[xz(x + 1,z)]);
+                glm::vec3 a6 = glm::cross(p - model.mesh().vertices[xz(x + 1,z + 1)],    p - model.mesh().vertices[xz(x + 1,z + 1)]);
+                model.mesh().normals[xz(x,z)] = glm::vec3(glm::normalize(a1 + a2 + a3 + a4 + a5 + a6));
             }
         }
-        model.m->model->meshes[0].reloadMesh();
-        transform->gameObject->getComponent<_renderer>()->recalcBounds();
+        model.mesh().reloadMesh();
+        model.recalcBounds();
         generated = true;
     }
 };
