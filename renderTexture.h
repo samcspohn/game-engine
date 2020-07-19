@@ -27,34 +27,58 @@ public:
 		if(width != scr_width || height != scr_height){
 			scr_width = width;
 			scr_height = height;
-			for(auto& i : textures){
-				// "Bind" the newly created texture : all future texture functions will modify this texture
-				glBindTexture(GL_TEXTURE_2D, i.second.id);
 
-				switch (i.second.type)
-				{
-					case renderTextureType::FLOAT:
-						glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB16F, scr_width, scr_height, 0,GL_RGBA, GL_FLOAT, 0);
-						break;
-					case renderTextureType::UNSIGNED_BYTE:
-						glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA, scr_width, scr_height, 0,GL_RGBA, GL_UNSIGNED_BYTE, 0);
-						break;
-					default:
-						break;
-				}
+			destroy();
+			scr_width = SCREEN_WIDTH;
+			scr_height = SCREEN_HEIGHT;
+			init();
+			for(auto &i : textures){
+				addColorAttachment(i.first,i.second.type,i.second.location);
+			}
+			if(rboDepth != -1)
+				addDepthBuffer();
+			finalize();
 
-				// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i.second.location, i.second.id, 0);
-			}
-			if(rboDepth != -1){
-				glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, scr_width, scr_height);
-				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
-			}
+			// for(auto& i : textures){
+			// 	// "Bind" the newly created texture : all future texture functions will modify this texture
+			// 	glBindTexture(GL_TEXTURE_2D, i.second.id);
+
+			// 	switch (i.second.type)
+			// 	{
+			// 		case renderTextureType::FLOAT:
+			// 			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB16F, scr_width, scr_height, 0,GL_RGBA, GL_FLOAT, 0);
+			// 			break;
+			// 		case renderTextureType::UNSIGNED_BYTE:
+			// 			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA, scr_width, scr_height, 0,GL_RGBA, GL_UNSIGNED_BYTE, 0);
+			// 			break;
+			// 		default:
+			// 			break;
+			// 	}
+
+			// 	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			// 	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			// 	// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i.second.location, i.second.id, 0);
+			// }
+			// if(rboDepth != -1){
+			// 	glDeleteRenderbuffers(1,&rboDepth);
+			// 	glGenRenderbuffers(1, &rboDepth);
+			// 	glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+			// 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, scr_width, scr_height);
+			// 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+			// }
 			return true;
 		}
 		return false;
+	}
+	void destroy(){
+		//Delete resources
+		for(auto& i : textures){
+			glDeleteTextures(1, &i.second.id);
+		}
+		glDeleteRenderbuffersEXT(1, &rboDepth);
+		//Bind 0, which means render to back buffer, as a result, fb is unbound
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+		glDeleteFramebuffersEXT(1, &FramebufferName);
 	}
 	void addColorAttachment(string name, renderTextureType type, GLuint location){
 		

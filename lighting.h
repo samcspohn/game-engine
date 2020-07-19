@@ -8,17 +8,24 @@
 struct pointLight{
     glm::vec3 color;
     float constant;
+
     float linear;
     float quadratic;
     int transfromId;
+private:
+    float radius;
+
+public:
+    glm::vec2 p;
+    float cutOff = -1;
+    float outerCutOff = -1;
+
     void setRadius(){
         float lightMax  = std::fmaxf(std::fmaxf(color.r, color.g), color.b);
          radius  = (-linear +  std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * lightMax))) 
          / (2 * quadratic);  
         // radius2 *= radius2;
     }
-private:
-    float radius;
 };
 
 class lightingManager{
@@ -51,6 +58,12 @@ public:
     void setConstant(float c){
         pl->constant = c;
         pl->setRadius();
+    }
+    void setOuterCutoff(float radians){
+        pl->outerCutOff = glm::cos(radians);
+    }
+    void setInnerCutoff(float radians){
+        pl->cutOff = glm::cos(radians);
     }
     void onStart(){
         pl = plm.pointLights.push_back(pointLight());

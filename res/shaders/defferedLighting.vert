@@ -10,6 +10,10 @@ struct pointLight{
     float quadratic;
     int transformId;
     float radius;
+
+    vec2 p;
+    float cutOff;
+    float outerCutOff;
 };
 
 
@@ -22,9 +26,10 @@ uniform mat4 view;
 uniform mat4 proj;
 uniform float FC;
 out vec2 TexCoords;
-flat out pointLight pl;
+flat out pointLight light;
 
 flat out vec3 lightPos;
+flat out vec3 direction;
 
 // layout(std430, binding = 0) buffer l{ vec4 lights[];};
 
@@ -37,11 +42,12 @@ out float logz;
 void main()
 {
 	uint id = gl_InstanceID;
-	pl = pointLights[id];
-	_transform t = transforms[pl.transformId];
+	light = pointLights[id];
+	_transform t = transforms[light.transformId];
 	
 	lightPos = t.position;
-	gl_Position = proj * view * vec4(t.position + position * pl.radius,1);
+	direction = vec3(rotate(t.rotation) * vec4(0,0,1,1));
+	gl_Position = proj * view * vec4(t.position + position * light.radius,1);
 	
 	logz = 1.0 + gl_Position.w;
 	gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
