@@ -67,9 +67,8 @@ Transform Transform::operator=(const Transform& t) {
 	this->parent = t.parent;
 }
 
-void Transform::lookat(glm::vec3 lookatPoint, glm::vec3 up) {
-	glm::quat r = glm::toQuat(glm::lookAt(_T->position, lookatPoint, up));
-	_T->rotation = r;
+void Transform::lookat(glm::vec3 direction, glm::vec3 up) {
+	_T->rotation = quatLookAtLH(direction,up);
 }
 glm::vec3 Transform::forward() {
 	return glm::normalize(_T->rotation * glm::vec3(0.0f, 0.0f, 1.0f));

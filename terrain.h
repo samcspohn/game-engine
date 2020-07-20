@@ -130,7 +130,7 @@ public:
 
         Texture grass;
         grass.type = "texture_diffuse";
-        grass.load("res/images/grass_texture_tiled.png");
+        grass.load("res/images/grass.jpg");
         model.mesh().textures.push_back(grass);
 
         Texture rock;
