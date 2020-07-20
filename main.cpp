@@ -679,6 +679,83 @@ public:
     
 };
 
+class player_sc3 : public component {
+public:
+	float speed = 3.f;
+    bool cursorReleased = false;
+	float fov = 80;
+	gui::window* info;
+	gui::text* fps;
+	vector<gun*> guns;
+
+	void onStart(){
+		info = new gui::window();
+		fps = new gui::text();
+		info->adopt(fps);
+		info->name = "game info";
+		ImGuiWindowFlags flags = 0;
+		flags |= ImGuiWindowFlags_NoTitleBar;
+		flags |= ImGuiWindowFlags_NoMove;
+		flags |= ImGuiWindowFlags_NoResize;
+		info->flags = flags;
+		info->pos = ImVec2(20,20);
+		info->size = ImVec2(200,150);
+
+		guns = transform->gameObject->getComponents<gun>();
+		// bomb = bullets["bomb"];
+		guns[0]->ammo = bullets["bomb"].proto;
+		guns[0]->rof = 3'000 / 60;
+		guns[0]->dispersion = 0.3f;
+		guns[0]->speed = 200;
+		guns[0]->setBarrels({vec3(-0.4,0.4,0.4)});
+	}
+	void update(){
+		fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+
+		transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+		transform->rotate(vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
+        transform->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
+		vec3 pos = transform->getPosition();
+		pos.y = terr->getHeight(pos.x,pos.z).height + 1.8;
+		transform->setPosition(pos);
+		// transform->setRotation(quatLookAtLH(transform->getRotation() * vec3(0,0,1),vec3(0,1,0)));
+		transform->lookat(transform->forward(),vec3(0,1,0));
+
+		fov -= Input.Mouse.getScroll() * 5;
+		fov = glm::clamp(fov, 5.f,80.f);
+		transform->gameObject->getComponent<_camera>()->fov = fov;//Input.Mouse.getScroll();
+
+        if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cursorReleased = false;
+		}
+		else if (Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursorReleased = true;
+		}
+		if(Input.getKeyDown(GLFW_KEY_R)){
+			speed *= 2;
+		}
+		if(Input.getKeyDown(GLFW_KEY_F)){
+			speed /= 2;
+		}
+		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+			// for(int i = 0; i <= Time.deltaTime * 100; i++){
+			// 	numBoxes++;
+			// 	auto g = new game_object(*physObj);
+			// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+			// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+			// }
+			guns[0]->fire();
+		}
+
+	}
+    COPY(player_sc3);
+};
+
 
 int main(int argc, char **argv)
 {
@@ -854,7 +931,7 @@ int main(int argc, char **argv)
 
     game_object* light = new game_object();
     light->transform->setPosition(glm::vec3(30000));
-    light->addComponent<Light>()->setColor(glm::vec3(30000));
+    light->addComponent<Light>()->setColor(glm::vec3(24000));
     light->getComponent<Light>()->setConstant(1.f);
     light->getComponent<Light>()->setlinear(0.000014f);
     light->getComponent<Light>()->setQuadratic(0.000007f);
@@ -879,7 +956,7 @@ int main(int argc, char **argv)
 	// player->addComponent<collider>()->layer = 1;
 	// player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
-	player->addComponent<player_sc2>();
+	player->addComponent<player_sc3>();
 	player->transform->translate(vec3(0, 10, -35));
 
 
