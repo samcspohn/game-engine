@@ -693,11 +693,11 @@ public:
 		fps = new gui::text();
 		info->adopt(fps);
 		info->name = "game info";
-		ImGuiWindowFlags flags = 0;
-		flags |= ImGuiWindowFlags_NoTitleBar;
-		flags |= ImGuiWindowFlags_NoMove;
-		flags |= ImGuiWindowFlags_NoResize;
-		info->flags = flags;
+		// ImGuiWindowFlags flags = 0;
+		// flags |= ImGuiWindowFlags_NoTitleBar;
+		// flags |= ImGuiWindowFlags_NoMove;
+		// flags |= ImGuiWindowFlags_NoResize;
+		// info->flags = flags;
 		info->pos = ImVec2(20,20);
 		info->size = ImVec2(200,150);
 
@@ -707,7 +707,7 @@ public:
 		guns[0]->rof = 3'000 / 60;
 		guns[0]->dispersion = 0.3f;
 		guns[0]->speed = 200;
-		guns[0]->setBarrels({vec3(-0.4,0.4,0.4)});
+		guns[0]->setBarrels({vec3(-1.1,0.4,0.5)});
 	}
 	void update(){
 		fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);

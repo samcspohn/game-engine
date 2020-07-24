@@ -6,6 +6,7 @@ layout(depth_less) out float gl_FragDepth;
 struct Material{
 	sampler2D texture_diffuse0;
 	sampler2D texture_diffuse1;
+	sampler2D texture_diffuse2;
 	sampler2D texture_specular0;
 	sampler2D texture_normal0;
 	float shininess;
@@ -14,6 +15,7 @@ struct Material{
 
 
 in vec2 TexCoord;
+in vec2 TexCoord2;
 in vec3 Normal;
 in vec3 FragPos;
 in vec4 DirLightSpacePos;
@@ -47,18 +49,19 @@ void main()
 
 	vec3 diffuseColor0 = texture(material.texture_diffuse0,TexCoord).rgb;
 	vec3 diffuseColor1 = texture(material.texture_diffuse1,TexCoord).rgb;
+	vec3 diffuseColor2 = texture(material.texture_diffuse2,TexCoord2).rgb;
 // 	vec3 specColor = texture(material.texture_specular0,TexCoord).rgb;
 	if(diffuseColor0 == vec3(0,0,0)){
 		 diffuseColor0 = vec3(1,1,1);
 		//  specColor = vec3(1,1,1);
 	}
 	float r = dot(normalize(Normal), vec3(0,1,0));
-	r = clamp(r * 5 - 4,0,1);
+	r = clamp(r * 10 - 8.2,0,1);
 
 	// color.a = 1.0f;
     gPosition = vec4(FragPos,1);
     gNormal = vec4(normalize(Normal),1);
-    gAlbedoSpec.rgb = diffuseColor0 * r + diffuseColor1 * (1 - r);;
+    gAlbedoSpec.rgb = diffuseColor0 * r + (diffuseColor1 * (1 - r) + diffuseColor2 * (1 - r)) * 0.5f;
     gAlbedoSpec.a = 0;//texture(material.texture_specular0,TexCoord).r;
 	gl_FragDepth = log2(logz) * 0.5 * FC;
 }

@@ -19,8 +19,8 @@ std::list<gui_base*> gui_windows;
 class window : public gui_base{
 public:
     std::vector<gui_base*> children;
-    ImVec2 pos;
-    ImVec2 size;
+    ImVec2 pos = ImVec2(20,20);
+    ImVec2 size = ImVec2(60,60);
     ImGuiWindowFlags flags = 0;
     std::string name;
     bool p_open = true;

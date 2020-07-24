@@ -1,6 +1,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#define GLM_SWIZZLE 
+#define GLM_FORCE_SWIZZLE
 #include <glm/glm.hpp>
 // #include <glm/gtc/swizzle.hpp>
 #include <glm/gtc/matrix_transform.hpp>

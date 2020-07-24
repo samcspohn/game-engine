@@ -4,7 +4,8 @@
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoord;
-layout (location = 2) in vec3 normal;
+layout (location = 2) in vec2 uvs2;
+layout (location = 3) in vec3 normal;
 
 #define vector(name, type ,_binding) layout(std430,binding = _binding) buffer _{uint size; type name[];}
 
@@ -26,6 +27,7 @@ layout(std430,binding = 4) buffer _ids{
 
 //out float logz;
 out vec2 TexCoord;
+out vec2 TexCoord2;
 out vec3 Normal;
 out vec3 FragPos;
 out vec4 DirLightSpacePos;
@@ -57,6 +59,7 @@ void main()
 //	DirLightSpacePos = dirLightTransform * model * vec4(position, 1.0);
 
 	TexCoord = texCoord;
+	TexCoord2 = uvs2;
 	FragPos = (model * vec4(position,1.0f)).xyz;
 	Normal = mat3(normalMat) * normal;
 //	}
