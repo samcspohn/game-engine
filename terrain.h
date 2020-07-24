@@ -126,7 +126,9 @@ public:
 
         vector<glm::vec3>& verts = model.mesh().vertices;
         vector<glm::vec2>& uvs = model.mesh().uvs;
+        vector<glm::vec2>& uvs2 = model.mesh().uvs2;
         uvs = vector<glm::vec2>(width * depth);
+        uvs2 = vector<glm::vec2>(width * depth);
 
         Texture grass;
         grass.type = "texture_diffuse";
@@ -138,13 +140,32 @@ public:
         rock.load("res/images/rock.jpg");
         model.mesh().textures.push_back(rock);
 
+
+        Texture mountain;
+        mountain.type = "texture_diffuse";
+        mountain.load("res/images/mountain.jpg");
+        model.mesh().textures.push_back(mountain);
+
         glm::vec2 uv;
+        glm::vec2 uv2;
         for(int x = 0; x < width; x++){
             uv.y = (float)!(bool)(int)uv.y;
+            float u = (float)(x % 8) / 4;
+            if(x % 8 >= 4)
+                    uv2.y = 2 - u;
+                else
+                    uv2.y = u;
             for(int z = 0; z < depth; z++){
                 verts[x * width + z] = glm::vec3(x - (width - 1) / 2.0,heightMap[x][z], z - (depth - 1) / 2.0);
                 uvs[x * width + z] = uv;
                 uv.x = (float)!(bool)(int)uv.x;
+
+                float u = (float)(z % 8) / 4;
+                if(z % 8 >= 4)
+                    uv2.x = 2 - u;
+                else
+                    uv2.x = u;
+                uvs2[x * width + z] = uv2;
             }
         }
 

@@ -40,6 +40,7 @@ public:
     /*  Mesh Data  */
     vector<glm::vec3> vertices;
 	vector<glm::vec2> uvs;
+    vector<glm::vec2> uvs2;
 	vector<glm::vec3> normals;
     vector<GLuint> indices;
     vector<Texture> textures;
@@ -152,11 +153,13 @@ private:
         // again translates to 3/2 floats which translates to a byte array.
 
 		int offset = 0;
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size() + sizeof(glm::vec2) * uvs.size() + sizeof(glm::vec3) * normals.size(), 0, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size() + sizeof(glm::vec2) * uvs.size()  + sizeof(glm::vec2) * uvs2.size() + sizeof(glm::vec3) * normals.size(), 0, GL_STATIC_DRAW);
 		glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec3) * vertices.size(), vertices.data());
 		offset += sizeof(glm::vec3) * vertices.size();
 		glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec2) * uvs.size(), uvs.data());
 		offset += sizeof(glm::vec2) * uvs.size();
+        glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec2) * uvs2.size(), uvs2.data());
+		offset += sizeof(glm::vec2) * uvs2.size();
 		glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec3) * normals.size(), normals.data());
 
 		//glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
@@ -169,9 +172,13 @@ private:
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)offset);
 		offset += sizeof(glm::vec2) * uvs.size();
-		// normals
+        // uvs2 attribute
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)offset);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)offset);
+		offset += sizeof(glm::vec2) * uvs2.size();
+		// normals
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)offset);
 
 		// instanced
 		//glGenBuffers(1, &instVBO);

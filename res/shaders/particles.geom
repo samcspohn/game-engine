@@ -94,62 +94,29 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
 void main(){
     // uint index = data[index_[0]].id;
     uint index = index_[0];
+    d rp = data[index];
 
-            d rp = data[index];
+    uint proto_id = protoID(rp);
+    id = proto_id;
+    float life1 = life(rp);
+    float life2 = life1;
+    vec3 position = get(rp.pos) + cameraPos;
+    vec2 s = getScale(rp);
+    vec3 _scale = vec3(s.x,s.y,0) * prototypes[proto_id].sizeLife[int((1.f - min(max(life1,0.01f),1.f)) * 100.f)];
+    vec4 rotation = get(rp.rot);
 
-            uint proto_id = protoID(rp);
-            id = proto_id;
-            float life1 = life(rp);
-            float life2 = life1;
+    mat4 rot = rotate(identity(),rotation);
+    mat4 model = translate(identity(),position) * rot * scale(identity(),_scale);
+    mat4 mvp = projection * vRot * view * model;
 
-            // setsmVec3(item.pos,p11);
-            // // setRotation(item, rot);
-            // setsmQuat(item.rot,rot);
+    if(prototypes[proto_id].trail == 1)
+        life1 = life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
 
-            // vec3 position = getPosition(rp) + cameraPos;
-            vec3 position = get(rp.pos) + cameraPos;
-            vec2 s = getScale(rp);// * life1;
-            vec3 _scale = vec3(s.x,s.y,0) * prototypes[proto_id].sizeLife[int((1.f - min(max(life1,0.01f),1.f)) * 100.f)];
-            vec4 rotation = get(rp.rot);//getRotation(rp);
-            // _scale = (rotate(identity(),rotation) * vec4(_scale,1)).xyz;
-            // float _life = life(rp);
-            mat4 rot = rotate(identity(),rotation);
-            mat4 model = translate(identity(),position) * rot * scale(identity(),_scale);
-            mat4 mvp = projection * vRot * view * model;
+    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1);
+    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1);
+    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2);
+    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2);
 
-            if(prototypes[proto_id].trail == 1)
-                life1 = life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
+    EndPrimitive();
 
-            createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1);
-            // offset = gl_Position.xy;
-            createVert(vec3(.5f,.5f,0),mvp,model,rp, life1);
-            createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2);
-            createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2);
-
-
-            // mat4 vp = projection;// * vRot * view;
-            // d rp = data[index];
-
-            // vec3 p1 = getPoint1(rp);
-            // vec3 p2 = getPoint2(rp);
-
-            // vec3 point1 = normalize(cross(-p1,p2 - p1)) * .5f * scale(rp);
-            
-            // vec3 point2 = normalize(cross(-p2,p1 - p2)) * -.5f * scale(rp);
-            
-            // // vec3 point2 = vec3(5);
-            // // vec3 point1 = vec3(5);
-            // uint proto_id = protoID(rp);
-            // float life1 = life(rp);
-            // float life2 = life1;
-            // if(prototypes[proto_id].trail == 1)
-            //     life2 = life1 - 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
-            // createVert(p1 + point1,vp,identity(),rp, life2);
-            // // offset = gl_Position.xy;
-            // createVert(p1 - point1,vp,identity(),rp, life2);
-            // createVert(p2 + point2,vp,identity(),rp, life1);
-            // createVert(p2 - point2,vp,identity(),rp, life1);
-        // }
-        EndPrimitive();
-    // }
 }
