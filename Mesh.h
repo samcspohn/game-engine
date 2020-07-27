@@ -43,14 +43,14 @@ public:
     vector<glm::vec2> uvs2;
 	vector<glm::vec3> normals;
     vector<GLuint> indices;
-    vector<Texture> textures;
+    vector<_texture> textures;
     bool ready = false;
     /*  Functions  */
     // Constructor
     Mesh(){
         // enqueRenderJob([&]() { this->setupMesh(); });
     }
-    Mesh( vector<glm::vec3> _vertices, vector<glm::vec2> _uvs, vector<glm::vec3> _normals,vector<GLuint> indices, vector<Texture> textures )
+    Mesh( vector<glm::vec3> _vertices, vector<glm::vec2> _uvs, vector<glm::vec3> _normals,vector<GLuint> indices, vector<_texture> textures )
     {
         this->vertices = _vertices;
 		this->uvs = _uvs;
@@ -87,7 +87,7 @@ public:
             // Retrieve texture number (the N in diffuse_textureN)
             stringstream ss;
             string number;
-            string name = this->textures[i].type;
+            string name = this->textures[i].t->type;
             
             if( name == "texture_diffuse" )
             {
@@ -107,7 +107,7 @@ public:
             glUniform1i(texname, i );
             // shader.setInt("material." + name + number,i);
             // And finally bind the texture
-            glBindTexture( GL_TEXTURE_2D, this->textures[i].id );
+            glBindTexture( GL_TEXTURE_2D, this->textures[i].t->id );
         }
         
         // Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)

@@ -23,7 +23,6 @@ game_object *ExplosionProto = nullptr;
 emitter_prototype_ _expSmoke;
 emitter_prototype_ _expFlame;
 
-game_object *ground;
 
 
 struct bullet {
@@ -180,7 +179,7 @@ class player_sc : public component
 	gui::text* colCounter;
 	gui::window* reticule;
 	gui::image* crosshair;
-	Texture crosshairtex;
+	_texture crosshairtex;
 public:
 	terrain *t;
 
@@ -647,16 +646,47 @@ public:
 
 
 class player_sc2 : public component {
-	float speed = 3.f;
-public:
+    float speed = 3.f;
     bool cursorReleased = false;
+	float fov = 80;
+	gui::window* info;
+	gui::text* fps;
+	vector<gun*> guns;
+public:
+    void onStart(){
+		info = new gui::window();
+		fps = new gui::text();
+		info->adopt(fps);
+		info->name = "game info";
+		// ImGuiWindowFlags flags = 0;
+		// flags |= ImGuiWindowFlags_NoTitleBar;
+		// flags |= ImGuiWindowFlags_NoMove;
+		// flags |= ImGuiWindowFlags_NoResize;
+		// info->flags = flags;
+		info->pos = ImVec2(20,20);
+		info->size = ImVec2(200,150);
+
+		guns = transform->gameObject->getComponents<gun>();
+		// bomb = bullets["bomb"];
+		guns[0]->ammo = bullets["bomb"].proto;
+		guns[0]->rof = 3'000 / 60;
+		guns[0]->dispersion = 0.3f;
+		guns[0]->speed = 200;
+		guns[0]->setBarrels({vec3(-1.1,0.4,0.5)});
+	}
     void update(){
+        fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+
         transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
 		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
 		transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
         transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
-        transform->rotate(vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime * -0.4f);
-        transform->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime * -0.4f);
+		transform->rotate(vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
+        transform->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
+
+		fov -= Input.Mouse.getScroll() * 5;
+		fov = glm::clamp(fov, 5.f,80.f);
+		transform->gameObject->getComponent<_camera>()->fov = fov;//Input.Mouse.getScroll();
 
         if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
 		{
@@ -673,6 +703,9 @@ public:
 		}
 		if(Input.getKeyDown(GLFW_KEY_F)){
 			speed /= 2;
+		}
+		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+			guns[0]->fire();
 		}
     }
     COPY(player_sc2);
@@ -717,7 +750,7 @@ public:
 		transform->rotate(vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
         transform->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
 		vec3 pos = transform->getPosition();
-		pos.y = terr->getHeight(pos.x,pos.z).height + 1.8;
+		pos.y = getTerrain(pos.x,pos.z)->getHeight(pos.x,pos.z).height + 1.8;
 		transform->setPosition(pos);
 		// transform->setRotation(quatLookAtLH(transform->getRotation() * vec3(0,0,1),vec3(0,1,0)));
 		transform->lookat(transform->forward(),vec3(0,1,0));
@@ -743,12 +776,6 @@ public:
 			speed /= 2;
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-			// for(int i = 0; i <= Time.deltaTime * 100; i++){
-			// 	numBoxes++;
-			// 	auto g = new game_object(*physObj);
-			// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
-			// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
-			// }
 			guns[0]->fire();
 		}
 
@@ -936,16 +963,16 @@ int main(int argc, char **argv)
     light->getComponent<Light>()->setlinear(0.000014f);
     light->getComponent<Light>()->setQuadratic(0.000007f);
 
-	physObj = new game_object();
-	physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
-	physObj->addComponent<physicsObject>()->init(vec3(0));
-	numBoxes += 61;
-	for(int i = 0; i < 60; i++){
-		auto g = new game_object(*physObj);
-		vec3 r = randomSphere() * 500.f * randf() + vec3(0,500,0);
-		g->transform->setPosition(r);
-		g->getComponent<physicsObject>()->init(vec3(0));
-	}
+	// physObj = new game_object();
+	// physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
+	// physObj->addComponent<physicsObject>()->init(vec3(0));
+	// numBoxes += 61;
+	// for(int i = 0; i < 60; i++){
+	// 	auto g = new game_object(*physObj);
+	// 	vec3 r = randomSphere() * 500.f * randf() + vec3(0,500,0);
+	// 	g->transform->setPosition(r);
+	// 	g->getComponent<physicsObject>()->init(vec3(0));
+	// }
 
 	game_object* player = new game_object();
 	auto playerCam = player->addComponent<_camera>();
@@ -956,7 +983,7 @@ int main(int argc, char **argv)
 	// player->addComponent<collider>()->layer = 1;
 	// player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
-	player->addComponent<player_sc3>();
+	player->addComponent<player_sc2>();
 	player->transform->translate(vec3(0, 10, -35));
 
 
@@ -1023,69 +1050,98 @@ int main(int argc, char **argv)
 	// ship->transform->Adopt(boom->transform);
 
 	// ship->transform->setScale(vec3(10));
-
-	ground = new game_object();
-	ground->transform->scale(vec3(20));
+    genNoise(513,513,4);
+	game_object_proto *ground = new game_object_proto();
+	// ground->transform->scale(vec3(20));
 	auto r = ground->addComponent<_renderer>();
 	_model groundModel = _model();
 	groundModel.makeUnique();
 	r->set(terrainShader, groundModel);
-	auto t = ground->addComponent<terrain>();
-	t->r = r;
-	terr = t;
+	ground->addComponent<terrain>();
+	// t->r = r;
+	// terr = t;
 	// t->width = t->depth = 1024;
-	int terrainWidth = 1025;
-	t->genHeightMap(terrainWidth,terrainWidth);
-	ground->transform->translate(glm::vec3(0,-4500,0));
-	// ground->transform->translate(glm::vec3(-10240, -5000, -10240));
+	int terrainWidth = 32;
+    // t->genHeightMap(terrainWidth,terrainWidth,0,0);
+	// ground->transform->translate(glm::vec3(0,-4500,0));
 
-	game_object* tree_go = new game_object();
+    // ground = new game_object(*ground);
+    // terrain* t2 = ground->getComponent<terrain>();
+    // t2->r = ground->getComponent<_renderer>();
+    // t2->genHeightMap(terrainWidth,terrainWidth,1 * terrainWidth,1*terrainWidth);
+    // ground->transform->setPosition(vec3(20 * 1 * terrainWidth,-4500,20 * 1 * terrainWidth));
+
+	game_object_proto* tree_go = new game_object_proto();
 	tree_go->addComponent<_renderer>()->set(modelShader,tree);
-	tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
-	for(int i = -100; i < 100; i++){
-		for(int j = -100; j < 100; j++){
-			float x = (i + randf()) * 20.f;
-			float z = (j + randf()) * 20.f;
-			terrainHit h = t->getHeight(x, z);
-			if(dot(h.normal, vec3(0,1,0)) > 0.85){
-				tree_go = new game_object(*tree_go);
-				tree_go->transform->setPosition(vec3(x,h.height,z));
-			}
-		}	
-	}
+	// tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
+	int terrainsDim = 8;
+    for(int i = -terrainsDim; i <= terrainsDim; i++){
+        for (int j = -terrainsDim; j <= terrainsDim; j++)
+        {
+            game_object* g = new game_object(*ground);
+	        terrain* t = g->getComponent<terrain>();
+			t->scatter_obj = tree_go;
+            t->r = g->getComponent<_renderer>();
+            g->transform->setScale(vec3(20));
+            g->transform->setPosition(vec3(20 * i * terrainWidth,-4500,20 * j * terrainWidth));
+            t->genHeightMap(terrainWidth,terrainWidth,i * terrainWidth,j*terrainWidth);
+            if(i ==0 && j == 0){
+                terr = t;
+            }
+        }
+    }
 
-	float minH = 10000;
-	float maxH = -10000;
-	float *heightData = new float[terrainWidth*terrainWidth];
-	// setRadial(heightData, 4, PHY_FLOAT);
-	int x = 0;
-	for(int i = 0; i < t->heightMap.size(); i++){
-		for(int j = 0; j < t->heightMap[i].size(); j++){
-			heightData[j * terrainWidth + i] = t->heightMap[i][j];
-			if(minH > t->heightMap[i][j])
-				minH = t->heightMap[i][j];
-			else if(maxH < t->heightMap[i][j])
-				maxH = t->heightMap[i][j];
-		}
-	}
+	// game_object* tree_go = new game_object();
+	// tree_go->addComponent<_renderer>()->set(modelShader,tree);
+	// tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
+	// for(int i = -100; i < 100; i++){
+	// 	for(int j = -100; j < 100; j++){
+	// 		float x = (i + randf()) * 8.f;
+	// 		float z = (j + randf()) * 8.f;
+	// 		terrain* t = getTerrain(x,z);
+	// 		if(t != 0){
 
-	//similar to createSphere
-	btTransform ter;
-	ter.setIdentity();
-	ter.setOrigin(btVector3(0,0,0));
-	// btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
-	ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
-	btHeightfieldTerrainShape* heightField = new btHeightfieldTerrainShape(terrainWidth,terrainWidth, heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
-	btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
-	heightField->setLocalScaling(localScaling);
-	btMotionState* motion=new btDefaultMotionState(ter);
-	// btVector3 localInertia(0,0,0);
-	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
-	// info.m_restitution = 0.02;
-	btRigidBody* body=new btRigidBody(info);
-	body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-	body->setUserPointer(ground);
-	pm->addBody(body);
+	// 		terrainHit h = t->getHeight(x, z);
+	// 		if(dot(h.normal, vec3(0,1,0)) > 0.85){
+	// 			tree_go = new game_object(*tree_go);
+	// 			tree_go->transform->setPosition(vec3(x,h.height,z));
+	// 		}
+	// 		}
+	// 	}	
+	// }
+
+	// float minH = 10000;
+	// float maxH = -10000;
+	// float *heightData = new float[terrainWidth*terrainWidth];
+	// // setRadial(heightData, 4, PHY_FLOAT);
+	// int x = 0;
+	// for(int i = 0; i < t->heightMap.size(); i++){
+	// 	for(int j = 0; j < t->heightMap[i].size(); j++){
+	// 		heightData[j * terrainWidth + i] = t->heightMap[i][j];
+	// 		if(minH > t->heightMap[i][j])
+	// 			minH = t->heightMap[i][j];
+	// 		else if(maxH < t->heightMap[i][j])
+	// 			maxH = t->heightMap[i][j];
+	// 	}
+	// }
+
+	// //similar to createSphere
+	// btTransform ter;
+	// ter.setIdentity();
+	// ter.setOrigin(btVector3(0,0,0));
+	// // btStaticPlaneShape* plane=new btStaticPlaneShape(btVector3(0,1,0),0);
+	// ter.setOrigin(btVector3(0,maxH * ground->transform->getScale().y * ground->transform->getScale().y / 2 + ground->transform->getPosition().y,0));
+	// btHeightfieldTerrainShape* heightField = new btHeightfieldTerrainShape(terrainWidth,terrainWidth, heightData,btScalar(1.0),btScalar(0.0),btScalar(maxH * ground->transform->getScale().y),1,PHY_FLOAT,false);
+	// btVector3 localScaling(ground->transform->getScale().x,ground->transform->getScale().y,ground->transform->getScale().z);
+	// heightField->setLocalScaling(localScaling);
+	// btMotionState* motion=new btDefaultMotionState(ter);
+	// // btVector3 localInertia(0,0,0);
+	// btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,heightField);
+	// // info.m_restitution = 0.02;
+	// btRigidBody* body=new btRigidBody(info);
+	// body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+	// body->setUserPointer(ground);
+	// pm->addBody(body);
 
 	// player->getComponent<player_sc>()->t = t;
 	ifstream config("config.txt");
@@ -1127,6 +1183,7 @@ int main(int argc, char **argv)
 	// cube_sc *it = nanosuitMan->getComponent<cube_sc>();
 	// nanosuitMan->removeComponent<cube_sc>(it);
 	nanosuitMan->transform->move(glm::vec3(-10.f));
+    nanosuitMan->removeComponent<missile>();
 
 	emitter_prototype_ ep2 = createNamedEmitter("emitter2");
 	*ep2 = *flameEmitterProto;
@@ -1191,7 +1248,7 @@ int main(int argc, char **argv)
 
 	cout << endl << "missiles: " + FormatWithCommas(numCubes.load());
 	
-	delete[] heightData;
+	// delete[] heightData;
 
 	
 	return 0;

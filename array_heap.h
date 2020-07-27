@@ -55,6 +55,7 @@ public:
 			valid.emplace_back(true);
 			++extent;
 		}
+		data[ret.index] = t();
 		m.unlock();
 		return ret;
 	}
@@ -64,6 +65,7 @@ public:
 		m.lock();
 		avail.emplace_front(r.index);
 		valid[r.index] = false;
+		data[r.index].~t();
 		// //(*data)[r.index] = t();
 		// if (r.index == extent - 1) {
 		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {
@@ -146,6 +148,7 @@ public:
 			valid.emplace_back(true);
 			++extent;
 		}
+		*ret.d = t();
 		m.unlock();
 		return ret;
 	}
@@ -156,7 +159,7 @@ public:
 		// delete r.d;
 		avail.emplace_front(r.index);
 		valid[r.index] = false;
-		// data[r.index].~t();
+		data[r.index].~t();
 		m.unlock();
 		//(*data)[r.index] = t();
 		// if (r.index == extent - 1) {

@@ -150,33 +150,26 @@ void run()
 	timer stopWatch;
 	copyWorkers = COMPONENT_LIST(copyBuffers);
 	eventsPollDone = true;
-	// unlockUpdate();
-
 	for(auto & i : collisionGraph)
 		collisionLayers[i.first].clear();
-	// Octree->clear();
 
+	timer gameLoopTotal;
+	timer gameLoopMain;
+	timer renderTimer;
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
-
-		timer gameLoopTotal;
-		timer gameLoopMain;
 		gameLoopTotal.start();
+		renderTimer.start();
 		while (!eventsPollDone)
-		{
 			this_thread::sleep_for(1ns);
-		}
 		eventsPollDone = false;
-
 
 		gameLoopMain.start();
 
 		// scripting
 		doLoopIteration(gameComponents);
-
 		for(auto & i : collisionGraph)
 			collisionLayers[i.first].clear();
-
 		doLoopIteration(gameEngineComponents, false);
 
 		stopWatch.start();
@@ -225,7 +218,6 @@ void run()
 		appendStat("copy emitter inits", emitTime);
 
 		// copy emitter inits while copying transforms/renderers
-		// waitForWork();
 		////////////////////////////////////// switch particle burst buffer //////////////////////////////////////
 		swapBurstBuffer();
 
@@ -233,6 +225,10 @@ void run()
 		if(Input.getKeyDown(GLFW_KEY_B)){
 			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
 		}
+
+		float renderTime = renderTimer.stop();
+		if(renderTime < 1.f / 60.f * 1000)
+			this_thread::sleep_for((1.f / 60.f * 1000 - renderTime) * 1ms);
 
 		renderJob* rj = new renderJob();
 		rj->work = [&] { return; };
@@ -246,14 +242,6 @@ void run()
 	}
 
 	log("end of program");
-
-	// for (int i = 0; i < concurrency::numThreads; i++)
-	// {
-	// 	updateWork[i].push(updateJob(0, update_type::update, 0));
-	// 	workers[i]->join();
-	// 	delete workers[i];
-	// }
-
 	waitForRenderJob([&](){});
 
 	rootGameObject->destroy();

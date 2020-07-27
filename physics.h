@@ -732,21 +732,27 @@ public:
 				collisionLayers[i].query(cd.a, cd, colCount);
 		}
 		// Octree->query(cd.a, cd, colCount);
-		for (auto &i : terrains)
-		{
-			terrainHit h = i.second->getHeight(cd.a.c.x, cd.a.c.z);
-			if ((cd.a.c - cd.a.r).y < h.height)
-			{
-				glm::vec3 p = transform->getPosition();
-				if (rb != 0)
+		// for (auto &i : terrains)
+		// {
+			// terrainHit h = i.second->getHeight(cd.a.c.x, cd.a.c.z);
+			terrain* t = getTerrain(cd.a.c.x, cd.a.c.z);
+			if(t != 0){
+
+				terrainHit h = t->getHeight(cd.a.c.x, cd.a.c.z);
+				if ((cd.a.c - cd.a.r).y < h.height)
 				{
-					rb->vel = glm::reflect(rb->vel,h.normal) * rb->bounciness;
-					// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
-					transform->setPosition(glm::vec3(p.x, h.height + cd.a.r.y + 0.1f, p.z));
+					glm::vec3 p = transform->getPosition();
+					if (rb != 0)
+					{
+						rb->vel = glm::reflect(rb->vel,h.normal) * rb->bounciness;
+						// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
+						transform->setPosition(glm::vec3(p.x, h.height + cd.a.r.y + 0.1f, p.z));
+					}
+					// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
+					transform->gameObject->collide(t->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
 				}
-				transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
 			}
-		}
+		// }
 	}
 
 	//UPDATE(collider, update);

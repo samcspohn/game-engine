@@ -43,11 +43,11 @@ class _model {
 public:
 	_model();
 	_model(string fileName);
-	_modelMeta* m = 0;
 	vector<Mesh>& meshes();
 	Mesh& mesh();
 	void makeUnique();
 	void recalcBounds();
+	_modelMeta* m = 0;
 };
 
 

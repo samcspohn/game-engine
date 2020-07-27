@@ -53,7 +53,7 @@ public:
     Model(const Model& M){
         // enqueRenderJob([&](){
         this->directory = M.directory;
-        this->textures_loaded = M.textures_loaded;
+        // this->textures_loaded = M.textures_loaded;
         for(auto& i : M.meshes){
             this->meshes.push_back(Mesh(i));
         }
@@ -82,7 +82,7 @@ public:
 private:
     /*  Model Data  */
     string directory;
-    vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    // vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -138,7 +138,7 @@ private:
 		vector<glm::vec2> uvs;
 		vector<glm::vec3> normals;
         vector<GLuint> indices;
-        vector<Texture> textures;
+        vector<_texture> textures;
         
         // Walk through each of the mesh's vertices
         for ( GLuint i = 0; i < mesh->mNumVertices; i++ )
@@ -203,15 +203,15 @@ private:
             // Normal: texture_normalN
             
             // 1. Diffuse maps
-            vector<Texture> diffuseMaps = this->loadMaterialTextures( material, aiTextureType_DIFFUSE, "texture_diffuse" );
+            vector<_texture> diffuseMaps = this->loadMaterialTextures( material, aiTextureType_DIFFUSE, "texture_diffuse" );
             textures.insert( textures.end( ), diffuseMaps.begin( ), diffuseMaps.end( ) );
             
             // 2. Specular maps
-            vector<Texture> specularMaps = this->loadMaterialTextures( material, aiTextureType_SPECULAR, "texture_specular" );
+            vector<_texture> specularMaps = this->loadMaterialTextures( material, aiTextureType_SPECULAR, "texture_specular" );
             textures.insert( textures.end( ), specularMaps.begin( ), specularMaps.end( ) );
 
 			// 3. normal maps
-			vector<Texture> normalMaps = this->loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+			vector<_texture> normalMaps = this->loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 			textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         }
 		numVerts += vertices.size();
@@ -221,39 +221,41 @@ private:
     
     // Checks all material textures of a given type and loads the textures if they're not loaded yet.
     // The required info is returned as a Texture struct.
-    vector<Texture> loadMaterialTextures( aiMaterial *mat, aiTextureType type, string typeName )
+    vector<_texture> loadMaterialTextures( aiMaterial *mat, aiTextureType type, string typeName )
     {
-        vector<Texture> textures;
+        vector<_texture> textures;
         
         for ( GLuint i = 0; i < mat->GetTextureCount( type ); i++ )
         {
             aiString str;
             mat->GetTexture( type, i, &str );
             
-            // Check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
-            GLboolean skip = false;
+            // // Check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
+            // GLboolean skip = false;
             
-            for ( GLuint j = 0; j < textures_loaded.size( ); j++ )
-            {
-                if( textures_loaded[j].path == str )
-                {
-                    textures.push_back( textures_loaded[j] );
-                    skip = true; // A texture with the same filepath has already been loaded, continue to next one. (optimization)
+            // for ( GLuint j = 0; j < textures_loaded.size( ); j++ )
+            // {
+            //     if( textures_loaded[j].path == str )
+            //     {
+            //         textures.push_back( textures_loaded[j] );
+            //         skip = true; // A texture with the same filepath has already been loaded, continue to next one. (optimization)
                     
-                    break;
-                }
-            }
+            //         break;
+            //     }
+            // }
             
-            if( !skip )
-            {   // If texture hasn't been loaded already, load it
-                Texture texture;
-                texture.id = TextureFromFile( str.C_Str( ), this->directory );
-                texture.type = typeName;
-                texture.path = str;
+            // if( !skip )
+            // {   // If texture hasn't been loaded already, load it
+                _texture texture;
+                texture.load(this->directory + '/' + str.C_Str(), typeName);
+                // texture.setType();
+                // texture.id = TextureFromFile( str.C_Str( ), this->directory );
+                // texture.type = typeName;
+                // texture.path = str;
                 textures.push_back( texture );
                 
-                this->textures_loaded.push_back( texture );  // Store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
-            }
+                // this->textures_loaded.push_back( texture );  // Store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
+            // }
         }
         
         return textures;

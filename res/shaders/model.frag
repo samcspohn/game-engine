@@ -44,13 +44,15 @@ void main()
 //	color.rgb = vec3(gl_FragCoord.z);
 //	color.rgb = (normalize(Normal) + vec3(1)) / 2;
 	vec4 diffuseColor = texture(material.texture_diffuse0,TexCoord);
-	if(diffuseColor.a == 0)
+    vec4 specColor = texture(material.texture_specular0,TexCoord);
+	if(diffuseColor.a == 0 && specColor == vec4(0,0,0,1))
 		discard;
 // 	vec3 specColor = texture(material.texture_specular0,TexCoord).rgb;
 	if(diffuseColor == vec4(0,0,0,1)){
 		 diffuseColor = vec4(1,1,1,1);
 		//  specColor = vec3(1,1,1);
 	}
+    // diffuseColor.rgb = vec3(diffuseColor.a);
 
 	// color.a = 1.0f;
     // store the fragment position vector in the first gbuffer texture
@@ -61,6 +63,6 @@ void main()
     gAlbedoSpec.rgb = diffuseColor.rgb;//texture(material.texture_diffuse0,TexCoord).rgb;
     // gAlbedoSpec.a = 0.5;
     // store specular intensity in gAlbedoSpec's alpha component
-    gAlbedoSpec.a = texture(material.texture_specular0,TexCoord).r;
+    gAlbedoSpec.a = specColor.r;
 	gl_FragDepth = log2(logz) * 0.5 * FC;
 }

@@ -13,16 +13,22 @@
 
 using namespace std;
 
-struct Texture
+struct TextureMeta
 {
     GLuint id;
-    string type;
     aiString path;
+    string type;
     glm::ivec2 dims;
-    Texture();
-    Texture( string path, aiTextureType type, string typeName);
+    TextureMeta();
+    TextureMeta( string path, string type);
     void load(string path);
 };
 
+struct _texture{
+    TextureMeta* t;
+    void load(string path);
+    void setType(string type);
+    void load(string path, string type);
+};
 
 GLint TextureFromFile( const char *path, string directory );
