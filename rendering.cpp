@@ -61,6 +61,7 @@ void _model::makeUnique(){
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0 };
 	modelManager::models[idStr] = new _modelMeta();
 	m = modelManager::models.at(idStr);
+	m->name = idStr;
 	m->unique = true;
 }
 

@@ -64,11 +64,11 @@ public:
 class image : public gui_base{
 public:
     ImVec2 pos;
-    Texture img;
+    _texture img;
     inline  void render(){
         ImVec2 currPos = ImGui::GetCursorPos();
         ImGui::SetCursorPos(pos);
-        ImGui::Image(ImTextureID(img.id), ImVec2(img.dims.x, img.dims.y), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,0));
+        ImGui::Image(ImTextureID(img.t->id), ImVec2(img.t->dims.x, img.t->dims.y), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,0));
         ImGui::SetCursorPos(currPos);
     }
 };

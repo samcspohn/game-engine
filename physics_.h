@@ -238,7 +238,7 @@ class physicsObject : public component{
 		transform->setRotation(glm::toQuat(glm::transpose(*(glm::mat4*)(void*)&rb->getWorldTransform().getBasis())));
 		// transform->setRotation(_t.rotation);
 		// transform->setScale(_t.scale);
-		terrainHit hit = terrains.begin()->second->getHeight(_t.position.x,_t.position.z);
+		terrainHit hit = getTerrain(_t.position.x,_t.position.z)->getHeight(_t.position.x,_t.position.z);
 		if(_t.position.y < hit.height){
 			btTransform t = rb->getWorldTransform();
 			btVector3 v = t.getOrigin();

@@ -10,11 +10,44 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <map>
 
 using namespace std;
 
-Texture::Texture(){}
-Texture::Texture( string path, aiTextureType type, string typeName){
+namespace textureManager
+{
+    map<string,TextureMeta*> textures;
+    
+} // namespace textureManager
+
+void _texture::load(string path){
+    auto tm = textureManager::textures.find(path);
+    if(tm != textureManager::textures.end()){
+        this->t = tm->second;
+    }
+    else{
+        textureManager::textures.insert(std::pair<string,TextureMeta*>(path, new TextureMeta()));
+        textureManager::textures.at(path)->load(path);
+        this->t = textureManager::textures.at(path);
+    }
+}
+
+void _texture::load(string path, string type){
+    auto tm = textureManager::textures.find(path);
+    if(tm != textureManager::textures.end()){
+        this->t = tm->second;
+    }
+    else{
+        textureManager::textures.insert(std::pair<string,TextureMeta*>(path, new TextureMeta(path,type)));
+        this->t = textureManager::textures.at(path);
+    }
+}
+
+void _texture::setType(string type){
+    this->t->type = type;
+}
+TextureMeta::TextureMeta(){}
+TextureMeta::TextureMeta( string path, string type){
     //Generate texture ID and load texture data
     glGenTextures( 1, &id );
     
@@ -36,7 +69,7 @@ Texture::Texture( string path, aiTextureType type, string typeName){
     this->type = type;
     this->path = path;
 }
-void Texture::load(string path){
+void TextureMeta::load(string path){
     glGenTextures( 1, &id );
     
     unsigned char *image = SOIL_load_image( path.c_str( ), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA );
@@ -56,30 +89,30 @@ void Texture::load(string path){
 }
 
 
-GLint TextureFromFile( const char *path, string directory )
-{
-    //Generate texture ID and load texture data
-    string filename = string( path );
-    filename = directory + '/' + filename;
-    GLuint textureID;
-    glGenTextures( 1, &textureID );
+// GLint TextureFromFile( const char *path, string directory )
+// {
+//     //Generate texture ID and load texture data
+//     string filename = string( path );
+//     filename = directory + '/' + filename;
+//     GLuint textureID;
+//     glGenTextures( 1, &textureID );
     
-    int width, height;
+//     int width, height;
     
-    unsigned char *image = SOIL_load_image( filename.c_str( ), &width, &height, 0, SOIL_LOAD_RGBA );
+//     unsigned char *image = SOIL_load_image( filename.c_str( ), &width, &height, 0, SOIL_LOAD_RGBA );
     
-    // Assign texture to ID
-    glBindTexture( GL_TEXTURE_2D, textureID );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image );
-    glGenerateMipmap( GL_TEXTURE_2D );
+//     // Assign texture to ID
+//     glBindTexture( GL_TEXTURE_2D, textureID );
+//     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image );
+//     glGenerateMipmap( GL_TEXTURE_2D );
     
-    // Parameters
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture( GL_TEXTURE_2D, 0 );
-    SOIL_free_image_data( image );
+//     // Parameters
+//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//     glBindTexture( GL_TEXTURE_2D, 0 );
+//     SOIL_free_image_data( image );
     
-    return textureID;
-}
+//     return textureID;
+// }
