@@ -120,6 +120,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 // 		this_thread::sleep_for(1ns);
 // 	}
 // }
+tbb::task_scheduler_init tbbinit(concurrency::numThreads);
 
 void init()
 {
@@ -132,6 +133,7 @@ void init()
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
+	waitForRenderJob([](){});
 
 	root = new Transform(0);
 	rootGameObject = new game_object(root);
@@ -141,7 +143,7 @@ void init()
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	transformIdThreadcache = vector<vector<GLuint>>(copyWorkers->size());
-	transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
+	// transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
 	gameEngineComponents.erase(copyWorkers);
 }
 
@@ -198,13 +200,46 @@ void run()
 		}
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
-		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
-			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)		
-				j->second->_transformIds->storage->resize(j->second->ids.size());
-		
+		int __renderersSize = 0;
+		// int __rendererOffsetsSize = 0;
+		__renderer_offsets->storage->clear();
+		_renderer_radii->storage->clear();
+		batchManager::updateBatches();
+		// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
+		// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++){
+		// 		for(auto &k : j->second->m.meshes()){
+		// 			__renderer_offsets->storage->push_back(__renderersSize);
+		// 			_renderer_radii->storage->push_back(j->second->m.m->radius);
+		// 			__renderersSize += j->second->ids.size();
+		// 		}
+		// 	}
+		for(auto &i : batchManager::batches.back()){
+			for(auto &j : i.second){
+				for(auto &k : j.second){
+					__renderer_offsets->storage->push_back(__renderersSize);
+					_renderer_radii->storage->push_back(k.first->m.m->radius);
+					__renderersSize += k.first->ids.size();
+				}
+			}
+		}
+		__RENDERERS->storage->resize(__renderersSize);
+
+		// __renderer_offsets->storage->resize(__rendererOffsetsSize);
+		// _renderer_radii->storage->resize(__rendererOffsetsSize);
 
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
+		// transformIdsToBuffer.resize(TRANSFORMS.active);
+		// transformsToBuffer.resize(TRANSFORMS.active);
+
 		copyWorkers->update();
+		int bufferSize = 0;
+		for(int i = 0; i < concurrency::numThreads; i++){
+			((copyBuffers*)copyWorkers->get(i))->offset = bufferSize;
+			bufferSize += transformIdThreadcache[i].size();
+		}
+		transformIdsToBuffer.resize(bufferSize);
+		transformsToBuffer.resize(bufferSize);
+		copyWorkers->lateUpdate();
 		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
@@ -227,8 +262,8 @@ void run()
 		}
 
 		float renderTime = renderTimer.stop();
-		if(renderTime < 1.f / 60.f * 1000)
-			this_thread::sleep_for((1.f / 60.f * 1000 - renderTime) * 1ms);
+		// if(renderTime < 1.f / 60.f * 1000)
+		// 	this_thread::sleep_for((1.f / 60.f * 1000 - renderTime) * 1ms);
 
 		renderJob* rj = new renderJob();
 		rj->work = [&] { return; };

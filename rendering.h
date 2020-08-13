@@ -10,6 +10,7 @@
 #include "Component.h"
 #include "fast_list.h"
 #include <atomic>
+#include "texture.h"
 using namespace std;
 
 
@@ -18,7 +19,14 @@ struct matrix {
 	glm::mat4 model;
 	glm::mat4 normal;
 };
+struct __renderer {
+	uint transform;
+	uint id;
+};
 extern gpu_vector_proxy<matrix>* GPU_MATRIXES;
+extern gpu_vector<__renderer>* __RENDERERS;
+extern gpu_vector<GLuint>* __renderer_offsets;
+extern gpu_vector<GLfloat>* _renderer_radii;
 
 class _renderer;
 
@@ -78,10 +86,9 @@ public:
 };
 
 
-
 extern int renderingId;
 struct renderingMeta {
-	gpu_vector<GLuint>* _transformIds;
+	// gpu_vector<__renderer>* __renderers;
 	fast_list_deque<GLuint> ids;
 	
 	_shader s;
@@ -99,6 +106,34 @@ namespace renderingManager {
 	void destroy();
 	void lock();
 	void unlock();
+};
+struct batchElement{
+	renderingMeta*r;
+	Mesh* m;
+	// int indexSize;
+	// int pointSize;
+	double getHash();
+};
+struct batch{
+	list<batchElement> elements;
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+	double hash = 10;
+	int vertexSize = 0;
+	int indexSize = 0;
+	vector<GLuint> indices;
+	void init();
+	void addElement(batchElement b);
+	void finalize();
+};
+bool operator<(const texArray& l,const texArray& r);
+bool operator<(const _shader& l,const _shader& r);
+namespace batchManager{
+	// shader id, textureArray hash, mesh id
+	extern queue<map<_shader,map<texArray,map<renderingMeta*,Mesh*>>>> batches;
+	extern map<_shader,map<texArray,batch>> batches2;
+	// extern map<_shader,map<texArray,batch>> batches2;
+
+	void updateBatches();
 };
 
 void destroyRendering();

@@ -102,12 +102,14 @@ template<typename t>
 class deque_heap {
 	mutex m;
 public:
+	int active = 0;
 	struct ref {
 		int index;
 		deque_heap<t>* a;
-		t* d;
+		// t* d;
 		t* operator->() {
-			return d;
+			// return d;
+			return &(a->data[index]);
 			// return &(a->data.at(index));
 		}
 		operator int() {
@@ -122,11 +124,7 @@ public:
 	};
 	friend deque_heap::ref;
 	t& operator[](unsigned int i) {
-//		if (i >= extent)
-//			throw -10;//"out of bounds";
-		//if(!valid[i])
-		//	throw exception("invalid");
-		return data.at(i);
+		return data[i];
 	}
 	ref _new() {
 		ref ret;
@@ -136,7 +134,7 @@ public:
 			ret.index = *avail.begin();
 			avail.erase(avail.begin());;
 			valid[ret.index] = true;
-			ret.d = &data[ret.index];
+			// ret.d = &data[ret.index];
 			if (ret.index >= extent) {
 				extent = ret.index + 1;
 			}
@@ -144,12 +142,13 @@ public:
 		else {
 			ret.index = data.size();
 			data.emplace_back();
-			ret.d = &data.back();
+			// ret.d = &data.back();
 			valid.emplace_back(true);
 			++extent;
 		}
-		*ret.d = t();
+		++active;
 		m.unlock();
+		data[ret.index] = t();
 		return ret;
 	}
 	void _delete(ref r) {
@@ -159,8 +158,9 @@ public:
 		// delete r.d;
 		avail.emplace_front(r.index);
 		valid[r.index] = false;
-		data[r.index].~t();
+		--active;
 		m.unlock();
+		data[r.index].~t();
 		//(*data)[r.index] = t();
 		// if (r.index == extent - 1) {
 		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {

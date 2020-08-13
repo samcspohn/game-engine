@@ -3,7 +3,9 @@
 using namespace std;
 
 gpu_vector_proxy<matrix>* GPU_MATRIXES;
-
+gpu_vector<__renderer>* __RENDERERS;
+gpu_vector<GLuint>* __renderer_offsets;
+gpu_vector<GLfloat>* _renderer_radii;
 class _renderer;
 
 // model data
@@ -150,8 +152,8 @@ void _modelMeta::getBounds(){
 renderingMeta::renderingMeta(_shader _s, _model _m) {
 	s = _s;
 	m = _m;
-	_transformIds = new gpu_vector<GLuint>();
-	_transformIds->ownStorage();
+	// __renderers = new gpu_vector<__renderer>();
+	// __renderers->ownStorage();
 	// if(m.m->model->ready())
 		// m.m->getBounds();
 	// else{
@@ -180,6 +182,123 @@ namespace renderingManager {
 		m.unlock();
 	}
 };
+
+bool operator<(const texArray& l,const texArray& r){
+	return l.hash < r.hash;
+}
+bool operator<(const _shader& l,const _shader& r){
+	return l.s->shader->Program < r.s->shader->Program;
+}
+
+double batchElement::getHash(){
+	return double((unsigned long long)r * (unsigned long long)m) / (double)(m->indices.size() * m->points.size());
+}
+
+
+void batch::init(){
+	glGenVertexArrays( 1, &this->VAO );
+	glGenBuffers( 1, &this->VBO );
+	glGenBuffers( 1, &this->EBO );
+}
+
+void batch::addElement(batchElement b){
+	elements.push_back(b);
+}
+void batch::finalize(){
+	double h = 10;
+	this->vertexSize = 0;
+	this->indexSize = 0;
+	for(auto &i : elements){
+		h /= (i.getHash());
+		this->vertexSize += i.m->points.size();
+		this->indexSize += i.m->indices.size();
+	}
+	if(h != hash){
+		if(VAO == 0){
+			this->init();
+		}
+		glBindVertexArray( this->VAO );
+		glBindBuffer( GL_ARRAY_BUFFER, this->VBO );
+		int offset = 0;
+		glBufferData(GL_ARRAY_BUFFER, sizeof(point) * vertexSize, 0, GL_STATIC_DRAW);
+		for(auto &i : elements){
+			glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(point) * i.m->points.size(), i.m->points.data());
+			offset += i.m->points.size();
+		}
+		offset = 0;
+		// postion attribute
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		offset += sizeof(glm::vec3);
+		// uvs attribute
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		offset += sizeof(glm::vec2);
+		// uvs2 attribute
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		offset += sizeof(glm::vec2);
+		// normals
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+
+
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, this->EBO );
+		glBufferData( GL_ELEMENT_ARRAY_BUFFER, indexSize * sizeof( GLuint ), 0, GL_STATIC_DRAW );
+		offset = 0;
+		for(auto &i : elements){
+			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, sizeof(GLuint) * i.m->indices.size(), i.m->indices.data());
+			offset += i.m->indices.size();
+		}
+		glBindVertexArray( 0 );
+		this->hash = h;
+	}
+}
+
+namespace batchManager{
+	// shader id, textureArray hash, mesh id
+	queue<map<_shader,map<texArray,map<renderingMeta*,Mesh*>>>> batches;
+	// map<_shader,map<texArray,batch>> batches2;
+	void updateBatches(){
+		// cout << "batching" << endl;
+		batchManager::batches.emplace();
+		// for(auto &i : batchManager::batches2){
+		// 	for(auto &j : i.second){
+		// 		j.second.elements.clear();
+		// 	}
+		// }
+		for(auto &i : renderingManager::shader_model_vector){
+			for(auto &j: i.second){
+				// int shader = j.second->s.s->shader->Program;
+				for(auto &k : j.second->m.meshes()){
+					batchManager::batches.back()[j.second->s][k.textures][j.second] = &k;
+					// batchElement b;
+					// b.m = &k;
+					// b.r = j.second;
+					// batches2[j.second->s][k.textures].addElement(b);
+				}
+			}
+		}
+		// for(auto &i : batchManager::batches2){
+		// 	// cout << "" << i.first.s->name << endl;
+		// 	for(auto &j : i.second){
+		// 		// cout << "-- textures" << endl;
+		// 			j.second.finalize();
+		// 			// cout << " -- -- vao:" << k.second.VAO << " indices:" << k.second.indexSize << " vertices:" << k.second.vertexSize << endl;
+		// 	}
+		// }
+		// batchManager::batches = tempBatches;
+		// for(auto &i : batchManager::batches){
+		// 	cout << " - batched shader:" << i.first.s->name << " : textures:" << i.second.size() << endl;
+		// 	for(auto &j : i.second){
+		// 		cout << " - - meshes:" << j.second.size() << endl;
+		// 	}
+		// }
+		
+	}
+};
+// list<renderingMeta*> updatedRenderMetas;
+
 
 void destroyRendering(){
 	shaderManager::destroy();
@@ -219,11 +338,15 @@ void _renderer::set(_shader s, _model m) {
 		renderingManager::shader_model_vector[s.s->name][m.m->name] = new renderingMeta(s, m);
 
 		r = renderingManager::shader_model_vector.find(s.s->name);
+		// updatedRenderMetas.push_back(r->second[m.m->name]);
 	}
 	else {
 		auto rm = r->second.find(m.m->name);
-		if (rm == r->second.end())
+		if (rm == r->second.end()){
 			r->second[m.m->name] = new renderingMeta(s, m);
+			// updatedRenderMetas.push_back(r->second[m.m->name]);
+		}
+		
 	}
 	renderingManager::unlock();
 

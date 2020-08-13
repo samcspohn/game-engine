@@ -9,6 +9,7 @@
 #include <map>
 #include "helper1.h"
 #include "Shaderinclude.h"
+#include "texture.h"
 
 using namespace std;
 
@@ -113,6 +114,36 @@ struct shaderVariable {
 	}
 };
 
+
+struct texArray{
+    vector<_texture> textures;
+    double hash;
+    void calcHash(){
+        hash = (double)textures[0].t->id * 10.0;
+        for(int i = 1; i < textures.size(); i++){
+            hash = hash / (10.0 * (double)textures[i].t->id);
+        }
+    }
+    void setTextures(vector<_texture>& texs){
+        this->textures = texs;
+        this->calcHash();
+    }
+    void push_back(_texture t){
+        this->textures.push_back(t);
+        hash = hash / (10.0 * t.t->id);
+    }
+    _texture& operator[](size_t index){
+        return textures[index];
+    }
+	void unbind(){
+		for ( GLuint i = 0; i < textures.size( ); i++ )
+		{
+			glActiveTexture( GL_TEXTURE0 + i );
+			glBindTexture( GL_TEXTURE_2D, 0 );
+		}
+	}
+};
+
 class shaderVariables {
 	map<string, shaderVariable> variables;
 };
@@ -129,10 +160,13 @@ public:
 	void use(){
 		glUseProgram(Program);
 	}
-	// Constructor generates the shader on the fly
+	void setVec2(const std::string &name, const glm::vec2 &value) const
+    {	 
+        glUniform2fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(value)); 
+    }
     void setVec3(const std::string &name, const glm::vec3 &value) const
     { 
-        glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, &value[0]); 
+        glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(value)); 
     }
 	void setFloat(const std::string &name, float value) const
     { 
@@ -146,17 +180,51 @@ public:
     { 
         glUniform1ui(glGetUniformLocation(Program, name.c_str()), value); 
     }
+	void setMat3(const std::string &name, glm::mat3 &value){
+		glUniformMatrix3fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+	}
+	void setMat4(const std::string &name, glm::mat4 &value){
+		glUniformMatrix4fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+	}
+	void bindTextures(texArray& ta){
+		GLuint diffuseNr = 0;
+		GLuint specularNr = 0;
+		GLuint normalNr = 0;
+		for( GLuint tex = 0; tex < ta.textures.size( ); tex++ )
+		{
+			glActiveTexture( GL_TEXTURE0 + tex ); // Active proper texture unit before binding
+			// Retrieve texture number (the N in diffuse_textureN)
+			stringstream ss;
+			string number;
+			string name = ta[tex].t->type;
+			
+			if( name == "texture_diffuse" )
+			{
+				ss << diffuseNr++; // Transfer GLuint to stream
+			}
+			else if( name == "texture_specular" )
+			{
+				ss << specularNr++; // Transfer GLuint to stream
+			}
+			else if (name == "texture_normal")
+			{
+				ss << normalNr++; // Transfer GLuint to stream
+			}
+			number = ss.str( );
+			// Now set the sampler to the correct texture unit
+			// GLint texname = glGetUniformLocation(currShader->Program, ("material." + name + number).c_str());
+			// glUniform1i(texname, tex );
+			setInt("material." + name + number,tex);
+			// And finally bind the texture
+			glBindTexture( GL_TEXTURE_2D, ta[tex].t->id );
+		}
+	}
+	Shader(){}
 	Shader(const string computePath) {
 
 		this->computeFile = computePath;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
 		enqueRenderJob([&]() { _Shader(computeFile); });
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { _Shader(computeFile); };
-		// renderLock.lock();
-		// renderWork.push(rj);
-		// renderLock.unlock();
 	}
 
 	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true) {
@@ -165,12 +233,6 @@ public:
 		this->shadowMap = shadowMap;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
 		enqueRenderJob([&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); });
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); };
-		// renderLock.lock();
-		// renderWork.push(rj);
-		// renderLock.unlock();
 	}
 	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true) {
 		this->vertexFile = vertexPath;
@@ -180,23 +242,11 @@ public:
 		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
 */
 		enqueRenderJob([&]() { _Shader(vertexFile,geometryFile, fragmentFile, this->shadowMap); });
-		// renderJob rj;
-		// rj.type = doFunc;
-		// rj.work = [&]() { _Shader(vertexFile,geometryFile, fragmentFile, this->shadowMap); };
-		// renderLock.lock();
-		// renderWork.push(rj);
-		// renderLock.unlock();
+
 	}
 	GLuint loadFile(string file, GLenum ShaderType) {
 		std::string code;
-		//std::ifstream File;
-		//File.exceptions(std::ifstream::badbit);
-		//File.open(file);
-		//std::stringstream ShaderStream;
-		//ShaderStream << File.rdbuf();
-
 		code = shaderLoader::load(file);
-		//code = ShaderStream.str();
 		const GLchar *vShaderCode = code.c_str();
 
 		GLuint shader;
@@ -259,11 +309,6 @@ public:
 		vector<GLuint> shaders;
 		shaders.push_back(loadFile(computeFile, GL_COMPUTE_SHADER));
 		compileShader(shaders);
-	}
-	// Uses the current shader
-	void Use()
-	{
-		glUseProgram(this->Program);
 	}
 };
 

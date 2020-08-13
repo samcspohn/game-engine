@@ -15,33 +15,13 @@
 #include "Transform.h"
 #include "helper1.h"
 #include <vector>
+#include "renderTexture.h"
+#include "lighting.h"
+#include "particles.h"
+
 
 using namespace std;
 
-class barrier
-{
-	mutex m;
-	atomic<size_t> count;
-	atomic<size_t> objective;
-
-public:
-	void reset(size_t num)
-	{
-		m.lock();
-		objective.fetch_add(num);
-		m.unlock();
-	}
-	void wait()
-	{
-		m.lock();
-		count.fetch_add(1);
-		m.unlock();
-		while (objective.load() != count.load())
-		{
-			this_thread::sleep_for(1ns);
-		}
-	}
-};
 
 typedef glm::vec4 plane;
 struct _frustum
@@ -51,11 +31,45 @@ struct _frustum
 	plane right;
 	plane bottom;
 };
+struct DrawElementsIndirectCommand{
+	uint  count;
+	uint  primCount;
+	uint  firstIndex;
+	uint  baseVertex;
+	uint  baseInstance;
+} ;
 
-vector<vector<GLuint>> transformIdThreadcache;
-vector<vector<_transform>> transformThreadcache;
 
-gpu_vector<GLuint>* camAtomics = new gpu_vector<GLuint>();
+// vector<glm::vec4> lightPos;
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
 class _camera : public component
 {
 public:
@@ -69,8 +83,15 @@ public:
 	bool inited = false;
 	_frustum f;
 	// map<string, map<string, gpu_vector<GLuint>* >> shader_model_culled; // for transforms
-	map<string, map<string, gpu_vector_proxy<matrix> *>> mats;		  // for rendering
-	map<string, map<string, GLuint>> culledCounts;
+	// map<string, map<string, gpu_vector_proxy<matrix> *>> mats;		  // for rendering
+	vector<GLuint> _rendererOffsets;
+
+	renderTexture gBuffer;
+	_shader _shaderLightingPass;
+	_shader _quadShader;
+	_model lightVolumeModel;
+	lightVolume lv;
+
 
 	glm::mat4 view;
 	glm::mat4 rot;
@@ -90,94 +111,216 @@ public:
 	}
 	static void initPrepRender(Shader &matProgram)
 	{
+		// batchManager::updateBatches();
 		// glUseProgram(matProgram.Program);
-		componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
-		auto d = cameras->data.data.begin();
-		auto v = cameras->data.valid.begin();
-		for (; d != cameras->data.data.end(); d++, v++)
-		{
-			for (auto &i : renderingManager::shader_model_vector)
-			{
-				for (auto &j : i.second)
-				{
-					j.second->_transformIds->bufferData();
-				}
-			}
-		}
+		// componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
+		// auto d = cameras->data.data.begin();
+		// auto v = cameras->data.valid.begin();
+		// for (; d != cameras->data.data.end(); d++, v++)
+		// {
+		// 	for (auto &i : renderingManager::shader_model_vector)
+		// 	{
+		// 		for (auto &j : i.second)
+		// 		{
+		// 			j.second->_transformIds->bufferData();
+		// 		}
+		// 	}
+		// }
+	}
+	void onStart(){
+		waitForRenderJob([&](){
+			lightVolumeModel = _model("res/models/cube/cube.obj");
+			lightVolumeModel.m->model->loadModel();
+			// lightVolumeModel.m->loadModel();
+			lv.indices = lightVolumeModel.mesh().indices;
+			lv.vertices = lightVolumeModel.mesh().vertices;
+			lv.setupMesh();
+
+			gBuffer.scr_width = SCREEN_WIDTH;
+			gBuffer.scr_height = SCREEN_HEIGHT;
+			gBuffer.init();
+			gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
+			gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
+			gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
+			gBuffer.addDepthBuffer();
+			gBuffer.finalize();
+		});
+		_shaderLightingPass = _shader("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
+		_quadShader = _shader("res/shaders/defLighting.vert","res/shaders/defLighting.frag");
 	}
 	void prepRender(Shader &matProgram)
 	{
-		camAtomics->ownStorage();
-		glUseProgram(matProgram.Program);
-		glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "vRot"), 1, GL_FALSE, glm::value_ptr(rot));
-		glUniformMatrix4fv(glGetUniformLocation(matProgram.Program, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
+		_rendererOffsets = *(__renderer_offsets->storage);
+		
+		GPU_MATRIXES->tryRealloc(__RENDERERS->size());
 		GPU_TRANSFORMS->bindData(0);
-		camAtomics->bindData(5);
+		GPU_MATRIXES->bindData(3);
+		__RENDERERS->bindData(4);
+		__RENDERERS->bufferData();
+		__renderer_offsets->bindData(5);
+		__renderer_offsets->bufferData();
+		_renderer_radii->bindData(8);
+		_renderer_radii->bufferData();
 
-		// change to this cameras data
 		mainCamPos = transform->getPosition();
 		MainCamForward = transform->forward();
 		mainCamUp = transform->up();
 		
-		glUniform3f(glGetUniformLocation(matProgram.Program, "floatingOrigin"), pos.x, pos.y, pos.z);
-		glUniform1i(glGetUniformLocation(matProgram.Program, "stage"), 1);
-
-		glUniformMatrix3fv(glGetUniformLocation(matProgram.Program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
-		glUniform3f(glGetUniformLocation(matProgram.Program, "cullPos"), cullpos.x, cullpos.y, cullpos.z);
-		glUniform2f(glGetUniformLocation(matProgram.Program, "screen"), screen.x, screen.y);
-		for (auto &i : renderingManager::shader_model_vector)
-		{
-			for (auto &j : i.second)
-			{
-				camAtomics->storage->clear();
-				camAtomics->storage->push_back(0);
-				camAtomics->bufferData();
-				renderingManager::shader_model_vector[i.first][j.first]->_transformIds->bindData(4);
-				uint size = renderingManager::shader_model_vector[i.first][j.first]->_transformIds->size();
-				gpu_vector_proxy<matrix>* mat = mats[i.first][j.first];
-				if(mat == 0){
-					mat = new gpu_vector_proxy<matrix>();
-					mats[i.first][j.first] = mat;
-				}
-				mat->tryRealloc(size);
-				mat->bindData(3); 
-
-				glUniform1f(glGetUniformLocation(matProgram.Program, "radius"), renderingManager::shader_model_vector[i.first][j.first]->m.m->radius);
-				glUniform1ui(glGetUniformLocation(matProgram.Program, "num"), size);
-				glDispatchCompute(size / 64 + 1, 1, 1);
-				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-
-				camAtomics->retrieveData();
-				culledCounts[i.first][j.first] = (*camAtomics)[0];
-				// j.second->retrieveData();
-				// cout << "f";
-			}
-		}
+		matProgram.use();
+		matProgram.setMat4("view",view);
+		matProgram.setMat4("vRot",rot);
+		matProgram.setMat4("projection",proj);
+		matProgram.setVec3("floatingOrigin",pos);
+		matProgram.setInt("stage",1);
+		matProgram.setMat3("camInv",camInv);
+		matProgram.setVec3("cullpos",cullpos);
+		matProgram.setVec2("screen",screen);
+		matProgram.setUint("num",__RENDERERS->size());
+		
+		glDispatchCompute(__RENDERERS->size() / 64 + 1, 1, 1);
+		glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+		
+		__renderer_offsets->retrieveData();
+				
 	}
 	void render()
 	{
+
+
+		timer t;
 		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		glCullFace(GL_BACK);
-		for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
-		{
-			Shader *currShader = i->second.begin()->second->s.s->shader;
-			currShader->Use();
-			for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-			{
-				glUseProgram(currShader->Program);
-				glUniform1f(glGetUniformLocation(currShader->Program, "material.shininess"), 32);
-				glUniform1f(glGetUniformLocation(currShader->Program, "FC"), 2.0 / log2(farPlane + 1));
-				glUniform3fv(glGetUniformLocation(currShader->Program, "viewPos"), 1, glm::value_ptr(pos));
-				glUniform1f(glGetUniformLocation(currShader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
-				glUniform1f(glGetUniformLocation(currShader->Program, "screenWidth"), (float)SCREEN_WIDTH);
-				// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, j->second->_ids->bufferId);
-				mats[i->first][j->first]->bindData(3);
+		t.start();
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		gBuffer.use();
+		gBuffer.resize(SCREEN_WIDTH,SCREEN_HEIGHT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-				j->second->m.m->model->Draw(*currShader, culledCounts[i->first][j->first]);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);    
+		glDepthMask(GL_TRUE);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+
+		int counter = 0;
+		GPU_MATRIXES->bindData(3);
+		for(auto &i : batchManager::batches.front()){
+			Shader *currShader = i.first.s->shader;
+			currShader->use();
+			currShader->setFloat("material.shininess",32);
+			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
+			currShader->setVec3("viewPos",pos);
+			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
+			currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
+			for(auto &j : i.second){
+				texArray ta = j.first;
+				currShader->bindTextures(ta);
+				for(auto &k : j.second){
+					int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
+					if(count > 0){
+						currShader->setUint("matrixOffset", _rendererOffsets[counter]);
+						glBindVertexArray( k.second->VAO );
+						glDrawElementsInstanced(GL_TRIANGLES,k.second->indices.size(),GL_UNSIGNED_INT, 0,count);
+
+						glBindBuffer(GL_ARRAY_BUFFER,0);
+						glBindVertexArray( 0 );
+					}
+					++counter;
+				}
+				ta.unbind();
 			}
 		}
+		batchManager::batches.pop();
+		appendStat("render cam", t.stop());
+
+		t.start();
+		// gt_.start();
+		// // 2. lighting pass
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+		Shader& quadShader = *_quadShader.s->shader;
+		quadShader.use();
+		quadShader.setInt("gAlbedoSpec", 0);
+		quadShader.setInt("gPosition", 1);
+		quadShader.setInt("gNormal", 2);
+		quadShader.setVec3("viewPos",pos);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
+		renderQuad();
+		
+		gBuffer.blitDepth(0,SCREEN_WIDTH,SCREEN_HEIGHT);
+
+
+		// glEnable(GL_DEPTH_CLAMP);
+		glDisable(GL_DEPTH_TEST);  
+		// glDisable(GL_CULL_FACE);
+		// glDepthFunc(GL_LEQUAL); 
+		glCullFace(GL_FRONT);  
+		glDepthMask(GL_FALSE);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
+
+		Shader& shaderLightingPass = *_shaderLightingPass.s->shader;
+		shaderLightingPass.use();
+		shaderLightingPass.setInt("gAlbedoSpec", 0);
+		shaderLightingPass.setInt("gPosition", 1);
+		shaderLightingPass.setInt("gNormal", 2);
+		shaderLightingPass.setInt("gDepth", 3);
+
+		plm.gpu_pointLights->bindData(1);
+		GPU_TRANSFORMS->bindData(2);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
+		// glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
+		shaderLightingPass.setVec2("WindowSize",glm::vec2(SCREEN_WIDTH,SCREEN_HEIGHT));
+
+		shaderLightingPass.setMat4("view",view);
+		shaderLightingPass.setMat4("proj",proj);
+		shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
+		shaderLightingPass.setVec3("viewPos", pos);
+		lv.Draw(plm.pointLights.size());
+
+		// Always good practice to set everything back to defaults once configured.
+		for ( GLuint i = 0; i < 4; i++ )
+		{
+			glActiveTexture( GL_TEXTURE0 + i );
+			glBindTexture( GL_TEXTURE_2D, 0 );
+		}
+		// appendStat("render lighting", gt_.stop());
+		appendStat("render lighting cpu", t.stop());
+
+		glDepthMask(GL_TRUE);
+
+		// render particle
+		t.start();
+		// gt_.start();
+		glEnable(GL_DEPTH_TEST);  
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		glDepthMask(GL_FALSE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		particle_renderer::drawParticles(view, rot, proj);
+		// appendStat("render particles", gt_.stop());
+		appendStat("render particles", t.stop());
+
+		glDepthMask(GL_TRUE);
 	}
 
 	glm::mat4 getRotationMatrix()
@@ -219,6 +362,12 @@ private:
 };
 
 vector<int> renderCounts = vector<int>(concurrency::numThreads);
+vector<vector<GLuint>> transformIdThreadcache;
+// vector<vector<_transform>> transformThreadcache;
+
+vector<GLuint> transformIdsToBuffer;
+vector<_transform> transformsToBuffer;
+
 class copyBuffers : public component
 {
 	bool _registerEngineComponent()
@@ -227,58 +376,57 @@ class copyBuffers : public component
 	}
 public:
 	int id;
+	int offset;
 	void update()
 	{
 		int numt = concurrency::numThreads;
-		if (id < numt)
-		{
-			// int id = getThreadID();
-			{
-				int step = TRANSFORMS.size() / concurrency::numThreads;
-				uint i = step * id;
-				deque<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
-				deque<bool>::iterator v = TRANSFORMS.valid.begin() + step * id;
-				deque<_transform>::iterator to = from + step;
-				transformIdThreadcache[id].clear();
-				transformIdThreadcache[id].reserve(step + 1);
-				transformThreadcache[id].clear();
-				transformThreadcache[id].reserve(step + 1);
-				if(id == concurrency::numThreads - 1)
-					to = TRANSFORMS.data.end();
-				while (from != to){
-					if(*v){
-						transformIdThreadcache[id].emplace_back(i);
-						transformThreadcache[id].emplace_back(*from);
-					}
-					++from;
-					++v;
-					++i;
-				}
+		int step = TRANSFORMS.size() / concurrency::numThreads;
+		uint i = step * id;
+		deque<bool>::iterator from = TRANSFORMS.valid.begin() + step * id;
+		deque<bool>::iterator to = from + step;
+		transformIdThreadcache[id].clear();
+		transformIdThreadcache[id].reserve(step + 1);
+		if(id == concurrency::numThreads - 1)
+			to = TRANSFORMS.valid.end();
+		while (from != to){
+			if(*from){
+				transformIdThreadcache[id].emplace_back(i);
 			}
-
-			
-			for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
-			{
-				for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++)
-				{
-					int step = j->second->ids.size() / concurrency::numThreads;
-					typename deque<GLuint>::iterator from = j->second->ids.data.begin() + step  * id;
+			++from;
+			++i;
+		}
+	}
+	void lateUpdate(){
+		
+		for(int i = 0; i < transformIdThreadcache[id].size(); i++){
+			transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
+			transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
+		}
+		
+		int __rendererId = 0;
+		int __rendererOffset = 0;
+		typename vector<__renderer>::iterator __r = __RENDERERS->storage->begin();
+		for(auto &i : batchManager::batches.back()){
+			for(auto &j : i.second){
+				for(auto &k : j.second){
+					int step = k.first->ids.size() / concurrency::numThreads;
+					typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
 					typename deque<GLuint>::iterator to = from + step;
-					typename vector<GLuint>::iterator v = j->second->_transformIds->storage->begin() + step * id;
+					__r = __RENDERERS->storage->begin() + __rendererOffset + step * id;
 					if(id == concurrency::numThreads - 1){
-						to = j->second->ids.data.end();
+						to = k.first->ids.data.end();
 					}
 					while(from != to){
-						*v = *from;
+						__r->transform = *from;
+						__r->id = __rendererId;
 						++from;
-						++v;
+						++__r;
 					}
-						// memcpy(&(j->second->_transformIds->storage->at(from)), &(j->second->ids.data[from]), sizeof(GLuint) * to);
-					
+					++__rendererId;
+					__rendererOffset += k.first->ids.size();
 				}
 			}
 		}
-		//		renderCounts[getThreadID()]++;
 	}
 public:
 	//UPDATE(copyBuffers, update);
