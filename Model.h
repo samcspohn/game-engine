@@ -31,7 +31,6 @@ const int trivialVerts = 32;
 class Model
 {
 public:
-
 	string modelPath;
     bool loaded = false;
 	bool ready(){

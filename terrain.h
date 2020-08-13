@@ -55,11 +55,13 @@ float getNoise(float x, float y){
     float h = x1 * (1 - yr) + x2 * (yr);
     return h;
 }
+int terrainWidth = 1;
+
 class terrain;
 map<int,map<int,terrain*>> terrains;
 
 terrain* getTerrain(float x, float z){
-    float width = 32.f;
+    float width = terrainWidth;
     float scale = 20.f;
     auto xt = terrains.find((int)(x / scale / width + (x > 0 ? 1 : -1) * 0.5f));
     if(xt != terrains.end()){
@@ -139,7 +141,7 @@ public:
         vec3 pos = transform->getPosition();
         vec3 pos2 = c->data.data.front().transform->getPosition();
         pos.y = pos2.y = 0;
-        bool inThreshold = glm::length(pos - pos2) < 2000.f;
+        bool inThreshold = glm::length(pos - pos2) < 2000;
         if( inThreshold && scatter.size() == 0 )
         {
             for(glm::vec3 p : scatterPos){
@@ -180,8 +182,8 @@ public:
         // tree_go->addComponent<_renderer>()->set(modelShader,tree);
         // tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
         glm::vec3 pos = transform->getPosition();
-        for(int i = -16; i < 16; i++){
-            for(int j = -16; j < 16; j++){
+        for(int i = -width / 2; i < width / 2; i++){
+            for(int j = -depth / 2; j < depth / 2; j++){
                 float x = pos.x + (i + randf()) * 20.f;
                 float z = pos.z + (j + randf()) * 20.f;
                 terrainHit h = getHeight(x, z);
@@ -202,7 +204,7 @@ public:
         _model model = r->getModel();
         if(model.meshes().size() == 0){
             model.meshes().push_back(Mesh());
-            cout << "added mesh" << endl;
+            // cout << "added mesh" << endl;
         }
             
         model.mesh().vertices = vector<glm::vec3>(width * depth);
@@ -216,18 +218,18 @@ public:
         _texture grass;
         grass.load("res/images/grass.jpg");
         grass.setType("texture_diffuse");
-        model.mesh().textures.push_back(grass);
+        model.mesh().addTexture(grass);
 
         _texture rock;
         rock.load("res/images/rock.jpg");
         rock.setType("texture_diffuse");
-        model.mesh().textures.push_back(rock);
+        model.mesh().addTexture(rock);
 
 
         _texture mountain;
         mountain.load("res/images/mountain.jpg");
         mountain.setType("texture_diffuse");
-        model.mesh().textures.push_back(mountain);
+        model.mesh().addTexture(mountain);
 
         glm::vec2 uv;
         glm::vec2 uv2;
@@ -304,6 +306,7 @@ public:
         //         model.mesh().normals[xz(x,z)] = glm::vec3(glm::normalize(a1 + a2 + a3 + a4 + a5 + a6));
         //     }
         // }
+        model.mesh().makePoints();
         model.mesh().reloadMesh();
         model.recalcBounds();
         generated = true;

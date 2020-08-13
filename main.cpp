@@ -1050,6 +1050,7 @@ int main(int argc, char **argv)
 	// ship->transform->Adopt(boom->transform);
 
 	// ship->transform->setScale(vec3(10));
+	seedRand(vec3(123456789,345678901,567890123));
     genNoise(513,513,4);
 	game_object_proto *ground = new game_object_proto();
 	// ground->transform->scale(vec3(20));
@@ -1061,7 +1062,9 @@ int main(int argc, char **argv)
 	// t->r = r;
 	// terr = t;
 	// t->width = t->depth = 1024;
-	int terrainWidth = 32;
+	// terrainWidth = 1024;
+	// terrainWidth = 32;
+	terrainWidth = 64;
     // t->genHeightMap(terrainWidth,terrainWidth,0,0);
 	// ground->transform->translate(glm::vec3(0,-4500,0));
 
@@ -1074,9 +1077,11 @@ int main(int argc, char **argv)
 	game_object_proto* tree_go = new game_object_proto();
 	tree_go->addComponent<_renderer>()->set(modelShader,tree);
 	// tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
+	// int terrainsDim = 0;
+	// int terrainsDim = 16;
 	int terrainsDim = 8;
-    for(int i = -terrainsDim; i <= terrainsDim; i++){
-        for (int j = -terrainsDim; j <= terrainsDim; j++)
+    for(int i = -terrainsDim; i < terrainsDim + 1; i++){
+        for (int j = -terrainsDim; j < terrainsDim + 1; j++)
         {
             game_object* g = new game_object(*ground);
 	        terrain* t = g->getComponent<terrain>();
@@ -1099,7 +1104,7 @@ int main(int argc, char **argv)
 	// 		float x = (i + randf()) * 8.f;
 	// 		float z = (j + randf()) * 8.f;
 	// 		terrain* t = getTerrain(x,z);
-	// 		if(t != 0){
+	// 		if(t != 0){7
 
 	// 		terrainHit h = t->getHeight(x, z);
 	// 		if(dot(h.normal, vec3(0,1,0)) > 0.85){

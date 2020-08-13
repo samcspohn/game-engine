@@ -33,6 +33,7 @@ out vec3 FragPos;
 out vec4 DirLightSpacePos;
 out float logz;
 out vec4 col;
+uniform uint matrixOffset;
 
 //const float C = 1;
 uniform float FC;
@@ -45,7 +46,7 @@ vec4 logVert(vec4 in_) {
 
 void main()
 {
-	uint id = gl_InstanceID;
+	uint id = gl_InstanceID + matrixOffset;
 	col = vec4(1,1,1,1);
 
 	mat4 model = matrixes[id].model;

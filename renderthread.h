@@ -21,12 +21,12 @@
 #include "rendering.h"
 #include "game_engine_components.h"
 #include "physics.h"
-#include "particles.h"
+// #include "particles.h"
 #include "physics_.h"
 #include "audio.h"
 #include "gui.h"
-#include "renderTexture.h"
-#include "lighting.h"
+// #include "renderTexture.h"
+// #include "lighting.h"
 
 using namespace std;
 
@@ -141,36 +141,6 @@ struct renderData{
 };
 int frameCounter = 0;
 
-
-// vector<glm::vec4> lightPos;
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
-void renderQuad()
-{
-    if (quadVAO == 0)
-    {
-        float quadVertices[] = {
-            // positions        // texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-        // setup plane VAO
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    }
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
-}
 void renderThreadFunc()
 {
 
@@ -255,20 +225,20 @@ void renderThreadFunc()
 	
 
 	Shader matProgram("res/shaders/mat.comp");
-	Shader shaderLightingPass("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
-	Shader quadShader("res/shaders/defLighting.vert","res/shaders/defLighting.frag");
+	// Shader shaderLightingPass("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
+	// Shader quadShader("res/shaders/defLighting.vert","res/shaders/defLighting.frag");
 
-	shaderLightingPass.use();
-    shaderLightingPass.setInt("gAlbedoSpec", 0);
-    shaderLightingPass.setInt("gPosition", 1);
-    shaderLightingPass.setInt("gNormal", 2);
-	shaderLightingPass.setInt("gDepth", 3);
+	// shaderLightingPass.use();
+    // shaderLightingPass.setInt("gAlbedoSpec", 0);
+    // shaderLightingPass.setInt("gPosition", 1);
+    // shaderLightingPass.setInt("gNormal", 2);
+	// shaderLightingPass.setInt("gDepth", 3);
 
 
-	quadShader.use();
-    quadShader.setInt("gAlbedoSpec", 0);
-    quadShader.setInt("gPosition", 1);
-    quadShader.setInt("gNormal", 2);
+	// quadShader.use();
+    // quadShader.setInt("gAlbedoSpec", 0);
+    // quadShader.setInt("gPosition", 1);
+    // quadShader.setInt("gNormal", 2);
 
 	GLint max_buffers;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
@@ -279,82 +249,27 @@ void renderThreadFunc()
 
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
+	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
+	__RENDERERS = new gpu_vector<__renderer>();
+	__RENDERERS->ownStorage();
+	__renderer_offsets = new gpu_vector<GLuint>();
+	__renderer_offsets->ownStorage();
+	_renderer_radii = new gpu_vector<GLfloat>();
+	_renderer_radii->ownStorage();
 	initTransform();
 	initParticles();
 	particle_renderer::init();
 	lighting::init();
 	timer stopWatch;
 
-
-	// for(int i =0; i < 100; i++){
-	// 	lightPos.push_back(randomSphere() * glm::sqrt(randf()) * 20.f);
-	// 	lightPos.back().y = fmod(lightPos.back().y,3.f);
-	// }
-
-
-
-	// for(int i = 0; i < 10; i += 1){
-	// 	for(int j = 0; j < 10; j += 1){
-	// 		lightPos.push_back(glm::vec4(i * 2 - 10,-0.5, j * 2 - 10,1));
-	// 	}
-	// }
-	// gpu_vector_proxy<glm::vec4>* gpu_lights = new gpu_vector_proxy<glm::vec4>();
-
-	renderTexture gBuffer;
-	gBuffer.scr_width = SCREEN_WIDTH;
-	gBuffer.scr_height = SCREEN_HEIGHT;
-	gBuffer.init();
-	gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
-	gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
-	gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
-	gBuffer.addDepthBuffer();
-	gBuffer.finalize();
-
-
 	renderTexture colors;
 	colors.scr_width = SCREEN_WIDTH;
 	colors.scr_height = SCREEN_HEIGHT;
 	colors.init();
 
-	Model lightVolumeModel("res/models/cube/cube.obj");
-	lightVolumeModel.loadModel();
-	lightVolume lv;
-	lv.indices = lightVolumeModel.meshes[0].indices;
-	lv.vertices = lightVolumeModel.meshes[0].vertices;
-	lv.setupMesh();
-
-	auto SetLightingUniforms = [&](float farPlane, glm::vec3 viewPos, glm::mat4 view, glm::mat4 proj){
-		// glm::mat4 mv = view * glm::translate(lightPos[i].xyz()) * glm::scale(glm::vec3(8));
-		glUniformMatrix4fv(
-			glGetUniformLocation(shaderLightingPass.Program, "view"),
-			1,
-			GL_FALSE,
-			glm::value_ptr(view));
-		glUniformMatrix4fv(
-			glGetUniformLocation(shaderLightingPass.Program, "proj"),
-			1,
-			GL_FALSE,
-			glm::value_ptr(proj));
-		glUniform1f(
-			glGetUniformLocation(shaderLightingPass.Program, "FC"),
-			2.0 / log2(farPlane + 1));
-		// glUniform3fv(
-		// 	glGetUniformLocation(shaderLightingPass.Program, "lightPos"),
-		// 	1,
-		// 	glm::value_ptr(lightPos[i]));
-		// vec3 col(1,1,1);
-		// glUniform3fv(
-		// 	glGetUniformLocation(shaderLightingPass.Program, "lightColor"),
-		// 	1,
-		// 	glm::value_ptr(col));
-		glUniform3fv(
-			glGetUniformLocation(shaderLightingPass.Program, "viewPos"),
-			1,
-			glm::value_ptr(viewPos));
-	};
-
 	renderDone.store(true);
 	renderThreadReady.exchange(true);
+
 	while (true)
 	{
 		// log("render loop");
@@ -366,7 +281,7 @@ void renderThreadFunc()
 			renderWork.pop();
 			switch (rj->type)
 			{
-			case doFunc: //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			case renderNum::doFunc: //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				renderLock.unlock();
 
 				rj->work();
@@ -381,52 +296,62 @@ void renderThreadFunc()
 				break;
 			case renderNum::render:
 			{
-				gpuTimer gt;
-
+				gpuTimer gt_;
+				timer cpuTimer;
 				stopWatch.start();
 				updateTiming();
 
 
-				auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
+				auto cameras = COMPONENT_LIST(_camera);
 
+				cpuTimer.start();
+				gt_.start();
 				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
 				GPU_TRANSFORMS_UPDATES->tryRealloc(TRANSFORMS.size());
 				transformIds->tryRealloc(TRANSFORMS.size());
-				gt.start();
 
-				GLuint offset = 0;
-				for(int i = 0; i < transformIdThreadcache.size(); ++i){
-					transformIds->bufferData(transformIdThreadcache[i],offset,transformIdThreadcache[i].size());
-					GPU_TRANSFORMS_UPDATES->bufferData(transformThreadcache[i],offset,transformThreadcache[i].size());
-					offset += transformIdThreadcache[i].size();
-				}
-
-				matProgram.Use();
+				// GLuint offset = 0;
+				// transformIdsToBuffer.clear();
+				// transformsToBuffer.clear();
+				// for(int i = 0; i < transformIdThreadcache.size(); ++i){
+				// 	transformIdsToBuffer.insert(transformIdsToBuffer.end(),transformIdThreadcache[i].begin(),transformIdThreadcache[i].end());
+				// 	transformsToBuffer.insert(transformsToBuffer.end(),transformThreadcache[i].begin(),transformThreadcache[i].end());
+				// 	// transformIds->bufferData(transformIdThreadcache[i],offset,transformIdThreadcache[i].size());
+				// 	// GPU_TRANSFORMS_UPDATES->bufferData(transformThreadcache[i],offset,transformThreadcache[i].size());
+				// 	// offset += transformIdThreadcache[i].size();
+				// }
+				transformIds->bufferData(transformIdsToBuffer);
+				GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
+				matProgram.use();
 				GPU_TRANSFORMS->bindData(0);
 				transformIds->bindData(6);
 				GPU_TRANSFORMS_UPDATES->bindData(7);
 
 				matProgram.setInt("stage",-1);
-				matProgram.setUint("num",offset);
-				glDispatchCompute(offset / 64 + 1, 1, 1);
+				matProgram.setUint("num",transformsToBuffer.size());
+				glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				appendStat("transforms buffer", gt.stop());
-
+				appendStat("transforms buffer", gt_.stop());
+				appendStat("transforms buffer cpu", cpuTimer.stop());
+				
+				cpuTimer.start();
 				uint emitterInitCount = emitterInits.size();
 				prepParticles();
-				glFlush();
 
 				_camera::initPrepRender(matProgram);
+				appendStat("render init cpu", cpuTimer.stop());
 
 
-				gt.start();
-				updateParticles(mainCamPos,emitterInitCount); // change orient to camera in sort particles
-				appendStat("particles compute", gt.stop());
+				cpuTimer.start();
+				updateParticles(mainCamPos,emitterInitCount);
+				appendStat("particles compute", cpuTimer.stop());
 				vector<renderData> r_d;
 				for(_camera& c : cameras->data.data){
-					gt.start();
+					cpuTimer.start();
+					gt_.start();
 					c.prepRender(matProgram);
-					appendStat("matrix compute", gt.stop());
+					appendStat("matrix compute", gt_.stop());
+					appendStat("matrix compute", cpuTimer.stop());
 					r_d.push_back(renderData());
 					r_d.back().vp = c.proj * c.rot * c.view;
 					r_d.back().rot = c.rot;
@@ -446,123 +371,23 @@ void renderThreadFunc()
 					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
 					appendStat("particles sort", t.stop());
 				}
-				renderLock.unlock();
+
 
 				int k = 0;
 				plm.gpu_pointLights->bufferData();
 
 				for(_camera& c : cameras->data.data){
-
-					// 1. geometry pass: render all geometric/color data to g-buffer 
-					glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-					gBuffer.use();
-					if(gBuffer.resize(SCREEN_WIDTH,SCREEN_HEIGHT)){
-						gBuffer.destroy();
-						gBuffer.scr_width = SCREEN_WIDTH;
-						gBuffer.scr_height = SCREEN_HEIGHT;
-						gBuffer.init();
-						gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
-						gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
-						gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
-						gBuffer.addDepthBuffer();
-						gBuffer.finalize();
-					}
-					// colors.use();
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-					gt.start();
-
-					glDisable(GL_BLEND);
-					glEnable(GL_DEPTH_TEST);
-					glDepthFunc(GL_LESS);    
-					glDepthMask(GL_TRUE);
-					glEnable(GL_CULL_FACE);
-					glCullFace(GL_BACK);
-
 					c.render();
-
-					appendStat("render cam", gt.stop());
-
-					// // 2. lighting pass
-					glBindFramebuffer(GL_FRAMEBUFFER, 0);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-					
-					quadShader.use();
-					glUniform3fv(
-						glGetUniformLocation(quadShader.Program, "viewPos"),
-						1,
-						glm::value_ptr(c.pos));
-	
-					quadShader.setInt("gAlbedoSpec", 0);
-					quadShader.setInt("gPosition", 1);
-					quadShader.setInt("gNormal", 2);
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
-					glActiveTexture(GL_TEXTURE1);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
-					glActiveTexture(GL_TEXTURE2);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
-					renderQuad();
-					
-					gBuffer.blitDepth(0,SCREEN_WIDTH,SCREEN_HEIGHT);
-
-					// glEnable(GL_DEPTH_CLAMP);
-					glDisable(GL_DEPTH_TEST);  
-					// glDisable(GL_CULL_FACE);
-					// glDepthFunc(GL_LEQUAL); 
-					glCullFace(GL_FRONT);  
-					glDepthMask(GL_FALSE);
-					glEnable(GL_BLEND);
-					glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-					glBlendEquation(GL_FUNC_ADD);
-					shaderLightingPass.use();
-					shaderLightingPass.setInt("gAlbedoSpec", 0);
-					shaderLightingPass.setInt("gPosition", 1);
-					shaderLightingPass.setInt("gNormal", 2);
-
-					plm.gpu_pointLights->bindData(1);
-					GPU_TRANSFORMS->bindData(2);
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
-					glActiveTexture(GL_TEXTURE1);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
-					glActiveTexture(GL_TEXTURE2);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
-					glActiveTexture(GL_TEXTURE3);
-					glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
-					glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
-
-					glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
-					SetLightingUniforms(c.farPlane,c.pos,c.rot * c.view,c.proj);
-					lv.Draw(plm.pointLights.size());
-
-					// Always good practice to set everything back to defaults once configured.
-					for ( GLuint i = 0; i < 4; i++ )
-					{
-						glActiveTexture( GL_TEXTURE0 + i );
-						glBindTexture( GL_TEXTURE_2D, 0 );
-					}
-
-					glDepthMask(GL_TRUE);
-
-					// render particle
-					gt.start();
-					glEnable(GL_DEPTH_TEST);  
-					glEnable(GL_BLEND);
-					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-					glDisable(GL_CULL_FACE);
-					glDepthMask(GL_FALSE);
-					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-					particle_renderer::drawParticles(r_d[k].view, r_d[k].rot, r_d[k].proj);
-					appendStat("render particles", gt.stop());
-					glDepthMask(GL_TRUE);
 				}
+				renderLock.unlock();
+
 
 /////////////////////////////////////////////////////////////
 ///////////////////////// GUI ////////////////////////////////
 /////////////////////////////////////////////////////////////
-IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
+				cpuTimer.start();
+				gt_.start();
+				IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
 				ImGui_ImplOpenGL3_NewFrame();
 				ImGui_ImplGlfw_NewFrame();
 				ImGui::NewFrame();
@@ -576,18 +401,21 @@ IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Ref
 				// Rendering
 				ImGui::Render();
 				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+				appendStat("render gui", gt_.stop());
+				appendStat("render gui", cpuTimer.stop());
+
 /////////////////////////////////////////////////////////////
 ///////////////////////// GUI ////////////////////////////////
 /////////////////////////////////////////////////////////////
 				// colors.blit();
 
 				glfwSwapBuffers(window);
-				glFlush();
+				// glFlush();
 				appendStat("render", stopWatch.stop());
 				//renderDone.store(true);
 			}
 				break;
-			case rquit:
+			case renderNum::rquit:
 				particle_renderer::end();
 				while (gpu_buffers.size() > 0)
 				{

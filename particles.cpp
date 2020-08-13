@@ -335,7 +335,7 @@ int getParticleCount(){
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
 
-    particleProgram.Use();
+    particleProgram.use();
     //prepate program. bind variables
     GPU_TRANSFORMS->bindData(0);
     atomicCounters->bindData(1);
@@ -379,7 +379,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     (*atomicCounters)[1] = 0;
     (*atomicCounters)[2] = 0;
     atomicCounters->bufferData();
-    glFlush();
+    // glFlush();
 
     vector<uint> acs = *(atomicCounters->storage);
     
@@ -518,9 +518,9 @@ namespace particle_renderer
   
     void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec2 screen)
     {
-        gpuTimer t1;
+        timer t1;
         GLuint program;
-        particleSortProgram.Use();
+        particleSortProgram.use();
         program = particleSortProgram.Program;
 
 
@@ -541,7 +541,7 @@ namespace particle_renderer
         glUniform1f(glGetUniformLocation(program, "y_size"),screen.y);
         
 
-        gpuTimer gt2;
+        timer gt2;
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
@@ -625,7 +625,7 @@ namespace particle_renderer
 
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         float farplane = 1e32f;
-        particleShader.s->shader->Use();
+        particleShader.s->shader->use();
         GLuint matPView = glGetUniformLocation(particleShader.s->shader->Program, "view");
         GLuint matvRot = glGetUniformLocation(particleShader.s->shader->Program, "vRot");
         GLuint matProjection = glGetUniformLocation(particleShader.s->shader->Program, "projection");
