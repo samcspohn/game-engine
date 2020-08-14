@@ -225,20 +225,6 @@ void renderThreadFunc()
 	
 
 	Shader matProgram("res/shaders/mat.comp");
-	// Shader shaderLightingPass("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
-	// Shader quadShader("res/shaders/defLighting.vert","res/shaders/defLighting.frag");
-
-	// shaderLightingPass.use();
-    // shaderLightingPass.setInt("gAlbedoSpec", 0);
-    // shaderLightingPass.setInt("gPosition", 1);
-    // shaderLightingPass.setInt("gNormal", 2);
-	// shaderLightingPass.setInt("gDepth", 3);
-
-
-	// quadShader.use();
-    // quadShader.setInt("gAlbedoSpec", 0);
-    // quadShader.setInt("gPosition", 1);
-    // quadShader.setInt("gNormal", 2);
 
 	GLint max_buffers;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
@@ -254,8 +240,8 @@ void renderThreadFunc()
 	__RENDERERS->ownStorage();
 	__renderer_offsets = new gpu_vector<GLuint>();
 	__renderer_offsets->ownStorage();
-	_renderer_radii = new gpu_vector<GLfloat>();
-	_renderer_radii->ownStorage();
+	__rendererMetas = new gpu_vector<__renderMeta>();
+	__rendererMetas->ownStorage();
 	initTransform();
 	initParticles();
 	particle_renderer::init();
@@ -306,23 +292,12 @@ void renderThreadFunc()
 
 				cpuTimer.start();
 				gt_.start();
+				// buffer and allocate data
 				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
-				GPU_TRANSFORMS_UPDATES->tryRealloc(TRANSFORMS.size());
-				transformIds->tryRealloc(TRANSFORMS.size());
-
-				// GLuint offset = 0;
-				// transformIdsToBuffer.clear();
-				// transformsToBuffer.clear();
-				// for(int i = 0; i < transformIdThreadcache.size(); ++i){
-				// 	transformIdsToBuffer.insert(transformIdsToBuffer.end(),transformIdThreadcache[i].begin(),transformIdThreadcache[i].end());
-				// 	transformsToBuffer.insert(transformsToBuffer.end(),transformThreadcache[i].begin(),transformThreadcache[i].end());
-				// 	// transformIds->bufferData(transformIdThreadcache[i],offset,transformIdThreadcache[i].size());
-				// 	// GPU_TRANSFORMS_UPDATES->bufferData(transformThreadcache[i],offset,transformThreadcache[i].size());
-				// 	// offset += transformIdThreadcache[i].size();
-				// }
 				transformIds->bufferData(transformIdsToBuffer);
 				GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
 				matProgram.use();
+				// bind buffers
 				GPU_TRANSFORMS->bindData(0);
 				transformIds->bindData(6);
 				GPU_TRANSFORMS_UPDATES->bindData(7);

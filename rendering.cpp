@@ -5,7 +5,7 @@ using namespace std;
 gpu_vector_proxy<matrix>* GPU_MATRIXES;
 gpu_vector<__renderer>* __RENDERERS;
 gpu_vector<GLuint>* __renderer_offsets;
-gpu_vector<GLfloat>* _renderer_radii;
+gpu_vector<__renderMeta>* __rendererMetas;
 class _renderer;
 
 // model data
@@ -132,6 +132,12 @@ _shader::_shader(string vertex, string geom,  string fragment) {
 	}
 }
 
+Shader& _shader::operator->(){
+	return *(this->s->shader);
+}
+Shader& _shader::ref(){
+	return *(this->s->shader);
+}
 
 int renderingId = 0;
 void _modelMeta::getBounds(){

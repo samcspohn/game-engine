@@ -523,22 +523,26 @@ namespace particle_renderer
         particleSortProgram.use();
         program = particleSortProgram.Program;
 
-
+        
         GLuint stage = glGetUniformLocation(program, "stage");
         GLuint count = glGetUniformLocation(program, "count");
-        GLuint max_particles = glGetUniformLocation(program, "max_particles");
-        GLuint num_elements = glGetUniformLocation(program, "numElements");
-        GLuint breadth = glGetUniformLocation(program, "breadth");
         GLuint nkeys = glGetUniformLocation(program, "nkeys");
-        GLuint _pass = glGetUniformLocation(program, "pass");
 
-        glUniformMatrix3fv(glGetUniformLocation(program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
-        glUniform3f(glGetUniformLocation(program, "camPos"), camPos.x, camPos.y, camPos.z);
-        glUniform3f(glGetUniformLocation(program, "camp"), camP.x, camP.y, camP.z);
-        glUniform3f(glGetUniformLocation(program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
-        glUniform3f(glGetUniformLocation(program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
-        glUniform1f(glGetUniformLocation(program, "x_size"),screen.x);
-        glUniform1f(glGetUniformLocation(program, "y_size"),screen.y);
+
+        particleSortProgram.setMat3("camInv",camInv);
+        particleSortProgram.setVec3("camPos", camPos);
+        particleSortProgram.setVec3("camp",camP);
+        particleSortProgram.setVec3("cameraForward",MainCamForward);
+        particleSortProgram.setVec3("cameraUp",mainCamUp);
+        particleSortProgram.setFloat("x_size",screen.x);
+        particleSortProgram.setFloat("y_size",screen.y);
+        // glUniformMatrix3fv(glGetUniformLocation(program, "camInv"), 1, GL_FALSE, glm::value_ptr(camInv));
+        // glUniform3f(glGetUniformLocation(program, "camPos"), camPos.x, camPos.y, camPos.z);
+        // glUniform3f(glGetUniformLocation(program, "camp"), camP.x, camP.y, camP.z);
+        // glUniform3f(glGetUniformLocation(program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+        // glUniform3f(glGetUniformLocation(program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
+        // glUniform1f(glGetUniformLocation(program, "x_size"),screen.x);
+        // glUniform1f(glGetUniformLocation(program, "y_size"),screen.y);
         
 
         timer gt2;
@@ -562,13 +566,13 @@ namespace particle_renderer
 
 
         gt2.start();
-        glUniform1i(stage, -2);
-        glUniform1ui(count, 65536);
+        particleSortProgram.setInt("stage",-2);
+        particleSortProgram.setUint("count", 65536);
         glDispatchCompute(65536 / 128, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-        glUniform1i(stage, -1);
-        glUniform1ui(count, actualParticles);
+        particleSortProgram.setInt("stage",-1);
+        particleSortProgram.setUint("count", actualParticles);
         glDispatchCompute(actualParticles / 128 + 1, 1, 1);
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         uint numParticles;
@@ -580,33 +584,33 @@ namespace particle_renderer
         _output->bindData(2); // output
 
         gt2.start();
-        glUniform1i(stage, 0);
-        glUniform1ui(count, (ceil(numParticles / 32) / 128 + 1) * 128);
-        glUniform1ui(nkeys, numParticles);
+        particleSortProgram.setInt("stage",0);
+        particleSortProgram.setUint("count", (ceil(numParticles / 32) / 128 + 1) * 128);
+        particleSortProgram.setUint("nkeys", numParticles);
         glDispatchCompute(ceil(numParticles / 32) / 128 + 1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         appendStat("sort particle list stage 0", gt2.stop());
 
         gt2.start();
-        glUniform1i(stage, 1);
-        glUniform1ui(count, 256);
+        particleSortProgram.setInt("stage",1);
+        particleSortProgram.setUint("count", 256);
         glDispatchCompute(256 / 128, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 
-        glUniform1i(stage, 2);
-        glUniform1ui(count, 1);
+        particleSortProgram.setInt("stage",2);
+        particleSortProgram.setUint("count", 1);
         glDispatchCompute(1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         
-        glUniform1i(stage, 3);
-        glUniform1ui(count, 65536);
+        particleSortProgram.setInt("stage",3);
+        particleSortProgram.setUint("count", 65536);
         glDispatchCompute(65536 / 128, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         appendStat("sort particle list stage 1,2,3", gt2.stop());
 
         gt2.start();
-        glUniform1i(stage, 4);
-        glUniform1ui(count, numParticles);
+        particleSortProgram.setInt("stage",4);
+        particleSortProgram.setUint("count", numParticles);
         glDispatchCompute(numParticles / 128 + 1, 1, 1); // count
         glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
         appendStat("sort particle list stage 4", gt2.stop());
@@ -657,7 +661,7 @@ namespace particle_renderer
 };
 
 void prepParticles(){
-    				gpu_emitter_inits->bufferData(emitterInits);
-				gpu_emitter_prototypes->bufferData();
-				gpu_particle_bursts->bufferData();
+    gpu_emitter_inits->bufferData(emitterInits);
+    gpu_emitter_prototypes->bufferData();
+    gpu_particle_bursts->bufferData();
 }

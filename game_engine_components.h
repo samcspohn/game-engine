@@ -156,12 +156,12 @@ public:
 		GPU_MATRIXES->tryRealloc(__RENDERERS->size());
 		GPU_TRANSFORMS->bindData(0);
 		GPU_MATRIXES->bindData(3);
-		__RENDERERS->bindData(4);
+		__RENDERERS->bindData(1);
 		__RENDERERS->bufferData();
 		__renderer_offsets->bindData(5);
 		__renderer_offsets->bufferData();
-		_renderer_radii->bindData(8);
-		_renderer_radii->bufferData();
+		__rendererMetas->bindData(8);
+		__rendererMetas->bufferData();
 
 		mainCamPos = transform->getPosition();
 		MainCamForward = transform->forward();
@@ -174,7 +174,7 @@ public:
 		matProgram.setVec3("floatingOrigin",pos);
 		matProgram.setInt("stage",1);
 		matProgram.setMat3("camInv",camInv);
-		matProgram.setVec3("cullpos",cullpos);
+		matProgram.setVec3("cullPos",cullpos);
 		matProgram.setVec2("screen",screen);
 		matProgram.setUint("num",__RENDERERS->size());
 		
