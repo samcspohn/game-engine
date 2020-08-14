@@ -23,10 +23,16 @@ struct __renderer {
 	uint transform;
 	uint id;
 };
+struct __renderMeta{
+	GLfloat radius;
+	GLfloat min;
+	GLfloat max;
+	uint p;
+};
 extern gpu_vector_proxy<matrix>* GPU_MATRIXES;
 extern gpu_vector<__renderer>* __RENDERERS;
 extern gpu_vector<GLuint>* __renderer_offsets;
-extern gpu_vector<GLfloat>* _renderer_radii;
+extern gpu_vector<__renderMeta>* __rendererMetas;
 
 class _renderer;
 
@@ -83,6 +89,8 @@ public:
 	_shader(string vertex, string fragment);
 	_shader(string vertex, string geom,  string fragment);
 	_shaderMeta* s = 0;
+	Shader& ref();
+	Shader& operator->();
 };
 
 

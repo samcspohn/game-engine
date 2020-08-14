@@ -15,13 +15,18 @@ struct __renderer {
 	uint transform;
 	uint id;
 };
+struct __renderMeta{
+	float radius;
+	float min_;
+	float max_;
+	uint p;
+};
 
 layout(std430,binding = 0) buffer t{_transform transforms[];};
 layout(std430,binding = 1) buffer r{__renderer renderers[];};
-layout(std430,binding = 4) buffer i{__renderer ids[];};
 layout(std430, binding = 3) buffer _m_buffs{matrix matrixes[];};
 layout(std430,binding = 5) buffer o{uint offsets[];};
-layout(std430,binding = 8) buffer ri{uint radii[];};
+layout(std430,binding = 8) buffer rm{__renderMeta renderMetas[];};
 layout(std430,binding = 6) buffer it{uint transformIds[];};
 layout(std430,binding = 7) buffer ttc{_transform transformsToCopy[];};
 
@@ -57,15 +62,15 @@ void main () {
 				break;
 			default:
 			{
-				_transform transform = transforms[ids[gid].transform];
+				_transform transform = transforms[renderers[gid].transform];
 				vec3 p = camInv * (transform.position - cullPos);
-				float _radius = radii[ids[gid].id] * max(transform.scale.x,max(transform.scale.y,transform.scale.z));
+				float _radius = renderMetas[renderers[gid].id].radius * length(transform.scale);
 				//	uint renderid = renderers[gid].renderer;
 				if(p.z - _radius < 0.f
 					&& (abs(p.x) - _radius) / abs(p.z) < screen.x
 					&& (abs(p.y) - _radius) / abs(p.z) < screen.y){
 
-					uint buffsid = atomicAdd(offsets[ids[gid].id],1);
+					uint buffsid = atomicAdd(offsets[renderers[gid].id],1);
 
 					matrixes[buffsid].model = translate(transform.position) * rotate(transform.rotation) * scale(transform.scale);
 					matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;

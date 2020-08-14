@@ -1,7 +1,6 @@
 
 #pragma once
 #include "renderthread.h"
-#include <omp.h>
 // #include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
 // #include <GLFW/glfw3.h>
@@ -120,7 +119,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 // 		this_thread::sleep_for(1ns);
 // 	}
 // }
-tbb::task_scheduler_init tbbinit(concurrency::numThreads);
+
 
 void init()
 {
@@ -203,7 +202,7 @@ void run()
 		int __renderersSize = 0;
 		// int __rendererOffsetsSize = 0;
 		__renderer_offsets->storage->clear();
-		_renderer_radii->storage->clear();
+		__rendererMetas->storage->clear();
 		batchManager::updateBatches();
 		// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
 		// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++){
@@ -213,11 +212,15 @@ void run()
 		// 			__renderersSize += j->second->ids.size();
 		// 		}
 		// 	}
+		__renderMeta rm;
+		rm.min = 0;
+		rm.max = 1e32f;
 		for(auto &i : batchManager::batches.back()){
 			for(auto &j : i.second){
 				for(auto &k : j.second){
 					__renderer_offsets->storage->push_back(__renderersSize);
-					_renderer_radii->storage->push_back(k.first->m.m->radius);
+					rm.radius = k.first->m.m->radius;
+					__rendererMetas->storage->push_back(rm);
 					__renderersSize += k.first->ids.size();
 				}
 			}
