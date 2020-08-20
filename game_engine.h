@@ -1,6 +1,7 @@
 
 #pragma once
 #include "renderthread.h"
+#include <tbb/tbb_thread.h>
 // #include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
 // #include <GLFW/glfw3.h>
@@ -48,7 +49,7 @@ struct updateJob
 atomic<int> numCubes(0);
 game_object *rootGameObject;
 glm::mat4 proj;
-thread *renderThread;
+tbb::tbb_thread *renderThread;
 // bool recieveMouse = true;
 
 vector<mutex> updateLocks(concurrency::numThreads);
@@ -67,21 +68,9 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 		componentStorageBase *cb = j;
 		if(cb->hasUpdate()){
 			stopWatch.start();
-			// int size = cb->size();
-			// #pragma omp parallel
-			// {
-				// int id = omp_get_thread_num();
-				cb->update();
-				// int size = cb->size();
-				// #pragma omp parallel for
-				// for(int i = 0; i < size; ++i){
-				// 	if(cb->getv(i)){
-				// 		cb->get(i)->update();
-				// 	}
-				// }
-			// }
-			float dur = stopWatch.stop();
-			appendStat(cb->name + "--update", dur);
+			cb->update();
+			appendStat(cb->name + "--update", stopWatch.stop());
+			this_thread::sleep_for(2ns);
 		}
 	}
 	// LATE //UPDATE
@@ -90,36 +79,13 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 		componentStorageBase *cb = j;
 		if(cb->hasLateUpdate()){
 			stopWatch.start();
-			// int size = cb->size();
-			// #pragma omp parallel
-			// {
-				// int id = omp_get_thread_num();
-				cb->lateUpdate();
-			// }
+			cb->lateUpdate();
 			appendStat(cb->name + "--late_update", stopWatch.stop());
 		}
+		this_thread::sleep_for(2ns);
 	}
 
 }
-// void waitForWork(){
-// 	bool working = true;
-// 	while (working)
-// 	{
-// 		working = false;
-// 		lockUpdate();
-// 		for (auto i : updateWork)
-// 		{
-// 			if (i.size() > 0)
-// 			{
-// 				working = true;
-// 				break;
-// 			}
-// 		}
-// 		unlockUpdate();
-// 		this_thread::sleep_for(1ns);
-// 	}
-// }
-
 
 void init()
 {
@@ -127,7 +93,7 @@ void init()
 
 	audioManager::init();
 	renderThreadReady.exchange(false);
-	renderThread = new thread(renderThreadFunc);
+	renderThread = new tbb::tbb_thread(renderThreadFunc);
 	pm = new _physicsManager();
 
 	while (!renderThreadReady.load())
@@ -150,39 +116,31 @@ void run()
 {
 	timer stopWatch;
 	copyWorkers = COMPONENT_LIST(copyBuffers);
-	eventsPollDone = true;
+	// eventsPollDone = true;
 	for(auto & i : collisionGraph)
 		collisionLayers[i.first].clear();
 
 	timer gameLoopTotal;
 	timer gameLoopMain;
-	timer renderTimer;
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
 		gameLoopTotal.start();
-		renderTimer.start();
-		while (!eventsPollDone)
-			this_thread::sleep_for(1ns);
-		eventsPollDone = false;
-
 		gameLoopMain.start();
-
 		// scripting
 		doLoopIteration(gameComponents);
 		for(auto & i : collisionGraph)
 			collisionLayers[i.first].clear();
 		doLoopIteration(gameEngineComponents, false);
-
-		stopWatch.start();
-		pm->simulate(Time.deltaTime);
-		appendStat("physics simulation",stopWatch.stop());
-
 		appendStat("game loop main",gameLoopMain.stop());
+
+
+		waitForRenderJob([](){updateTiming();});
 
 		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render",stopWatch.stop());
 
+		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
 		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
 		
@@ -204,14 +162,6 @@ void run()
 		__renderer_offsets->storage->clear();
 		__rendererMetas->storage->clear();
 		batchManager::updateBatches();
-		// for (map<string, map<string, renderingMeta *>>::iterator i = renderingManager::shader_model_vector.begin(); i != renderingManager::shader_model_vector.end(); i++)
-		// 	for (map<string, renderingMeta *>::iterator j = i->second.begin(); j != i->second.end(); j++){
-		// 		for(auto &k : j->second->m.meshes()){
-		// 			__renderer_offsets->storage->push_back(__renderersSize);
-		// 			_renderer_radii->storage->push_back(j->second->m.m->radius);
-		// 			__renderersSize += j->second->ids.size();
-		// 		}
-		// 	}
 		__renderMeta rm;
 		rm.min = 0;
 		rm.max = 1e32f;
@@ -226,14 +176,7 @@ void run()
 			}
 		}
 		__RENDERERS->storage->resize(__renderersSize);
-
-		// __renderer_offsets->storage->resize(__rendererOffsetsSize);
-		// _renderer_radii->storage->resize(__rendererOffsetsSize);
-
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
-		// transformIdsToBuffer.resize(TRANSFORMS.active);
-		// transformsToBuffer.resize(TRANSFORMS.active);
-
 		copyWorkers->update();
 		int bufferSize = 0;
 		for(int i = 0; i < concurrency::numThreads; i++){
@@ -263,10 +206,6 @@ void run()
 		if(Input.getKeyDown(GLFW_KEY_B)){
 			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
 		}
-
-		float renderTime = renderTimer.stop();
-		// if(renderTime < 1.f / 60.f * 1000)
-		// 	this_thread::sleep_for((1.f / 60.f * 1000 - renderTime) * 1ms);
 
 		renderJob* rj = new renderJob();
 		rj->work = [&] { return; };

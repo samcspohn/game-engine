@@ -119,7 +119,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 	SCREEN_HEIGHT = height;
 	glViewport(0, 0, width, height);
 }
-bool eventsPollDone;
+// bool eventsPollDone;
 void updateTiming()
 {
 	Input.resetKeyDowns();
@@ -134,13 +134,14 @@ void updateTiming()
 	Time.timeBuffer.add(Time.unscaledDeltaTime);
 	lastFrame = currentFrame;
 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
-	eventsPollDone = true;
+	// eventsPollDone = true;
 }
 struct renderData{
 	glm::mat4 vp; glm::mat4 view; glm::vec3 camPos; glm::vec2 screen; glm::vec3 cullPos; glm::mat3 camInv; glm::mat4 rot; glm::mat4 proj;
 };
 int frameCounter = 0;
 
+atomic<bool> transformsBuffered;
 void renderThreadFunc()
 {
 
@@ -285,7 +286,7 @@ void renderThreadFunc()
 				gpuTimer gt_;
 				timer cpuTimer;
 				stopWatch.start();
-				updateTiming();
+				// updateTiming();
 
 
 				auto cameras = COMPONENT_LIST(_camera);
@@ -296,6 +297,10 @@ void renderThreadFunc()
 				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
 				transformIds->bufferData(transformIdsToBuffer);
 				GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
+				glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+				appendStat("transforms buffer", gt_.stop());
+				transformsBuffered.store(true);
+
 				matProgram.use();
 				// bind buffers
 				GPU_TRANSFORMS->bindData(0);
@@ -306,7 +311,6 @@ void renderThreadFunc()
 				matProgram.setUint("num",transformsToBuffer.size());
 				glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				appendStat("transforms buffer", gt_.stop());
 				appendStat("transforms buffer cpu", cpuTimer.stop());
 				
 				cpuTimer.start();
@@ -350,18 +354,15 @@ void renderThreadFunc()
 
 				int k = 0;
 				plm.gpu_pointLights->bufferData();
-
 				for(_camera& c : cameras->data.data){
 					c.render();
 				}
 				renderLock.unlock();
 
 
-/////////////////////////////////////////////////////////////
-///////////////////////// GUI ////////////////////////////////
-/////////////////////////////////////////////////////////////
-				cpuTimer.start();
-				gt_.start();
+				/////////////////////////////////////////////////////////////
+				///////////////////////// GUI ////////////////////////////////
+				/////////////////////////////////////////////////////////////
 				IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
 				ImGui_ImplOpenGL3_NewFrame();
 				ImGui_ImplGlfw_NewFrame();
@@ -376,16 +377,14 @@ void renderThreadFunc()
 				// Rendering
 				ImGui::Render();
 				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-				appendStat("render gui", gt_.stop());
-				appendStat("render gui", cpuTimer.stop());
+				
+				/////////////////////////////////////////////////////////////
+				///////////////////////// GUI ////////////////////////////////
+				/////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////
-///////////////////////// GUI ////////////////////////////////
-/////////////////////////////////////////////////////////////
-				// colors.blit();
 
 				glfwSwapBuffers(window);
-				// glFlush();
+				
 				appendStat("render", stopWatch.stop());
 				//renderDone.store(true);
 			}
