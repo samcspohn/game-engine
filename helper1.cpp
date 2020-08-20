@@ -246,6 +246,7 @@ void gpuTimer::start()
 }
 float gpuTimer::stop()
 {
+	// return -1;
 	// glFlush();
 	// return t.stop();
 	glQueryCounter(queryID[1], GL_TIMESTAMP);

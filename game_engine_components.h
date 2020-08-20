@@ -70,6 +70,9 @@ void renderQuad()
     glBindVertexArray(0);
 }
 
+
+
+
 class _camera : public component
 {
 public:
