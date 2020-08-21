@@ -216,6 +216,12 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
+	void bufferData(t* data, GLuint offset,GLuint size){
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * offset, sizeof(t) * size, data);//buffer data
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
 	void retrieveData(vector<t>& storage){
 		storage.resize(maxSize);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);

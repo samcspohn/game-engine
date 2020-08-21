@@ -136,12 +136,13 @@ struct batch{
 bool operator<(const texArray& l,const texArray& r);
 bool operator<(const _shader& l,const _shader& r);
 namespace batchManager{
+	extern mutex m;
 	// shader id, textureArray hash, mesh id
 	extern queue<map<_shader,map<texArray,map<renderingMeta*,Mesh*>>>> batches;
 	extern map<_shader,map<texArray,batch>> batches2;
 	// extern map<_shader,map<texArray,batch>> batches2;
 
-	void updateBatches();
+	map<_shader,map<texArray,map<renderingMeta*,Mesh*>>>& updateBatches();
 };
 
 void destroyRendering();
