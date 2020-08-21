@@ -1,8 +1,7 @@
 
 #pragma once
 #include "renderthread.h"
-#include <tbb/task_scheduler_observer.h>
-#include <sched.h>
+#include <tbb/tbb_thread.h>
 // #include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
 // #include <GLFW/glfw3.h>
@@ -50,7 +49,7 @@ struct updateJob
 atomic<int> numCubes(0);
 game_object *rootGameObject;
 glm::mat4 proj;
-thread *renderThread;
+tbb::tbb_thread *renderThread;
 // bool recieveMouse = true;
 
 vector<mutex> updateLocks(concurrency::numThreads);
@@ -71,7 +70,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 			stopWatch.start();
 			cb->update();
 			appendStat(cb->name + "--update", stopWatch.stop());
-			// this_thread::sleep_for(2ns);
+			this_thread::sleep_for(2ns);
 		}
 	}
 	// LATE //UPDATE
@@ -83,32 +82,19 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 			cb->lateUpdate();
 			appendStat(cb->name + "--late_update", stopWatch.stop());
 		}
-		// this_thread::sleep_for(2ns);
+		this_thread::sleep_for(2ns);
 	}
 
 }
 
-// class pinning_observer: public tbb::task_scheduler_observer {
-// public:
-//     affinity_mask_t m_mask; // HW affinity mask to be used for threads in an arena
-//     pinning_observer( tbb::task_arena &a, affinity_mask_t mask )
-//       : tbb::task_scheduler_observer(a), m_mask(mask) {
-//         observe(true); // activate the observer
-//     }
-//     /*override*/ void on_scheduler_entry( bool worker ) {
-//         set_thread_affinity(tbb::this_task_arena::current_thread_index(), m_mask);
-//     }
-//     /*override*/ void on_scheduler_exit( bool worker ) { }
-// };
-
 void init()
 {
 	// tbb::task_scheduler_init init;
-	concurrency::pinningObserver.observe(true);
+		concurrency::pinningObserver.observe(true);
 	audioManager::init();
 	renderThreadReady.exchange(false);
-
-	renderThread = new thread(renderThreadFunc);
+	renderThread = new tbb::tbb_thread(renderThreadFunc);
+	pm = new _physicsManager();
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
@@ -120,8 +106,7 @@ void init()
 	{
 		rootGameObject->addComponent<copyBuffers>()->id = i;
 	}
-
-	copyWorkers = COMPONENT_LIST(copyBuffers);
+	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
 	transformIdThreadcache = vector<vector<GLuint>>(copyWorkers->size());
 	// transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
 	gameEngineComponents.erase(copyWorkers);
@@ -130,6 +115,7 @@ void init()
 void run()
 {
 	timer stopWatch;
+	copyWorkers = COMPONENT_LIST(copyBuffers);
 	// eventsPollDone = true;
 	for(auto & i : collisionGraph)
 		collisionLayers[i.first].clear();
@@ -158,9 +144,16 @@ void run()
 		////////////////////////////////////// update camera data for frame ///////////////////
 		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
 		
-		render_data& rd = RENDER_QUEUE.push();
 		for(_camera& c : cameras->data.data){
-			c.calcFrame();
+			c.view = c.GetViewMatrix();
+			c.rot = c.getRotationMatrix();
+			c.proj = c.getProjection();
+			c.screen = c.getScreen();
+			c.pos = c.transform->getPosition();
+			if(!c.lockFrustum){
+				c.camInv = glm::mat3(c.rot);
+				c.cullpos = c.pos;
+			}
 		}
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
@@ -168,7 +161,6 @@ void run()
 		// int __rendererOffsetsSize = 0;
 		__renderer_offsets->storage->clear();
 		__rendererMetas->storage->clear();
-
 		batchManager::updateBatches();
 		__renderMeta rm;
 		rm.min = 0;
@@ -191,9 +183,8 @@ void run()
 			((copyBuffers*)copyWorkers->get(i))->offset = bufferSize;
 			bufferSize += transformIdThreadcache[i].size();
 		}
-		
-		rd.transformIdsToBuffer.resize(bufferSize);
-		rd.transformsToBuffer.resize(bufferSize);
+		transformIdsToBuffer.resize(bufferSize);
+		transformsToBuffer.resize(bufferSize);
 		copyWorkers->lateUpdate();
 		appendStat("copy buffers", stopWatch.stop());
 
@@ -229,8 +220,9 @@ void run()
 
 	log("end of program");
 	waitForRenderJob([&](){});
-
+	
 	concurrency::pinningObserver.observe(false);
+
 	rootGameObject->destroy();
 	destroyAllComponents();
 	audioManager::destroy();
@@ -244,7 +236,8 @@ void run()
 		this_thread::sleep_for(1ms);
 	renderThread->join();
 
-	
+	pm->destroy();
+	delete pm;
 	cout << endl;
 	componentStats.erase("");
 	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
