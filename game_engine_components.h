@@ -18,9 +18,7 @@
 #include "renderTexture.h"
 #include "lighting.h"
 #include "particles.h"
-#include <queue>
-#include <deque>
-#include <set>
+
 
 using namespace std;
 
@@ -74,16 +72,7 @@ void renderQuad()
 
 
 
-struct camera_frame{
-	glm::mat4 view;
-	glm::mat4 rot;
-	glm::mat4 proj;
-	glm::vec2 screen;
 
-	glm::vec3 pos;
-	glm::vec3 cullpos;
-	glm::mat3 camInv;
-};
 class _camera : public component
 {
 public:
@@ -106,9 +95,15 @@ public:
 	_model lightVolumeModel;
 	lightVolume lv;
 
-	queue<camera_frame> frames;
 
-	
+	glm::mat4 view;
+	glm::mat4 rot;
+	glm::mat4 proj;
+	glm::vec2 screen;
+
+	glm::vec3 pos;
+	glm::vec3 cullpos;
+	glm::mat3 camInv;
 	glm::vec2 getScreen(){
 		return glm::vec2(glm::tan(glm::radians(fov) / 2) * SCREEN_WIDTH / SCREEN_HEIGHT,glm::tan(glm::radians(fov) / 2));
 	}
@@ -116,6 +111,24 @@ public:
 	int order()
 	{
 		return 1 - 2;
+	}
+	static void initPrepRender(Shader &matProgram)
+	{
+		// batchManager::updateBatches();
+		// glUseProgram(matProgram.Program);
+		// componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
+		// auto d = cameras->data.data.begin();
+		// auto v = cameras->data.valid.begin();
+		// for (; d != cameras->data.data.end(); d++, v++)
+		// {
+		// 	for (auto &i : renderingManager::shader_model_vector)
+		// 	{
+		// 		for (auto &j : i.second)
+		// 		{
+		// 			j.second->_transformIds->bufferData();
+		// 		}
+		// 	}
+		// }
 	}
 	void onStart(){
 		waitForRenderJob([&](){
@@ -138,20 +151,6 @@ public:
 		_shaderLightingPass = _shader("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
 		_quadShader = _shader("res/shaders/defLighting.vert","res/shaders/defLighting.frag");
 	}
-
-	void calcFrame(){
-		camera_frame c;
-		c.view = GetViewMatrix();
-		c.rot = getRotationMatrix();
-		c.proj = getProjection();
-		c.screen = getScreen();
-		c.pos = transform->getPosition();
-		if(!lockFrustum){
-			c.camInv = glm::mat3(c.rot);
-			c.cullpos = c.pos;
-		}
-		frames.push(c);
-	}
 	void prepRender(Shader &matProgram)
 	{
 
@@ -172,14 +171,14 @@ public:
 		mainCamUp = transform->up();
 		
 		matProgram.use();
-		matProgram.setMat4("view",frames.front().view);
-		matProgram.setMat4("vRot",frames.front().rot);
-		matProgram.setMat4("projection",frames.front().proj);
-		matProgram.setVec3("floatingOrigin",frames.front().pos);
+		matProgram.setMat4("view",view);
+		matProgram.setMat4("vRot",rot);
+		matProgram.setMat4("projection",proj);
+		matProgram.setVec3("floatingOrigin",pos);
 		matProgram.setInt("stage",1);
-		matProgram.setMat3("camInv",frames.front().camInv);
-		matProgram.setVec3("cullPos",frames.front().cullpos);
-		matProgram.setVec2("screen",frames.front().screen);
+		matProgram.setMat3("camInv",camInv);
+		matProgram.setVec3("cullPos",cullpos);
+		matProgram.setVec2("screen",screen);
 		matProgram.setUint("num",__RENDERERS->size());
 		
 		glDispatchCompute(__RENDERERS->size() / 64 + 1, 1, 1);
@@ -190,6 +189,8 @@ public:
 	}
 	void render()
 	{
+
+
 		timer t;
 		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		glCullFace(GL_BACK);
@@ -213,7 +214,7 @@ public:
 			currShader->use();
 			currShader->setFloat("material.shininess",32);
 			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
-			currShader->setVec3("viewPos",frames.front().pos);
+			currShader->setVec3("viewPos",pos);
 			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
 			currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
 			for(auto &j : i.second){
@@ -234,6 +235,7 @@ public:
 				ta.unbind();
 			}
 		}
+		batchManager::batches.pop();
 		appendStat("render cam", t.stop());
 
 		t.start();
@@ -248,7 +250,7 @@ public:
 		quadShader.setInt("gAlbedoSpec", 0);
 		quadShader.setInt("gPosition", 1);
 		quadShader.setInt("gNormal", 2);
-		quadShader.setVec3("viewPos",frames.front().pos);
+		quadShader.setVec3("viewPos",pos);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
@@ -291,10 +293,10 @@ public:
 		// glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
 		shaderLightingPass.setVec2("WindowSize",glm::vec2(SCREEN_WIDTH,SCREEN_HEIGHT));
 
-		shaderLightingPass.setMat4("view",frames.front().view);
-		shaderLightingPass.setMat4("proj",frames.front().proj);
+		shaderLightingPass.setMat4("view",view);
+		shaderLightingPass.setMat4("proj",proj);
 		shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
-		shaderLightingPass.setVec3("viewPos", frames.front().pos);
+		shaderLightingPass.setVec3("viewPos", pos);
 		lv.Draw(plm.pointLights.size());
 
 		// Always good practice to set everything back to defaults once configured.
@@ -317,19 +319,11 @@ public:
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		// sort particles
-		t.start();
-		if(!lockFrustum)
-			particle_renderer::setCamCull(frames.front().camInv,frames.front().cullpos);
-		particle_renderer::sortParticles(frames.front().proj * frames.front().rot * frames.front().view, frames.front().rot * frames.front().view, mainCamPos,frames.front().screen);
-		appendStat("particles sort", t.stop());
-
-		particle_renderer::drawParticles(frames.front().view, frames.front().rot, frames.front().proj);
+		particle_renderer::drawParticles(view, rot, proj);
+		// appendStat("render particles", gt_.stop());
 		appendStat("render particles", t.stop());
 
 		glDepthMask(GL_TRUE);
-		frames.pop();
 	}
 
 	glm::mat4 getRotationMatrix()
@@ -374,52 +368,8 @@ vector<int> renderCounts = vector<int>(concurrency::numThreads);
 vector<vector<GLuint>> transformIdThreadcache;
 // vector<vector<_transform>> transformThreadcache;
 
-struct render_data{
-	vector<GLuint> transformIdsToBuffer;
-	vector<_transform> transformsToBuffer;
-	map<_shader,map<texArray,map<renderingMeta*,Mesh*>>> frame_batches;
-};
-
-struct render_queue{
-	mutex m;
-	set<int> avail;
-	deque<render_data> cache;
-	queue<render_data*> data;
-	render_data& push(){
-		m.lock();
-		if(avail.size() > 0){
-			data.push(&cache[*avail.begin()]);
-			avail.erase(avail.begin());
-		}
-		else{
-			cache.emplace_back();
-			data.push(&cache.back());
-		}
-		m.unlock();
-		return *data.back();
-	}
-	render_data& front(){
-		return *data.front();
-	}
-	render_data& back(){
-		return *data.back();
-	}
-	void pop(){
-		m.lock();
-		render_data* r = data.front();
-		int i = 0;
-		while(r != &cache[i]){
-			i++;
-		}
-		r->transformIdsToBuffer.clear();
-		r->transformsToBuffer.clear();
-		data.pop();
-		avail.emplace(i);
-		m.unlock();
-	}
-};
-
-render_queue RENDER_QUEUE;
+vector<GLuint> transformIdsToBuffer;
+vector<_transform> transformsToBuffer;
 
 class copyBuffers : public component
 {
@@ -452,14 +402,13 @@ public:
 	void lateUpdate(){
 		
 		for(int i = 0; i < transformIdThreadcache[id].size(); i++){
-			RENDER_QUEUE.back().transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
-			RENDER_QUEUE.back().transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
+			transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
+			transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
 		}
 		
 		int __rendererId = 0;
 		int __rendererOffset = 0;
 		typename vector<__renderer>::iterator __r = __RENDERERS->storage->begin();
-		// batchManager::batches.back();
 		for(auto &i : batchManager::batches.back()){
 			for(auto &j : i.second){
 				for(auto &k : j.second){

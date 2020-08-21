@@ -136,14 +136,25 @@ void updateTiming()
 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
 	// eventsPollDone = true;
 }
-
+struct renderData{
+	glm::mat4 vp; glm::mat4 view; glm::vec3 camPos; glm::vec2 screen; glm::vec3 cullPos; glm::mat3 camInv; glm::mat4 rot; glm::mat4 proj;
+};
 int frameCounter = 0;
+#include "thread"
+#include <tbb/tbb.h>
+#include <sched.h>
 
 atomic<bool> transformsBuffered;
 void renderThreadFunc()
 {
+	// const size_t size = CPU_ALLOC_SIZE( concurrency::pinningObserver.ncpus );
+	// cpu_set_t *target_mask = CPU_ALLOC( concurrency::pinningObserver.ncpus );
+	// CPU_ZERO_S( size, target_mask );
+	// CPU_SET_S( 0, size, target_mask );
+	// const int err = sched_setaffinity( 0, size, target_mask );
 
-	
+	pthread_setschedprio(pthread_self(), 99);
+
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -265,10 +276,10 @@ void renderThreadFunc()
 			renderLock.lock();
 			renderJob* rj = renderWork.front();
 			renderWork.pop();
-			renderLock.unlock();
 			switch (rj->type)
 			{
 			case renderNum::doFunc: //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				renderLock.unlock();
 
 				rj->work();
 
@@ -287,23 +298,16 @@ void renderThreadFunc()
 				stopWatch.start();
 				// updateTiming();
 
-				render_data& rd = RENDER_QUEUE.front();
+
 				auto cameras = COMPONENT_LIST(_camera);
-
-				cpuTimer.start();
-				uint emitterInitCount = emitterInits.size();
-				prepParticles();
-				appendStat("render init cpu", cpuTimer.stop());
-
-
 
 				cpuTimer.start();
 				gt_.start();
 				// buffer and allocate data
 				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
-
-				transformIds->bufferData(rd.transformIdsToBuffer);
-				GPU_TRANSFORMS_UPDATES->bufferData(rd.transformsToBuffer);
+				transformIds->bufferData(transformIdsToBuffer);
+				GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
+				glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 				appendStat("transforms buffer", gt_.stop());
 				transformsBuffered.store(true);
 
@@ -314,23 +318,47 @@ void renderThreadFunc()
 				GPU_TRANSFORMS_UPDATES->bindData(7);
 
 				matProgram.setInt("stage",-1);
-				matProgram.setUint("num",rd.transformsToBuffer.size());
-				glDispatchCompute(rd.transformsToBuffer.size() / 64 + 1, 1, 1);
+				matProgram.setUint("num",transformsToBuffer.size());
+				glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
 				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				appendStat("transforms buffer cpu", cpuTimer.stop());
 				
+				cpuTimer.start();
+				uint emitterInitCount = emitterInits.size();
+				prepParticles();
+
+				_camera::initPrepRender(matProgram);
+				appendStat("render init cpu", cpuTimer.stop());
+
 
 				cpuTimer.start();
-				updateParticles(vec3(0),emitterInitCount);
+				updateParticles(mainCamPos,emitterInitCount);
 				appendStat("particles compute", cpuTimer.stop());
-
-				
+				vector<renderData> r_d;
 				for(_camera& c : cameras->data.data){
 					cpuTimer.start();
 					gt_.start();
 					c.prepRender(matProgram);
 					appendStat("matrix compute", gt_.stop());
 					appendStat("matrix compute", cpuTimer.stop());
+					r_d.push_back(renderData());
+					r_d.back().vp = c.proj * c.rot * c.view;
+					r_d.back().rot = c.rot;
+					r_d.back().view = c.view;
+					r_d.back().camPos = c.pos;
+					r_d.back().screen = c.screen;
+					r_d.back().cullPos = c.cullpos;
+					r_d.back().camInv = c.camInv;
+					r_d.back().proj = c.proj;
+
+
+					// sort particles
+					timer t;
+					t.start();
+					if(!c.lockFrustum)
+						particle_renderer::setCamCull(c.camInv,c.cullpos);
+					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
+					appendStat("particles sort", t.stop());
 				}
 
 
@@ -339,7 +367,7 @@ void renderThreadFunc()
 				for(_camera& c : cameras->data.data){
 					c.render();
 				}
-				RENDER_QUEUE.pop();
+				renderLock.unlock();
 
 
 				/////////////////////////////////////////////////////////////
@@ -389,7 +417,7 @@ void renderThreadFunc()
 				glfwTerminate();
 				renderThreadReady.exchange(false);
 
-				// renderLock.unlock();
+				renderLock.unlock();
 				delete rj;
 
 				return;
