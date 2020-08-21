@@ -1,5 +1,4 @@
 #include "Component.h"
-#include <omp.h>
 #define ull unsigned long long
 
 void compItr::erase(){};
@@ -15,7 +14,7 @@ void component::update(){};
 void component::lateUpdate(){};
 int component::getThreadID()
 {
-	return omp_get_thread_num();
+	return tbb::this_task_arena::current_thread_index();
 }
 ull component::getHash()
 {

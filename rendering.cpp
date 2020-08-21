@@ -262,12 +262,15 @@ void batch::finalize(){
 }
 
 namespace batchManager{
+	mutex m;
 	// shader id, textureArray hash, mesh id
 	queue<map<_shader,map<texArray,map<renderingMeta*,Mesh*>>>> batches;
 	// map<_shader,map<texArray,batch>> batches2;
-	void updateBatches(){
+	map<_shader,map<texArray,map<renderingMeta*,Mesh*>>>& updateBatches(){
 		// cout << "batching" << endl;
+		m.lock();
 		batchManager::batches.emplace();
+		m.unlock();
 		// for(auto &i : batchManager::batches2){
 		// 	for(auto &j : i.second){
 		// 		j.second.elements.clear();
@@ -285,6 +288,7 @@ namespace batchManager{
 				}
 			}
 		}
+		return batchManager::batches.back();
 		// for(auto &i : batchManager::batches2){
 		// 	// cout << "" << i.first.s->name << endl;
 		// 	for(auto &j : i.second){

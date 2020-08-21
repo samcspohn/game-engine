@@ -545,7 +545,7 @@ namespace particle_renderer
         // glUniform1f(glGetUniformLocation(program, "y_size"),screen.y);
         
 
-        timer gt2;
+        gpuTimer gt2;
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
