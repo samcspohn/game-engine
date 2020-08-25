@@ -791,6 +791,7 @@ int main(int argc, char **argv)
 
 	hideMouse = false;
 	
+	cout << sizeof(tbb::spin_mutex) << " : " << sizeof(tbb::mutex) << endl;
 	
 	::init();
 	gunSound = audio("res/audio/explosion1.wav");

@@ -43,8 +43,10 @@ extern unsigned int transforms_enabled;
 _transform& get_T(int index);
 
 extern Transform* root;
+
 class Transform {
-	mutex m;
+	// mutex m;
+	tbb::spin_mutex m;
 public:
 	deque_heap<_transform>::ref _T;
 	game_object* gameObject;
@@ -80,7 +82,7 @@ public:
 	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle);
 
 private:
-	bool enabled = true;
+	// bool enabled = true;
 	Transform * parent;
 	list<Transform*> children;
 	list<Transform*>::iterator childId;

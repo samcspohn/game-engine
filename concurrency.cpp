@@ -46,8 +46,9 @@ namespace concurrency {
 		exit( EXIT_FAILURE );
 	}
 	// sched_param sp{25};
-	// sched_setscheduler(0,SCHED_RR,&sp);
-	pthread_setschedprio(pthread_self(), 0 );
+	// int err = sched_setscheduler(0,SCHED_RR,&sp);
+	// int err = pthread_setschedprio(pthread_self(), 1 );
+	std::cout << tbb::this_task_arena::current_thread_index() << " thread priority err: " << err << std::endl;
 #if LOG_PINNING
 		else {
 			std::stringstream ss;

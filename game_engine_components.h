@@ -403,7 +403,7 @@ public:
 		
 		for(int i = 0; i < transformIdThreadcache[id].size(); i++){
 			transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
-			transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
+			// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
 		}
 		
 		int __rendererId = 0;

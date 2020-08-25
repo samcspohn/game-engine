@@ -147,13 +147,13 @@ int frameCounter = 0;
 atomic<bool> transformsBuffered;
 void renderThreadFunc()
 {
-	// const size_t size = CPU_ALLOC_SIZE( concurrency::pinningObserver.ncpus );
-	// cpu_set_t *target_mask = CPU_ALLOC( concurrency::pinningObserver.ncpus );
-	// CPU_ZERO_S( size, target_mask );
-	// CPU_SET_S( 0, size, target_mask );
-	// const int err = sched_setaffinity( 0, size, target_mask );
-
-	pthread_setschedprio(pthread_self(), 99);
+	const size_t size = CPU_ALLOC_SIZE( concurrency::pinningObserver.ncpus );
+	cpu_set_t *target_mask = CPU_ALLOC( concurrency::pinningObserver.ncpus );
+	CPU_ZERO_S( size, target_mask );
+	CPU_SET_S( 0, size, target_mask );
+	CPU_SET_S( 1, size, target_mask );
+	const int err = sched_setaffinity( 0, size, target_mask );
+	
 
 	glfwInit();
 

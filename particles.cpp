@@ -290,18 +290,11 @@ void particle_emitter::onDestroy()
 mutex particle_emitter::lock;
 void initParticles()
 {
-    cout << "initializing particles" << endl;
     vector<GLuint> indexes(MAX_PARTICLES);
-    int step = MAX_PARTICLES / 1000;
-    int prog = 0;
     for (int i = 0; i < MAX_PARTICLES; ++i)
     {
         indexes[i] = i;
-        if(i % step == 0){
-            cout << "\r" << (float)prog++ / 10 << flush;
-        }
     }
-
     dead->bufferData(indexes);
     particles->ownStorage();
     *particles->storage = vector<particle>(MAX_PARTICLES);

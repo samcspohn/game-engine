@@ -82,8 +82,8 @@ public:
 	vector<t>* storage;
 
 	void realloc() {
-		glDeleteBuffers(1, &bufferId);
-		glGenBuffers(1, &bufferId);
+		// glDeleteBuffers(1, &bufferId);
+		// glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -172,8 +172,8 @@ public:
 	GLuint bufferId = -1;
 
 	void realloc() {
-		glDeleteBuffers(1, &bufferId);
-		glGenBuffers(1, &bufferId);
+		// glDeleteBuffers(1, &bufferId);
+		// glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
