@@ -123,39 +123,34 @@ public:
 
 	void update()
 	{
-		int size = this->size();
-		int grain = size/concurrency::numThreads /concurrency::numThreads;
-		grain = glm::max(grain,1);
-		tbb::parallel_for(
-			tbb::blocked_range<unsigned int>(0,size, grain),
-			[&](const tbb::blocked_range<unsigned int>& r) {
-				for (unsigned int i=r.begin();i<r.end();++i){
-					if(data.valid[i]){
-						data.data[i].update();
-					}
-				}
+		_parallel_for(data,[&](int i){
+			if(data.valid[i]){
+				data.data[i].update();
 			}
-			// ,
-			// update_ap
-		);
+		});
 
 	}
 	void lateUpdate(){
-		int size = this->size();
-		int grain = size/concurrency::numThreads /concurrency::numThreads;
-		grain = glm::max(grain,1);
-		tbb::parallel_for(
-			tbb::blocked_range<unsigned int>(0,size,grain),
-			[&](const tbb::blocked_range<unsigned int>& r) {
-				for (unsigned int i=r.begin();i<r.end();++i){
-					if(data.valid[i]){
-						data.data[i].lateUpdate();
-					}
-				}
+		_parallel_for(data,[&](int i){
+			if(data.valid[i]){
+				data.data[i].lateUpdate();
 			}
-			// ,
-			// update_ap
-		);
+		});
+	// 	int size = this->size();
+	// 	int grain = size/concurrency::numThreads /concurrency::numThreads;
+	// 	grain = glm::max(grain,1);
+	// 	tbb::parallel_for(
+	// 		tbb::blocked_range<unsigned int>(0,size,grain),
+	// 		[&](const tbb::blocked_range<unsigned int>& r) {
+	// 			for (unsigned int i=r.begin();i<r.end();++i){
+	// 				if(data.valid[i]){
+	// 					data.data[i].lateUpdate();
+	// 				}
+	// 			}
+	// 		}
+	// 		// ,
+	// 		// update_ap
+	// 	);
 	}
 };
 

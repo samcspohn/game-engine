@@ -121,6 +121,9 @@ public:
 		t& data() {
 			return a->data.at(index);
 		}
+		void _delete(){
+			a->_delete(*this);
+		}
 	};
 	friend deque_heap::ref;
 	t& operator[](unsigned int i) {

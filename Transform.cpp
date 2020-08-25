@@ -1,4 +1,5 @@
 #include "Transform.h"
+#include "concurrency.h"
 using namespace std;
 
 mutex gameLock;
@@ -39,6 +40,7 @@ _transform& get_T(int index) {
 
 Transform* root;
 
+
 void Transform::init() {
 	// gameLock.lock();
 	_T = TRANSFORMS._new();
@@ -46,12 +48,12 @@ void Transform::init() {
 	parent = 0;
 	root->Adopt(this);
 }
-Transform::Transform(game_object* g) {
+Transform::Transform(game_object* g) : m() {
 	this->gameObject = g;
 	init();
 }
 
-Transform::Transform(Transform& other, game_object* go) {
+Transform::Transform(Transform& other, game_object* go) : m() {
 	this->gameObject = go;
 	init();
 	_T->position = other.getPosition();
@@ -63,7 +65,6 @@ Transform Transform::operator=(const Transform& t) {
 	this->_T = t._T;
 	this->gameObject = t.gameObject;
 	this->children = t.children;
-	this->enabled = t.enabled;
 	this->parent = t.parent;
 }
 
@@ -124,15 +125,16 @@ void Transform::Adopt(Transform * transform) {
 
 void Transform::_destroy() {
 	orphan();
-	if (enabled) {
-		TRANSFORMS._delete(_T);
-	}
-	else
-	{
-		STATIC_TRANSFORMS._delete(_T);
-	}
-	if (enabled)
-		--transforms_enabled;
+	_T._delete();
+	// if (enabled) {
+	// 	TRANSFORMS._delete(_T);
+	// }
+	// else
+	// {
+	// 	STATIC_TRANSFORMS._delete(_T);
+	// }
+	// if (enabled)
+	// 	--transforms_enabled;
 	delete this;
 }
 

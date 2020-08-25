@@ -89,8 +89,9 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 
 void init()
 {
+	
 	// tbb::task_scheduler_init init;
-		concurrency::pinningObserver.observe(true);
+		// concurrency::pinningObserver.observe(true);
 	audioManager::init();
 	renderThreadReady.exchange(false);
 	renderThread = new tbb::tbb_thread(renderThreadFunc);
@@ -186,6 +187,18 @@ void run()
 		transformIdsToBuffer.resize(bufferSize);
 		transformsToBuffer.resize(bufferSize);
 		copyWorkers->lateUpdate();
+
+		_parallel_for(transformsToBuffer,[&](int i){
+			transformsToBuffer[i] = TRANSFORMS[transformIdsToBuffer[i]];
+		});
+		// tbb::parallel_for(
+		// 	tbb::blocked_range<unsigned int>(0,transformIdsToBuffer.size()),
+		// 	[&](const tbb::blocked_range<unsigned int>& r) {
+		// 		for (unsigned int i=r.begin();i<r.end();++i){
+		// 			transformsToBuffer[i] = TRANSFORMS[transformIdsToBuffer[i]];
+		// 		}
+		// 	}
+		// );
 		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
@@ -221,7 +234,7 @@ void run()
 	log("end of program");
 	waitForRenderJob([&](){});
 	
-	concurrency::pinningObserver.observe(false);
+	// concurrency::pinningObserver.observe(false);
 
 	rootGameObject->destroy();
 	destroyAllComponents();

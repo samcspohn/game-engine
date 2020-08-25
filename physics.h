@@ -401,10 +401,6 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 
 	}
 }
-
-mutex colDatLock;
-vector<colDat> colliderData;
-
 struct treenode
 {
 	int axis;
@@ -417,7 +413,7 @@ struct treenode
 	bool left;
 	bool isLeaf;
 	int objCounter;
-	vector<colDat> objs;
+	deque<colDat> objs;
 	// colDat objs[maxObj];
 	void clear()
 	{
@@ -441,10 +437,6 @@ struct treenode
 		objs.push_back(cd);
 		objCounter++;
 		return &objs.back();
-		// if (objCounter == maxObj)
-		// 	return 0;
-		// objs[objCounter] = cd;
-		// return &objs[objCounter++];
 	}
 	mutex m;
 	treenode() : m() {}

@@ -43,8 +43,8 @@ public:
 
 class game_object
 {
-	mutex lock;
-	mutex colLock;
+	tbb::spin_mutex lock;
+	tbb::spin_mutex colLock;
 	bool colliding = false;
 
 	map<component *, compItr *> components;
