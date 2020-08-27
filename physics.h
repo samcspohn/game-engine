@@ -271,131 +271,7 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 	// if (a.c >= b.c)
 	// 	return;
 	if (a.valid && b.valid && testAABB(a.a, b.a) && TestOBBOBB(a.o,b.o))
-	{
-		//        cout << "collision";
-		// glm::vec3 aMin = a.a.c - a.a.r;
-		// glm::vec3 aMax = a.a.c + a.a.r;
-
-		// glm::vec3 bMin = b.a.c - b.a.r;
-		// glm::vec3 bMax = b.a.c + b.a.r;
-
-		// float x;
-		// if (a.a.c.x < b.a.c.x)
-		// {
-		// 	x = bMin.x - aMax.x;
-		// 	if (x > 0)
-		// 		x = 0;
-		// }
-		// else
-		// {
-		// 	x = bMax.x - aMin.x;
-		// 	if (x < 0)
-		// 		x = 0;
-		// }
-
-		// float y;
-		// if (a.a.c.y < b.a.c.y)
-		// {
-		// 	y = bMin.y - aMax.y;
-		// 	if (y > 0)
-		// 		y = 0;
-		// }
-		// else
-		// {
-		// 	y = bMax.y - aMin.y;
-		// 	if (y < 0)
-		// 		y = 0;
-		// }
-
-		// float z;
-		// if (a.a.c.z < b.a.c.z)
-		// {
-		// 	z = bMin.z - aMax.z;
-		// 	if (z > 0)
-		// 		z = 0;
-		// }
-		// else
-		// {
-		// 	z = bMax.z - aMin.z;
-		// 	if (z < 0)
-		// 		z = 0;
-		// }
-
-		// if (abs(x) <= abs(y))
-		// {
-		// 	y = 0;
-		// 	if (abs(x) <= abs(z))
-		// 		z = 0;
-		// 	else
-		// 		x = 0;
-		// }
-		// else
-		// {
-		// 	x = 0;
-		// 	if (abs(y) <= abs(z))
-		// 		z = 0;
-		// 	else
-		// 		y = 0;
-		// }
-
-		// glm::vec3 r = glm::normalize(a.a.c - b.a.c);
-		// r *= glm::length(a.a.c - b.a.c) - (a.a.r.x + b.a.r.x);
-		// r /= Time.deltaTime;
-		// r /= 2;
-		// if (vecIsNan(r))
-		// 	r = glm::vec3();
-		// colCount++;
-
-		// if (a.rb != 0 && b.rb != 0)
-		// {
-		// 	if (b.rb->mass == 0 || a.rb->mass == 0)
-		// 		return;
-		// 	float mRatio = b.rb->mass / (b.rb->mass + a.rb->mass);
-		// 	//            cout << "collision" << endl;
-		// 	//todo find why b is nan
-		// 	if (vecIsNan(b.rb->getVelocity()) || vecIsNan(a.rb->getVelocity()))
-		// 	{
-		// 		std::cout << "vec is nan" << endl;
-		// 		return;
-		// 	}
-		// 	/*glm::vec3 bvel = b.rb->getVelocity();
-		// 	b.rb->setVelocity(a.rb->getVelocity());
-		// 	a.rb->setVelocity(bvel);*/
-
-		// 	glm::vec3 aCurr = a.rb->vel;
-		// 	a.rb->vel += b.rb->vel - aCurr + glm::vec3(x, y, z) * 2.f; // * 2.f) / a.rb->mass * b.rb->mass;
-		// 	b.rb->vel += aCurr - b.rb->vel - glm::vec3(x, y, z) * 2.f; // * 2.f) / b.rb->mass * a.rb->mass;
-
-		// 	if (a.a.c == b.a.c)
-		// 	{
-		// 		// a.rb->vel += length(glm::vec3(x, y, z)) * randomSphere() * (1 - mRatio);
-		// 		// b.rb->vel += length(glm::vec3(x, y, z)) * randomSphere() * (mRatio);
-		// 		((component *)a.c)->transform->move(length(glm::vec3(x, y, z)) * randomSphere() * (1 - mRatio)* (1.f/colCount));
-		// 		((component *)b.c)->transform->move(-length(glm::vec3(x, y, z)) * randomSphere() * mRatio * (1.f/colCount));
-		// 	}
-		// 	else
-		// 	{
-		// 		// a.rb->vel += glm::vec3(x, y, z) * (1 - mRatio);
-		// 		// b.rb->vel += -glm::vec3(x, y, z) * mRatio;
-		// 		((component *)a.c)->transform->move(glm::vec3(x, y, z) * (1 - mRatio) * (1.f/colCount));
-		// 		((component *)b.c)->transform->move(-glm::vec3(x, y, z) * mRatio * (1.f/colCount));
-		// 	}
-		// }
-		// else if (b.rb != 0 && a.rb == 0)
-		// {
-		// 	//*b.rb->vel = glm::vec3(0);
-		// 	//*b.rb->vel -= glm::vec3(x, y, z) * 2.f;
-		// 	b.rb->vel = glm::vec3((x == 0 ? b.rb->vel.x : -b.rb->vel.x * 0.5f), (y == 0 ? b.rb->vel.y : -b.rb->vel.y * 0.5f), (z == 0 ? b.rb->vel.z : -b.rb->vel.z * 0.5f)); // glm::vec3(x, y, z);
-
-		// 	((component *)b.c)->transform->move(-glm::vec3(x, y, z));
-		// }
-		// else if (a.rb != 0 && b.rb == 0)
-		// {
-		// 	a.rb->vel = glm::vec3((x == 0 ? a.rb->vel.x : -a.rb->vel.x * 0.5f), (y == 0 ? a.rb->vel.y : -a.rb->vel.y * 0.5f), (z == 0 ? a.rb->vel.z : -a.rb->vel.z * 0.5f)); // glm::vec3(x, y, z);
-		// 	//*a.rb->vel += glm::vec3(x, y, z) * 2.f;
-		// 	((component *)a.c)->transform->move(glm::vec3(x, y, z));
-		// }
-		
+	{	
 		((component *)a.c)->transform->gameObject->collide(((component *)b.c)->transform->gameObject,vec3(0),vec3(0));
 		((component *)b.c)->transform->gameObject->collide(((component *)a.c)->transform->gameObject,vec3(0),vec3(0));
 
@@ -431,6 +307,7 @@ struct treenode
 		d = 0;
 		children = -1;
 		left = _left;
+		// m.unlock();
 	}
 	colDat *push_back(const colDat &cd)
 	{
@@ -657,14 +534,14 @@ public:
 		_collider = collider_();
 	}
 
-	// void onDestroy()
-	// {
-	// 	colM.lock();
-	// 	if (posInTree)
-	// 		posInTree->valid = false;
-	// 	collider_manager.colliders.erase(itr);
-	// 	colM.unlock();
-	// }
+	void onDestroy()
+	{
+		// colM.lock();
+		if (posInTree)
+			posInTree->valid = false;
+		// collider_manager.colliders.erase(itr);
+		// colM.unlock();
+	}
 	glm::vec3 r = glm::vec3(1);
 	struct collider_
 	{

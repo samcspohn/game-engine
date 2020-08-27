@@ -19,7 +19,7 @@ struct __renderMeta{
 	float radius;
 	float min_;
 	float max_;
-	uint p;
+	uint isBillboard;
 };
 
 layout(std430,binding = 0) buffer t{_transform transforms[];};
@@ -66,13 +66,25 @@ void main () {
 				vec3 p = camInv * (transform.position - cullPos);
 				float _radius = renderMetas[renderers[gid].id].radius * length(transform.scale);
 				//	uint renderid = renderers[gid].renderer;
-				if(p.z - _radius < 0.f
-					&& (abs(p.x) - _radius) / abs(p.z) < screen.x
-					&& (abs(p.y) - _radius) / abs(p.z) < screen.y){
+				float dist = length(p);
+				float r = abs(_radius / dist); 
+				bool f = r > renderMetas[renderers[gid].id].min_ && r < renderMetas[renderers[gid].id].max_;
+				// f = true;
+				if(f 
+					&& p.z - _radius < 0.f
+					&& (abs(p.x) - _radius) / dist < screen.x
+					&& (abs(p.y) - _radius) / dist < screen.y){
 
+					// float isBillboard = ;
 					uint buffsid = atomicAdd(offsets[renderers[gid].id],1);
 
-					matrixes[buffsid].model = translate(transform.position) * rotate(transform.rotation) * scale(transform.scale);
+					// matrixes[buffsid].model = (translate(transform.position) * rotate(transform.rotation) * scale(transform.scale) * (1.f - isBillboard))
+					//  + (translate(transform.position) * rotate(lookAt(transform.position - cullPos,vec3(0,1,0))) * scale(transform.scale) * isBillboard);
+					if(renderMetas[renderers[gid].id].isBillboard == 1){
+						matrixes[buffsid].model = translate(transform.position) * rotate(lookAt(transform.position - cullPos,vec3(0,1,0))) * scale(transform.scale);
+					}else{
+						matrixes[buffsid].model = translate(transform.position) * rotate(transform.rotation) * scale(transform.scale);
+					}
 					matrixes[buffsid].mvp = projection * vRot * view * matrixes[buffsid].model;
 
 					matrixes[buffsid].normal = mat4(transpose(inverse(mat3(rotate(transform.rotation) * scale(transform.scale)))));

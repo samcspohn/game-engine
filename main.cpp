@@ -267,7 +267,7 @@ public:
 			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject->getComponent<_camera>()->lockFrustum);
 			reticule->size = ImVec2(SCREEN_WIDTH,SCREEN_HEIGHT);
 			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240,SCREEN_HEIGHT / 2 - 200);
-			colCounter->contents = "collisions: " + to_string(colCount);
+			// colCounter->contents = "collisions: " + to_string(colCount);
 		}
 
 		if (Input.getKeyDown(GLFW_KEY_R))
@@ -680,9 +680,11 @@ public:
         transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
 		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
 		transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
-        transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+        // transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
 		transform->rotate(vec3(0,1,0), Input.Mouse.getX() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
         transform->rotate(vec3(1,0,0), Input.Mouse.getY() * Time.unscaledDeltaTime  * fov / 80 * -0.4f);
+		transform->lookat(transform->forward(),vec3(0,1,0));
+
 
 		fov -= Input.Mouse.getScroll() * 5;
 		fov = glm::clamp(fov, 5.f,80.f);
@@ -1076,7 +1078,17 @@ int main(int argc, char **argv)
     // ground->transform->setPosition(vec3(20 * 1 * terrainWidth,-4500,20 * 1 * terrainWidth));
 
 	game_object_proto* tree_go = new game_object_proto();
-	tree_go->addComponent<_renderer>()->set(modelShader,tree);
+	_renderer* tree_rend = tree_go->addComponent<_renderer>();
+	tree_rend->set(modelShader,tree);
+	tree_rend->setCullSizes(0.01f,INFINITY);
+	_renderer* tree_billboard = tree_go->addComponent<_renderer>();
+	_texture tree_bill_tex;
+	tree_bill_tex.namedTexture("bill1");
+	waitForRenderJob([&](){
+		tree_bill_tex.t->gen(1024,1024);
+	});
+	makeBillboard(tree,tree_bill_tex,tree_billboard);
+	tree_billboard->setCullSizes(0.0f,0.01f);
 	// tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
 	// int terrainsDim = 0;
 	// int terrainsDim = 16;

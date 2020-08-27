@@ -91,11 +91,11 @@ void init()
 {
 	
 	// tbb::task_scheduler_init init;
-		// concurrency::pinningObserver.observe(true);
+		concurrency::pinningObserver.observe(true);
 	audioManager::init();
 	renderThreadReady.exchange(false);
 	renderThread = new tbb::tbb_thread(renderThreadFunc);
-	pm = new _physicsManager();
+	// pm = new _physicsManager();
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
@@ -132,6 +132,11 @@ void run()
 		for(auto & i : collisionGraph)
 			collisionLayers[i.first].clear();
 		doLoopIteration(gameEngineComponents, false);
+
+		stopWatch.start();
+		tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
+		toDestroy.clear();
+		appendStat("destroy deffered",stopWatch.stop());
 		appendStat("game loop main",gameLoopMain.stop());
 
 
@@ -164,13 +169,16 @@ void run()
 		__rendererMetas->storage->clear();
 		batchManager::updateBatches();
 		__renderMeta rm;
-		rm.min = 0;
-		rm.max = 1e32f;
+		// rm.min = 0;
+		// rm.max = 1e32f;
 		for(auto &i : batchManager::batches.back()){
 			for(auto &j : i.second){
 				for(auto &k : j.second){
 					__renderer_offsets->storage->push_back(__renderersSize);
 					rm.radius = k.first->m.m->radius;
+					rm.isBillboard = k.first->isBillboard;
+					rm.min = k.first->minRadius;
+					rm.max = k.first->maxRadius;
 					__rendererMetas->storage->push_back(rm);
 					__renderersSize += k.first->ids.size();
 				}
@@ -178,27 +186,24 @@ void run()
 		}
 		__RENDERERS->storage->resize(__renderersSize);
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
-		copyWorkers->update();
-		int bufferSize = 0;
-		for(int i = 0; i < concurrency::numThreads; i++){
-			((copyBuffers*)copyWorkers->get(i))->offset = bufferSize;
-			bufferSize += transformIdThreadcache[i].size();
+		if(TRANSFORMS.density() > 0.5){
+			TRANSFORMS_TO_BUFFER.resize(TRANSFORMS.size());
 		}
-		transformIdsToBuffer.resize(bufferSize);
-		transformsToBuffer.resize(bufferSize);
-		copyWorkers->lateUpdate();
+		copyWorkers->update();
+		if(TRANSFORMS.density() <= 0.5){
+			int bufferSize = 0;
+			for(int i = 0; i < concurrency::numThreads; i++){
+				((copyBuffers*)copyWorkers->get(i))->offset = bufferSize;
+				bufferSize += transformIdThreadcache[i].size();
+			}
+			transformIdsToBuffer.resize(bufferSize);
+			transformsToBuffer.resize(bufferSize);
+			copyWorkers->lateUpdate();
 
-		_parallel_for(transformsToBuffer,[&](int i){
-			transformsToBuffer[i] = TRANSFORMS[transformIdsToBuffer[i]];
-		});
-		// tbb::parallel_for(
-		// 	tbb::blocked_range<unsigned int>(0,transformIdsToBuffer.size()),
-		// 	[&](const tbb::blocked_range<unsigned int>& r) {
-		// 		for (unsigned int i=r.begin();i<r.end();++i){
-		// 			transformsToBuffer[i] = TRANSFORMS[transformIdsToBuffer[i]];
-		// 		}
-		// 	}
-		// );
+			_parallel_for(transformsToBuffer,[&](int i){
+				transformsToBuffer[i] = TRANSFORMS[transformIdsToBuffer[i]];
+			});
+		}
 		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
@@ -234,7 +239,7 @@ void run()
 	log("end of program");
 	waitForRenderJob([&](){});
 	
-	// concurrency::pinningObserver.observe(false);
+	concurrency::pinningObserver.observe(false);
 
 	rootGameObject->destroy();
 	destroyAllComponents();
@@ -249,8 +254,8 @@ void run()
 		this_thread::sleep_for(1ms);
 	renderThread->join();
 
-	pm->destroy();
-	delete pm;
+	// pm->destroy();
+	// delete pm;
 	cout << endl;
 	componentStats.erase("");
 	for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)

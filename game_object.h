@@ -40,11 +40,14 @@ public:
 	
 };
 
+class game_object;
+
+extern tbb::concurrent_unordered_set<game_object*> toDestroy;
 
 class game_object
 {
-	tbb::spin_mutex lock;
-	tbb::spin_mutex colLock;
+	mutex lock;
+	mutex colLock;
 	bool colliding = false;
 
 	map<component *, compItr *> components;
@@ -97,9 +100,9 @@ public:
 		}
 		colliding = false;
 		colLock.unlock();
-		if(this->destroyed){
-			this->destroy();
-		}
+		// if(this->destroyed){
+		// 	this->destroy();
+		// }
 		// lock.unlock();
 	}
 
@@ -181,31 +184,32 @@ public:
 
 	void destroy()
 	{
-		lock.lock();
-		if(this->colliding){
-			this->destroyed = true;
-			lock.unlock();
-			return;
-		}
-		// if(this->destroyed){
+		toDestroy.insert(this);
+		// lock.lock();
+		// if(this->colliding){
+		// 	this->destroyed = true;
 		// 	lock.unlock();
 		// 	return;
 		// }
-		for (auto &i : components)
-		{
-			i.first->onDestroy();
-		}
-		while(components.size() > 0){
-			components.begin()->second->erase();
-			components.erase(components.begin());
-		}
-		while (transform->getChildren().size() > 0)
-		{
-			transform->getChildren().front()->gameObject->destroy();
-		}
-		transform->_destroy();
-		lock.unlock();
-		this->_destroy();
+		// // if(this->destroyed){
+		// // 	lock.unlock();
+		// // 	return;
+		// // }
+		// for (auto &i : components)
+		// {
+		// 	i.first->onDestroy();
+		// }
+		// while(components.size() > 0){
+		// 	components.begin()->second->erase();
+		// 	components.erase(components.begin());
+		// }
+		// while (transform->getChildren().size() > 0)
+		// {
+		// 	transform->getChildren().front()->gameObject->destroy();
+		// }
+		// transform->_destroy();
+		// lock.unlock();
+		// this->_destroy();
 	}
 
 	game_object(Transform *t) : lock()
@@ -257,6 +261,31 @@ public:
 	}
 	void _destroy()
 	{
+		lock.lock();
+		if(this->colliding){
+			this->destroyed = true;
+			lock.unlock();
+			return;
+		}
+		// if(this->destroyed){
+		// 	lock.unlock();
+		// 	return;
+		// }
+		for (auto &i : components)
+		{
+			i.first->onDestroy();
+		}
+		while(components.size() > 0){
+			components.begin()->second->erase();
+			components.erase(components.begin());
+		}
+		while (transform->getChildren().size() > 0)
+		{
+			transform->getChildren().front()->gameObject->destroy();
+		}
+		transform->_destroy();
+		lock.unlock();
+		// this->_destroy();
 		delete this;
 	}
 

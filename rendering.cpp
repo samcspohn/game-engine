@@ -66,7 +66,13 @@ void _model::makeUnique(){
 	m->name = idStr;
 	m->unique = true;
 }
-
+void _model::makeProcedural(){
+	int id = uniqueMeshIdGenerator.fetch_add(1);
+	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0 };
+	modelManager::models[idStr] = new _modelMeta();
+	m = modelManager::models.at(idStr);
+	m->name = idStr;
+}
 
 //shader data
 
@@ -325,6 +331,10 @@ _model _renderer::getModel(){
 	return model;
 }
 
+void _renderer::setCullSizes(float min, float max){
+	meta->maxRadius = max;
+	meta->minRadius = min;
+}
 void _renderer::onStart() {
 	if (shader.s == 0 || model.m == 0)
 		return;

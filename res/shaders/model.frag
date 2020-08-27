@@ -20,12 +20,6 @@ in float logz;
 
 uniform vec3 viewPos;
 uniform Material material;
-// uniform sampler2D directionalShadowMap;
-//uniform float farPlane;
-// uniform OmniShadowMap omniShadowMap;
-//uniform PointLight light;
-
-
 
 // out vec4 color;
 layout(location = 0) out vec4 gAlbedoSpec;
@@ -45,8 +39,8 @@ void main()
 //	color.rgb = (normalize(Normal) + vec3(1)) / 2;
 	vec4 diffuseColor = texture(material.texture_diffuse0,TexCoord);
     vec4 specColor = texture(material.texture_specular0,TexCoord);
-	if(diffuseColor.a == 0 && specColor == vec4(0,0,0,1))
-		discard;
+	// if(diffuseColor.a == 0 && specColor == vec4(0,0,0,1))
+	// 	discard;
 // 	vec3 specColor = texture(material.texture_specular0,TexCoord).rgb;
 	if(diffuseColor == vec4(0,0,0,1)){
 		 diffuseColor = vec4(1,1,1,1);

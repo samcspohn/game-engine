@@ -9,9 +9,6 @@ project(game_engine)
 
 include_directories(${CMAKE_SOURCE_DIR}/imgui)
 add_subdirectory(imgui)
-set(BULLET2_MULTITHREADING ON)
-include_directories(${CMAKE_SOURCE_DIR}/bullet)
-add_subdirectory(bullet)
 
 # add_subdirectory(bullet)
 # add_library(game libBulletSoftBody.a)
@@ -27,10 +24,6 @@ target_link_libraries(game imgui_glfw)
 target_link_libraries(game imgui_opengl3)
 target_link_libraries(game imgui_draw)
 target_link_libraries(game imgui_widgets)
-target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletSoftBody/libBulletSoftBody.a)
-target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletDynamics/libBulletDynamics.a)
-target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletCollision/libBulletCollision.a)
-target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/LinearMath/libLinearMath.a)
 target_link_libraries(game GL)
 target_link_libraries(game GLU)
 target_link_libraries(game GLEW)
@@ -51,14 +44,7 @@ target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}/bullet/src
                            ${CMAKE_SOURCE_DIR}/imgui
                            )
-FIND_PACKAGE( OpenMP)
-if(OPENMP_FOUND)
-    message("OPENMP FOUND")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
-include_directories(SYSTEM ${OpenMP_INCLUDE_PATH})
+
 add_custom_command(
     TARGET game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory

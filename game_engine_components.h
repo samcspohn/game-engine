@@ -71,6 +71,75 @@ void renderQuad()
 }
 
 
+_shader billBoardGenerator;
+_shader billBoardShader;
+_model bill;
+// _texture t;
+// t.namedTexture("bill1");
+// t.t->gen(1024,1024);
+void makeBillboard(_model m, _texture t, _renderer* r){
+
+	billBoardGenerator = _shader("res/shaders/model_no_inst.vert","res/shaders/model.frag");
+	billBoardShader = _shader("res/shaders/model.vert","res/shaders/model.frag");
+
+	bill.makeProcedural();
+	waitForRenderJob([&](){
+		bill.meshes().push_back(Mesh());
+		bill.mesh().vertices = {glm::vec3(-1.0f,  1.0f, 0.0f)
+		,glm::vec3(-1.0f, -1.0f, 0.0f)
+		,glm::vec3(1.0f,  1.0f, 0.0f)
+		,glm::vec3(1.0f, -1.0f, 0.0f)};
+
+		bill.mesh().uvs = {glm::vec2(0.0f, 1.0f)
+		,glm::vec2(0.0f, 0.0f)
+		,glm::vec2(1.0f, 1.0f)
+		,glm::vec2(1.0f, 0.0f)};
+
+		bill.mesh().indices = {0,3,1,0,2,3};
+
+		bill.mesh().makePoints();
+		bill.mesh().reloadMesh();
+		bill.recalcBounds();
+
+		renderTexture gBuffer;
+		
+		gBuffer.scr_width = t.t->dims.x;
+		gBuffer.scr_height = t.t->dims.y;
+		gBuffer.init();
+		gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
+		gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
+		gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
+		gBuffer.addDepthBuffer();
+		gBuffer.finalize();
+
+		gBuffer.use();
+
+		billBoardGenerator.ref().use();
+		billBoardGenerator.ref().setFloat("FC", 2.0 / log2(1e2 + 1));
+		billBoardGenerator.ref().setVec3("viewPos",glm::vec3(0));
+		billBoardGenerator.ref().setFloat("screenHeight", (float)t.t->dims.y);
+		billBoardGenerator.ref().setFloat("screenWidth", (float)t.t->dims.x);
+		mat4 mvp = glm::perspective(10.f,1.f,0.f,20.f) * glm::translate(glm::vec3(0,0,10));
+		billBoardGenerator.ref().setMat4("mvp", mvp);
+		
+		mat4 model = glm::translate(glm::vec3(0,0,10));
+		billBoardGenerator.ref().setMat4("model", model);
+		
+		glBindVertexArray( m.mesh().VAO );
+		glDrawElements(GL_TRIANGLES,m.mesh().indices.size(),GL_UNSIGNED_INT, 0);
+
+		glBindBuffer(GL_ARRAY_BUFFER,0);
+		glBindVertexArray( 0 );
+
+
+		glCopyImageSubData(t.t->id, GL_TEXTURE_2D, 0, 0, 0, 0,
+                   gBuffer.getTexture("gAlbedoSpec"), GL_TEXTURE_2D, 0, 0, 0, 0,
+                   gBuffer.scr_width, gBuffer.scr_height, 1);	
+	});
+	bill.mesh().textures.push_back(t);
+	r->set(billBoardShader,bill);
+	r->meta->isBillboard = 1;
+}
 
 
 class _camera : public component
@@ -212,7 +281,6 @@ public:
 		for(auto &i : batchManager::batches.front()){
 			Shader *currShader = i.first.s->shader;
 			currShader->use();
-			currShader->setFloat("material.shininess",32);
 			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
 			currShader->setVec3("viewPos",pos);
 			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
@@ -290,7 +358,6 @@ public:
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
-		// glUniform2f(glGetUniformLocation(shaderLightingPass.Program, "WindowSize"), SCREEN_WIDTH, SCREEN_HEIGHT);
 		shaderLightingPass.setVec2("WindowSize",glm::vec2(SCREEN_WIDTH,SCREEN_HEIGHT));
 
 		shaderLightingPass.setMat4("view",view);
@@ -385,27 +452,35 @@ public:
 		int numt = concurrency::numThreads;
 		int step = TRANSFORMS.size() / concurrency::numThreads;
 		uint i = step * id;
-		deque<bool>::iterator from = TRANSFORMS.valid.begin() + step * id;
-		deque<bool>::iterator to = from + step;
 		transformIdThreadcache[id].clear();
-		transformIdThreadcache[id].reserve(step + 1);
-		if(id == concurrency::numThreads - 1)
-			to = TRANSFORMS.valid.end();
-		while (from != to){
-			if(*from){
-				transformIdThreadcache[id].emplace_back(i);
+		if(TRANSFORMS.density() > 0.5){
+
+			deque<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
+			deque<_transform>::iterator to = from + step;
+
+			if(id == concurrency::numThreads - 1)
+				to = TRANSFORMS.data.end();
+			for (auto itr = from; itr != to; itr++, i++){
+				TRANSFORMS_TO_BUFFER[i] = *itr;
 			}
-			++from;
-			++i;
+
+		}else{
+
+			deque<bool>::iterator from = TRANSFORMS.valid.begin() + step * id;
+			deque<bool>::iterator to = from + step;
+
+			transformIdThreadcache[id].reserve(step + 1);
+			if(id == concurrency::numThreads - 1)
+				to = TRANSFORMS.valid.end();
+			while (from != to){
+				if(*from){
+					transformIdThreadcache[id].emplace_back(i);
+				}
+				++from;
+				++i;
+			}
 		}
-	}
-	void lateUpdate(){
-		
-		for(int i = 0; i < transformIdThreadcache[id].size(); i++){
-			transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
-			// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
-		}
-		
+
 		int __rendererId = 0;
 		int __rendererOffset = 0;
 		typename vector<__renderer>::iterator __r = __RENDERERS->storage->begin();
@@ -429,6 +504,13 @@ public:
 					__rendererOffset += k.first->ids.size();
 				}
 			}
+		}
+	}
+	void lateUpdate(){
+		
+		for(int i = 0; i < transformIdThreadcache[id].size(); i++){
+			transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
+			// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
 		}
 	}
 public:
