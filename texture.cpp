@@ -32,6 +32,12 @@ void _texture::load(string path){
     }
 }
 
+void _texture::namedTexture(string name){
+    textureManager::textures.insert(std::pair<string,TextureMeta*>(name, new TextureMeta()));
+    this->t = textureManager::textures.at(name);
+
+}
+
 void _texture::load(string path, string type){
     auto tm = textureManager::textures.find(path);
     if(tm != textureManager::textures.end()){
@@ -86,6 +92,24 @@ void TextureMeta::load(string path){
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture( GL_TEXTURE_2D, 0 );
     SOIL_free_image_data( image );
+}
+
+void TextureMeta::gen(int width, int height){
+    // Assign texture to ID
+    glGenTextures( 1, &id );
+    
+    dims.x = width;
+    dims.y = height;
+    glBindTexture( GL_TEXTURE_2D, id );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+    glGenerateMipmap( GL_TEXTURE_2D );
+    
+    // Parameters
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 

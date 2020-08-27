@@ -27,7 +27,7 @@ struct __renderMeta{
 	GLfloat radius;
 	GLfloat min;
 	GLfloat max;
-	uint p;
+	uint isBillboard;
 };
 extern gpu_vector_proxy<matrix>* GPU_MATRIXES;
 extern gpu_vector<__renderer>* __RENDERERS;
@@ -60,6 +60,7 @@ public:
 	vector<Mesh>& meshes();
 	Mesh& mesh();
 	void makeUnique();
+	void makeProcedural();
 	void recalcBounds();
 	_modelMeta* m = 0;
 };
@@ -101,7 +102,9 @@ struct renderingMeta {
 	
 	_shader s;
 	_model m;
-
+	float minRadius = 0.f;
+	float maxRadius = INFINITY;
+	uint isBillboard;
 	renderingMeta(_shader _s, _model _m);
 private:
 	renderingMeta(const renderingMeta& other);
@@ -153,7 +156,9 @@ class _renderer : public component {
 	renderingMeta* meta = 0;
 	typename fast_list_deque<GLuint>::iterator transformIdRef;
 	friend void run();
+	friend void makeBillboard(_model m, _texture t, _renderer* r);
 public:
+	void setCullSizes(float min, float max);
 	_model getModel();
 	void onStart();
 	_renderer();

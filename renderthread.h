@@ -147,12 +147,12 @@ int frameCounter = 0;
 atomic<bool> transformsBuffered;
 void renderThreadFunc()
 {
-	const size_t size = CPU_ALLOC_SIZE( concurrency::pinningObserver.ncpus );
-	cpu_set_t *target_mask = CPU_ALLOC( concurrency::pinningObserver.ncpus );
-	CPU_ZERO_S( size, target_mask );
-	CPU_SET_S( 0, size, target_mask );
-	CPU_SET_S( 1, size, target_mask );
-	const int err = sched_setaffinity( 0, size, target_mask );
+	// const size_t size = CPU_ALLOC_SIZE( concurrency::pinningObserver.ncpus );
+	// cpu_set_t *target_mask = CPU_ALLOC( concurrency::pinningObserver.ncpus );
+	// CPU_ZERO_S( size, target_mask );
+	// CPU_SET_S( 0, size, target_mask );
+	// CPU_SET_S( 1, size, target_mask );
+	// const int err = sched_setaffinity( 0, size, target_mask );
 	
 
 	glfwInit();
@@ -304,23 +304,28 @@ void renderThreadFunc()
 				cpuTimer.start();
 				gt_.start();
 				// buffer and allocate data
-				GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
-				transformIds->bufferData(transformIdsToBuffer);
-				GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
-				glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-				appendStat("transforms buffer", gt_.stop());
+				if(TRANSFORMS.density() > 0.5){
+					GPU_TRANSFORMS->bufferData(TRANSFORMS_TO_BUFFER);
+				}else{
+
+					GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
+					transformIds->bufferData(transformIdsToBuffer);
+					GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
+
+					matProgram.use();
+					// bind buffers
+					GPU_TRANSFORMS->bindData(0);
+					transformIds->bindData(6);
+					GPU_TRANSFORMS_UPDATES->bindData(7);
+
+					matProgram.setInt("stage",-1);
+					matProgram.setUint("num",transformsToBuffer.size());
+					glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
+					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				}
+
 				transformsBuffered.store(true);
-
-				matProgram.use();
-				// bind buffers
-				GPU_TRANSFORMS->bindData(0);
-				transformIds->bindData(6);
-				GPU_TRANSFORMS_UPDATES->bindData(7);
-
-				matProgram.setInt("stage",-1);
-				matProgram.setUint("num",transformsToBuffer.size());
-				glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
-				glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				appendStat("transforms buffer", gt_.stop());
 				appendStat("transforms buffer cpu", cpuTimer.stop());
 				
 				cpuTimer.start();

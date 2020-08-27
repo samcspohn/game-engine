@@ -31,6 +31,7 @@ struct _transform {
 };
 extern atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 extern deque_heap<_transform> TRANSFORMS;
+extern vector<_transform> TRANSFORMS_TO_BUFFER;
 extern deque_heap<_transform> STATIC_TRANSFORMS;
 extern gpu_vector_proxy<_transform>* GPU_TRANSFORMS;
 extern gpu_vector_proxy<GLuint>* transformIds;

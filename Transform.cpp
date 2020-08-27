@@ -19,6 +19,7 @@ void _transform::rotate(glm::vec3 axis, float radians) {
 
 atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 deque_heap<_transform> TRANSFORMS;
+vector<_transform> TRANSFORMS_TO_BUFFER;
 deque_heap<_transform> STATIC_TRANSFORMS;
 gpu_vector_proxy<_transform>* GPU_TRANSFORMS;
 gpu_vector_proxy<GLuint>* transformIds;

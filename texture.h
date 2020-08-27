@@ -22,10 +22,12 @@ struct TextureMeta
     TextureMeta();
     TextureMeta( string path, string type);
     void load(string path);
+    void gen(int width, int height);
 };
 
 struct _texture{
     TextureMeta* t;
+    void namedTexture(string name);
     void load(string path);
     void setType(string type);
     void load(string path, string type);
