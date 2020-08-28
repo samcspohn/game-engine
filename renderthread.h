@@ -239,10 +239,19 @@ void renderThreadFunc()
 
 	GLint max_buffers;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
-	cout << max_buffers << endl;
+	cout << "max storage buffer bindings: " << max_buffers << endl;
+
+
+	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &max_buffers);
+	cout << "max compute buffers: " << max_buffers << endl;
+
+
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_buffers);
+	cout << "max buffer size: " << max_buffers << endl;
+
 	GLint maxAtt = 0;
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAtt);
-	cout << maxAtt << endl;
+	cout << "max color attachements: " << maxAtt << endl;
 
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
