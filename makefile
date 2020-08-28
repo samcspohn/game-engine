@@ -10,4 +10,7 @@ getDeps:
 	pacman -S --noconfirm assimp
 	pacman -S --noconfirm glm
 	pacman -S --noconfirm gdb
-	pacman -S --noconfirm clang
+	pacman -S --noconfirm cmake
+	pacman -S --noconfirm openal
+	pacman -S --noconfirm freealut
+	# pacman -S --noconfirm clang

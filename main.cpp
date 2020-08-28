@@ -651,12 +651,15 @@ class player_sc2 : public component {
 	float fov = 80;
 	gui::window* info;
 	gui::text* fps;
+	gui::text* partis;
 	vector<gun*> guns;
 public:
     void onStart(){
 		info = new gui::window();
 		fps = new gui::text();
 		info->adopt(fps);
+		partis = new gui::text();
+		info->adopt(partis);
 		info->name = "game info";
 		// ImGuiWindowFlags flags = 0;
 		// flags |= ImGuiWindowFlags_NoTitleBar;
@@ -676,6 +679,7 @@ public:
 	}
     void update(){
         fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+		partis->contents = "particles: " + to_string(actualParticles);
 
         transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
 		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);

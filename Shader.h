@@ -282,6 +282,7 @@ public:
 		if (!success)
 		{
 			glGetProgramInfoLog(this->Program, 4096, NULL, infoLog);
+			std::cout << this->vertexFile << ", " << this->fragmentFile << ", " << this->geometryFile << ", " << this->computeFile << std::endl;
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 		}
 		// Delete the shaders as they're linked into our program now and no longer necessery
@@ -291,6 +292,7 @@ public:
 	void _Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
 		vector<GLuint> shaders;
+		// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
 		shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
 		shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
 		shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
@@ -300,6 +302,7 @@ public:
 	{
 
 		vector<GLuint> shaders;
+		// std::cout << vertexPath << fragmentPath << std::endl;
 		shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
 		shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
 		compileShader(shaders);
@@ -307,6 +310,7 @@ public:
 	void _Shader(const string computePath)
 	{
 		vector<GLuint> shaders;
+		// cout << computeFile << endl;
 		shaders.push_back(loadFile(computeFile, GL_COMPUTE_SHADER));
 		compileShader(shaders);
 	}
