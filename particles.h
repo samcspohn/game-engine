@@ -10,7 +10,7 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_PARTICLES 1024 * 1024 * 8
+
 class component;
 struct colorArray{
     struct key{
@@ -108,7 +108,8 @@ public:
     void onStart();
     void onDestroy();
 };
-
+extern int particleCount;
+extern int actualParticles;
 void initParticles();
 
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount);
