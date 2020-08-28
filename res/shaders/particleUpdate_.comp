@@ -1,0 +1,87 @@
+#version 430 core
+
+#extension GL_ARB_compute_shader : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
+#include "util.glsl"
+#include "particle.glsl"
+#include "transform.glsl"
+
+
+layout(std430,binding = 0) buffer t{_transform transforms[];};//
+layout(std430,binding = 1) buffer ac{int atomicCounters[];};//
+layout(std430,binding = 2) buffer p{particle particles[];};//
+layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];}; //
+layout(std430,binding = 4) buffer e{emitter emitters[];};//
+layout(std430,binding = 6) buffer de{uint dead[];};//
+layout(std430,binding = 10) buffer lp{uint livingParticles[];};//
+
+const uint liveParticles = 0;
+const uint burstCounter = 1;
+const uint emittedCounter = 2;
+
+uniform uint count;
+uniform uint burstOffset;
+uniform float deltaTime;
+uniform float time;
+uniform int max_particles;
+uniform uint stage;
+uniform vec3 floatingOrigin;
+
+void update(uint index, float dt){
+
+    uint id = livingParticles[index];
+    particle p = particles[id];
+    emitter_prototype proto = prototypes[p.emitter_prototype];
+    p.position += get(p.velocity) * dt;
+
+    if(p.next < -1){
+        if(emitters[-p.next - 2].last == id)
+            p.position2 = transforms[emitters[-p.next - 2].transform].position;
+    }else{
+        p.position2 += get(p.velocity2) * dt;
+    }
+
+    p.life -= dt / p.l;
+    // p.life2 -= dt / p.l;
+
+    if(p.life <= 0.f)
+    {
+        int index = atomicAdd(atomicCounters[liveParticles],-1);
+        dead[index - 1] = id;
+        // p.live = 0;
+        p.next = -1;//p.prev = -1;
+    }
+
+    particles[id] = p;
+}
+
+void countParticles(uint thread_id){
+    if(particles[thread_id].life > 0.f){
+        uint index = uint(atomicAdd(atomicCounters[2],1));
+        livingParticles[index] = thread_id;
+    }
+
+}
+
+
+layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
+void main () {
+    uint gid = gl_GlobalInvocationID.x;
+    if(gid < count){
+        switch(stage){
+            case 4:
+                atomicMin(atomicCounters[liveParticles],max_particles);
+                break;
+            case 5:
+                atomicCounters[2] = 0;
+                break;
+            case 6:
+                countParticles(gid);
+                break;
+            case 7:
+                update(gid,deltaTime);
+                break;
+
+        }
+    }
+}

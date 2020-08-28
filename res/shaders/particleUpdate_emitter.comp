@@ -7,18 +7,14 @@
 #include "transform.glsl"
 
 
-layout(std430,binding = 0) buffer t{_transform transforms[];};
-layout(std430,binding = 1) buffer ac{int atomicCounters[];};
-layout(std430,binding = 2) buffer p{particle particles[];};
-layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
-layout(std430,binding = 4) buffer e{emitter emitters[];};
-// layout(std430,binding = 5) buffer r{uint rng[];};
-layout(std430,binding = 5) buffer bp{uint burstParticles[];};
-layout(std430,binding = 6) buffer de{uint dead[];};
+layout(std430,binding = 0) buffer t{_transform transforms[];};//
+layout(std430,binding = 1) buffer ac{int atomicCounters[];};//
+layout(std430,binding = 2) buffer p{particle particles[];};//
+layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];}; //
+layout(std430,binding = 4) buffer e{emitter emitters[];};//
+layout(std430,binding = 6) buffer de{uint dead[];};//
 layout(std430,binding = 7) buffer ed{_emission emitted[];};
 layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
-layout(std430,binding = 9) buffer pb{_burst particleBursts[];};
-layout(std430,binding = 10) buffer lp{uint livingParticles[];};
 
 const uint liveParticles = 0;
 const uint burstCounter = 1;
@@ -31,35 +27,6 @@ uniform float time;
 uniform int max_particles;
 uniform uint stage;
 uniform vec3 floatingOrigin;
-shared uint garbage[130];
-
-void update(uint index, float dt){
-
-    uint id = livingParticles[index];
-    particle p = particles[id];
-    emitter_prototype proto = prototypes[p.emitter_prototype];
-    p.position += get(p.velocity) * dt;
-
-    if(p.next < -1){
-        if(emitters[-p.next - 2].last == id)
-            p.position2 = transforms[emitters[-p.next - 2].transform].position;
-    }else{
-        p.position2 += get(p.velocity2) * dt;
-    }
-
-    p.life -= dt / p.l;
-    // p.life2 -= dt / p.l;
-
-    if(p.life <= 0.f)
-    {
-        int index = atomicAdd(atomicCounters[liveParticles],-1);
-        dead[index - 1] = id;
-        // p.live = 0;
-        p.next = -1;//p.prev = -1;
-    }
-
-    particles[id] = p;
-}
 
 void initEmitters(uint id){
     emitterInit ei = emittersInits[id];
@@ -164,49 +131,6 @@ void emit(uint thread_id){
 
 }
 
-void burst(uint thread_id){
-    _burst e = particleBursts[thread_id];
-
-    emitter_prototype ep = prototypes[e.emitter_prototype];
-    
-    int new_particles = atomicAdd(atomicCounters[liveParticles],int(e.count));
-    int burst_start = atomicAdd(atomicCounters[burstCounter],int(e.count));
-    int end = burst_start + int(e.count);
-    burst_start = min(burst_start,max_particles);
-    end = min(end,max_particles);
-    // atomicMin(atomicCounters[liveParticles],max_particles);
-    
-    for(int i = burst_start; i < end; ++i){
-        burstParticles[i] = thread_id;
-    }
-}
-
-void makeBursts(uint thread_id){
-        _burst e = particleBursts[burstParticles[thread_id]];
-
-        emitter_prototype ep = prototypes[e.emitter_prototype];
-        int x = int(dead[burstOffset + thread_id]);
-        particle p;
-
-        vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
-        rng generator;
-        setSeed(generator,id,time);
-
-        float p_count = 0;
-        makeParticle(p,ep,generator,p_count, e.position,lookAt(e.direction,vec3(0,1,0.000001)),e.scale, e.emitter_prototype, deltaTime, -1);
-        // p.live = 1;
-        particles[x] = p;
-}
-
-void countParticles(uint thread_id){
-    if(particles[thread_id].life > 0.f){
-        uint index = uint(atomicAdd(atomicCounters[2],1));
-        livingParticles[index] = thread_id;
-    }
-
-}
-
-
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
@@ -218,25 +142,6 @@ void main () {
             case 1:
                 emit(gid);
                 break;
-            case 2:
-                burst(gid);
-                break;
-            case 3:
-                makeBursts(gid);
-                break;
-            case 4:
-                atomicMin(atomicCounters[liveParticles],max_particles);
-                break;
-            case 5:
-                atomicCounters[2] = 0;
-                break;
-            case 6:
-                countParticles(gid);
-                break;
-            case 7:
-                update(gid,deltaTime);
-                break;
-
         }
     }
 }

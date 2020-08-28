@@ -1,0 +1,107 @@
+#version 430 core
+
+#extension GL_ARB_compute_shader : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
+#include "util.glsl"
+#include "particle.glsl"
+#include "transform.glsl"
+
+
+layout(std430,binding = 0) buffer t{_transform transforms[];};
+layout(std430,binding = 1) buffer ac{int atomicCounters[];};
+layout(std430,binding = 2) buffer p{particle particles[];};
+layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
+// layout(std430,binding = 5) buffer r{uint rng[];};
+layout(std430,binding = 5) buffer bp{uint burstParticles[];};
+layout(std430,binding = 6) buffer de{uint dead[];};
+layout(std430,binding = 7) buffer ed{_emission emitted[];};
+layout(std430,binding = 9) buffer pb{_burst particleBursts[];};
+
+const uint liveParticles = 0;
+const uint burstCounter = 1;
+const uint emittedCounter = 2;
+
+uniform uint count;
+uniform uint burstOffset;
+uniform float deltaTime;
+uniform float time;
+uniform int max_particles;
+uniform uint stage;
+uniform vec3 floatingOrigin;
+
+void makeParticle(inout particle p, inout emitter_prototype ep, inout rng generator, inout float particle_count, vec3 tpos, vec4 trot, vec3 tscale, uint epId, float dt, uint eId){
+
+    p.position = tpos + normalize(randVec3(generator)) * tscale * ep.radius;
+    // p.rotation  = transforms[e.transform].rotation;
+    p.scale = tscale.xy * ep.scale;
+    p.life = 1.f;
+    p.l = max(ep.lifetime2 + gen(generator) * abs(ep.lifetime - ep.lifetime2),0.0001f);
+    // p.emitter = eId;
+    p.emitter_prototype = epId;
+    vec3 random = rotate(vec3(1,0,0),gen(generator) * ep.dispersion,vec3(0,0,ep.minSpeed + gen(generator) * (ep.maxSpeed - ep.minSpeed)));
+    random = rotate(vec3(0,0,1),gen(generator) * 2 * M_PI,random);
+    vec3 vel = vec3(rotate(identity(), trot) * vec4(random * tscale,1));
+    set(p.velocity,vel);
+    
+    if(ep.velAlign == 1){
+        vec3 dir = cross(vel,randVec3(generator));
+        set(p.rotation,lookAt(dir,vel));
+    }else{
+        set(p.rotation,normalize(randVec4(generator)));
+    }
+
+    p.position += vel * dt * particle_count;
+    p.position2 = p.position;
+    p.velocity2 = p.velocity;
+    p.life -= dt * particle_count++ / p.l;
+}
+
+void burst(uint thread_id){
+    _burst e = particleBursts[thread_id];
+
+    emitter_prototype ep = prototypes[e.emitter_prototype];
+    
+    int new_particles = atomicAdd(atomicCounters[liveParticles],int(e.count));
+    int burst_start = atomicAdd(atomicCounters[burstCounter],int(e.count));
+    int end = burst_start + int(e.count);
+    burst_start = min(burst_start,max_particles);
+    end = min(end,max_particles);
+    // atomicMin(atomicCounters[liveParticles],max_particles);
+    
+    for(int i = burst_start; i < end; ++i){
+        burstParticles[i] = thread_id;
+    }
+}
+
+void makeBursts(uint thread_id){
+        _burst e = particleBursts[burstParticles[thread_id]];
+
+        emitter_prototype ep = prototypes[e.emitter_prototype];
+        int x = int(dead[burstOffset + thread_id]);
+        particle p;
+
+        vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
+        rng generator;
+        setSeed(generator,id,time);
+
+        float p_count = 0;
+        makeParticle(p,ep,generator,p_count, e.position,lookAt(e.direction,vec3(0,1,0.000001)),e.scale, e.emitter_prototype, deltaTime, -1);
+        // p.live = 1;
+        particles[x] = p;
+}
+
+
+layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
+void main () {
+    uint gid = gl_GlobalInvocationID.x;
+    if(gid < count){
+        switch(stage){
+            case 2:
+                burst(gid);
+                break;
+            case 3:
+                makeBursts(gid);
+                break;
+        }
+    }
+}
