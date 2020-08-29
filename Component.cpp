@@ -4,7 +4,7 @@
 void compItr::erase(){};
 component* compItr::getComponent(){};
 
-
+vector<int> numbers = {0};
 void component::onStart() {}
 void component::onDestroy() {}
 bool component::_registerEngineComponent() { return false; };

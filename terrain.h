@@ -139,7 +139,7 @@ public:
     void update(){
         auto c = COMPONENT_LIST(_camera);
         vec3 pos = transform->getPosition();
-        vec3 pos2 = c->data.data.front().transform->getPosition();
+        vec3 pos2 = c->get(0)->transform->getPosition();
         pos.y = pos2.y = 0;
         bool inThreshold = glm::length(pos - pos2) < 2000;
         if( inThreshold && scatter.size() == 0 )

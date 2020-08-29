@@ -556,6 +556,8 @@ namespace particle_renderer
         particleSortProgram.setFloat("x_size",screen.x);
         particleSortProgram.setFloat("y_size",screen.y);
 
+
+        particleSortProgram2.use();
         particleSortProgram2.setMat3("camInv",camInv);
         particleSortProgram2.setVec3("camPos", camPos);
         particleSortProgram2.setVec3("camp",camP);
@@ -585,6 +587,7 @@ namespace particle_renderer
 
 
         gt2.start();
+        particleSortProgram.use();
         particleSortProgram.setInt("stage",-2);
         particleSortProgram.setUint("count", 65536);
         glDispatchCompute(65536 / 128, 1, 1); // count
