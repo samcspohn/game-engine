@@ -98,7 +98,6 @@ public:
 	virtual component* get(int i){}
 	// virtual bool getv(int i){}
 	virtual int size(){};
-	virtual void addNewElements(){};
 };
 
 
@@ -115,9 +114,6 @@ public:
 	{
 		return data.size();
 	}
-	 void addNewElements(){
-		 data.update();
-	 };
 
 	component* get(int i){
 		return (component*)&(data[i]);
@@ -128,19 +124,19 @@ public:
 
 	void update()
 	{
-		while(numbers.size() < data.size()){
-			numbers.push_back(numbers.back() + 1);
-		}
-		std::for_each(
-			std::execution::par_unseq,
-			numbers.begin(),
-			numbers.begin() + data.size(),
-			[&](auto&& i)
-			{
-				if(data.valid[i]){
-					data.data[i].update();
-				}
-			});
+		// while(numbers.size() < data.size()){
+		// 	numbers.push_back(numbers.back() + 1);
+		// }
+		// std::for_each(
+		// 	std::execution::par_unseq,
+		// 	numbers.begin(),
+		// 	numbers.begin() + data.size(),
+		// 	[&](auto&& i)
+		// 	{
+		// 		if(data.valid[i]){
+		// 			data.data[i].update();
+		// 		}
+		// 	});
 		// std::for_each(
 		// 	std::execution::par_unseq,
 		// 	data.pointers.begin(),
@@ -149,27 +145,27 @@ public:
 		// 	{
 		// 		i.second->update();
 		// 	});
-		// _parallel_for(data,[&](int i){
-		// 	if(data.valid[i]){
-		// 		data.data[i].update();
-		// 	}
-		// });
+		_parallel_for(data,[&](int i){
+			if(data.valid[i]){
+				data.data[i].update();
+			}
+		});
 
 	}
 	void lateUpdate(){
-		while(numbers.size() < data.size()){
-			numbers.push_back(numbers.back() + 1);
-		}
-		std::for_each(
-			std::execution::par_unseq,
-			numbers.begin(),
-			numbers.begin() + data.size(),
-			[&](auto&& i)
-			{
-				if(data.valid[i]){
-					data.data[i].lateUpdate();
-				}
-			});
+		// while(numbers.size() < data.size()){
+		// 	numbers.push_back(numbers.back() + 1);
+		// }
+		// std::for_each(
+		// 	std::execution::par_unseq,
+		// 	numbers.begin(),
+		// 	numbers.begin() + data.size(),
+		// 	[&](auto&& i)
+		// 	{
+		// 		if(data.valid[i]){
+		// 			data.data[i].lateUpdate();
+		// 		}
+		// 	});
 
 		// std::for_each(
 		// 	std::execution::par_unseq,
@@ -180,11 +176,11 @@ public:
 		// 		i.second->lateUpdate();
 		// 	});
 
-		// _parallel_for(data,[&](int i){
-		// 	if(data.valid[i]){
-		// 		data.data[i].lateUpdate();
-		// 	}
-		// });
+		_parallel_for(data,[&](int i){
+			if(data.valid[i]){
+				data.data[i].lateUpdate();
+			}
+		});
 	}
 };
 

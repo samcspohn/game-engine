@@ -1,3 +1,5 @@
 #include "game_object.h"
 
-tbb::concurrent_unordered_set<game_object*> toDestroy;
+// std::vector<game_object*> toDestroy;
+// mutex destroyLock;
+tbb::concurrent_vector<game_object*> toDestroy;

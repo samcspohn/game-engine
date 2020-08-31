@@ -134,7 +134,25 @@ void run()
 		doLoopIteration(gameEngineComponents, false);
 
 		stopWatch.start();
-		tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
+		
+		// std::for_each(
+		// 	std::execution::par_unseq,
+		// 	toDestroy.begin(),
+		// 	toDestroy.end(),
+		// 	[](auto&& g){g->_destroy();});
+		try{
+			tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
+		}catch(...){
+			set<game_object*> gos;
+			for(auto &i : toDestroy){
+				if(gos.find(i) != gos.end()){
+					cout << "found duplicate" << endl;
+					throw "found duplicate";
+					terminate();
+				}
+				gos.emplace(i);
+			}
+		}
 		toDestroy.clear();
 		appendStat("destroy deffered",stopWatch.stop());
 		appendStat("game loop main",gameLoopMain.stop());
