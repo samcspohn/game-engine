@@ -29,6 +29,14 @@ struct _transform {
 	void translate(glm::vec3 translation);
 	void rotate(glm::vec3 axis, float radians);
 };
+
+
+struct data_transforms{
+	deque<glm::vec3> positions;
+	deque<glm::quat> rotations;
+	deque<glm::vec3> scales;
+};
+
 extern atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 extern deque_heap<_transform> TRANSFORMS;
 extern vector<_transform> TRANSFORMS_TO_BUFFER;
