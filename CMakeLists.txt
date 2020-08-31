@@ -60,9 +60,9 @@ add_custom_command(
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-option(BUILD_DEBUG "build un-optimized with debugger info" ON)
+option(BUILD_DEBUG "build un-optimized with debugger info" OFF)
 if(BUILD_DEBUG)
-    target_compile_options(game PUBLIC -w -g -fpermissive -fopenmp)
+    target_compile_options(game PUBLIC -w -g -fpermissive)
 else()
-    target_compile_options(game PUBLIC -w -g -fpermissive -fopenmp -O3)
+    target_compile_options(game PUBLIC -w -g -fpermissive -O3)
 endif()
