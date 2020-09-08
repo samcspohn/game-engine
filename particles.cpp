@@ -11,7 +11,7 @@
 
 using namespace std;
 using namespace glm;
-#define MAX_PARTICLES 1024 * 1024
+#define MAX_PARTICLES 1024 * 1024 * 8
 
 struct smquat{
 	uvec2 d;
