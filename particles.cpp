@@ -171,6 +171,7 @@ gpu_vector_proxy<GLuint> *dead = new gpu_vector_proxy<GLuint>();
 gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
 gpu_vector<GLuint> *atomicCounters = new gpu_vector<GLuint>();
 gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
+gpu_vector_proxy<GLfloat> *particleLifes = new gpu_vector_proxy<GLfloat>();
 array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
@@ -307,9 +308,10 @@ void initParticles()
     gpu_particle_bursts->ownStorage();
     
     livingParticles->tryRealloc(MAX_PARTICLES);
-    emitted->tryRealloc(MAX_PARTICLES);
+    // emitted->tryRealloc(MAX_PARTICLES);
     burstParticles->tryRealloc(MAX_PARTICLES);
     particlesToDestroy->tryRealloc(MAX_PARTICLES);
+    particleLifes->tryRealloc(MAX_PARTICLES);
     gpu_emitter_prototypes->storage = &emitter_prototypes_.data;
     // gpu_emitters->tryRealloc(1024 * 1024 * 4);
 }
@@ -343,7 +345,8 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     gpu_emitters->bindData(4);
     burstParticles->bindData(5);
     dead->bindData(6);
-    emitted->bindData(7);
+    // emitted->bindData(7);
+    particleLifes->bindData(7);
     gpu_emitter_inits->bindData(8);
     gpu_particle_bursts->bindData(9);
     livingParticles->bindData(10);

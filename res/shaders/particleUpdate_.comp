@@ -13,6 +13,7 @@ layout(std430,binding = 2) buffer p{particle particles[];};//
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];}; //
 layout(std430,binding = 4) buffer e{emitter emitters[];};//
 layout(std430,binding = 6) buffer de{uint dead[];};//
+layout(std430,binding = 7) buffer pl{float particleLifes[];};
 layout(std430,binding = 10) buffer lp{uint livingParticles[];};//
 
 const uint liveParticles = 0;
@@ -42,6 +43,8 @@ void update(uint index, float dt){
     }
 
     p.life -= dt / p.l;
+    particleLifes[id] = p.life;
+
     // p.life2 -= dt / p.l;
 
     if(p.life <= 0.f)
@@ -56,7 +59,7 @@ void update(uint index, float dt){
 }
 
 void countParticles(uint thread_id){
-    if(particles[thread_id].life > 0.f){
+    if(particleLifes[thread_id] > 0.f){
         uint index = uint(atomicAdd(atomicCounters[2],1));
         livingParticles[index] = thread_id;
     }
