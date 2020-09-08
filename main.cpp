@@ -86,7 +86,7 @@ public:
 			// colCount++;
 			if(length(normal) == 0)
 				normal = randomSphere();
-			// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+			b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
 			numCubes.fetch_add(-1);
 			transform->gameObject->destroy();
 
@@ -949,7 +949,7 @@ int main(int argc, char **argv)
 	bomb_proto->getComponent<collider>()->dim = vec3(0.4f);
 	// bomb_proto->addComponent<physicsObject>();
 	// bomb_proto->addComponent<audiosource>()->set(gunSound);
-	// bomb_proto->addComponent<particle_emitter>();
+	bomb_proto->addComponent<particle_emitter>();
 	bomb.proto = bomb_proto;
 	bomb_proto->addComponent<missile>()->setBullet(bomb);
 	bullets["bomb"] = bomb;

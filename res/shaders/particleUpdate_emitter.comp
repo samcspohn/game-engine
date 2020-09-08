@@ -13,7 +13,8 @@ layout(std430,binding = 2) buffer p{particle particles[];};//
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];}; //
 layout(std430,binding = 4) buffer e{emitter emitters[];};//
 layout(std430,binding = 6) buffer de{uint dead[];};//
-layout(std430,binding = 7) buffer ed{_emission emitted[];};
+layout(std430,binding = 7) buffer pl{float particleLifes[];};
+// layout(std430,binding = 7) buffer ed{_emission emitted[];};
 layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
 
 const uint liveParticles = 0;
@@ -121,6 +122,8 @@ void emit(uint thread_id){
 
             // p.live = 1;
             particles[x] = p;
+            particleLifes[x] = 1.f;
+
         }
         e.emission -= float(uint(e.emission));
     }else{
