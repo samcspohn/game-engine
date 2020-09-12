@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace glm;
+#define MAX_PARTICLES 1024 * 1024 * 8
 
 struct smquat{
 	uvec2 d;
@@ -161,17 +162,18 @@ enum particleCounters
     liveParticles = 0,
     destroyCounter = 1
 };
-gpu_vector<particle> *particles = new gpu_vector<particle>();
+gpu_vector_proxy<particle> *particles = new gpu_vector_proxy<particle>();
 gpu_vector_proxy<_emission> *emitted = new gpu_vector_proxy<_emission>();
 gpu_vector_proxy<GLuint> *burstParticles = new gpu_vector_proxy<GLuint>();
 gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
 vector<_burst> particle_bursts;
 gpu_vector_proxy<GLuint> *dead = new gpu_vector_proxy<GLuint>();
-gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
+// gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
 gpu_vector<GLuint> *atomicCounters = new gpu_vector<GLuint>();
 gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
 array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
+gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
 
 mutex burstLock;
@@ -296,9 +298,10 @@ void initParticles()
         indexes[i] = i;
     }
     dead->bufferData(indexes);
-    particles->ownStorage();
-    *particles->storage = vector<particle>(MAX_PARTICLES);
-    particles->bufferData();
+    // particles->ownStorage();
+    // *particles->storage = vector<particle>(MAX_PARTICLES);
+    // particles->bufferData();
+    particles->tryRealloc(MAX_PARTICLES);
     atomicCounters->ownStorage();
     *atomicCounters->storage = vector<GLuint>(3);
     gpu_particle_bursts->ownStorage();
@@ -306,7 +309,8 @@ void initParticles()
     livingParticles->tryRealloc(MAX_PARTICLES);
     emitted->tryRealloc(MAX_PARTICLES);
     burstParticles->tryRealloc(MAX_PARTICLES);
-    particlesToDestroy->tryRealloc(MAX_PARTICLES);
+    particleLifes->tryRealloc(MAX_PARTICLES / sizeof(GLuint) / 8);
+    // particlesToDestroy->tryRealloc(MAX_PARTICLES);
     gpu_emitter_prototypes->storage = &emitter_prototypes_.data;
     // gpu_emitters->tryRealloc(1024 * 1024 * 4);
 }
@@ -321,7 +325,7 @@ mutex pcMutex;
 int getParticleCount(){
     int ret;
     pcMutex.lock();
-        ret = particleCount;
+        ret = actualParticles;
     pcMutex.unlock();
     return ret;
 }
@@ -338,7 +342,8 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     gpu_emitters->bindData(4);
     burstParticles->bindData(5);
     dead->bindData(6);
-    emitted->bindData(7);
+    // emitted->bindData(7);
+    particleLifes->bindData(7);
     gpu_emitter_inits->bindData(8);
     gpu_particle_bursts->bindData(9);
     livingParticles->bindData(10);
@@ -374,7 +379,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     atomicCounters->bufferData();
     // glFlush();
 
-    vector<uint> acs = *(atomicCounters->storage);
+    // vector<uint> acs = *(atomicCounters->storage);
     
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "burstOffset"), (*atomicCounters)[0]);
 
@@ -401,7 +406,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 
-    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES); // count particles
+    glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES / 32); // count particles
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 6);
     glDispatchCompute(MAX_PARTICLES / 128 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);

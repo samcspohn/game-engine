@@ -78,17 +78,56 @@ _model bill;
 // t.namedTexture("bill1");
 // t.t->gen(1024,1024);
 void makeBillboard(_model m, _texture t, _renderer* r){
-
+	// billBoardGenerator = _shader("res/shaders/defLighting.vert","res/shaders/red.frag");
 	billBoardGenerator = _shader("res/shaders/model_no_inst.vert","res/shaders/model.frag");
 	billBoardShader = _shader("res/shaders/model.vert","res/shaders/model.frag");
 
+	glm::vec3 max = [&]{
+		glm::vec3 vert(-INFINITY);
+		for(auto& i : m.meshes()){
+			for(auto v : i.vertices){
+				// v = v * glm::mat3(glm::rotate(glm::radians(-90.f), vec3(1,0,0)));
+				if(vert.x < v.x){
+					vert.x = v.x;
+				}
+				if(vert.y < v.z){
+					vert.y = v.z;
+				}
+			}
+		}
+		return vert;
+	}();
+	glm::vec3 min = [&]{
+		glm::vec3 vert(INFINITY);
+		for(auto& i : m.meshes()){
+			for(auto v : i.vertices){
+				// v = v * glm::mat3(glm::rotate(glm::radians(-90.f), vec3(1,0,0)));
+				if(vert.x > v.x){
+					vert.x = v.x;
+				}
+				if(vert.y > v.z){
+					vert.y = v.z;
+				}
+			}
+		}
+		return vert;
+	}();
 	bill.makeProcedural();
 	waitForRenderJob([&](){
 		bill.meshes().push_back(Mesh());
-		bill.mesh().vertices = {glm::vec3(-1.0f,  1.0f, 0.0f)
-		,glm::vec3(-1.0f, -1.0f, 0.0f)
-		,glm::vec3(1.0f,  1.0f, 0.0f)
-		,glm::vec3(1.0f, -1.0f, 0.0f)};
+		bill.mesh().vertices = {glm::vec3(min.x,  max.y, 0.0f)
+		,glm::vec3(min.x, min.y, 0.0f)
+		,glm::vec3(max.x,  max.y, 0.0f)
+		,glm::vec3(max.x, min.y, 0.0f)};
+
+		// for(auto& i : bill.mesh().vertices){
+		// 	i *= 10;
+		// }
+
+		bill.mesh().normals = {glm::vec3(0,0,1),
+		glm::vec3(0,0,1),
+		glm::vec3(0,0,1),
+		glm::vec3(0,0,1)};
 
 		bill.mesh().uvs = {glm::vec2(0.0f, 1.0f)
 		,glm::vec2(0.0f, 0.0f)
@@ -103,8 +142,8 @@ void makeBillboard(_model m, _texture t, _renderer* r){
 
 		renderTexture gBuffer;
 		
-		gBuffer.scr_width = t.t->dims.x;
-		gBuffer.scr_height = t.t->dims.y;
+		gBuffer.scr_width = t.t->dims.x + 1;
+		gBuffer.scr_height = t.t->dims.y + 1;
 		gBuffer.init();
 		gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
 		gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
@@ -114,27 +153,40 @@ void makeBillboard(_model m, _texture t, _renderer* r){
 
 		gBuffer.use();
 
+		// billBoardGenerator.ref().use();
+		// renderQuad();
 		billBoardGenerator.ref().use();
 		billBoardGenerator.ref().setFloat("FC", 2.0 / log2(1e2 + 1));
 		billBoardGenerator.ref().setVec3("viewPos",glm::vec3(0));
 		billBoardGenerator.ref().setFloat("screenHeight", (float)t.t->dims.y);
 		billBoardGenerator.ref().setFloat("screenWidth", (float)t.t->dims.x);
-		mat4 mvp = glm::perspective(10.f,1.f,0.f,20.f) * glm::translate(glm::vec3(0,0,10));
+		mat4 mvp = 
+		// glm::perspective(radians(90.f),1.f,0.001f,20000.f) 
+		// * glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0,0,1), glm::vec3(0,1,0)) 
+		glm::translate(glm::vec3(-0.4f,-0.9f,-1)) 
+		* glm::rotate(glm::radians(-90.f), vec3(1,0,0))
+		* glm::scale(glm::vec3(1.2f/(abs(max.x) + abs(min.x)),0,1.95 / (abs(max.y) + abs(min.y))));
 		billBoardGenerator.ref().setMat4("mvp", mvp);
 		
-		mat4 model = glm::translate(glm::vec3(0,0,10));
+		mat4 model = glm::translate(glm::vec3(0,0,-10)) * glm::rotate(glm::radians(-90.f), vec3(1,0,0));
 		billBoardGenerator.ref().setMat4("model", model);
 		
-		glBindVertexArray( m.mesh().VAO );
-		glDrawElements(GL_TRIANGLES,m.mesh().indices.size(),GL_UNSIGNED_INT, 0);
+		for(auto &mes : m.meshes()){
 
-		glBindBuffer(GL_ARRAY_BUFFER,0);
-		glBindVertexArray( 0 );
+			billBoardGenerator.ref().bindTextures(mes.textures);
+			glBindVertexArray( mes.VAO );
+			glDrawElements(GL_TRIANGLES,mes.indices.size(),GL_UNSIGNED_INT, 0);
 
-
-		glCopyImageSubData(t.t->id, GL_TEXTURE_2D, 0, 0, 0, 0,
-                   gBuffer.getTexture("gAlbedoSpec"), GL_TEXTURE_2D, 0, 0, 0, 0,
-                   gBuffer.scr_width, gBuffer.scr_height, 1);	
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+			glBindVertexArray( 0 );
+			mes.textures.unbind();
+		}
+		
+		t.t->id = gBuffer.getTexture("gAlbedoSpec");
+		// t = gBuffer.getTex("gAlbedoSpec");
+		// glCopyImageSubData(gBuffer.getTexture("gAlbedoSpec"), GL_TEXTURE_2D, 0, 0, 0, 0,
+        //            t.t->id, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //            gBuffer.scr_width, gBuffer.scr_height, 1);	
 	});
 	bill.mesh().textures.push_back(t);
 	r->set(billBoardShader,bill);
@@ -181,24 +233,7 @@ public:
 	{
 		return 1 - 2;
 	}
-	static void initPrepRender(Shader &matProgram)
-	{
-		// batchManager::updateBatches();
-		// glUseProgram(matProgram.Program);
-		// componentStorage<_camera> * cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
-		// auto d = cameras->data.data.begin();
-		// auto v = cameras->data.valid.begin();
-		// for (; d != cameras->data.data.end(); d++, v++)
-		// {
-		// 	for (auto &i : renderingManager::shader_model_vector)
-		// 	{
-		// 		for (auto &j : i.second)
-		// 		{
-		// 			j.second->_transformIds->bufferData();
-		// 		}
-		// 	}
-		// }
-	}
+
 	void onStart(){
 		waitForRenderJob([&](){
 			lightVolumeModel = _model("res/models/cube/cube.obj");
@@ -252,15 +287,14 @@ public:
 		
 		glDispatchCompute(__RENDERERS->size() / 64 + 1, 1, 1);
 		glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-		
 		__renderer_offsets->retrieveData();
 				
 	}
 	void render()
 	{
 
-
-		timer t;
+		// vector<GLuint>& _rendererOffsets = *(__renderer_offsets->storage);
+		gpuTimer t;
 		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		glCullFace(GL_BACK);
 		t.start();

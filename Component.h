@@ -11,7 +11,7 @@
 #include "fast_list.h"
 #include "array_heap.h"
 #include "helper1.h"
-#include <omp.h>
+// #include <omp.h>
 // #include <tbb/tbb.h>
 #include "tbb/blocked_range.h"
 #include "tbb/parallel_for.h"
@@ -24,18 +24,19 @@ class Transform;
 class component
 {
 	friend game_object;
+
 public:
 	virtual void onStart();
 	virtual void onDestroy();
 
 	virtual bool _registerEngineComponent();
-	virtual void onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal);
+	virtual void onCollision(game_object *go, glm::vec3 point, glm::vec3 normal);
 	virtual void update();
 	virtual void lateUpdate();
 	// virtual void _update(int index, unsigned int _start, unsigned int _end);
 	// virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
 	virtual void _copy(game_object *go) = 0;
-	Transform* transform;
+	Transform *transform;
 	int getThreadID();
 	ull getHash();
 };
@@ -87,19 +88,21 @@ class componentStorageBase
 public:
 	bool h_update;
 	bool h_lateUpdate;
+	timer update_timer;
+	float update_t;
+	float lateupdate_t;
 	string name;
 	mutex lock;
-	bool hasUpdate(){return h_update;}
-	bool hasLateUpdate(){return h_lateUpdate;}
+	bool hasUpdate() { return h_update; }
+	bool hasLateUpdate() { return h_lateUpdate; }
 	virtual void update(){};
 	virtual void lateUpdate(){};
-	virtual component* get(int i){}
-	virtual bool getv(int i){}
+	virtual component *get(int i) {}
+	virtual bool getv(int i) {}
 	virtual int size(){};
+	virtual unsigned int active(){};
 	virtual void sort(){};
 };
-
-
 
 template <typename t>
 class componentStorage : public componentStorageBase
@@ -107,50 +110,76 @@ class componentStorage : public componentStorageBase
 public:
 	deque_heap<t> data;
 
-	componentStorage(){
+	componentStorage()
+	{
+	}
+	unsigned int active()
+	{
+		return data.active;
 	}
 	int size()
 	{
 		return data.size();
 	}
 
-	component* get(int i){
-		return (component*)&(data.data[i]);
+	component *get(int i)
+	{
+		return (component *)&(data.data[i]);
 	}
-	bool getv(int i){
+	bool getv(int i)
+	{
 		return data.valid[i];
 	}
 
 	void update()
 	{
-		_parallel_for(data,[&](int i){
-			if(data.valid[i]){
-				data.data[i].update();
+		update_timer.start();
+		if (update_t > 0.1f)
+		{
+			_parallel_for(data, [&](int i) {
+				if (data.valid[i])
+				{
+					data.data[i].update();
+				}
+			});
+		}
+		else
+		{
+			int size = data.size();
+			for (int i = 0; i < size; i++)
+			{
+				if (data.valid[i])
+				{
+					data.data[i].update();
+				}
 			}
-		});
-
+		}
+		update_t = update_timer.stop();
 	}
-	void lateUpdate(){
-		_parallel_for(data,[&](int i){
-			if(data.valid[i]){
-				data.data[i].lateUpdate();
+	void lateUpdate()
+	{
+		update_timer.start();
+		if (lateupdate_t > 0.1f)
+		{
+			_parallel_for(data, [&](int i) {
+				if (data.valid[i])
+				{
+					data.data[i].lateUpdate();
+				}
+			});
+		}
+		else
+		{
+			int size = data.size();
+			for (int i = 0; i < size; i++)
+			{
+				if (data.valid[i])
+				{
+					data.data[i].lateUpdate();
+				}
 			}
-		});
-	// 	int size = this->size();
-	// 	int grain = size/concurrency::numThreads /concurrency::numThreads;
-	// 	grain = glm::max(grain,1);
-	// 	tbb::parallel_for(
-	// 		tbb::blocked_range<unsigned int>(0,size,grain),
-	// 		[&](const tbb::blocked_range<unsigned int>& r) {
-	// 			for (unsigned int i=r.begin();i<r.end();++i){
-	// 				if(data.valid[i]){
-	// 					data.data[i].lateUpdate();
-	// 				}
-	// 			}
-	// 		}
-	// 		// ,
-	// 		// update_ap
-	// 	);
+		}
+		lateupdate_t = update_timer.stop();
 	}
 };
 
@@ -167,7 +196,7 @@ inline compInfo<t> addComponentToAll(const t &c)
 		componentLock.lock();
 		if (allcomponents.find(hash) == allcomponents.end())
 		{
-			componentStorageBase * csb = (componentStorageBase *)(new componentStorage<t>());
+			componentStorageBase *csb = (componentStorageBase *)(new componentStorage<t>());
 			allcomponents[hash] = csb;
 			csb->name = typeid(t).name();
 			csb->h_update = typeid(&t::update) != typeid(&component::update);
@@ -183,7 +212,8 @@ inline compInfo<t> addComponentToAll(const t &c)
 	compStorage->lock.lock();
 	typename deque_heap<t>::ref id = compStorage->data._new();
 	compStorage->lock.unlock();
-	*id = std::move(c);
+	new(&(*id)) t(c);
+	// *id = std::move(c);
 
 	compInfo<t> ret;
 	ret.compPtr = &(*id);

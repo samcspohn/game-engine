@@ -152,7 +152,7 @@ public:
 		}
 		++active;
 		m.unlock();
-		data[ret.index] = t();
+		new(&data[ret.index]) t();
 		return ret;
 	}
 	void _delete(ref r) {
@@ -181,7 +181,9 @@ public:
 			return INFINITY;
 		return 1 - (float)avail.size() / (float)extent;
 	}
-
+	// unsigned int active(){
+		// return this->active;
+	// }
 	unsigned int size() {
 		return extent;
 	}

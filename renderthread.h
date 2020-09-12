@@ -136,9 +136,7 @@ void updateTiming()
 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
 	// eventsPollDone = true;
 }
-struct renderData{
-	glm::mat4 vp; glm::mat4 view; glm::vec3 camPos; glm::vec2 screen; glm::vec3 cullPos; glm::mat3 camInv; glm::mat4 rot; glm::mat4 proj;
-};
+
 int frameCounter = 0;
 #include "thread"
 #include <tbb/tbb.h>
@@ -239,10 +237,19 @@ void renderThreadFunc()
 
 	GLint max_buffers;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
-	cout << max_buffers << endl;
+	cout << "max storage buffer bindings: " << max_buffers << endl;
+
+
+	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &max_buffers);
+	cout << "max compute buffers: " << max_buffers << endl;
+
+
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_buffers);
+	cout << "max buffer size: " << max_buffers << endl;
+
 	GLint maxAtt = 0;
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAtt);
-	cout << maxAtt << endl;
+	cout << "max color attachements: " << maxAtt << endl;
 
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
@@ -265,7 +272,7 @@ void renderThreadFunc()
 	colors.init();
 
 	renderDone.store(true);
-	renderThreadReady.exchange(true);
+	renderThreadReady.store(true);
 
 	while (true)
 	{
@@ -301,8 +308,8 @@ void renderThreadFunc()
 
 				auto cameras = COMPONENT_LIST(_camera);
 
-				cpuTimer.start();
 				gt_.start();
+				cpuTimer.start();
 				// buffer and allocate data
 				if(TRANSFORMS.density() > 0.5){
 					GPU_TRANSFORMS->bufferData(TRANSFORMS_TO_BUFFER);
@@ -325,37 +332,27 @@ void renderThreadFunc()
 				}
 
 				transformsBuffered.store(true);
-				appendStat("transforms buffer", gt_.stop());
 				appendStat("transforms buffer cpu", cpuTimer.stop());
+				appendStat("transforms buffer", gt_.stop());
 				
-				cpuTimer.start();
+				// cpuTimer.start();
 				uint emitterInitCount = emitterInits.size();
 				prepParticles();
 
-				_camera::initPrepRender(matProgram);
-				appendStat("render init cpu", cpuTimer.stop());
+				// _camera::initPrepRender(matProgram);
+				// appendStat("render init cpu", cpuTimer.stop());
 
+				plm.gpu_pointLights->bufferData();
 
-				cpuTimer.start();
+				gt_.start();
 				updateParticles(mainCamPos,emitterInitCount);
-				appendStat("particles compute", cpuTimer.stop());
-				vector<renderData> r_d;
+				appendStat("particles compute", gt_.stop());
 				for(_camera& c : cameras->data.data){
-					cpuTimer.start();
 					gt_.start();
+					cpuTimer.start();
 					c.prepRender(matProgram);
+					appendStat("matrix compute cpu", cpuTimer.stop());
 					appendStat("matrix compute", gt_.stop());
-					appendStat("matrix compute", cpuTimer.stop());
-					r_d.push_back(renderData());
-					r_d.back().vp = c.proj * c.rot * c.view;
-					r_d.back().rot = c.rot;
-					r_d.back().view = c.view;
-					r_d.back().camPos = c.pos;
-					r_d.back().screen = c.screen;
-					r_d.back().cullPos = c.cullpos;
-					r_d.back().camInv = c.camInv;
-					r_d.back().proj = c.proj;
-
 
 					// sort particles
 					timer t;
@@ -364,12 +361,8 @@ void renderThreadFunc()
 						particle_renderer::setCamCull(c.camInv,c.cullpos);
 					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
 					appendStat("particles sort", t.stop());
-				}
 
 
-				int k = 0;
-				plm.gpu_pointLights->bufferData();
-				for(_camera& c : cameras->data.data){
 					c.render();
 				}
 				renderLock.unlock();

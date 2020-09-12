@@ -27,8 +27,11 @@ gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
 
 void initTransform(){
 	GPU_TRANSFORMS = new gpu_vector_proxy<_transform>();
+	GPU_TRANSFORMS->usage = GL_STREAM_COPY;
 	GPU_TRANSFORMS_UPDATES = new gpu_vector_proxy<_transform>();
+	GPU_TRANSFORMS_UPDATES->usage = GL_STREAM_COPY;
 	transformIds = new gpu_vector_proxy<GLuint>();
+	transformIds->usage = GL_STREAM_COPY;
 }
 
 int switchAH(int index) {

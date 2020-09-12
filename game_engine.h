@@ -93,6 +93,7 @@ void init()
 	// tbb::task_scheduler_init init;
 		concurrency::pinningObserver.observe(true);
 	audioManager::init();
+	audioSourceManager::init();
 	renderThreadReady.exchange(false);
 	renderThread = new tbb::tbb_thread(renderThreadFunc);
 	// pm = new _physicsManager();
@@ -132,7 +133,8 @@ void run()
 		for(auto & i : collisionGraph)
 			collisionLayers[i.first].clear();
 		doLoopIteration(gameEngineComponents, false);
-
+		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
+		
 		stopWatch.start();
 		tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
 		toDestroy.clear();

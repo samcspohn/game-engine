@@ -15,7 +15,8 @@ layout(std430,binding = 4) buffer e{emitter emitters[];};
 // layout(std430,binding = 5) buffer r{uint rng[];};
 layout(std430,binding = 5) buffer bp{uint burstParticles[];};
 layout(std430,binding = 6) buffer de{uint dead[];};
-layout(std430,binding = 7) buffer ed{_emission emitted[];};
+// layout(std430,binding = 7) buffer ed{_emission emitted[];};
+layout(std430,binding = 7) buffer pl{uint particleLifes[];};
 layout(std430,binding = 8) buffer ei{emitterInit emittersInits[];};
 layout(std430,binding = 9) buffer pb{_burst particleBursts[];};
 layout(std430,binding = 10) buffer lp{uint livingParticles[];};
@@ -31,7 +32,15 @@ uniform float time;
 uniform int max_particles;
 uniform uint stage;
 uniform vec3 floatingOrigin;
-shared uint garbage[130];
+// shared uint garbage[130];
+
+void setParticleLive(uint x){
+    atomicOr(particleLifes[x / 32], 1 << (x % 32));
+}
+
+void setParticleDead(uint x){
+    atomicAnd(particleLifes[x / 32], ~(1 << (x % 32)));
+}
 
 void update(uint index, float dt){
 
@@ -47,13 +56,18 @@ void update(uint index, float dt){
         p.position2 += get(p.velocity2) * dt;
     }
 
+    
     p.life -= dt / p.l;
+    // particleLifes[id] = p.life;
+
     // p.life2 -= dt / p.l;
 
     if(p.life <= 0.f)
     {
         int index = atomicAdd(atomicCounters[liveParticles],-1);
         dead[index - 1] = id;
+        setParticleDead(id);
+        // atomicAnd(particleLifes[id / 32], ~(1 << (id % 32)));
         // p.live = 0;
         p.next = -1;//p.prev = -1;
     }
@@ -84,6 +98,8 @@ void makeParticle(inout particle p, inout emitter_prototype ep, inout rng genera
     // p.rotation  = transforms[e.transform].rotation;
     p.scale = tscale.xy * ep.scale;
     p.life = 1.f;
+    
+
     p.l = max(ep.lifetime2 + gen(generator) * abs(ep.lifetime - ep.lifetime2),0.0001f);
     // p.emitter = eId;
     p.emitter_prototype = epId;
@@ -154,6 +170,9 @@ void emit(uint thread_id){
 
             // p.live = 1;
             particles[x] = p;
+            setParticleLive(x);
+            // atomicOr(particleLifes[x / 32], 1 << (x % 32));
+            // particleLifes[x] = 1.f;
         }
         e.emission -= float(uint(e.emission));
     }else{
@@ -196,13 +215,25 @@ void makeBursts(uint thread_id){
         makeParticle(p,ep,generator,p_count, e.position,lookAt(e.direction,vec3(0,1,0.000001)),e.scale, e.emitter_prototype, deltaTime, -1);
         // p.live = 1;
         particles[x] = p;
+        // particleLifes[x] = 1.f;
+        setParticleLive(x);
+        // atomicOr(particleLifes[x / 32], 1 << (x % 32));
 }
 
 void countParticles(uint thread_id){
-    if(particles[thread_id].life > 0.f){
-        uint index = uint(atomicAdd(atomicCounters[2],1));
-        livingParticles[index] = thread_id;
+    uint mask = 1;
+    uint offsetId = thread_id * 32;
+    for(int i = 0; i < 32; i++){
+       if(bool(particleLifes[thread_id] & mask)){
+            uint index = uint(atomicAdd(atomicCounters[2],1));
+            livingParticles[index] = offsetId + i;
+       }
+       mask = mask << 1;
     }
+    // if(particleLifes[thread_id] > 0.f){
+    //     uint index = uint(atomicAdd(atomicCounters[2],1));
+    //     livingParticles[index] = thread_id;
+    // }
 
 }
 

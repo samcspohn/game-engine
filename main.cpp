@@ -45,16 +45,16 @@ public:
 	// glm::vec3 rot;
 	// particle_emitter* myEmitter;
 	// glm::vec3 dir;
-	// bool hit = false;
-	// audiosource* sound;
-	// double life;
+	bool hit = false;
+	audiosource* sound;
+	double life;
 	missile() {}
 	void onStart()
 	{
 		// rot = randomSphere();
 		// hit = false;
-		numCubes.fetch_add(1);
-		// sound = transform->gameObject->getComponent<audiosource>();
+		// numCubes.fetch_add(1);
+		sound = transform->gameObject->getComponent<audiosource>();
 		// myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
 	void setBullet(const bullet& _b){
@@ -64,31 +64,31 @@ public:
 	}
 	void update()
 	{
+		if(!hit){
 			transform->move(vel * Time.deltaTime);
 			// transform->rotate(rot, Time.deltaTime * glm::radians(100.f));
 			vel += vec3(0, -9.81, 0) * Time.deltaTime;
-
-		// if(hit){
-
-		// 	numCubes.fetch_add(-1);
-		// 	// colCount++;
-		// 	// // if(length(normal) == 0)
-		// 	// vec3 normal;
-		// 	// 	normal = randomSphere();
-		// 	// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		// 	transform->gameObject->destroy();
-		// }
+		}else{
+			if(life > Time.time){
+				// numCubes.fetch_add(-1);
+				transform->gameObject->destroy();
+			}
+		}
 
 	}
 	void onCollision(game_object *go,vec3 point, vec3 normal)
 	{
-		// if(!hit && go->getComponent<missile>() == 0){
+		if(!hit){
 			// colCount++;
 			if(length(normal) == 0)
 				normal = randomSphere();
 			b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-			numCubes.fetch_add(-1);
-			transform->gameObject->destroy();
+			hit = true;
+			// sound->play(transform->getPosition());
+			life = Time.time + 2;
+		}
+			// numCubes.fetch_add(-1);
+			// transform->gameObject->destroy();
 
 			// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
 			// sound->play(transform->getPosition());
@@ -651,6 +651,8 @@ class player_sc2 : public component {
 	float fov = 80;
 	gui::window* info;
 	gui::text* fps;
+	gui::text* missileCounter;
+	gui::text* particleCounter;
 	vector<gun*> guns;
 public:
     void onStart(){
@@ -658,6 +660,10 @@ public:
 		fps = new gui::text();
 		info->adopt(fps);
 		info->name = "game info";
+		missileCounter = new gui::text();
+		info->adopt(missileCounter);
+		particleCounter = new gui::text();
+		info->adopt(particleCounter);
 		// ImGuiWindowFlags flags = 0;
 		// flags |= ImGuiWindowFlags_NoTitleBar;
 		// flags |= ImGuiWindowFlags_NoMove;
@@ -676,6 +682,8 @@ public:
 	}
     void update(){
         fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+		missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
+		particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
 
         transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
 		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
@@ -785,6 +793,15 @@ public:
     COPY(player_sc3);
 };
 
+class sun_sc : public component{
+	COPY(sun_sc);
+	public:
+	float distance = 30'000;
+	float day_cycle = 30;
+	void update(){
+		transform->setPosition(vec3(cos(Time.time / day_cycle),sin(Time.time / day_cycle),0) * distance * mat3(rotate(radians(45.f),vec3(0,0,1))));
+	}
+};
 
 int main(int argc, char **argv)
 {
@@ -799,6 +816,7 @@ int main(int argc, char **argv)
 	gunSound = audio("res/audio/explosion1.wav");
 	
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
+	_shader lampShader("res/shaders/model.vert", "res/shaders/lamp.frag");
 	_shader terrainShader("res/shaders/model.vert", "res/shaders/terrain.frag");
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
@@ -960,11 +978,16 @@ int main(int argc, char **argv)
 	//////////////////////////////////////////////////////////
 
     game_object* light = new game_object();
-    light->transform->setPosition(glm::vec3(30000));
+	light->transform->setScale(vec3(1000));
+    // light->transform->setPosition(glm::vec3(30000));
     light->addComponent<Light>()->setColor(glm::vec3(24000));
     light->getComponent<Light>()->setConstant(1.f);
     light->getComponent<Light>()->setlinear(0.000014f);
     light->getComponent<Light>()->setQuadratic(0.000007f);
+	auto sun = light->addComponent<sun_sc>();
+	sun->distance = 50'000;
+	sun->day_cycle = 10;
+	light->addComponent<_renderer>()->set(lampShader,cubeModel);
 
 	// physObj = new game_object();
 	// physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
@@ -1080,15 +1103,16 @@ int main(int argc, char **argv)
 	game_object_proto* tree_go = new game_object_proto();
 	_renderer* tree_rend = tree_go->addComponent<_renderer>();
 	tree_rend->set(modelShader,tree);
-	tree_rend->setCullSizes(0.01f,INFINITY);
+	tree_rend->setCullSizes(0.04f,INFINITY);
 	_renderer* tree_billboard = tree_go->addComponent<_renderer>();
 	_texture tree_bill_tex;
 	tree_bill_tex.namedTexture("bill1");
+	tree_bill_tex.setType("texture_diffuse");
 	waitForRenderJob([&](){
 		tree_bill_tex.t->gen(1024,1024);
 	});
 	makeBillboard(tree,tree_bill_tex,tree_billboard);
-	tree_billboard->setCullSizes(0.0f,0.01f);
+	tree_billboard->setCullSizes(0.0f,0.05f);
 	// tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
 	// int terrainsDim = 0;
 	// int terrainsDim = 16;
@@ -1210,7 +1234,7 @@ int main(int argc, char **argv)
 	ep2->emission_rate = 5.0f;
 	ep2->lifetime = 7.f;
 	ep2->maxSpeed = 1;
-	ep2->color(vec4(1, .4, 0, 0.5));
+	ep2->color(vec4(1, .4, 0, 0.5),vec4(1, .4, 0, 0.0));
 	auto pe = nanosuitMan->addComponent<particle_emitter>();
 	pe->setPrototype(ep2);
 
