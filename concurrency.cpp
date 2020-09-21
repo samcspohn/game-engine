@@ -1,5 +1,4 @@
-#pragma once
-// #include <omp.h>
+
 #include "concurrency.h"
 #include <iostream>
 #include <sched.h>

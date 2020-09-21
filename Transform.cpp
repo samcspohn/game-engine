@@ -27,8 +27,11 @@ gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
 
 void initTransform(){
 	GPU_TRANSFORMS = new gpu_vector_proxy<_transform>();
+	GPU_TRANSFORMS->usage = GL_STREAM_COPY;
 	GPU_TRANSFORMS_UPDATES = new gpu_vector_proxy<_transform>();
+	GPU_TRANSFORMS_UPDATES->usage = GL_STREAM_COPY;
 	transformIds = new gpu_vector_proxy<GLuint>();
+	transformIds->usage = GL_STREAM_COPY;
 }
 
 int switchAH(int index) {
@@ -62,12 +65,13 @@ Transform::Transform(Transform& other, game_object* go) : m() {
 	_T->scale = other.getScale();
 }
 
-Transform Transform::operator=(const Transform& t) {
-	this->_T = t._T;
-	this->gameObject = t.gameObject;
-	this->children = t.children;
-	this->parent = t.parent;
-}
+// Transform Transform::operator=(const Transform& t) {
+// 	this->_T = t._T;
+// 	this->gameObject = t.gameObject;
+// 	this->children = t.children;
+// 	this->parent = t.parent;
+// 	return *this;
+// }
 
 void Transform::lookat(glm::vec3 direction, glm::vec3 up) {
 	_T->rotation = quatLookAtLH(direction,up);

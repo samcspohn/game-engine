@@ -20,7 +20,7 @@
 #include "game_object.h"
 #include "rendering.h"
 #include "game_engine_components.h"
-#include "physics.h"
+// #include "physics.h"
 // #include "particles.h"
 #include "physics_.h"
 #include "audio.h"
@@ -39,7 +39,6 @@ bool hideMouse = true;
 atomic<bool> renderDone(false);
 atomic<bool> renderThreadReady(false);
 bool recieveMouse = true;
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
@@ -136,13 +135,25 @@ void updateTiming()
 	Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
 	// eventsPollDone = true;
 }
-struct renderData{
-	glm::mat4 vp; glm::mat4 view; glm::vec3 camPos; glm::vec2 screen; glm::vec3 cullPos; glm::mat3 camInv; glm::mat4 rot; glm::mat4 proj;
-};
+
 int frameCounter = 0;
 #include "thread"
 #include <tbb/tbb.h>
 #include <sched.h>
+
+// void GLAPIENTRY
+// MessageCallback(GLenum source,
+// 				GLenum type,
+// 				GLuint id,
+// 				GLenum severity,
+// 				GLsizei length,
+// 				const GLchar *message,
+// 				const void *userParam)
+// {
+// 	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+// 			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+// 			type, severity, message);
+// }
 
 atomic<bool> transformsBuffered;
 void renderThreadFunc()
@@ -153,7 +164,6 @@ void renderThreadFunc()
 	// CPU_SET_S( 0, size, target_mask );
 	// CPU_SET_S( 1, size, target_mask );
 	// const int err = sched_setaffinity( 0, size, target_mask );
-	
 
 	glfwInit();
 
@@ -173,31 +183,30 @@ void renderThreadFunc()
 		throw EXIT_FAILURE;
 	}
 
-/////////////////////////////////////////////////////////////
-///////////////////////// GUI ////////////////////////////////
-/////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////
+	///////////////////////// GUI ////////////////////////////////
+	/////////////////////////////////////////////////////////////
 
 	IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+	ImGui::CreateContext();
+	ImGuiIO &io = ImGui::GetIO();
+	(void)io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-
-
-    // Setup style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-    // ImGui::StyleColorsLight();
+	// Setup style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+	// ImGui::StyleColorsLight();
 
 	auto font_default = io.Fonts->AddFontDefault();
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 130");
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 130");
 
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 	if (hideMouse)
@@ -212,7 +221,6 @@ void renderThreadFunc()
 	glfwSetWindowCloseCallback(window, window_close_callback);
 
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0);
@@ -233,25 +241,36 @@ void renderThreadFunc()
 	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_CULL_FACE);
-	
 
 	Shader matProgram("res/shaders/mat.comp");
 
-	GLint max_buffers;
-	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &max_buffers);
-	cout << "max storage buffer bindings: " << max_buffers << endl;
+	GLint glIntv;
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &glIntv);
+	cout << "max storage buffer bindings: " << glIntv << endl;
 
+	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &glIntv);
+	cout << "max compute buffers: " << glIntv << endl;
 
-	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &max_buffers);
-	cout << "max compute buffers: " << max_buffers << endl;
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &glIntv);
+	cout << "max buffer size: " << glIntv << endl;
 
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,0,&glIntv);
+	cout << "max compute work group count x: " << glIntv << endl;	
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,1,&glIntv);
+	cout << "max compute work group count y: " << glIntv << endl;	
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,2,&glIntv);
+	cout << "max compute work group count z: " << glIntv << endl;	
 
-	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_buffers);
-	cout << "max buffer size: " << max_buffers << endl;
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &glIntv);
+	cout << "max compute work group size x: " << glIntv << endl;
 
 	GLint maxAtt = 0;
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAtt);
 	cout << "max color attachements: " << maxAtt << endl;
+
+	// // During init, enable debug output
+	// glEnable(GL_DEBUG_OUTPUT);
+	// glDebugMessageCallback(MessageCallback, 0);
 
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
@@ -274,7 +293,7 @@ void renderThreadFunc()
 	colors.init();
 
 	renderDone.store(true);
-	renderThreadReady.exchange(true);
+	renderThreadReady.store(true);
 
 	while (true)
 	{
@@ -283,7 +302,7 @@ void renderThreadFunc()
 		if (renderWork.size() > 0)
 		{
 			renderLock.lock();
-			renderJob* rj = renderWork.front();
+			renderJob *rj = renderWork.front();
 			renderWork.pop();
 			switch (rj->type)
 			{
@@ -292,13 +311,15 @@ void renderThreadFunc()
 
 				rj->work();
 
-				if(rj->completed == 0){
+				if (rj->completed == 0)
+				{
 					rj->completed = 1;
-					while(rj->completed != 2){
+					while (rj->completed != 2)
+					{
 						this_thread::sleep_for(1ns);
 					}
 				}
-				
+
 				break;
 			case renderNum::render:
 			{
@@ -307,15 +328,17 @@ void renderThreadFunc()
 				stopWatch.start();
 				// updateTiming();
 
-
 				auto cameras = COMPONENT_LIST(_camera);
 
-				cpuTimer.start();
 				gt_.start();
+				cpuTimer.start();
 				// buffer and allocate data
-				if(TRANSFORMS.density() > 0.5){
+				if (TRANSFORMS.density() > 0.5)
+				{
 					GPU_TRANSFORMS->bufferData(TRANSFORMS_TO_BUFFER);
-				}else{
+				}
+				else
+				{
 
 					GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
 					transformIds->bufferData(transformIdsToBuffer);
@@ -327,62 +350,47 @@ void renderThreadFunc()
 					transformIds->bindData(6);
 					GPU_TRANSFORMS_UPDATES->bindData(7);
 
-					matProgram.setInt("stage",-1);
-					matProgram.setUint("num",transformsToBuffer.size());
+					matProgram.setInt("stage", -1);
+					matProgram.setUint("num", transformsToBuffer.size());
 					glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				}
 
 				transformsBuffered.store(true);
-				appendStat("transforms buffer", gt_.stop());
 				appendStat("transforms buffer cpu", cpuTimer.stop());
-				
-				cpuTimer.start();
+				appendStat("transforms buffer", gt_.stop());
+
+				// cpuTimer.start();
 				uint emitterInitCount = emitterInits.size();
 				prepParticles();
 
-				_camera::initPrepRender(matProgram);
-				appendStat("render init cpu", cpuTimer.stop());
+				// _camera::initPrepRender(matProgram);
+				// appendStat("render init cpu", cpuTimer.stop());
 
+				plm.gpu_pointLights->bufferData();
 
-				cpuTimer.start();
-				updateParticles(mainCamPos,emitterInitCount);
-				appendStat("particles compute", cpuTimer.stop());
-				vector<renderData> r_d;
-				for(_camera& c : cameras->data.data){
-					cpuTimer.start();
+				gt_.start();
+				updateParticles(mainCamPos, emitterInitCount);
+				appendStat("particles compute", gt_.stop());
+				for (_camera &c : cameras->data.data)
+				{
 					gt_.start();
+					cpuTimer.start();
 					c.prepRender(matProgram);
+					appendStat("matrix compute cpu", cpuTimer.stop());
 					appendStat("matrix compute", gt_.stop());
-					appendStat("matrix compute", cpuTimer.stop());
-					r_d.push_back(renderData());
-					r_d.back().vp = c.proj * c.rot * c.view;
-					r_d.back().rot = c.rot;
-					r_d.back().view = c.view;
-					r_d.back().camPos = c.pos;
-					r_d.back().screen = c.screen;
-					r_d.back().cullPos = c.cullpos;
-					r_d.back().camInv = c.camInv;
-					r_d.back().proj = c.proj;
-
 
 					// sort particles
 					timer t;
 					t.start();
-					if(!c.lockFrustum)
-						particle_renderer::setCamCull(c.camInv,c.cullpos);
-					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos,c.screen);
+					if (!c.lockFrustum)
+						particle_renderer::setCamCull(c.camInv, c.cullpos);
+					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos, c.screen);
 					appendStat("particles sort", t.stop());
-				}
 
-
-				int k = 0;
-				plm.gpu_pointLights->bufferData();
-				for(_camera& c : cameras->data.data){
 					c.render();
 				}
 				renderLock.unlock();
-
 
 				/////////////////////////////////////////////////////////////
 				///////////////////////// GUI ////////////////////////////////
@@ -394,25 +402,25 @@ void renderThreadFunc()
 
 				ImGui::PushFont(font_default);
 
-				for(auto& i : gui::gui_windows){
+				for (auto &i : gui::gui_windows)
+				{
 					i->render();
 				}
 				ImGui::PopFont();
 				// Rendering
 				ImGui::Render();
 				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-				
+
 				/////////////////////////////////////////////////////////////
 				///////////////////////// GUI ////////////////////////////////
 				/////////////////////////////////////////////////////////////
 
-
 				glfwSwapBuffers(window);
-				
+
 				appendStat("render", stopWatch.stop());
 				//renderDone.store(true);
 			}
-				break;
+			break;
 			case renderNum::rquit:
 				particle_renderer::end();
 				while (gpu_buffers.size() > 0)
@@ -421,12 +429,11 @@ void renderThreadFunc()
 				}
 				destroyRendering();
 
-
 				// Cleanup gui
 				ImGui_ImplOpenGL3_Shutdown();
 				ImGui_ImplGlfw_Shutdown();
 				ImGui::DestroyContext();
-				
+
 				glFlush();
 				glfwTerminate();
 				renderThreadReady.exchange(false);
@@ -442,7 +449,7 @@ void renderThreadFunc()
 		}
 		// else
 		// {
-			this_thread::sleep_for(1ns);
+		this_thread::sleep_for(1ns);
 		// }
 	}
 }

@@ -28,19 +28,24 @@ struct audioMeta{
     }
 };
 // Position of the Listener.
-ALfloat ListenerPos[] = { 0.0, 0.0, 0.0 };
+glm::vec3 ListenerPos;
  
 // Velocity of the Listener.
 ALfloat ListenerVel[] = { 0.0, 0.0, 0.0 };
  
+
+
+
+
 // Orientation of the Listener. (first 3 elements are "at", second 3 are "up")
 // Also note that these should be units of '1'.
 ALfloat ListenerOri[] = { 0.0, 0.0, -1.0,  0.0, 1.0, 0.0 };
 namespace audioManager{
     map<string, audioMeta*> audios;
+
     void init(){
         alutInit(NULL, 0);
-        alListenerfv(AL_POSITION,    ListenerPos);
+        alListenerfv(AL_POSITION,    glm::value_ptr(ListenerPos));
         alListenerfv(AL_VELOCITY,    ListenerVel);
         alListenerfv(AL_ORIENTATION, ListenerOri);
 
@@ -58,6 +63,12 @@ namespace audioManager{
             std::cout << "max mono sources: " << attrs[i+1] << std::endl;
         }
         }
+    }
+    void updateListener(glm::vec3 pos){
+        ListenerPos = pos;
+        alListenerfv(AL_POSITION,    glm::value_ptr(ListenerPos));
+        alListenerfv(AL_VELOCITY,    ListenerVel);
+        alListenerfv(AL_ORIENTATION, ListenerOri);
     }
     void destroy(){
         for(auto& i : audios){
@@ -80,67 +91,124 @@ struct audio{
     audioMeta* a = 0;
 };
 
-mutex audiom;
- 
-class audiosource : public component{
-    ALuint Source = -1;
-    ALfloat SourcePos[3] = { 0.0, 0.0, 0.0 };
-    ALfloat SourceVel[3] = { 0.0, 0.0, 0.0 };
-    ALfloat pitch = 1;
-    audio a;
+
+class audioSource{
 public:
-    COPY(audiosource);
-    audiosource(){
-        Source = -1;
-        a.a = 0;
+    ALuint Source = -1;
+    atomic<bool>* isPlaying;
+    audioSource(){
+         alGenSources(1, &Source);
     }
-    audiosource(const audiosource& as){
-        Source = -1;
-        a = as.a;
-    }
-    void setPitch(float p){
-        pitch = p;
-        alSourcef(Source, AL_PITCH, pitch);
+    audioSource(const audioSource& as){
+        alGenSources(1, &Source);
     }
     void play(){
         alSourcePlay(Source);
     }
-    void play(glm::vec3 pos){
-        SourcePos[0] = pos.x;
-        SourcePos[1] = pos.y;
-        SourcePos[2] = pos.z;
-        alSourcefv(Source, AL_POSITION, SourcePos);
-        alSourcef(Source, AL_GAIN, glm::min(1.0, 300.0 / length(pos)));
+    void stop(){
+        // if(isPlaying != 0){
+            // *isPlaying = false;
+            alSourceStop(Source);
+        // }
+        // isPlaying = 0;
+    }
+    void play(glm::vec3 pos, audio& a, float pitch, float gain){
+        alSourcei(Source, AL_BUFFER, a.a->Buffer);
+        alSourcef(Source, AL_PITCH, pitch);
+        alSourcef(Source, AL_GAIN, gain);
+        alSourcefv(Source, AL_POSITION, glm::value_ptr(pos));
+        alSourcefv(Source, AL_VELOCITY, ListenerVel);
+        alSourcei(Source, AL_LOOPING, a.a->loop);
+
+        // alSourcefv(Source, AL_POSITION, glm::value_ptr(pos));
+        // alSourcef(Source, AL_GAIN, glm::min(1.0, 300.0 / length(pos)));
         alSourcePlay(Source);
     }
-    bool isPlaying(){
+    bool _isPlaying(){
         ALint isp;
         alGetSourcei(Source,AL_SOURCE_STATE,&isp);
+        // *isPlaying = (bool)isp;
         return (bool)isp;
+    }
+};
+
+namespace audioSourceManager {
+    mutex audiom;
+
+    int maxSources;
+    std::deque<audioSource> sources;
+    std::deque<audioSource*> inUse;
+    std::set<audioSource*> notInUse;
+
+    void init(){
+        while(true)
+        {
+            auto as = audioSource();
+            if(alGetError() != AL_NO_ERROR){
+                break;
+            }
+            sources.push_back(as);
+            notInUse.emplace(&sources.back());
+        } 
+        maxSources = sources.size();
+    }
+
+    audioSource* getSource(atomic<bool>* playing){
+        audiom.lock();
+        if(inUse.size() >= maxSources){
+            inUse.front()->stop();
+            notInUse.emplace(inUse.front());
+            inUse.pop_front();
+        }
+        audioSource* ret;
+        ret = *notInUse.begin();
+        ret->isPlaying = playing;
+        notInUse.erase(ret);
+        inUse.push_back(ret);
+        audiom.unlock();
+        return ret;
+    }
+}
+ 
+
+class audiosource : public component{
+
+    ALfloat SourcePos[3] = { 0.0, 0.0, 0.0 };
+    ALfloat SourceVel[3] = { 0.0, 0.0, 0.0 };
+    ALfloat pitch = 1;
+    ALfloat gain = 1;
+    audio a;
+    atomic<bool> isPlaying = {false};
+public:
+    COPY(audiosource);
+    audiosource() : isPlaying(false) {};
+    audiosource(const audiosource& as) : isPlaying(false), a(as.a) {};
+    void setPitch(float p){
+        pitch = p;
+    }
+    void play(){
+        auto s = audioSourceManager::getSource(&isPlaying);
+        s->play(transform->getPosition(),a,pitch,gain);
+        // alSourcePlay(Source);
+    }
+    void play(glm::vec3 pos){
+        auto s = audioSourceManager::getSource(&isPlaying);
+        s->play(pos,a,pitch,glm::min(1.0, 10.0 / length(pos - ListenerPos)) * gain);
+
+    }
+    
+    bool _isPlaying(){
+        return isPlaying;
     }
     void set(audio& _a){
         this->a = _a;
-        if(Source != -1){
-            alDeleteSources(1, &Source);
-        }
-        alGenSources(1, &Source);
-        if(alGetError() != AL_NO_ERROR)
-            cout << "could not gen source" << endl;
-        alSourcei(Source, AL_BUFFER, a.a->Buffer);
-        alSourcef(Source, AL_PITCH, pitch);
-        alSourcef(Source, AL_GAIN, 0.7);
-        alSourcefv(Source, AL_POSITION, SourcePos);
-        alSourcefv(Source, AL_VELOCITY, SourceVel);
-        alSourcei(Source, AL_LOOPING, a.a->loop);
-
     }
     void onStart(){
         if(a.a != 0)
             set(this->a);
     }
     void onDestroy(){
-        if(Source != -1){
-            alDeleteSources(1, &Source);
-        }
+
     }
 };
+

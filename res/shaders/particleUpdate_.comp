@@ -1,7 +1,7 @@
 #version 430 core
 
 #extension GL_ARB_compute_shader : enable
-#extension GL_ARB_shader_storage_buffer_object : enable
+// #extension GL_ARB_shader_storage_buffer_object : enable
 #include "util.glsl"
 #include "particle.glsl"
 #include "transform.glsl"
@@ -13,13 +13,14 @@ layout(std430,binding = 2) buffer p{particle particles[];};//
 layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];}; //
 layout(std430,binding = 4) buffer e{emitter emitters[];};//
 layout(std430,binding = 6) buffer de{uint dead[];};//
-layout(std430,binding = 7) buffer pl{float particleLifes[];};
+layout(std430,binding = 7) buffer pl{uint particleLifes[];};
 layout(std430,binding = 10) buffer lp{uint livingParticles[];};//
 
 const uint liveParticles = 0;
 const uint burstCounter = 1;
 const uint emittedCounter = 2;
 
+uniform uint offset;
 uniform uint count;
 uniform uint burstOffset;
 uniform float deltaTime;
@@ -27,6 +28,11 @@ uniform float time;
 uniform int max_particles;
 uniform uint stage;
 uniform vec3 floatingOrigin;
+
+// void setParticleDead(uint x){
+//     atomicAnd(particleLifes[x / 32], ~(1 << (x % 32)));
+// }
+
 
 void update(uint index, float dt){
 
@@ -43,7 +49,7 @@ void update(uint index, float dt){
     }
 
     p.life -= dt / p.l;
-    particleLifes[id] = p.life;
+    // particleLifes[id] = p.life;
 
     // p.life2 -= dt / p.l;
 
@@ -52,6 +58,8 @@ void update(uint index, float dt){
         int index = atomicAdd(atomicCounters[liveParticles],-1);
         dead[index - 1] = id;
         // p.live = 0;
+        particleLifes[id] = 0;
+        // setParticleDead(id);
         p.next = -1;//p.prev = -1;
     }
 
@@ -59,15 +67,23 @@ void update(uint index, float dt){
 }
 
 void countParticles(uint thread_id){
+    // uint mask = 1;
+    // uint offsetId = thread_id * 32;
+    // for(int i = 0; i < 32; i++){
+    //    if(bool(particleLifes[thread_id] & mask)){
+    //         uint index = uint(atomicAdd(atomicCounters[2],1));
+    //         livingParticles[index] = offsetId + i;
+    //    }
+    //    mask = mask << 1;
+    // }
     if(particleLifes[thread_id] > 0.f){
         uint index = uint(atomicAdd(atomicCounters[2],1));
         livingParticles[index] = thread_id;
     }
-
 }
 
 
-layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
+layout( local_size_x = 256,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
     if(gid < count){

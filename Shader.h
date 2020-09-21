@@ -14,105 +14,105 @@
 using namespace std;
 
 
-struct shaderVariable {
-	int type = -1;
-	union {
-		//constants
-		GLfloat f;
-		GLint i;
-		GLuint ui;
-		glm::vec3 v3;
-		glm::vec2 v2;
-		glm::vec4 v4;
-		glm::mat4 m4;
-		glm::mat3 m3;
+// struct shaderVariable {
+// 	int type = -1;
+// 	union {
+// 		//constants
+// 		GLfloat f;
+// 		GLint i;
+// 		GLuint ui;
+// 		glm::vec3 v3;
+// 		glm::vec2 v2;
+// 		glm::vec4 v4;
+// 		glm::mat4 m4;
+// 		glm::mat3 m3;
 
-		//references
-		GLfloat* fp;
-		GLint* ip;
-		GLuint* uip;
-		glm::vec3* v3p;
-		glm::vec2* v2p;
-		glm::vec4* v4p;
-		glm::mat4* m4p;
-		glm::mat3* m3p;
+// 		//references
+// 		GLfloat* fp;
+// 		GLint* ip;
+// 		GLuint* uip;
+// 		glm::vec3* v3p;
+// 		glm::vec2* v2p;
+// 		glm::vec4* v4p;
+// 		glm::mat4* m4p;
+// 		glm::mat3* m3p;
 
-	};
-	shaderVariable operator=(int _i) {
-		if (type != 1 || type != -1)
-			throw "mismatched types";
-		type = 1;
-		i = _i;
-	}
-	shaderVariable operator=(float _f) {
-		type = 0;
-		f = _f;
-	}
-	shaderVariable operator=(unsigned int _ui) {
-		type = 2;
-		ui = _ui;
-	}
-	shaderVariable operator=(glm::vec3 _v3) {
-		type = 3;
-		v3 = _v3;
-	}
-	shaderVariable operator=(glm::vec2 _v2) {
-		type = 4;
-		v2 = _v2;
-	}
-	shaderVariable operator=(glm::vec4 _v4) {
-		type = 5;
-		v4 = _v4;
-	}
-	shaderVariable operator=(glm::mat4 _m4) {
-		type = 6;
-		m4 = _m4;
-	}
-	shaderVariable operator=(glm::mat3 _m3) {
-		type = 7;
-		m3 = _m3;
-	}
-	shaderVariable operator=(int* _i) {
-		if (type != 1 || type != -1)
-			throw "mismatched types";
-		type = 8;
-		ip = _i;
-	}
-	shaderVariable operator=(float* _f) {
-		type = 9;
-		fp = _f;
-	}
-	shaderVariable operator=(unsigned int* _ui) {
-		type = 10;
-		uip = _ui;
-	}
-	shaderVariable operator=(glm::vec3* _v3) {
-		type = 11;
-		v3p = _v3;
-	}
-	shaderVariable operator=(glm::vec2* _v2) {
-		type = 12;
-		v2p = _v2;
-	}
-	shaderVariable operator=(glm::vec4* _v4) {
-		type = 13;
-		v4p = _v4;
-	}
-	shaderVariable operator=(glm::mat4 *_m4) {
-		type = 14;
-		m4p = _m4;
-	}
-	shaderVariable operator=(glm::mat3 *_m3) {
-		type = 15;
-		m3p = _m3;
-	}
+// 	};
+// 	shaderVariable operator=(int _i) {
+// 		if (type != 1 || type != -1)
+// 			throw "mismatched types";
+// 		type = 1;
+// 		i = _i;
+// 	}
+// 	shaderVariable operator=(float _f) {
+// 		type = 0;
+// 		f = _f;
+// 	}
+// 	shaderVariable operator=(unsigned int _ui) {
+// 		type = 2;
+// 		ui = _ui;
+// 	}
+// 	shaderVariable operator=(glm::vec3 _v3) {
+// 		type = 3;
+// 		v3 = _v3;
+// 	}
+// 	shaderVariable operator=(glm::vec2 _v2) {
+// 		type = 4;
+// 		v2 = _v2;
+// 	}
+// 	shaderVariable operator=(glm::vec4 _v4) {
+// 		type = 5;
+// 		v4 = _v4;
+// 	}
+// 	shaderVariable operator=(glm::mat4 _m4) {
+// 		type = 6;
+// 		m4 = _m4;
+// 	}
+// 	shaderVariable operator=(glm::mat3 _m3) {
+// 		type = 7;
+// 		m3 = _m3;
+// 	}
+// 	shaderVariable operator=(int* _i) {
+// 		if (type != 1 || type != -1)
+// 			throw "mismatched types";
+// 		type = 8;
+// 		ip = _i;
+// 	}
+// 	shaderVariable operator=(float* _f) {
+// 		type = 9;
+// 		fp = _f;
+// 	}
+// 	shaderVariable operator=(unsigned int* _ui) {
+// 		type = 10;
+// 		uip = _ui;
+// 	}
+// 	shaderVariable operator=(glm::vec3* _v3) {
+// 		type = 11;
+// 		v3p = _v3;
+// 	}
+// 	shaderVariable operator=(glm::vec2* _v2) {
+// 		type = 12;
+// 		v2p = _v2;
+// 	}
+// 	shaderVariable operator=(glm::vec4* _v4) {
+// 		type = 13;
+// 		v4p = _v4;
+// 	}
+// 	shaderVariable operator=(glm::mat4 *_m4) {
+// 		type = 14;
+// 		m4p = _m4;
+// 	}
+// 	shaderVariable operator=(glm::mat3 *_m3) {
+// 		type = 15;
+// 		m3p = _m3;
+// 	}
 
-	void data() {
-		switch (this->type) {
+// 	void data() {
+// 		switch (this->type) {
 
-		}
-	}
-};
+// 		}
+// 	}
+// };
 
 
 struct texArray{
@@ -144,9 +144,9 @@ struct texArray{
 	}
 };
 
-class shaderVariables {
-	map<string, shaderVariable> variables;
-};
+// class shaderVariables {
+// 	map<string, shaderVariable> variables;
+// };
 
 class Shader
 {

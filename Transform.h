@@ -29,14 +29,6 @@ struct _transform {
 	void translate(glm::vec3 translation);
 	void rotate(glm::vec3 axis, float radians);
 };
-
-
-struct data_transforms{
-	deque<glm::vec3> positions;
-	deque<glm::quat> rotations;
-	deque<glm::vec3> scales;
-};
-
 extern atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 extern deque_heap<_transform> TRANSFORMS;
 extern vector<_transform> TRANSFORMS_TO_BUFFER;
@@ -64,7 +56,7 @@ public:
 	Transform(game_object* g);
 	Transform(Transform& other, game_object* go);
 
-	Transform operator=(const Transform& t);
+	// Transform operator=(const Transform& t);
 	void lookat(glm::vec3 lookatPoint, glm::vec3 up);
 	glm::vec3 forward();
 	glm::vec3 right();

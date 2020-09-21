@@ -109,3 +109,4 @@ float life(inout d item){
 void life(inout d item, float l){
     item.protoID_life = (item.protoID_life & 0xffff0000) | (floatBitsToUint(l) >> 16);
 }
+
