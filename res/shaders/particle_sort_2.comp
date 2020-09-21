@@ -5,7 +5,7 @@
 
 
 
-const uint WG_SIZE = 128;
+const uint WG_SIZE = 256;
 const uint N_GROUPS = 256;
 const uint RADIX = 12;
 const uint BUCK = 1 << RADIX;
@@ -41,9 +41,9 @@ const uint numKeys = 2048;
 shared uint _keys[numKeys];
 shared uint buckets[2048]; // 12 bits
 shared uint ids[numKeys];
-shared uint local_sums[128];
+shared uint local_sums[256];
 
-const uint workSize = 2048 / 128;
+const uint workSize = 2048 / 256;
 void subSort(uint g_id){
     
     // 2048 / 128 = 16
@@ -52,8 +52,8 @@ void subSort(uint g_id){
     uint start = l_id * workSize;
     uint end = start + workSize;
 
-    uint buckStart = l_id * 16;
-    uint buckEnd = buckStart + 16;
+    uint buckStart = l_id * 8;
+    uint buckEnd = buckStart + 8;
 
     uint globalOffset = numKeys * w_id;
     for(uint i = buckStart; i < buckEnd; ++i){
@@ -86,7 +86,7 @@ barrier();
     if(l_id == 0){
         uint temp = globalOffset +  local_sums[0];
         local_sums[0] = globalOffset;
-        for(uint i = 1; i < 128; i++){
+        for(uint i = 1; i < 256; i++){
             uint temp2 = local_sums[i];
             local_sums[i] = temp;
             temp += temp2;
@@ -168,7 +168,7 @@ uint convertFloatToClamped(float f){
     return uint(f * 32768 + 32768);
 }
 
-layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;
+layout( local_size_x = 256,  local_size_y = 1, local_size_z = 1) in;
 void main () {
     uint gid = gl_GlobalInvocationID.x;
     uint index;

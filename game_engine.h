@@ -1,6 +1,7 @@
 
 #pragma once
 #include "renderthread.h"
+#include "physics2.h"
 #include <tbb/tbb_thread.h>
 // #include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
@@ -91,8 +92,9 @@ void init()
 {
 	
 	// tbb::task_scheduler_init init;
-		concurrency::pinningObserver.observe(true);
+		// concurrency::pinningObserver.observe(true);
 	audioManager::init();
+	audioSourceManager::init();
 	renderThreadReady.exchange(false);
 	renderThread = new tbb::tbb_thread(renderThreadFunc);
 	// pm = new _physicsManager();
@@ -118,8 +120,8 @@ void run()
 	timer stopWatch;
 	copyWorkers = COMPONENT_LIST(copyBuffers);
 	// eventsPollDone = true;
-	for(auto & i : collisionGraph)
-		collisionLayers[i.first].clear();
+	// for(auto & i : collisionGraph)
+	// 	collisionLayers[i.first].clear();
 
 	timer gameLoopTotal;
 	timer gameLoopMain;
@@ -129,30 +131,34 @@ void run()
 		gameLoopMain.start();
 		// scripting
 		doLoopIteration(gameComponents);
-		for(auto & i : collisionGraph)
-			collisionLayers[i.first].clear();
+		// for(auto & i : collisionGraph)
+		// 	collisionLayers[i.first].clear();
 		doLoopIteration(gameEngineComponents, false);
+		
+		// stopWatch.start();
+		// auto colliders = COMPONENT_LIST(collider2);
+		// for(int i = 0; i < colliders->size(); i++){
+		// 	if(colliders->getv(i)){
+		// 		colliders->data.data[i]._Update();
+		// 	}
+		// }
+		// appendStat("collider2 update",stopWatch.stop());
+
+
+		// stopWatch.start();
+		// updateColliders();
+		// appendStat("update colliders",stopWatch.stop());
+
+		cleanUpColliderNodes();
 
 		stopWatch.start();
+		calcCollisions();
+		appendStat("calc collisions",stopWatch.stop());
 		
-		// std::for_each(
-		// 	std::execution::par_unseq,
-		// 	toDestroy.begin(),
-		// 	toDestroy.end(),
-		// 	[](auto&& g){g->_destroy();});
-		try{
-			tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
-		}catch(...){
-			set<game_object*> gos;
-			for(auto &i : toDestroy){
-				if(gos.find(i) != gos.end()){
-					cout << "found duplicate" << endl;
-					throw "found duplicate";
-					terminate();
-				}
-				gos.emplace(i);
-			}
-		}
+		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
+		
+		stopWatch.start();
+		tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
 		toDestroy.clear();
 		appendStat("destroy deffered",stopWatch.stop());
 		appendStat("game loop main",gameLoopMain.stop());
@@ -257,7 +263,7 @@ void run()
 	log("end of program");
 	waitForRenderJob([&](){});
 	
-	concurrency::pinningObserver.observe(false);
+	// concurrency::pinningObserver.observe(false);
 
 	rootGameObject->destroy();
 	destroyAllComponents();

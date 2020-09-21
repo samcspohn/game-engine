@@ -74,6 +74,14 @@
         "compare": "cpp",
         "concepts": "cpp",
         "stop_token": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "cassert": "cpp",
+        "cerrno": "cpp",
+        "cfloat": "cpp",
+        "climits": "cpp",
+        "ios": "cpp",
+        "locale": "cpp",
+        "queue": "cpp",
+        "cstdbool": "cpp"
     }
 }

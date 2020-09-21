@@ -34,6 +34,7 @@ template<typename t>
 class gpu_vector : public gpu_vector_base{
 public:
 	gpu_vector() {
+		usage = GL_DYNAMIC_DRAW;
 		id = this->gpu_vector_base::idGenerator.fetch_add(1);
 		gpu_buffers.insert(std::pair<int,gpu_vector_base*>(id,this));
 	}
@@ -55,7 +56,7 @@ public:
 	void _init() {
 		glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		inited = true;
 	}
@@ -79,13 +80,14 @@ public:
 	mutex lock;
 	GLint maxSize = 1;
 	GLuint bufferId = -1;
+	GLenum usage;
 	vector<t>* storage;
 
 	void realloc() {
 		// glDeleteBuffers(1, &bufferId);
 		// glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 	void bufferData() {
@@ -143,6 +145,7 @@ class gpu_vector_proxy : public gpu_vector_base{
 	}
 public:
 	gpu_vector_proxy() {
+		usage = GL_DYNAMIC_DRAW;
 		id = this->gpu_vector_base::idGenerator.fetch_add(1);
 		gpu_buffers.insert(std::pair<int,gpu_vector_base*>(id,this));
 	}
@@ -153,7 +156,7 @@ public:
 	void _init() {
 		glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		inited = true;
 	}
@@ -170,19 +173,21 @@ public:
 	mutex lock;
 	GLint maxSize = 1;
 	GLuint bufferId = -1;
+	GLenum usage;
 
 	void realloc() {
 		// glDeleteBuffers(1, &bufferId);
 		// glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		cout <<"gpu_vector " << id << " realloc err: " << glGetError() << endl;
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 	void realloc(uint oldSize) {
 		GLuint newId;
 		glGenBuffers(1, &newId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, newId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 		glBindBuffer(GL_COPY_READ_BUFFER,bufferId);

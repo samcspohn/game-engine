@@ -11,11 +11,11 @@
 #define vector(name, type ,_binding) layout(std430,binding = _binding) buffer _name{uint size; type name[];}
 
 
-struct __renderer {
+struct renderer {
 	uint transform;
 	uint id;
 };
-struct __renderMeta{
+struct renderMeta{
 	float radius;
 	float min_;
 	float max_;
@@ -23,10 +23,10 @@ struct __renderMeta{
 };
 
 layout(std430,binding = 0) buffer t{_transform transforms[];};
-layout(std430,binding = 1) buffer r{__renderer renderers[];};
+layout(std430,binding = 1) buffer r{renderer renderers[];};
 layout(std430, binding = 3) buffer _m_buffs{matrix matrixes[];};
 layout(std430,binding = 5) buffer o{uint offsets[];};
-layout(std430,binding = 8) buffer rm{__renderMeta renderMetas[];};
+layout(std430,binding = 8) buffer rm{renderMeta renderMetas[];};
 layout(std430,binding = 6) buffer it{uint transformIds[];};
 layout(std430,binding = 7) buffer ttc{_transform transformsToCopy[];};
 

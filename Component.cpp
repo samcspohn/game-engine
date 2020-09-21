@@ -2,7 +2,7 @@
 #define ull unsigned long long
 
 void compItr::erase(){};
-component* compItr::getComponent(){};
+component* compItr::getComponent(){ return 0; };
 
 vector<int> numbers = {0};
 void component::onStart() {}
@@ -38,8 +38,3 @@ void destroyAllComponents(){
 
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
 
-#define COPY(component_type)                     \
-	void component_type::_copy(game_object *go)                  \
-	{                                            \
-		go->dupComponent(component_type(*this)); \
-	}

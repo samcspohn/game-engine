@@ -42,9 +42,7 @@ public:
 
 class game_object;
 
-// extern mutex destroyLock;
-// extern std::vector<game_object*> toDestroy;
-extern tbb::concurrent_vector<game_object*> toDestroy;
+extern tbb::concurrent_unordered_set<game_object*> toDestroy;
 
 class game_object
 {
@@ -53,8 +51,8 @@ class game_object
 	bool colliding = false;
 
 	map<component *, compItr *> components;
-	~game_object() { };
-	atomic<bool> destroyed;
+	~game_object() { destroyed = false; };
+	bool destroyed = false;
 	//friend component;
 	_renderer *renderer = 0;
 	friend _renderer;
@@ -186,11 +184,7 @@ public:
 
 	void destroy()
 	{
-		// destroyLock.lock();
-		if(!this->destroyed.exchange(true)){
-			toDestroy.emplace_back(this);
-		}
-		// destroyLock.unlock();
+		toDestroy.insert(this);
 		// lock.lock();
 		// if(this->colliding){
 		// 	this->destroyed = true;
@@ -268,11 +262,11 @@ public:
 	void _destroy()
 	{
 		lock.lock();
-		// if(this->colliding){
-		// 	this->destroyed = true;
-		// 	lock.unlock();
-		// 	return;
-		// }
+		if(this->colliding){
+			this->destroyed = true;
+			lock.unlock();
+			return;
+		}
 		// if(this->destroyed){
 		// 	lock.unlock();
 		// 	return;
@@ -287,7 +281,7 @@ public:
 		}
 		while (transform->getChildren().size() > 0)
 		{
-			transform->getChildren().front()->gameObject->_destroy();
+			transform->getChildren().front()->gameObject->destroy();
 		}
 		transform->_destroy();
 		lock.unlock();

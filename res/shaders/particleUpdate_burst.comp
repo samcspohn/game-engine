@@ -1,7 +1,7 @@
 #version 430 core
 
 #extension GL_ARB_compute_shader : enable
-#extension GL_ARB_shader_storage_buffer_object : enable
+// #extension GL_ARB_shader_storage_buffer_object : enable
 #include "util.glsl"
 #include "particle.glsl"
 #include "transform.glsl"
@@ -15,7 +15,7 @@ layout(std430,binding = 3) buffer ep{emitter_prototype prototypes[];};
 layout(std430,binding = 5) buffer bp{uint burstParticles[];};
 layout(std430,binding = 6) buffer de{uint dead[];};
 // layout(std430,binding = 7) buffer ed{_emission emitted[];};
-layout(std430,binding = 7) buffer pl{float particleLifes[];};
+layout(std430,binding = 7) buffer pl{uint particleLifes[];};
 layout(std430,binding = 9) buffer pb{_burst particleBursts[];};
 
 const uint liveParticles = 0;
@@ -29,6 +29,10 @@ uniform float time;
 uniform int max_particles;
 uniform uint stage;
 uniform vec3 floatingOrigin;
+
+// void setParticleLive(uint x){
+//     atomicOr(particleLifes[x / 32], 1 << (x % 32));
+// }
 
 void makeParticle(inout particle p, inout emitter_prototype ep, inout rng generator, inout float particle_count, vec3 tpos, vec4 trot, vec3 tscale, uint epId, float dt, uint eId){
 
@@ -89,7 +93,8 @@ void makeBursts(uint thread_id){
         makeParticle(p,ep,generator,p_count, e.position,lookAt(e.direction,vec3(0,1,0.000001)),e.scale, e.emitter_prototype, deltaTime, -1);
         // p.live = 1;
         particles[x] = p;
-        particleLifes[x] = 1.f;
+        particleLifes[x] = 1;
+        // setParticleLive(x);
 }
 
 
