@@ -96,6 +96,9 @@ bool testAABB(const AABB2 &a, const AABB2 &b)
     if(a.max.z < b.min.z || a.min.z > b.max.z) return false;
     return true;
 }
+bool testOBBHeightMap(OBB& a, vector<float>& h){
+    return a.c.y < 0.f;
+}
 
 #define EPSILON 0.00001
 int TestOBBOBB(OBB &a, OBB &b)
