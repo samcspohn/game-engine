@@ -1,7 +1,8 @@
 
 #pragma once
 #include "renderthread.h"
-#include "physics2.h"
+// #include "physics2.h"
+#include "physics.h"
 #include <tbb/tbb_thread.h>
 // #include "tbb/task_scheduler_init.h"
 // #include <GL/glew.h>
@@ -131,29 +132,9 @@ void run()
 		gameLoopMain.start();
 		// scripting
 		doLoopIteration(gameComponents);
-		// for(auto & i : collisionGraph)
-		// 	collisionLayers[i.first].clear();
+		for(auto & i : collisionGraph)
+			collisionLayers[i.first].clear();
 		doLoopIteration(gameEngineComponents, false);
-		
-		// stopWatch.start();
-		// auto colliders = COMPONENT_LIST(collider2);
-		// for(int i = 0; i < colliders->size(); i++){
-		// 	if(colliders->getv(i)){
-		// 		colliders->data.data[i]._Update();
-		// 	}
-		// }
-		// appendStat("collider2 update",stopWatch.stop());
-
-
-		// stopWatch.start();
-		// updateColliders();
-		// appendStat("update colliders",stopWatch.stop());
-
-		cleanUpColliderNodes();
-
-		stopWatch.start();
-		calcCollisions();
-		appendStat("calc collisions",stopWatch.stop());
 		
 		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
 		
@@ -164,9 +145,9 @@ void run()
 		appendStat("game loop main",gameLoopMain.stop());
 
 
+		stopWatch.start();
 		waitForRenderJob([](){updateTiming();});
 
-		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render",stopWatch.stop());
 

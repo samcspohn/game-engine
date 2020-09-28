@@ -35,7 +35,7 @@ struct bullet {
 
 map<string, bullet> bullets;
 
-
+audio explosionSound;
 class missile : public component
 {
 public:
@@ -46,7 +46,7 @@ public:
 	// particle_emitter* myEmitter;
 	// glm::vec3 dir;
 	bool hit = false;
-	audiosource* sound;
+	// audiosource* sound;
 	double life;
 	missile() {}
 	void onStart()
@@ -54,7 +54,7 @@ public:
 		// rot = randomSphere();
 		// hit = false;
 		// numCubes.fetch_add(1);
-		sound = transform->gameObject->getComponent<audiosource>();
+		// sound = transform->gameObject->getComponent<audiosource>();
 		// myEmitter = transform->gameObject->getComponent<particle_emitter>();
 	}
 	void setBullet(const bullet& _b){
@@ -84,6 +84,7 @@ public:
 				normal = randomSphere();
 			b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
 			hit = true;
+			// gunSound.play(transform->getPosition(),1.f,10.0 / length2(transform->getPosition() - ListenerPos));
 			// sound->play(transform->getPosition());
 			life = Time.time + 2;
 			transform->gameObject->destroy();
@@ -809,10 +810,10 @@ int main(int argc, char **argv)
 		maxGameDuration = (float)stoi(argv[1]);
 
 
-	oct_root = new oct_node();
-	oct_root->aabb  = AABB2(1e25);
-	oct_root->leaf = true;
-	oct_root->c = vec3(0);
+	// oct_root = new oct_node();
+	// oct_root->aabb  = AABB2(1e25);
+	// oct_root->leaf = true;
+	// oct_root->c = vec3(0);
 	hideMouse = false;
 	
 	cout << sizeof(tbb::spin_mutex) << " : " << sizeof(tbb::mutex) << endl;
@@ -964,8 +965,8 @@ int main(int argc, char **argv)
 
 	game_object_proto* bomb_proto = new game_object_proto();
 	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
-	bomb_proto->addComponent<collider2>()->setLayer(0);
-	bomb_proto->getComponent<collider2>()->dim = vec3(0.4f);
+	bomb_proto->addComponent<collider>()->setLayer(0);
+	bomb_proto->getComponent<collider>()->dim = vec3(0.4f);
 	// bomb_proto->addComponent<physicsObject>();
 	// bomb_proto->addComponent<audiosource>()->set(gunSound);
 	bomb_proto->addComponent<particle_emitter>();
@@ -974,7 +975,7 @@ int main(int argc, char **argv)
 	bullets["bomb"] = bomb;
 
 	game_object_proto* laser_proto = new game_object_proto();
-	laser_proto->addComponent<collider2>()->setLayer(0);
+	laser_proto->addComponent<collider>()->setLayer(0);
 	laser_proto->addComponent<particle_emitter>();
 	laser.proto = laser_proto;
 	laser_proto->addComponent<missile>()->setBullet(laser);
@@ -1219,8 +1220,8 @@ int main(int argc, char **argv)
 	g->speed = 100;
 	g->ammo = bullets["bomb"].proto;
 	shooter->addComponent<autoShooter>();
-	shooter->addComponent<collider2>()->setLayer(0);
-	shooter->getComponent<collider2>()->dim = vec3(2,1,18);
+	shooter->addComponent<collider>()->setLayer(0);
+	shooter->getComponent<collider>()->dim = vec3(2,1,18);
 	// shooter->transform->setScale(vec3(6));
 	game_object *go = new game_object(*shooter);
 
@@ -1248,7 +1249,7 @@ int main(int argc, char **argv)
 	proto2->addComponent<spinner>();
 	proto2->addComponent<_renderer>();
 	// proto2->addComponent<rigidBody>()->gravity = false;
-	proto2->addComponent<collider2>()->setLayer(1);
+	proto2->addComponent<collider>()->setLayer(1);
 	// proto2->addComponent<cube_sc>();
 	proto2->getComponent<_renderer>()->set(modelShader, cubeModel);
 	proto2->addComponent<particle_emitter>();

@@ -88,6 +88,7 @@ struct audio{
             a = audioManager::audios.at(file);
         }
     }
+    void play(vec3 pos, float pitch, float gain);
     audioMeta* a = 0;
 };
 
@@ -168,6 +169,21 @@ namespace audioSourceManager {
         audiom.unlock();
         return ret;
     }
+     audioSource* getSource(){
+        audiom.lock();
+        if(inUse.size() >= maxSources){
+            inUse.front()->stop();
+            notInUse.emplace(inUse.front());
+            inUse.pop_front();
+        }
+        audioSource* ret;
+        ret = *notInUse.begin();
+        ret->isPlaying = 0;
+        notInUse.erase(ret);
+        inUse.push_back(ret);
+        audiom.unlock();
+        return ret;
+    }
 }
  
 
@@ -211,4 +227,9 @@ public:
 
     }
 };
+
+void audio::play(vec3 pos, float pitch, float gain){
+    auto s = audioSourceManager::getSource();
+    s->play(pos,*this,pitch,gain);
+}
 
