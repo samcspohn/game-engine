@@ -83,13 +83,6 @@ public:
 	GLenum usage;
 	vector<t>* storage;
 
-	void realloc() {
-		// glDeleteBuffers(1, &bufferId);
-		// glGenBuffers(1, &bufferId);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	}
 	void bufferData() {
 		lock.lock();
 		if (!inited)
@@ -134,6 +127,15 @@ private:
 		if (ownsStorage)
 			delete storage;
 	}
+
+	void realloc() {
+		// glDeleteBuffers(1, &bufferId);
+		// glGenBuffers(1, &bufferId);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
 	bool ownsStorage = false;
 };
 
@@ -175,30 +177,7 @@ public:
 	GLuint bufferId = -1;
 	GLenum usage;
 
-	void realloc() {
-		// glDeleteBuffers(1, &bufferId);
-		// glGenBuffers(1, &bufferId);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
-		cout <<"gpu_vector " << id << " realloc err: " << glGetError() << endl;
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	}
-	void realloc(uint oldSize) {
-		GLuint newId;
-		glGenBuffers(1, &newId);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, newId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-		glBindBuffer(GL_COPY_READ_BUFFER,bufferId);
-		glBindBuffer(GL_COPY_WRITE_BUFFER,newId);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER,GL_COPY_WRITE_BUFFER,0,0,sizeof(t)*oldSize);
-
-		glDeleteBuffers(1, &bufferId);
-		this->bufferId = newId;
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-	}
 	void bufferData(vector<t>& data) {
 		lock.lock();
 		if (!inited)
@@ -276,5 +255,35 @@ public:
 			realloc();
 		}
 		return ret;
+	}
+
+private:
+	void realloc() {
+		// glDeleteBuffers(1, &bufferId);
+		// glGenBuffers(1, &bufferId);
+		glGetError();
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		GLenum err = glGetError();
+		if(err)
+			cout << "gpu_vector " << id << " realloc err: " << err << endl;
+	}
+	void realloc(uint oldSize) {
+		GLuint newId;
+		glGenBuffers(1, &newId);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, newId);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		glBindBuffer(GL_COPY_READ_BUFFER,bufferId);
+		glBindBuffer(GL_COPY_WRITE_BUFFER,newId);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER,GL_COPY_WRITE_BUFFER,0,0,sizeof(t)*oldSize);
+
+		glDeleteBuffers(1, &bufferId);
+		this->bufferId = newId;
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 	}
 };

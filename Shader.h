@@ -267,6 +267,25 @@ public:
 		return shader;
 
 	}
+	GLuint loadFromString(string code, GLenum ShaderType){
+		const GLchar *vShaderCode = code.c_str();
+
+		GLuint shader;
+		GLint success;
+		GLchar infoLog[4096];
+		// Vertex Shader
+		shader = glCreateShader(ShaderType);
+		glShaderSource(shader, 1, &vShaderCode, NULL);
+		glCompileShader(shader);
+		// Print compile errors if any
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
+			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+		}
+		return shader;
+	}
 
 	void compileShader(vector<GLuint>& shaders) {
 		GLint success;

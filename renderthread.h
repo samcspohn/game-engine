@@ -25,6 +25,7 @@
 #include "physics_.h"
 #include "audio.h"
 #include "gui.h"
+#include "gpu_sort.h"
 // #include "renderTexture.h"
 // #include "lighting.h"
 
@@ -275,8 +276,14 @@ void renderThreadFunc()
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
 	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
-	__RENDERERS = new gpu_vector<__renderer>();
-	__RENDERERS->ownStorage();
+
+	__RENDERERS_in = new gpu_vector<__renderer>();
+	__RENDERERS_in->ownStorage();
+	__RENDERERS_keys_in = new gpu_vector<GLuint>();
+	__RENDERERS_keys_in->ownStorage();
+	__RENDERERS_out = new gpu_vector_proxy<__renderer>();
+	__RENDERERS_keys_out = new gpu_vector_proxy<GLuint>();
+
 	__renderer_offsets = new gpu_vector<GLuint>();
 	__renderer_offsets->ownStorage();
 	__rendererMetas = new gpu_vector<__renderMeta>();
@@ -294,6 +301,15 @@ void renderThreadFunc()
 
 	renderDone.store(true);
 	renderThreadReady.store(true);
+
+	_atomics = new gpu_vector<uint>();
+	_block_sums = new gpu_vector<GLuint>();
+	_histo = new gpu_vector<GLuint>();
+
+	sorter<__renderer> renderer_sorter("renderer","struct renderer {\
+	uint transform;\
+	uint id;\
+};");
 
 	while (true)
 	{
@@ -356,6 +372,13 @@ void renderThreadFunc()
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				}
 
+								//sort renderers
+				// gt_.start();
+				// renderer_sorter.sort(__RENDERERS_in->size(),__RENDERERS_in,__RENDERERS_keys_in,__RENDERERS_out,__RENDERERS_keys_out);
+				// appendStat("renderer sort", gt_.stop());
+
+				__RENDERERS_in->bufferData();
+
 				transformsBuffered.store(true);
 				appendStat("transforms buffer cpu", cpuTimer.stop());
 				appendStat("transforms buffer", gt_.stop());
@@ -372,6 +395,9 @@ void renderThreadFunc()
 				gt_.start();
 				updateParticles(mainCamPos, emitterInitCount);
 				appendStat("particles compute", gt_.stop());
+
+
+
 				for (_camera &c : cameras->data.data)
 				{
 					gt_.start();

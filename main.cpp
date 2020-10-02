@@ -682,6 +682,8 @@ public:
 		guns[0]->setBarrels({vec3(-1.1,0.4,0.5)});
 	}
     void update(){
+		int numMissiles = COMPONENT_LIST(missile)->size();
+		cout << "\rmissiles: " + FormatWithCommas(numMissiles) + "       ";
         fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 		missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
 		particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
@@ -1293,8 +1295,6 @@ int main(int argc, char **argv)
 	// }
 
 	run();
-
-	cout << endl << "missiles: " + FormatWithCommas(numCubes.load());
 	
 	// delete[] heightData;
 
