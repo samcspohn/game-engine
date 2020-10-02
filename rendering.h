@@ -30,7 +30,12 @@ struct __renderMeta{
 	uint isBillboard;
 };
 extern gpu_vector_proxy<matrix>* GPU_MATRIXES;
-extern gpu_vector<__renderer>* __RENDERERS;
+
+extern gpu_vector<__renderer>* __RENDERERS_in;
+extern gpu_vector<GLuint>* __RENDERERS_keys_in;
+extern gpu_vector_proxy<__renderer>* __RENDERERS_out;
+extern gpu_vector_proxy<GLuint>* __RENDERERS_keys_out;
+
 extern gpu_vector<GLuint>* __renderer_offsets;
 extern gpu_vector<__renderMeta>* __rendererMetas;
 
@@ -104,7 +109,7 @@ struct renderingMeta {
 	_model m;
 	float minRadius = 0.f;
 	float maxRadius = INFINITY;
-	uint isBillboard;
+	uint isBillboard = 0;
 	renderingMeta(_shader _s, _model _m);
 private:
 	renderingMeta(const renderingMeta& other);

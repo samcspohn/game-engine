@@ -40,6 +40,7 @@ uniform mat3 camInv;
 uniform mat4 view;
 uniform mat4 vRot;
 uniform mat4 projection;
+uniform vec3 camUp;
 
 //vector(transforms, _transform, 0);
 
@@ -81,7 +82,10 @@ void main () {
 					// matrixes[buffsid].model = (translate(transform.position) * rotate(transform.rotation) * scale(transform.scale) * (1.f - isBillboard))
 					//  + (translate(transform.position) * rotate(lookAt(transform.position - cullPos,vec3(0,1,0))) * scale(transform.scale) * isBillboard);
 					if(renderMetas[renderers[gid].id].isBillboard == 1){
-						matrixes[buffsid].model = translate(transform.position) * rotate(lookAt(transform.position - cullPos,vec3(0,1,0))) * scale(transform.scale);
+						matrixes[buffsid].model = 
+						(translate(transform.position) * rotate(lookAt(transform.position - cullPos - vec3(0.001),camUp + vec3(0.001))) * scale(transform.scale));// * renderMetas[renderers[gid].id].isBillboard
+						//  + 
+						// (translate(transform.position) * rotate(transform.rotation) * scale(transform.scale)) * (1 - renderMetas[renderers[gid].id].isBillboard);
 					}else{
 						matrixes[buffsid].model = translate(transform.position) * rotate(transform.rotation) * scale(transform.scale);
 					}

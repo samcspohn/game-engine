@@ -1,27 +1,17 @@
 #version 430 core
-#include "util.glsl"
-#include "transform.glsl"
-#include "particle.glsl"
-
-
-
-const uint WG_SIZE = 256;
-const uint N_GROUPS = 256;
-const uint RADIX = 12;
-const uint BUCK = 1 << RADIX;
 
 const uint block_sum_size = 256;
 
 
 
-layout(std430,binding = 1) buffer d_in{d _input[];};
-layout(std430,binding = 2) buffer d_out{d _output[];};
-layout(std430,binding = 3) buffer blk_sum{uint block_sums[];};
-layout(std430,binding = 5) buffer a{uint atomics[];};
+layout(std430,binding = 0) buffer d_in{_T_ _input[];};
+layout(std430,binding = 1) buffer ki{uint keys_in[];};
+layout(std430,binding = 2) buffer d_out{_T_ _output[];};
+layout(std430,binding = 3) buffer ko{uint keys_out[];};
 
-layout(std430,binding = 7) buffer d_h{uint histo[];};
-layout(std430,binding = 9) buffer ki{uint keys_in[];};
-layout(std430,binding = 10) buffer ko{uint keys_out[];};
+layout(std430,binding = 4) buffer blk_sum{uint block_sums[];};
+layout(std430,binding = 5) buffer a{uint atomics[];};
+layout(std430,binding = 6) buffer d_h{uint histo[];};
 
 
 
@@ -29,13 +19,7 @@ uniform int stage;
 uniform uint count;
 uniform uint nkeys;
 uniform uint pass;
-uniform float x_size;
-uniform float y_size;
-uniform vec3 camp;
-uniform vec3 camPos;
-uniform vec3 cameraForward;
-uniform vec3 cameraUp;
-uniform mat3 camInv;
+
 
 const uint numKeys = 2048;
 shared uint _keys[numKeys];
@@ -113,6 +97,9 @@ void radix(uint g_id){
     uint temp;
     // first pass
     switch(stage){
+        case -1:
+            atomicAdd(histo[keys_in[g_id]],1);
+            break;
         case 0:
             subSort(g_id);
             break;
@@ -142,7 +129,7 @@ void radix(uint g_id){
             histo[g_id] += block_sums[g_id/block_sum_size];
             break;
         case 4:
-            d item = _input[g_id]; 
+            _T_ item = _input[g_id]; 
             // index = key(item);
             index = keys_in[g_id]; 
             _output[atomicAdd(histo[index],1)] = item;

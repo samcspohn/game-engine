@@ -3,7 +3,11 @@
 using namespace std;
 
 gpu_vector_proxy<matrix>* GPU_MATRIXES;
-gpu_vector<__renderer>* __RENDERERS;
+gpu_vector<__renderer>* __RENDERERS_in;
+gpu_vector<GLuint>* __RENDERERS_keys_in;
+gpu_vector_proxy<__renderer>* __RENDERERS_out;
+gpu_vector_proxy<GLuint>* __RENDERERS_keys_out;
+
 gpu_vector<GLuint>* __renderer_offsets;
 gpu_vector<__renderMeta>* __rendererMetas;
 class _renderer;

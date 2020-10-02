@@ -262,11 +262,10 @@ public:
 
 		_rendererOffsets = *(__renderer_offsets->storage);
 		
-		GPU_MATRIXES->tryRealloc(__RENDERERS->size());
+		GPU_MATRIXES->tryRealloc(__RENDERERS_in->size());
 		GPU_TRANSFORMS->bindData(0);
 		GPU_MATRIXES->bindData(3);
-		__RENDERERS->bindData(1);
-		__RENDERERS->bufferData();
+		__RENDERERS_in->bindData(1);
 		__renderer_offsets->bindData(5);
 		__renderer_offsets->bufferData();
 		__rendererMetas->bindData(8);
@@ -284,10 +283,11 @@ public:
 		matProgram.setInt("stage",1);
 		matProgram.setMat3("camInv",camInv);
 		matProgram.setVec3("cullPos",cullpos);
+		matProgram.setVec3("camUp",transform->up());
 		matProgram.setVec2("screen",screen);
-		matProgram.setUint("num",__RENDERERS->size());
+		matProgram.setUint("num",__RENDERERS_in->size());
 		
-		glDispatchCompute(__RENDERERS->size() / 64 + 1, 1, 1);
+		glDispatchCompute(__RENDERERS_in->size() / 64 + 1, 1, 1);
 		glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 		__renderer_offsets->retrieveData();
 				
@@ -519,22 +519,26 @@ public:
 
 		int __rendererId = 0;
 		int __rendererOffset = 0;
-		typename vector<__renderer>::iterator __r = __RENDERERS->storage->begin();
+		typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
+		typename vector<GLuint>::iterator __rk = __RENDERERS_keys_in->storage->begin();
 		for(auto &i : batchManager::batches.back()){
 			for(auto &j : i.second){
 				for(auto &k : j.second){
 					int step = k.first->ids.size() / concurrency::numThreads;
 					typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
 					typename deque<GLuint>::iterator to = from + step;
-					__r = __RENDERERS->storage->begin() + __rendererOffset + step * id;
+					__r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
+					__rk =  __RENDERERS_keys_in->storage->begin() + __rendererOffset + step * id;
 					if(id == concurrency::numThreads - 1){
 						to = k.first->ids.data.end();
 					}
 					while(from != to){
 						__r->transform = *from;
 						__r->id = __rendererId;
+						*__rk = *from >> 16;
 						++from;
 						++__r;
+						++__rk;
 					}
 					++__rendererId;
 					__rendererOffset += k.first->ids.size();

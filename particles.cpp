@@ -490,7 +490,6 @@ vector<int> offsets_(BUCKETS);
 gpu_vector<d> *input = new gpu_vector<d>();
 gpu_vector<d> *_output = new gpu_vector<d>();
 gpu_vector<GLuint> *block_sums = new gpu_vector<GLuint>();
-gpu_vector<GLuint> *scan = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
 
 namespace particle_renderer
@@ -535,14 +534,11 @@ namespace particle_renderer
         _output->storage->resize(MAX_PARTICLES);
         block_sums->ownStorage();
         block_sums->storage->resize(BLOCK_SUM_SIZE);
-        scan->ownStorage();
-        scan->storage->resize(BUCK * N_GROUPS);
         histo->ownStorage();
         histo->storage->resize(65536);
         input->bufferData();
         _output->bufferData();
         block_sums->bufferData();
-        scan->bufferData();
         histo->bufferData();
 
     }
@@ -582,6 +578,7 @@ namespace particle_renderer
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
+        histo->bufferData();
 
         livingParticles->bindData(0);
         input->bindData(1);
@@ -589,7 +586,6 @@ namespace particle_renderer
         block_sums->bindData(3);
         particles->bindData(4);
         atomics->bindData(5);
-        scan->bindData(6);
         histo->bindData(7);
         gpu_emitter_prototypes->bindData(8);
         keys_in->bindData(9);
@@ -598,10 +594,10 @@ namespace particle_renderer
 
         gt2.start();
         particleSortProgram.use();
-        particleSortProgram.setInt("stage",-2);
-        particleSortProgram.setUint("count", 65536);
-        glDispatchCompute(65536 / 256, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // particleSortProgram.setInt("stage",-2);
+        // particleSortProgram.setUint("count", 65536);
+        // glDispatchCompute(65536 / 256, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         particleSortProgram.setInt("stage",-1);
         particleSortProgram.setUint("count", actualParticles);
