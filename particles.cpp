@@ -7,6 +7,7 @@
 #include "rendering.h"
 #include <fstream>
 #include "helper1.h"
+#include "gpu_sort.h"
 // #include "Shader.h"
 
 using namespace std;
@@ -343,7 +344,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
 
     // particleProgram.use();
-    //prepate program. bind variables
+    //prepare program. bind variables
     GPU_TRANSFORMS->bindData(0);
     atomicCounters->bindData(1);
     particles->bindData(2);
@@ -463,12 +464,13 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
 
 struct d{
-	uint xy;
-    float z;
-    uint qxy;
-    uint qzw;
+    // smvec3 pos;
+    uint xy;
+    uint z;
+    smquat rot;
 	uint scale_xy;
 	uint protoID_life;
+    uint p1;uint p2;
 };
 
 #define COUNTER_THREADS 4096
@@ -487,8 +489,8 @@ gpu_vector<uint> *atomics = new gpu_vector<uint>();
 vector<int> counters_(BUCKETS);
 vector<int> offsets_(BUCKETS);
 
-gpu_vector<d> *input = new gpu_vector<d>();
-gpu_vector<d> *_output = new gpu_vector<d>();
+gpu_vector_proxy<d> *_input = new gpu_vector_proxy<d>();
+gpu_vector_proxy<d> *_output = new gpu_vector_proxy<d>();
 gpu_vector<GLuint> *block_sums = new gpu_vector<GLuint>();
 gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
 
@@ -504,6 +506,7 @@ namespace particle_renderer
     vector<d> res;
     ofstream output;
     rolling_buffer time;
+    sorter<d>* p_sort;
 
     void setCamCull(glm::mat3 ci, glm::vec3 cp){
         camInv = ci;
@@ -528,18 +531,28 @@ namespace particle_renderer
 
         keys_in->tryRealloc(MAX_PARTICLES);
         keys_out->tryRealloc(MAX_PARTICLES);
-        input->ownStorage();
-        input->storage->resize(MAX_PARTICLES);
-        _output->ownStorage();
-        _output->storage->resize(MAX_PARTICLES);
+        _input->tryRealloc(MAX_PARTICLES);
+        // _output->ownStorage();
+        _output->tryRealloc(MAX_PARTICLES);
         block_sums->ownStorage();
         block_sums->storage->resize(BLOCK_SUM_SIZE);
         histo->ownStorage();
         histo->storage->resize(65536);
-        input->bufferData();
-        _output->bufferData();
         block_sums->bufferData();
         histo->bufferData();
+
+        p_sort = new sorter<d>("d",
+"struct smquat{\
+	uvec2 d;\
+};\
+\
+struct d{\
+    uint xy;\
+    uint z;\
+    smquat rot;\
+	uint scale_xy;\
+	uint protoID_life;\
+};", "z");
 
     }
 
@@ -563,14 +576,14 @@ namespace particle_renderer
         particleSortProgram.setFloat("y_size",screen.y);
 
 
-        particleSortProgram2.use();
-        particleSortProgram2.setMat3("camInv",camInv);
-        particleSortProgram2.setVec3("camPos", camPos);
-        particleSortProgram2.setVec3("camp",camP);
-        particleSortProgram2.setVec3("cameraForward",MainCamForward);
-        particleSortProgram2.setVec3("cameraUp",mainCamUp);
-        particleSortProgram2.setFloat("x_size",screen.x);
-        particleSortProgram2.setFloat("y_size",screen.y);
+        // particleSortProgram2.use();
+        // particleSortProgram2.setMat3("camInv",camInv);
+        // particleSortProgram2.setVec3("camPos", camPos);
+        // particleSortProgram2.setVec3("camp",camP);
+        // particleSortProgram2.setVec3("cameraForward",MainCamForward);
+        // particleSortProgram2.setVec3("cameraUp",mainCamUp);
+        // particleSortProgram2.setFloat("x_size",screen.x);
+        // particleSortProgram2.setFloat("y_size",screen.y);
 
         
 
@@ -581,15 +594,14 @@ namespace particle_renderer
         histo->bufferData();
 
         livingParticles->bindData(0);
-        input->bindData(1);
+        _input->bindData(1);
         _output->bindData(2);
         block_sums->bindData(3);
         particles->bindData(4);
         atomics->bindData(5);
         histo->bindData(7);
         gpu_emitter_prototypes->bindData(8);
-        keys_in->bindData(9);
-        keys_out->bindData(10);
+
 
 
         gt2.start();
@@ -607,46 +619,58 @@ namespace particle_renderer
         atomics->retrieveData();
         numParticles = atomics->storage->at(0);
         appendStat("sort particle list stage -2,-1", gt2.stop());
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
         
-        input->bindData(1);   // input
-        _output->bindData(2); // output
+        p_sort->sort(numParticles,_input,_output);
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        particleSortProgram2.use();
-        gt2.start();
-        particleSortProgram2.setInt("stage",0);
-        uint subSortGroups = ceil(numParticles / 8) / 256 + 1;
-        particleSortProgram2.setUint("count", subSortGroups * 256);
-        particleSortProgram2.setUint("nkeys", numParticles);
-        glDispatchCompute(subSortGroups, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        appendStat("sort particle list stage 0", gt2.stop());
-
-        gt2.start();
-        particleSortProgram2.setInt("stage",1);
-        particleSortProgram2.setUint("count", 256);
-        glDispatchCompute(256 / 256, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        particleSortProgram2.setInt("stage",2);
-        particleSortProgram2.setUint("count", 1);
-        glDispatchCompute(1, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
-        particleSortProgram2.setInt("stage",3);
-        particleSortProgram2.setUint("count", 65536);
-        glDispatchCompute(65536 / 256, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        appendStat("sort particle list stage 1,2,3", gt2.stop());
+        // _input->bindData(1);   // input
+        // _output->bindData(2); // output
 
-        gt2.start();
-        particleSortProgram2.setInt("stage",4);
-        particleSortProgram2.setUint("count", numParticles);
-        glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        appendStat("sort particle list stage 4", gt2.stop());
+        // particleSortProgram2.use();
 
-        atomics->retrieveData();
-        numParticles = atomics->storage->at(0);
+        // particleSortProgram2.setInt("stage", -1);
+        // particleSortProgram2.setUint("count", numParticles);
+        // glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+        // gt2.start();
+        // particleSortProgram2.setInt("stage",0);
+        // uint subSortGroups = ceil(numParticles / 8) / 256 + 1;
+        // particleSortProgram2.setUint("count", subSortGroups * 256);
+        // particleSortProgram2.setUint("nkeys", numParticles);
+        // glDispatchCompute(subSortGroups, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // appendStat("sort particle list stage 0", gt2.stop());
+
+        // gt2.start();
+        // particleSortProgram2.setInt("stage",1);
+        // particleSortProgram2.setUint("count", 256);
+        // glDispatchCompute(256 / 256, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+        // particleSortProgram2.setInt("stage",2);
+        // particleSortProgram2.setUint("count", 1);
+        // glDispatchCompute(1, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        
+        // particleSortProgram2.setInt("stage",3);
+        // particleSortProgram2.setUint("count", 65536);
+        // glDispatchCompute(65536 / 256, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // appendStat("sort particle list stage 1,2,3", gt2.stop());
+
+        // gt2.start();
+        // particleSortProgram2.setInt("stage",4);
+        // particleSortProgram2.setUint("count", numParticles);
+        // glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // appendStat("sort particle list stage 4", gt2.stop());
+
+        // atomics->retrieveData();
+        // numParticles = atomics->storage->at(0);
 
 
         double t = t1.stop();
@@ -670,7 +694,8 @@ namespace particle_renderer
         glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "FC"), 2.0 / log2(farplane + 1));
         glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
         glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenWidth"), (float)SCREEN_WIDTH);
-
+        particleShader.s->shader->setMat3("camInv",camInv);
+        
         glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(matvRot, 1, GL_FALSE, glm::value_ptr(rot));
         glUniformMatrix4fv(matProjection, 1, GL_FALSE, glm::value_ptr(proj));
@@ -679,7 +704,8 @@ namespace particle_renderer
         gpu_emitter_prototypes->bindData(3);
         gpu_emitters->bindData(4);
         particles->bindData(2);
-        _output->bindData(6);
+        _input->bindData(6);
+        // _output->bindData(6);
 
         glBindVertexArray(VAO);
 

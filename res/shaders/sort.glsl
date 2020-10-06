@@ -1,25 +1,20 @@
 #version 430 core
 
+
 const uint block_sum_size = 256;
 
-
-
 layout(std430,binding = 0) buffer d_in{_T_ _input[];};
-layout(std430,binding = 1) buffer ki{uint keys_in[];};
-layout(std430,binding = 2) buffer d_out{_T_ _output[];};
-layout(std430,binding = 3) buffer ko{uint keys_out[];};
-
-layout(std430,binding = 4) buffer blk_sum{uint block_sums[];};
-layout(std430,binding = 5) buffer a{uint atomics[];};
-layout(std430,binding = 6) buffer d_h{uint histo[];};
+layout(std430,binding = 1) buffer d_out{_T_ _output[];};
+layout(std430,binding = 2) buffer blk_sum{uint block_sums[];};
+layout(std430,binding = 3) buffer d_h{uint histo[];};
 
 
-
+uint key(inout _T_ t){
+    return t._K_;
+}
 uniform int stage;
 uniform uint count;
 uniform uint nkeys;
-uniform uint pass;
-
 
 const uint numKeys = 2048;
 shared uint _keys[numKeys];
@@ -50,7 +45,7 @@ barrier();
     }
     for(uint i = start; i < end; ++i){
         // uint k = key(_output[globalOffset + i]);
-        uint k = keys_out[globalOffset + i];
+        uint k = key(_input[globalOffset + i]) >> 16;
         k >>= 5;
         _keys[i] = k;
         ids[i] = globalOffset + i;
@@ -85,8 +80,8 @@ barrier();
 
     for(uint i = start; i < end; ++i){
         uint index = atomicAdd(buckets[_keys[i]],1);
-        _input[index] = _output[ids[i]];
-        keys_in[index] = keys_out[ids[i]];
+        _output[index] = _input[ids[i]];
+        // keys_in[index] = keys_out[ids[i]];
 
     }
 }
@@ -98,7 +93,7 @@ void radix(uint g_id){
     // first pass
     switch(stage){
         case -1:
-            atomicAdd(histo[keys_in[g_id]],1);
+            atomicAdd(histo[key(_input[g_id]) >> 16],1);
             break;
         case 0:
             subSort(g_id);
@@ -129,10 +124,10 @@ void radix(uint g_id){
             histo[g_id] += block_sums[g_id/block_sum_size];
             break;
         case 4:
-            _T_ item = _input[g_id]; 
+            _T_ item = _output[g_id]; 
             // index = key(item);
-            index = keys_in[g_id]; 
-            _output[atomicAdd(histo[index],1)] = item;
+            index = key(item) >> 16; 
+            _input[atomicAdd(histo[index],1)] = item;
             break;
     }
     // // second pass

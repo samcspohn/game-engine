@@ -27,6 +27,7 @@ class gpu_vector_base{
 	static atomic<int> idGenerator;
 	public:
 	virtual void deleteBuffer() = 0;
+	
 };
 extern map<int,gpu_vector_base*> gpu_buffers;
 
@@ -53,6 +54,9 @@ public:
 		storage = new vector<t>();
 		ownsStorage = true;
 	}
+	void logErr(string err){
+		cout << "gpu_vector " << id << " type: " << typeid(t).name() << " err: " << err << endl;
+	}
 	void _init() {
 		glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
@@ -62,7 +66,12 @@ public:
 	}
 
 	void bindData(uint index){
+		glGetError();
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferId);
+		GLenum err = glGetError();
+		if(err)
+			logErr("bind " + to_string(err));
+		
 	}
 	void retrieveData(){
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
@@ -155,15 +164,30 @@ public:
 		enqueRenderJob([&]() { _init(); });
 	}
 
+	void logErr(string err){
+		cout << "gpu_vector " << id << " type: " << typeid(t).name() << " err: " << err << endl;
+	}
+
 	void _init() {
+		glGetError();
 		glGenBuffers(1, &bufferId);
+		if(bufferId == -1){
+			logErr("bad init");
+		}
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		GLenum err = glGetError();
+		if(err)
+			logErr("init " + to_string(err));
 		inited = true;
 	}
 	void bindData(uint index){
+		glGetError();
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferId);
+		GLenum err = glGetError();
+		if(err)
+			logErr("bind " + to_string(err));
 	}
 
 	void deleteBuffer(){
@@ -259,8 +283,8 @@ public:
 
 private:
 	void realloc() {
-		// glDeleteBuffers(1, &bufferId);
-		// glGenBuffers(1, &bufferId);
+		glDeleteBuffers(1, &bufferId);
+		glGenBuffers(1, &bufferId);
 		glGetError();
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
@@ -268,7 +292,7 @@ private:
 
 		GLenum err = glGetError();
 		if(err)
-			cout << "gpu_vector " << id << " realloc err: " << err << endl;
+		logErr("realloc" + to_string(err));
 	}
 	void realloc(uint oldSize) {
 		GLuint newId;

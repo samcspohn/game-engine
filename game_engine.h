@@ -190,9 +190,11 @@ void run()
 			}
 		}
 		__RENDERERS_in->storage->resize(__renderersSize);
-		__RENDERERS_keys_in->storage->resize(__renderersSize);
-		__RENDERERS_out->tryRealloc(__renderersSize);
-		__RENDERERS_keys_out->tryRealloc(__renderersSize);
+		// __RENDERERS_keys_in->storage->resize(__renderersSize);
+		// enqueRenderJob([&](){
+		// 	__RENDERERS_out->tryRealloc(__renderersSize);
+		// });
+		// __RENDERERS_keys_out->tryRealloc(__renderersSize);
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
 		if(TRANSFORMS.density() > 0.5){
 			TRANSFORMS_TO_BUFFER.resize(TRANSFORMS.size());

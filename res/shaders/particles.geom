@@ -16,6 +16,7 @@ layout(std430,binding = 4) buffer e{emitter emitters[];};
 uniform vec3 cameraPos;
 uniform mat4 view;
 uniform mat4 vRot;
+uniform mat3 camInv;
 uniform mat4 projection;
 uniform float FC;
 uniform float aspectRatio;
@@ -100,13 +101,13 @@ void main(){
     id = proto_id;
     float life1 = life(rp);
     float life2 = life1;
-    vec3 position = get(rp.pos) + cameraPos;
+    vec3 position = inverse(camInv) * get(getPos(rp)) + cameraPos;
     vec2 s = getScale(rp);
     vec3 _scale = vec3(s.x,s.y,0) * prototypes[proto_id].sizeLife[int((1.f - min(max(life1,0.01f),1.f)) * 100.f)];
     vec4 rotation = get(rp.rot);
 
-    mat4 rot = rotate(identity(),rotation);
-    mat4 model = translate(identity(),position) * rot * scale(identity(),_scale);
+    mat4 rot = rotate(rotation);
+    mat4 model = translate(position) * rot * scale(_scale);
     mat4 mvp = projection * vRot * view * model;
 
     if(prototypes[proto_id].trail == 1)

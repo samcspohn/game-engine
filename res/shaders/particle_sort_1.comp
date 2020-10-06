@@ -15,7 +15,7 @@ const uint block_sum_size = 256;
 
 
 layout(std430,binding = 0) buffer lp{uint livingParticles[];};
-
+layout(std430,binding = 1) buffer d_in{d _input[];};
 layout(std430,binding = 2) buffer d_out{d _output[];};
 
 layout(std430,binding = 4) buffer p{particle particles[];};
@@ -23,7 +23,7 @@ layout(std430,binding = 5) buffer a{uint atomics[];};
 
 layout(std430,binding = 7) buffer d_h{uint histo[];};
 layout(std430,binding = 8) buffer ep{emitter_prototype prototypes[];};
-layout(std430,binding = 10) buffer ko{uint keys_out[];};
+// layout(std430,binding = 10) buffer ko{uint keys_out[];};
 
 
 
@@ -71,7 +71,7 @@ void main () {
                         d item;
                         uint _key =  (~floatBitsToUint(p1.z) << 1) >> 16;
                         // key(item, _key);
-                        keys_out[index] = _key;
+                        // keys_out[index] = _key;
                         // emitterID(item, p.emitter);
                         life(item, p.life);
                         protoID(item, p.emitter_prototype);
@@ -98,18 +98,21 @@ void main () {
                             vec3 l = cross(x,y);
                             rot = lookAt(l,y);
                         }
-                        p11 -= camPos;
+                        p11 = camInv * (p11 - camPos);
                         setScale(item,_scale);
                         // genPosition1(item, p11);
-                        set(item.pos,p11);
+                        smvec3 pos;
+                        set(pos,p11);
+                        setPos(item,pos);
+                        // set(item.pos,p11);
                         // setRotation(item, rot);
                         set(item.rot,rot);
                         // genPosition2(item, p21);
 
                         // item.id = gid;
-                        atomicAdd(histo[_key],1);
-                        // _input[index] = item;
-                        _output[index] = item;
+                        // atomicAdd(histo[item.z>> 16],1);
+                        _input[index] = item;
+                        // _output[index] = item;
                         // _input[index].id = gid;
                     }
                 }

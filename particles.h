@@ -11,6 +11,7 @@ using namespace std;
 using namespace glm;
 
 
+
 class component;
 struct colorArray{
     struct key{
