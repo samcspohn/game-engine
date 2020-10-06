@@ -1,61 +1,68 @@
 #include "Shader.h"
 #include "gpu_vector.h"
-#include "Shaderinclude.h"
+// #include "Shaderinclude.h"
+#include <fstream>
 
-gpu_vector<uint> *_atomics;
-gpu_vector<GLuint> *_block_sums;
-gpu_vector<GLuint> *_histo;
+// extern gpu_vector<uint> *_atomics;
+extern gpu_vector<GLuint> *_block_sums;
+extern gpu_vector<GLuint> *_histo;
 
-template<typename t>
+template <typename t>
 struct sorter
-{  
+{
     Shader shader;
-    sorter(string element, string elementStruct){
+    sorter(){}
+    sorter(string element, string elementStruct, string key)
+    {
+        cout << "\ncreating sort kernel for " + element + "\n";
         std::string code;
-		code = shaderLoader::load("res/shaders/sort.glsl");
+        code = shaderLoader::load("res/shaders/sort.glsl");
         int index = code.find("\n");
-        code.replace(code.begin() + index,code.begin() + index, "\n" + elementStruct + "\n");
+
+        code.replace(code.begin() + index, code.begin() + index, "\n" + elementStruct + "\n");
+
+        index = code.find("_K_");
+        code.replace(code.begin() + index, code.begin() + index + 3, key);
 
         index = code.find("_T_");
-        while(index != -1){
-            code.replace(code.begin() + index,code.begin() + index + 3, element);
+        while (index != -1)
+        {
+            code.replace(code.begin() + index, code.begin() + index + 3, element);
             index = code.find("_T_", index);
         }
-        shader.loadFromString(code,GL_COMPUTE_SHADER);
+        ofstream f(element + "_sort.glsl");
+        f << code;
+        f.close();
+        vector<GLuint> shaders;
+        shaders.push_back(shader.loadFromString(code, GL_COMPUTE_SHADER));
+        shader.compileShader(shaders);
     }
-    void sort(int count, gpu_vector<t>* _data_in, gpu_vector<uint>* _keys_in, gpu_vector_proxy<t>* _data_out, gpu_vector_proxy<uint>* _keys_out)
+
+    void _sort(int count)
     {
 
-        shader.use();
-        _atomics->ownStorage();
-
-        _data_in->bufferData();
-        _data_in->bindData(0);
-
-        _keys_in->bindData(1);
-        _keys_in->bufferData();
-
-        _data_out->bindData(2);
-        _keys_out->bindData(3);
-
-/////////////////////////////////
-        if(_atomics->size() == 0)
-            _atomics->storage->push_back(0);
+        /////////////////////////////////
+        // if (_atomics->size() == 0)
+        //     _atomics->storage->push_back(0);
 
         _block_sums->ownStorage();
         _block_sums->storage->resize(256);
         _histo->ownStorage();
         _histo->storage->resize(65536);
 
-        _atomics->storage->at(0) = 0;
-        _atomics->bufferData();
+
+        _block_sums->bindData(2);
+        _histo->bindData(3);
+        
         _histo->bufferData();
+        _block_sums->bufferData();
         
-        _block_sums->bindData(4);
-        _atomics->bindData(5);
-        _histo->bindData(6);
-/////////////////////////////////
-        
+
+        /////////////////////////////////
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // gpuTimer gt2;
+        shader.use();
+
         shader.setInt("stage", -1);
         shader.setUint("count", count);
         glDispatchCompute(count / 256 + 1, 1, 1); // count
@@ -94,4 +101,27 @@ struct sorter
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         // appendStat("sort particle list stage 4", gt2.stop());
     }
+    void sort(int count, gpu_vector<t> *_data_in, gpu_vector_proxy<t> *_data_out)
+    {
+
+        // _atomics->ownStorage();
+// 
+        _data_in->bindData(0);
+        _data_in->bufferData();
+
+        _data_out->bindData(1);
+        _sort(count);
+    }
+
+    void sort(int count, gpu_vector_proxy<t> *_data_in, gpu_vector_proxy<t> *_data_out)
+    {
+
+        // shader.use();
+        // _atomics->ownStorage();
+
+        _data_in->bindData(0);
+
+        _data_out->bindData(1);
+        _sort(count);
+    };
 };

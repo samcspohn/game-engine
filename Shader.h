@@ -151,7 +151,7 @@ struct texArray{
 class Shader
 {
 public:
-	GLuint Program;
+	GLuint Program = -1;
 	string vertexFile;
 	string geometryFile;
 	string fragmentFile;

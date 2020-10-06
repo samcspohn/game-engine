@@ -6,7 +6,8 @@
 
 #include <iomanip>
 #include <locale>
-#include "bullet/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+// #include "bullet/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include <bitset>
 
 terrain* terr;
 int numBoxes = 0;
@@ -811,6 +812,10 @@ int main(int argc, char **argv)
 	if (argc > 1)
 		maxGameDuration = (float)stoi(argv[1]);
 
+
+	uint uintBits = 1 << 31;
+	bitset<32> bits{uintBits};
+	cout << bits << endl;
 
 	// oct_root = new oct_node();
 	// oct_root->aabb  = AABB2(1e25);

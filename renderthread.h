@@ -279,10 +279,10 @@ void renderThreadFunc()
 
 	__RENDERERS_in = new gpu_vector<__renderer>();
 	__RENDERERS_in->ownStorage();
-	__RENDERERS_keys_in = new gpu_vector<GLuint>();
-	__RENDERERS_keys_in->ownStorage();
-	__RENDERERS_out = new gpu_vector_proxy<__renderer>();
-	__RENDERERS_keys_out = new gpu_vector_proxy<GLuint>();
+	// __RENDERERS_keys_in = new gpu_vector<GLuint>();
+	// __RENDERERS_keys_in->ownStorage();
+	// __RENDERERS_out = new gpu_vector_proxy<__renderer>();
+	// __RENDERERS_keys_out = new gpu_vector_proxy<GLuint>();
 
 	__renderer_offsets = new gpu_vector<GLuint>();
 	__renderer_offsets->ownStorage();
@@ -302,14 +302,15 @@ void renderThreadFunc()
 	renderDone.store(true);
 	renderThreadReady.store(true);
 
-	_atomics = new gpu_vector<uint>();
+	// _atomics = new gpu_vector<uint>();
 	_block_sums = new gpu_vector<GLuint>();
 	_histo = new gpu_vector<GLuint>();
 
 	sorter<__renderer> renderer_sorter("renderer","struct renderer {\
 	uint transform;\
 	uint id;\
-};");
+};", "transform");
+
 
 	while (true)
 	{
@@ -372,12 +373,14 @@ void renderThreadFunc()
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				}
 
-								//sort renderers
+				
+					// //sort renderers
 				// gt_.start();
-				// renderer_sorter.sort(__RENDERERS_in->size(),__RENDERERS_in,__RENDERERS_keys_in,__RENDERERS_out,__RENDERERS_keys_out);
+				__RENDERERS_in->bufferData();
+				// __RENDERERS_out->tryRealloc(__RENDERERS_in->size());
+				// renderer_sorter.sort(__RENDERERS_in->size(),__RENDERERS_in,__RENDERERS_out);
 				// appendStat("renderer sort", gt_.stop());
 
-				__RENDERERS_in->bufferData();
 
 				transformsBuffered.store(true);
 				appendStat("transforms buffer cpu", cpuTimer.stop());
@@ -395,7 +398,6 @@ void renderThreadFunc()
 				gt_.start();
 				updateParticles(mainCamPos, emitterInitCount);
 				appendStat("particles compute", gt_.stop());
-
 
 
 				for (_camera &c : cameras->data.data)

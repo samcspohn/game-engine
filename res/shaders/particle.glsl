@@ -83,7 +83,8 @@ struct _burst{
 };
 
 struct d{
-    smvec3 pos;
+    uint xy;
+    uint z;
     smquat rot;
 	uint scale_xy;
 	uint protoID_life;
@@ -110,3 +111,14 @@ void life(inout d item, float l){
     item.protoID_life = (item.protoID_life & 0xffff0000) | (floatBitsToUint(l) >> 16);
 }
 
+void setPos(inout d item, smvec3 sv){
+    item.xy = sv.xy;
+    item.z = ~(floatBitsToUint(sv.z) ^ (1 << 31));
+}
+
+smvec3 getPos(inout d item){
+    smvec3 sv;
+    sv.xy = item.xy;
+    sv.z = uintBitsToFloat(~item.z ^ (1 << 31));
+    return sv;
+}

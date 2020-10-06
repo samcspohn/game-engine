@@ -188,12 +188,15 @@ uint getAngle(vec3 a, vec3 b,vec2 quadrant){
 }
 
 void set(inout smvec3 v, vec3 a){
-	vec3 newVec = vec3(a.x,a.y,-a.z);
-    uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
+	// vec3 newVec = vec3(a.x,a.y,-a.z);
+    // uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
     
-    uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
-	v.xy = (xAxisAngle << 16) | yAxisAngle;
-	v.z = -length(a);
+    // uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
+	// v.xy = (xAxisAngle << 16) | yAxisAngle;
+	// v.z = -length(a);
+
+	v.xy = (floatBitsToUint(a.x / a.z) & LEFT) | (floatBitsToUint(a.y / a.z) >> 16);
+	v.z = a.z;
 }
 
 void rotateX(inout vec3 vec, float angle){
@@ -215,10 +218,14 @@ float getAngle(uint a){
 }
 
 vec3 get(inout smvec3 v){
-	float anglex = getAngle(getHighBits(v.xy));
-    float angley = getAngle(getLowBits(v.xy));
-    vec3 p = vec3(0,0, v.z);
-    rotateX(p,-anglex);
-    rotateY(p,angley);
+	// float anglex = getAngle(getHighBits(v.xy));
+    // float angley = getAngle(getLowBits(v.xy));
+    // vec3 p = vec3(0,0, v.z);
+    // rotateX(p,-anglex);
+    // rotateY(p,angley);
+	vec3 p;
+	p.x = uintBitsToFloat(v.xy & LEFT) * v.z;
+	p.y = uintBitsToFloat(v.xy << 16)  * v.z;
+	p.z = v.z;
     return p;
 }
