@@ -101,6 +101,8 @@ void main(){
     id = proto_id;
     float life1 = life(rp);
     float life2 = life1;
+    // inverse(camInv) * 
+    // smvec3 pos = ;
     vec3 position = inverse(camInv) * get(getPos(rp)) + cameraPos;
     vec2 s = getScale(rp);
     vec3 _scale = vec3(s.x,s.y,0) * prototypes[proto_id].sizeLife[int((1.f - min(max(life1,0.01f),1.f)) * 100.f)];

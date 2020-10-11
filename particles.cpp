@@ -621,8 +621,9 @@ struct d{\
         appendStat("sort particle list stage -2,-1", gt2.stop());
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        
+        t1.start();
         p_sort->sort(numParticles,_input,_output);
+        appendStat("sort particle list", t1.stop());
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         
@@ -631,10 +632,10 @@ struct d{\
 
         // particleSortProgram2.use();
 
-        // particleSortProgram2.setInt("stage", -1);
-        // particleSortProgram2.setUint("count", numParticles);
-        // glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // // particleSortProgram2.setInt("stage", -1);
+        // // particleSortProgram2.setUint("count", numParticles);
+        // // glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
+        // // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         // gt2.start();
         // particleSortProgram2.setInt("stage",0);
@@ -669,13 +670,13 @@ struct d{\
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
         // appendStat("sort particle list stage 4", gt2.stop());
 
-        // atomics->retrieveData();
-        // numParticles = atomics->storage->at(0);
+        // // atomics->retrieveData();
+        // // numParticles = atomics->storage->at(0);
 
 
-        double t = t1.stop();
-        appendStat("sort particle list", t);
-        time.add(t);
+        // double t = t1.stop();
+        // appendStat("sort particle list", t);
+        // time.add(t);
     }
 
     void drawParticles(mat4 view, mat4 rot, mat4 proj)

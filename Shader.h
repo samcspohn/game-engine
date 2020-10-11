@@ -119,6 +119,10 @@ struct texArray{
     vector<_texture> textures;
     double hash;
     void calcHash(){
+		if(textures.size() == 0){
+			hash = -1;
+			return;
+		}
         hash = (double)textures[0].t->id * 10.0;
         for(int i = 1; i < textures.size(); i++){
             hash = hash / (10.0 * (double)textures[i].t->id);

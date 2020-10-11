@@ -110,7 +110,7 @@ void main () {
                         // genPosition2(item, p21);
 
                         // item.id = gid;
-                        // atomicAdd(histo[item.z>> 16],1);
+                        // atomicAdd(histo[item.z >> 16],1);
                         _input[index] = item;
                         // _output[index] = item;
                         // _input[index].id = gid;

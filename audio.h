@@ -191,11 +191,11 @@ class audiosource : public component{
 
     ALfloat SourcePos[3] = { 0.0, 0.0, 0.0 };
     ALfloat SourceVel[3] = { 0.0, 0.0, 0.0 };
-    ALfloat pitch = 1;
-    ALfloat gain = 1;
     audio a;
     atomic<bool> isPlaying = {false};
 public:
+    ALfloat pitch = 1;
+    ALfloat gain = 1;
     COPY(audiosource);
     audiosource() : isPlaying(false) {};
     audiosource(const audiosource& as) : isPlaying(false), a(as.a) {};
@@ -204,7 +204,7 @@ public:
     }
     void play(){
         auto s = audioSourceManager::getSource(&isPlaying);
-        s->play(transform->getPosition(),a,pitch,gain);
+        s->play(transform->getPosition(),a,pitch,glm::min(1.0, 10.0 / length(transform->getPosition() - ListenerPos)) * gain);
         // alSourcePlay(Source);
     }
     void play(glm::vec3 pos){
