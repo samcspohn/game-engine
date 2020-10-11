@@ -86,7 +86,7 @@ glm::vec3 Transform::up() {
 	return glm::normalize(_T->rotation * glm::vec3(0.0f, 1.0f, 0.0f));
 }
 glm::mat4 Transform::getModel() {
-	return (glm::translate(_T->position) * glm::scale(_T->scale))* glm::toMat4(_T->rotation);
+	return (glm::translate(_T->position) * glm::toMat4(_T->rotation) * glm::scale(_T->scale));
 }
 glm::vec3 Transform::getScale() {
 	return _T->scale;

@@ -116,7 +116,7 @@ void setPos(inout d item, smvec3 sv){
     item.z = ~(floatBitsToUint(sv.z) ^ (1 << 31));
 }
 
-smvec3 getPos(inout d item){
+smvec3 getPos(d item){
     smvec3 sv;
     sv.xy = item.xy;
     sv.z = uintBitsToFloat(~item.z ^ (1 << 31));

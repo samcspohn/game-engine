@@ -262,7 +262,7 @@ public:
 		if (framecount++ > 1){
 
 			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
-			missileCounter->contents = "missiles: " + FormatWithCommas(numCubes.load());
+			missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->size());
 			particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
 			shipVelocity->contents = "speed: " + to_string(ship_vel);
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
@@ -406,6 +406,7 @@ public:
 		guns = transform->getChildren().front();
 		barrels = guns->gameObject->getComponent<gun>();
 		sound = transform->gameObject->getComponent<audiosource>();
+		sound->gain = 0.5;
 		muzzelFlash = getEmitterPrototypeByName("muzzelFlash");
 		// muzzelSmoke = getEmitterPrototypeByName("muzzelSmoke");
 	}
@@ -632,6 +633,10 @@ public:
 		//  + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up()
 		//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 	}
+
+	void onCollision(game_object *go,vec3 point, vec3 normal){
+		getEmitterPrototypeByName("shockWave").burst(point,transform->forward(),vec3(0.2),25);
+	}
 	//UPDATE(_ship,update);
 	COPY(_ship);
 };
@@ -817,10 +822,10 @@ int main(int argc, char **argv)
 	bitset<32> bits{uintBits};
 	cout << bits << endl;
 
-	// oct_root = new oct_node();
-	// oct_root->aabb  = AABB2(1e25);
-	// oct_root->leaf = true;
-	// oct_root->c = vec3(0);
+
+
+
+
 	hideMouse = false;
 	
 	cout << sizeof(tbb::spin_mutex) << " : " << sizeof(tbb::mutex) << endl;
@@ -839,6 +844,11 @@ int main(int argc, char **argv)
 	collisionGraph[0] = {1};
 	collisionGraph[1] = {0,1};
 
+	while(!cubeModel.m->model->ready())
+		this_thread::yield();
+	boxPoints = cubeModel.m->model->meshes[0].vertices;
+	boxTris = cubeModel.m->model->meshes[0].indices;
+
 	colorArray ca;
 	ca.addKey(vec4(1),0.03)
 	.addKey(vec4(1,1,0.5f,1),0.05)
@@ -856,11 +866,11 @@ int main(int argc, char **argv)
 	.addKey(vec4(0.75,0.65,0.54,0.0f),1.f);
 
 	colorArray ca2;
-	ca2.addKey(vec4(1),0.1)
-	.addKey(vec4(1,1,0.9f,1),0.15)
-	.addKey(vec4(1,0.8f,0.5f,0.9f),0.2)
-	.addKey(vec4(1,0.5f,0.5f,0.9f),0.25)
-	.addKey(vec4(0.5,0.5f,0.5f,0.6f),0.3)
+	ca2.addKey(vec4(1),0.05)
+	.addKey(vec4(1,1,0.9f,1),0.09)
+	.addKey(vec4(1,0.8f,0.5f,0.9f),0.12)
+	.addKey(vec4(1,0.5f,0.5f,0.9f),0.17)
+	.addKey(vec4(0.5,0.5f,0.5f,0.6f),0.21)
 	.addKey(vec4(0.5,0.5f,0.5f,0.0f),1);
 
 	floatArray fa;
@@ -1019,70 +1029,76 @@ int main(int argc, char **argv)
 	playerCam->farPlane = 1e32f;
 	player->addComponent<gun>();
 	player->addComponent<gun>();
+	// player->addComponent<player_sc2>();
+
+	////////////////////////////////////////////
+	
 	// player->addComponent<collider>()->layer = 1;
 	// player->addComponent<rigidBody>()->bounciness = 0.3;
 	// player->addComponent<rigidBody>()->gravity = false;
-	player->addComponent<player_sc2>();
+
+
+	////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////
+	player->addComponent<player_sc>();
 	player->transform->translate(vec3(0, 10, -35));
 
+	game_object* boom = new game_object();
+	boom->transform->Adopt(player->transform);
+	// auto b = boom->addComponent<_boom>();
 
-	////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////
-	// game_object* boom = new game_object();
-	// boom->transform->Adopt(player->transform);
-	// // auto b = boom->addComponent<_boom>();
+	auto pointer = new game_object();
+	pointer->transform->setPosition(player->transform->getPosition());
+	player->transform->Adopt(pointer->transform);
+	pointer->transform->translate(vec3(0,0,5000));
+	pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
 
-	// auto pointer = new game_object();
-	// pointer->transform->setPosition(player->transform->getPosition());
-	// player->transform->Adopt(pointer->transform);
-	// pointer->transform->translate(vec3(0,0,5000));
-	// pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
+	game_object* ship = new game_object();
+	auto r_ = ship->addComponent<_renderer>();
+	_model shipModel = _model("res/models/ship1/ship.obj");
+	r_->set(modelShader,shipModel);
+	ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
+	auto ship_col = ship->addComponent<collider>();
+	ship_col->setMesh(shipModel.mesh());
+	ship_col->dim = vec3(4,2,20);
+	ship_col->layer = 1;
 
-	// game_object* ship = new game_object();
-	// auto r_ = ship->addComponent<_renderer>();
-	// _model shipModel = _model("res/models/ship1/ship.obj");
-	// r_->set(modelShader,shipModel);
-	// ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
-	// auto ship_col = ship->addComponent<collider>();
-	// ship_col->dim = vec3(2,1,18);
-	// ship_col->layer = 1;
+	vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
+	vec2(1.7,4.45),
+	vec2(1.7,-5.2),
+	vec2(1.2,-8.2),
+	vec2(-1.2,5.85),
+	vec2(-1.7,3.05),
+	vec2(-1.7,-4.25),
+	vec2(-1.2,-7.1)};
+	for(auto& i : MainGunPos_s){
+		makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0);
+	}
+	ship->addComponent<gunManager>();
 
-	// vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
-	// vec2(1.7,4.45),
-	// vec2(1.7,-5.2),
-	// vec2(1.2,-8.2),
-	// vec2(-1.2,5.85),
-	// vec2(-1.7,3.05),
-	// vec2(-1.7,-4.25),
-	// vec2(-1.2,-7.1)};
-	// for(auto& i : MainGunPos_s){
-	// 	makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0);
-	// }
-	// ship->addComponent<gunManager>();
+	ship->addComponent<Light>();
+	ship->getComponent<Light>()->setColor(vec3(100,0,0));
+    ship->getComponent<Light>()->setConstant(1.f);
+    ship->getComponent<Light>()->setlinear(0.01f);
+    ship->getComponent<Light>()->setQuadratic(0.0032f);
+	ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
+	ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
 
-	// ship->addComponent<Light>();
-	// ship->getComponent<Light>()->setColor(vec3(100,0,0));
-    // ship->getComponent<Light>()->setConstant(1.f);
-    // ship->getComponent<Light>()->setlinear(0.01f);
-    // ship->getComponent<Light>()->setQuadratic(0.0032f);
-	// ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
-	// ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
-
-	// game_object* engine = new game_object();
-	// engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
-	// engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineFlame"));
-	// engine->transform->translate(vec3(0,0,-10));
-	// ship->transform->Adopt(engine->transform);
-	// engine = new game_object(*engine);
-	// engine->transform->translate(vec3(-2.2,0,6));
-	// engine = new game_object(*engine);
-	// engine->transform->translate(vec3(2.2 * 2,0,0));
+	game_object* engine = new game_object();
+	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
+	engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineFlame"));
+	engine->transform->translate(vec3(0,0,-10));
+	ship->transform->Adopt(engine->transform);
+	engine = new game_object(*engine);
+	engine->transform->translate(vec3(-2.2,0,6));
+	engine = new game_object(*engine);
+	engine->transform->translate(vec3(2.2 * 2,0,0));
 	
 
-	// game_object* ship_container = new game_object();
-	// ship_container->transform->Adopt(ship->transform);
-	// ship_container->transform->Adopt(boom->transform);
+	game_object* ship_container = new game_object();
+	ship_container->transform->Adopt(ship->transform);
+	ship_container->transform->Adopt(boom->transform);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////

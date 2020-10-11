@@ -161,7 +161,7 @@ struct smquat{
 	uvec2 d;
 };
 
-vec4 get(inout smquat q){
+vec4 get(smquat q){
 	return normalize(vec4((float(getHighBits(q.d.x)) - 32768) / 32768,
                 (float(getLowBits(q.d.x)) - 32768) / 32768,
                 (float(getHighBits(q.d.y)) - 32768) / 32768,
@@ -188,15 +188,15 @@ uint getAngle(vec3 a, vec3 b,vec2 quadrant){
 }
 
 void set(inout smvec3 v, vec3 a){
-	// vec3 newVec = vec3(a.x,a.y,-a.z);
-    // uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
+	vec3 newVec = vec3(a.x,a.y,-a.z);
+    uint xAxisAngle = getAngle(newVec,vec3(a.x,0,-a.z),vec2(a.y,a.z));
     
-    // uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
-	// v.xy = (xAxisAngle << 16) | yAxisAngle;
-	// v.z = -length(a);
+    uint yAxisAngle = getAngle(vec3(a.x,0, -a.z), vec3(0,0, 1),vec2(a.x,a.z));
+	v.xy = (xAxisAngle << 16) | yAxisAngle;
+	v.z = length(a);
 
-	v.xy = (floatBitsToUint(a.x / a.z) & LEFT) | (floatBitsToUint(a.y / a.z) >> 16);
-	v.z = a.z;
+	// v.xy = (floatBitsToUint(tan(a.x / a.z)) & LEFT) | (floatBitsToUint(tan(a.y / a.z)) >> 16);
+	// v.z = a.z;
 }
 
 void rotateX(inout vec3 vec, float angle){
@@ -217,15 +217,17 @@ float getAngle(uint a){
     return float(a) / 65536 * 6.28318530718;
 }
 
-vec3 get(inout smvec3 v){
-	// float anglex = getAngle(getHighBits(v.xy));
-    // float angley = getAngle(getLowBits(v.xy));
-    // vec3 p = vec3(0,0, v.z);
-    // rotateX(p,-anglex);
-    // rotateY(p,angley);
-	vec3 p;
-	p.x = uintBitsToFloat(v.xy & LEFT) * v.z;
-	p.y = uintBitsToFloat(v.xy << 16)  * v.z;
-	p.z = v.z;
+vec3 get(smvec3 v){
+	float anglex = getAngle(getHighBits(v.xy));
+    float angley = getAngle(getLowBits(v.xy));
+    vec3 p = vec3(0,0, -v.z);
+    rotateX(p,-anglex);
+    rotateY(p,angley);
+	// vec3 p;
+	// p.x = atan(uintBitsToFloat(v.xy & LEFT));
+	// p.x *= (v.z > 0 && p.x > 0 ? -1 : 1) * v.z;
+	// p.y = atan(uintBitsToFloat(v.xy << 16));
+	// p.y *= (v.z > 0 && p.y > 0 ? -1 : 1) * v.z;
+	// p.z = v.z;
     return p;
 }

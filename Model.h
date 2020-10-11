@@ -47,7 +47,7 @@ public:
     Model(string path)
     {
 		modelPath = path;
-        enqueRenderJob([&]() { loadModel(modelPath); });
+        waitForRenderJob([&]() { loadModel(modelPath); });
     }
     Model(const Model& M){
         // enqueRenderJob([&](){

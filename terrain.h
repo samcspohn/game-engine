@@ -93,6 +93,7 @@ public:
     int offsetX;
     int offsetZ;
     float middle;
+    float max_height;
     bool generated = false;
     int xz(int x, int z){
         return x * width + z;
@@ -174,6 +175,7 @@ public:
             }
         }
         middle = (max + min) / 2;
+        max_height = max;
         glm::vec2 index = transform->getPosition().xz() / transform->getScale().xz() / glm::vec2(width -1 ,depth - 1);
         terrains[index.x][index.y] = transform->gameObject->getComponent<terrain>();
         generated = true;
