@@ -88,23 +88,27 @@ struct point {
     glm::vec3 pos2;
 };
 
-struct colDat
-{
-    collider *c;
-    bool collider_shape_updated;
+// struct colDat
+// {
+//     collider *c;
+//     bool collider_shape_updated;
+//     int type;
+//     union
+//     {
+//         OBB o;
+//         mesh m;
+//         point p;
+//     };
+//     bool valid;
+//     rigidBody *rb;
+//     colDat(){};
+//     colDat(collider *_c, AABB2 _a) : c(_c){}
+//     void update();
+// };
+
+struct octDat{
     AABB2 a;
-    int type;
-    union
-    {
-        OBB o;
-        mesh m;
-        point p;
-    };
-    bool valid;
-    rigidBody *rb;
-    colDat(){};
-    colDat(collider *_c, AABB2 _a) : c(_c), a(_a) {}
-    void update();
+    collider* d;
 };
 
 bool _testAABB(const AABB &a, const AABB &b)
