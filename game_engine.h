@@ -136,14 +136,11 @@ void run()
 			collisionLayers[i.first].clear();
 		// doLoopIteration(gameEngineComponents, false);
 
+/////////////////////////////////////////////////
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
-		// if (cb->hasUpdate())
-		// {
-			stopWatch.start();
-			cb->update();
-			appendStat(cb->name + "--update", stopWatch.stop());
-		// }
-
+		stopWatch.start();
+		cb->update();
+		appendStat(cb->name + "--update", stopWatch.stop());
 		stopWatch.start();		
 		_parallel_for(cb->data, [&](int i) {
 			if (cb->data.valid[i])
@@ -152,14 +149,10 @@ void run()
 			}
 		});
 		appendStat(cb->name + "--mid_update", stopWatch.stop());
-
-
-		// if (cb->hasLateUpdate())
-		// {
-			stopWatch.start();
-			cb->lateUpdate();
-			appendStat(cb->name + "--late_update", stopWatch.stop());
-		// }
+		stopWatch.start();
+		cb->lateUpdate();
+		appendStat(cb->name + "--late_update", stopWatch.stop());
+//////////////////////////////////////////////////
 
 		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
 
@@ -169,6 +162,14 @@ void run()
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
 
+
+		auto cameras = COMPONENT_LIST(_camera);
+		// floating_origin = cameras->get(0)->transform.getPosition();
+		// _parallel_for(Transforms,[&](int i){
+		// 	Transforms.positions[i] -= floating_origin;
+		// });
+
+
 		stopWatch.start();
 		waitForRenderJob([]() { updateTiming(); });
 
@@ -177,7 +178,6 @@ void run()
 
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
-		auto cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
 
 		for (_camera &c : cameras->data.data)
 		{

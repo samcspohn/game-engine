@@ -52,23 +52,25 @@ void main()
 {
     vec2 TexCoords = gl_FragCoord.xy / WindowSize;
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
+    vec3 Normal = texture(gNormal, TexCoords).rgb;
+
     vec3 v = FragPos - lightPos;
+    vec3 lightDir = normalize(lightPos - FragPos);
     if(abs(v.x) > light.radius 
     || abs(v.y) > light.radius 
     || abs(v.z) > light.radius 
-    || length2(FragPos - lightPos) > light.radius * light.radius)
+    || length2(FragPos - lightPos) > light.radius * light.radius
+    || abs(dot(lightDir,Normal)) < 0.001)
         discard;
 
 
 
-    vec3 Normal = texture(gNormal, TexCoords).rgb;
     vec3 Diffuse = texture(gAlbedoSpec, TexCoords).rgb;
     float Specular = texture(gAlbedoSpec, TexCoords).a;
     
     // then calculate lighting as usual
     vec3 lighting = Diffuse * 0.0; // hard-coded ambient component
     vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 lightDir = normalize(lightPos - FragPos);
 
     float theta     = dot(lightDir, normalize(-direction));
     float epsilon   = light.cutOff - light.outerCutOff;

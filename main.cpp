@@ -77,7 +77,6 @@ public:
 
 class gun : public component
 {
-	float reload;
 	float lastFire;
 	vector<vec3> barrels = {vec3(0,-12,10)};
 public:
@@ -99,10 +98,15 @@ public:
 	{
 		
 		// reload += rof * Time.deltaTime;
-		if(Time.time - lastFire > 1.f / rof){
-
-			reload = glm::max((Time.deltaTime) * rof,1.f);
-			lastFire = Time.time;
+		if((Time.time - lastFire) * rof > 1.f){
+			float x = Time.deltaTime * rof;
+			float reload = std::max((float)(int)x, 1.f);
+			float r;
+			// if(reload > x)
+			// 	r = Time.deltaTime * (reload / x);
+			// else
+				r = Time.deltaTime * (1 - (x - reload));
+			lastFire = Time.time - r;
 			for (int i = 0; i < (int)reload; i++)
 			{
 				for(auto& j : barrels){
