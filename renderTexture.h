@@ -67,7 +67,7 @@ public:
 		switch (type)
 		{
 		case renderTextureType::FLOAT:
-			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB32F, scr_width, scr_height, 0,GL_RGBA, GL_FLOAT, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB16F, scr_width, scr_height, 0,GL_RGBA, GL_FLOAT, 0);
 			break;
 		case renderTextureType::UNSIGNED_BYTE:
 			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA, scr_width, scr_height, 0,GL_RGBA, GL_UNSIGNED_BYTE, 0);

@@ -67,7 +67,7 @@ public:
     }
     void onStart(){
         pl = plm.pointLights.push_back(pointLight());
-        pl->transfromId = transform->_T.index;
+        pl->transfromId = transform.id;
         
     }
     void onDestroy(){

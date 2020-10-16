@@ -177,7 +177,7 @@ public:
         middle = (max + min) / 2;
         max_height = max;
         glm::vec2 index = transform->getPosition().xz() / transform->getScale().xz() / glm::vec2(width -1 ,depth - 1);
-        terrains[index.x][index.y] = transform->gameObject->getComponent<terrain>();
+        terrains[index.x][index.y] = transform->gameObject()->getComponent<terrain>();
         generated = true;
 
         // game_object* tree_go = new game_object(scatter_obj);

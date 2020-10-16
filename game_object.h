@@ -115,7 +115,7 @@ public:
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));
 		ret->transform = this->transform;
-		ret->transform->gameObject = this;
+		ret->transform->setGameObject(this);
 		ret->onStart();
 		// gameLock.unlock();
 
@@ -131,7 +131,7 @@ public:
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));
 		ret->transform = this->transform;
-		ret->transform->gameObject = this;
+		ret->transform->setGameObject(this);
 		ret->onStart();
 		// gameLock.unlock();
 
@@ -147,7 +147,7 @@ public:
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));
 		ret->transform = this->transform;
-		ret->transform->gameObject = this;
+		ret->transform->setGameObject(this);
 		// gameLock.unlock();
 		return ret;
 	}
@@ -185,55 +185,37 @@ public:
 	void destroy()
 	{
 		toDestroy.insert(this);
-		// lock.lock();
-		// if(this->colliding){
-		// 	this->destroyed = true;
-		// 	lock.unlock();
-		// 	return;
-		// }
-		// // if(this->destroyed){
-		// // 	lock.unlock();
-		// // 	return;
-		// // }
-		// for (auto &i : components)
-		// {
-		// 	i.first->onDestroy();
-		// }
-		// while(components.size() > 0){
-		// 	components.begin()->second->erase();
-		// 	components.erase(components.begin());
-		// }
-		// while (transform->getChildren().size() > 0)
-		// {
-		// 	transform->getChildren().front()->gameObject->destroy();
-		// }
-		// transform->_destroy();
-		// lock.unlock();
-		// this->_destroy();
 	}
 
-	game_object(Transform *t) : lock()
+	game_object(transform2 t) : lock()
 	{
 		// gameLock.lock();
 		destroyed = false;
 		this->transform = t;
-		t->gameObject = this;
+		t->setGameObject( this );
 		// gameLock.unlock();
 	}
 	game_object() : lock()
 	{
 		// gameLock.lock();
 		destroyed = false;
-		this->transform = new Transform(this);
-		root->Adopt(this->transform);
+		// this->transform = new Transform(this);
+		this->transform = Transforms._new();
+		// root->Adopt(this->transform);
 		// gameLock.unlock();
 	};
-	game_object(const game_object &g) : lock()
+	game_object(game_object &g) : lock()
 	{
 		// gameLock.lock();
 		destroyed = false;
-		this->transform = new Transform(*g.transform, this);
-		g.transform->getParent()->Adopt(this->transform);
+		// this->transform = new Transform(*g.transform, this);
+		// g.transform->getParent()->Adopt(this->transform);
+
+		this->transform = Transforms._new();// new Transform(this);
+		this->transform->init(g.transform, this);
+		g.transform.getParent().adopt(this->transform);
+		// g.transform.getParent().adopt(this->transform);
+
 		for (auto &i : g.components)
 		{
 			i.first->_copy(this);
@@ -248,7 +230,8 @@ public:
 	{
 		destroyed = false;
 		gameLock.lock();
-		this->transform = new Transform(this);
+		this->transform = Transforms._new();// new Transform(this);
+		this->transform->init(this);
 		gameLock.unlock();
 		for (auto &i : g.components)
 		{
@@ -281,7 +264,7 @@ public:
 		}
 		while (transform->getChildren().size() > 0)
 		{
-			transform->getChildren().front()->gameObject->destroy();
+			transform->getChildren().front()->gameObject()->destroy();
 		}
 		transform->_destroy();
 		lock.unlock();
@@ -289,6 +272,6 @@ public:
 		delete this;
 	}
 
-	Transform *transform;
+	transform2 transform;
 };
 
