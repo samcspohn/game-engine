@@ -16,11 +16,12 @@
 #include "tbb/blocked_range.h"
 #include "tbb/parallel_for.h"
 #include "tbb/partitioner.h"
+#include "Transform.h"
 #define ull unsigned long long
-class game_object;
+// class game_object;
 
 // bool compareTransform(Transform *t1, Transform *t2);
-class Transform;
+// class Transform2;
 class component
 {
 	friend game_object;
@@ -36,7 +37,7 @@ public:
 	// virtual void _update(int index, unsigned int _start, unsigned int _end);
 	// virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
 	virtual void _copy(game_object *go) = 0;
-	Transform *transform;
+	transform2 transform;
 	int getThreadID();
 	ull getHash();
 };

@@ -248,7 +248,7 @@ void particle_emitter::setPrototype(emitter_prototype_ ep)
     emitterInit ei;
     ei.emitterProtoID = prototype.getId();
     ei.live = 1;
-    ei.transformID = transform->_T.index;
+    ei.transformID = transform.id;
     ei.id = this->emitter.index;
     lock.lock();
     emitter_inits[ei.id] = ei;
@@ -258,7 +258,7 @@ void particle_emitter::setPrototype(emitter_prototype_ ep)
 void particle_emitter::onStart()
 {
     this->emitter = EMITTERS._new();
-    this->emitter->transform = transform->_T.index;
+    this->emitter->transform = transform.id;
     this->emitter->live = 1;
     this->emitter->emission = 1;
     emitter->emitter_prototype = prototype.getId();
@@ -267,7 +267,7 @@ void particle_emitter::onStart()
     emitterInit ei;
     ei.emitterProtoID = prototype.getId();
     ei.live = 1;
-    ei.transformID = transform->_T.index;
+    ei.transformID = transform.id;
     ei.id = this->emitter.index;
     lock.lock();
     emitter_inits[ei.id] = ei;
@@ -283,7 +283,7 @@ void particle_emitter::onDestroy()
     emitterInit ei;
     ei.emitterProtoID = prototype.getId();
     ei.live = 0;
-    ei.transformID = transform->_T.index;
+    ei.transformID = transform.id;
     ei.id = this->emitter.index;
     lock.lock();
     emitter_inits[ei.id] = ei;
@@ -587,7 +587,7 @@ struct d{\
 
         
 
-        gpuTimer gt2;
+        gpuTimer gt;
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
@@ -604,7 +604,7 @@ struct d{\
 
 
 
-        gt2.start();
+        gt.start();
         particleSortProgram.use();
         // particleSortProgram.setInt("stage",-2);
         // particleSortProgram.setUint("count", 65536);
@@ -618,12 +618,12 @@ struct d{\
         uint numParticles;
         atomics->retrieveData();
         numParticles = atomics->storage->at(0);
-        appendStat("sort particle list stage -2,-1", gt2.stop());
+        appendStat("particle list create", gt.stop());
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        t1.start();
+        gt.start();
         p_sort->sort(numParticles,_input,_output);
-        appendStat("sort particle list", t1.stop());
+        appendStat("particle list sort", gt.stop());
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         

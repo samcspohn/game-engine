@@ -27,7 +27,7 @@ layout(std430,binding = 1) buffer r{renderer renderers[];};
 layout(std430, binding = 3) buffer _m_buffs{matrix matrixes[];};
 layout(std430,binding = 5) buffer o{uint offsets[];};
 layout(std430,binding = 8) buffer rm{renderMeta renderMetas[];};
-layout(std430,binding = 6) buffer it{uint transformIds[];};
+layout(std430,binding = 6) buffer it{int transformIds[];};
 layout(std430,binding = 7) buffer ttc{_transform transformsToCopy[];};
 
 uniform int stage;

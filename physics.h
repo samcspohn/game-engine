@@ -25,7 +25,7 @@ const int maxDepth = 100;
 atomic<int> rbId;
 
 class physicsWorker;
-bool testCollision(colDat &c1, colDat &c2, glm::vec3& result);
+bool testCollision(colDat &c1, colDat &c2, glm::vec3 &result);
 
 void assignRigidBody(collider *c, rigidBody *rb);
 
@@ -55,10 +55,10 @@ public:
 	void onStart()
 	{
 		id = rbId.fetch_add(1);
-		auto _c = transform->gameObject->getComponent<collider>();
+		auto _c = transform->gameObject()->getComponent<collider>();
 		if (_c != 0)
 		{
-			assignRigidBody(_c, transform->gameObject->getComponent<rigidBody>());
+			assignRigidBody(_c, transform->gameObject()->getComponent<rigidBody>());
 		}
 		//        mass = 1;
 	}
@@ -130,8 +130,8 @@ void rigidBody::collide(colDat &a, colDat &b, int &colCount)
 			return testCollision(a, b, res);
 		}())
 	{
-		((component *)a.c)->transform->gameObject->collide(((component *)b.c)->transform->gameObject, res, vec3(0));
-		((component *)b.c)->transform->gameObject->collide(((component *)a.c)->transform->gameObject, res, vec3(0));
+		((component *)a.c)->transform->gameObject()->collide(((component *)b.c)->transform->gameObject(), res, vec3(0));
+		((component *)b.c)->transform->gameObject()->collide(((component *)a.c)->transform->gameObject(), res, vec3(0));
 	}
 }
 struct treenode
@@ -369,7 +369,10 @@ public:
 	int layer;
 	int type = 1;
 	colDat *posInTree = 0;
-	COPY(collider);
+	glm::vec3 r = glm::vec3(1);
+	colDat cd;
+	glm::vec3 dim = vec3(1);
+	rigidBody *rb = 0;
 	bool _registerEngineComponent()
 	{
 		return true;
@@ -381,82 +384,121 @@ public:
 	void onStart()
 	{
 		posInTree = 0;
-		id = colid++;
-		auto _rb = transform->gameObject->getComponent<rigidBody>();
+		auto _rb = transform->gameObject()->getComponent<rigidBody>();
 		if (_rb != 0)
 		{
-			//            cout << "assigning rb in collider" << endl;
 			rb = _rb;
 		}
-
-		_collider = collider_();
 	}
-
 	void onDestroy()
 	{
-		// colM.lock();
 		if (posInTree)
 			posInTree->valid = false;
-		// collider_manager.colliders.erase(itr);
-		// colM.unlock();
 	}
-	glm::vec3 r = glm::vec3(1);
-	struct collider_
-	{
-		collider_()
-		{
-			type = 0;
-			box = glm::vec3(1);
-		}
-		int type;
-		union
-		{
-			physics::box box;
-			physics::sphere sphere;
-			physics::plane plane;
-		};
-	} _collider;
-	// AABB2 a;
-	colDat cd;
-	glm::vec3 dim = vec3(1);
+
 	void setMesh(Mesh &_m)
 	{
 		cd.type = 2;
-		type = 2;
+		this->type = 2;
 		cd.m.points = &_m.vertices;
 		cd.m.tris = &_m.indices;
 	}
+	void setPoint()
+	{
+		cd.type = 3;
+		this->type = 3;
+		cd.p = point();
+	}
 	void update()
 	{
-		//octLock.lock();
-		//if (id == 0) {
-		//	cout << "\ncreate tree\n";
-		//}
+
 		posInTree = 0;
-		glm::vec3 sc = transform->getScale() * dim;
-		glm::mat3 rot = glm::toMat3(transform->getRotation());
-		glm::vec3 r = vec3(1) * length(sc) * 1.5f;
-		cd.a = AABB2(transform->getPosition() - r, transform->getPosition() + r);
+		switch (type)
+		{
+		case 0:
+		case 1:
+		case 2:
+		{
+			glm::vec3 sc = transform->getScale() * dim;
+			// glm::mat3 rot = glm::toMat3(transform->getRotation());
+			glm::vec3 r = vec3(length(sc));
+			glm::vec3 pos = transform->getPosition();
+			cd.a = AABB2(pos - r, pos + r);
+			cd.collider_shape_updated = false;
+		}
+		break;
+		case 3:
+		{
+			if(cd.p.pos1 == vec3(0)){
+				cd.p.pos2 = transform->getPosition();
+			}else{
+				cd.p.pos2 = cd.p.pos1;
+			}
+			cd.p.pos1 = transform->getPosition();
+			// cd.a.max = cd.p.pos1;
+			// cd.a.min = cd.p.pos2;
+			// if(cd.a.max.x < cd.a.min.x)
+			// 	std::swap(cd.a.max.x,cd.a.min.x);
+			// if(cd.a.max.y < cd.a.min.y)
+			// 	std::swap(cd.a.max.y,cd.a.min.y);
+			// if(cd.a.max.z < cd.a.min.z)
+			// 	std::swap(cd.a.max.z,cd.a.min.z);
+
+
+			new(&cd.a.max) glm::vec3(glm::max(cd.p.pos1.x, cd.p.pos2.x),
+								 glm::max(cd.p.pos1.y, cd.p.pos2.y),
+								 glm::max(cd.p.pos1.z, cd.p.pos2.z));
+
+			new(&cd.a.min) glm::vec3(glm::min(cd.p.pos1.x, cd.p.pos2.x),
+								 glm::min(cd.p.pos1.y, cd.p.pos2.y),
+								 glm::min(cd.p.pos1.z, cd.p.pos2.z));
+
+
+			// // x
+			// if(cd.p.pos1.x > cd.p.pos2.x){
+			// 	cd.a.max.x = cd.p.pos1.x;cd.a.min.x = cd.p.pos2.x;
+			// }else{
+			// 	cd.a.max.x = cd.p.pos2.x;cd.a.min.x = cd.p.pos1.x;
+			// }
+			// // y
+			// if(cd.p.pos1.y > cd.p.pos2.y){
+			// 	cd.a.max.y = cd.p.pos1.y;cd.a.min.y = cd.p.pos2.y;
+			// }else{
+			// 	cd.a.max.y = cd.p.pos2.y;cd.a.min.y = cd.p.pos1.y;
+			// }
+			// // z
+			// if(cd.p.pos1.z > cd.p.pos2.z){
+			// 	cd.a.max.z = cd.p.pos1.z;cd.a.min.z = cd.p.pos2.z;
+			// }else{
+			// 	cd.a.max.z = cd.p.pos2.z;cd.a.min.z = cd.p.pos1.z;
+			// }
+			cd.collider_shape_updated = true;
+		}
+		}
+		// glm::vec3 sc = transform->getScale() * dim;
+		// // glm::mat3 rot = glm::toMat3(transform->getRotation());
+		// glm::vec3 r = vec3(length(sc));
+		// glm::vec3 pos = transform->getPosition();
+		// cd.a = AABB2(pos - r, pos + r);
 		cd.type = type;
 		cd.c = this;
 		cd.valid = true;
 		cd.rb = rb;
-		cd.collider_shape_updated = false;
+		// cd.collider_shape_updated = false;
 
+		// int depth = 0;
+		// if (layer == 1)
+		// 	collisionLayers[layer].insert(cd, depth);
+	}
+	void midUpdate()
+	{
 		int depth = 0;
-		// physLock.lock();
 		if (layer == 1)
 			collisionLayers[layer].insert(cd, depth);
-		// physLock.unlock();
-
-		//octLock.unlock();
 	}
 
-	rigidBody *rb = 0;
-	int id;
 	void lateUpdate()
 	{
-
 		int colCount = 0;
 		for (auto &i : collisionGraph[layer])
 		{
@@ -471,7 +513,6 @@ public:
 		terrain *t = getTerrain(center.x, center.z);
 		if (t != 0)
 		{
-
 			if (cd.a.min.y > t->max_height * t->transform->getScale().y + t->transform->getPosition().y)
 				return;
 			terrainHit h = t->getHeight(center.x, center.z);
@@ -485,14 +526,12 @@ public:
 					transform->setPosition(glm::vec3(p.x, h.height + cd.a.min.y + 0.1f, p.z));
 				}
 				// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
-				transform->gameObject->collide(t->transform->gameObject, glm::vec3(p.x, h.height, p.z), h.normal);
+				transform->gameObject()->collide(t->transform->gameObject(), glm::vec3(p.x, h.height, p.z), h.normal);
 			}
 		}
-		// }
 	}
 
-	//UPDATE(collider, update);
-	// LATE_UPDATE(collider, lateUpdate);
+	COPY(collider);
 
 private:
 };
@@ -508,20 +547,35 @@ void setPosInTree(collider *c, colDat *i)
 
 void colDat::update()
 {
-	if (type == 1)
+	switch (type)
+	{
+	case 1: // obb
 	{
 		glm::vec3 sc = c->transform->getScale() * c->dim;
 		glm::mat3 rot = glm::toMat3(c->transform->getRotation());
 
 		o.c = a.getCenter();
-		o.u[0] = rot * glm::vec3(1, 0, 0);
-		o.u[1] = rot * glm::vec3(0, 1, 0);
-		o.u[2] = rot * glm::vec3(0, 0, 1);
+		o.u = rot;
+		// o.u[0] = rot * glm::vec3(1, 0, 0);
+		// o.u[1] = rot * glm::vec3(0, 1, 0);
+		// o.u[2] = rot * glm::vec3(0, 0, 1);
 		o.e = sc;
+	}
+	break;
+	case 2:
+		break;
+	case 3: // point
+	{
+		// p.pos2 = p.pos1;
+		// p.pos1 = c->transform->getPosition();
+	}
+	break;
+	default:
+		break;
 	}
 }
 
-bool testCollision(colDat &c1, colDat &c2, glm::vec3& result)
+bool testCollision(colDat &c1, colDat &c2, glm::vec3 &result)
 {
 
 	colDat *a;
@@ -564,6 +618,8 @@ bool testCollision(colDat &c1, colDat &c2, glm::vec3& result)
 			trans2 = b->c->transform->getModel();
 			return testOBBMesh(a->o, trans, b->m, trans2, result);
 			break;
+		case 3:
+			return testPointOBB(b->p, a->o, result);
 		default:
 			break;
 		}
@@ -585,9 +641,22 @@ bool testCollision(colDat &c1, colDat &c2, glm::vec3& result)
 				m2 = &a->m;
 				trans = glm::inverse(b->c->transform->getModel()) * a->c->transform->getModel();
 			}
-			return testMeshMesh(*m1,trans, *m2, trans2, result);
+			return testMeshMesh(*m1, trans, *m2, trans2, result);
 			break;
-
+		case 3: // point
+			return testPointMesh(b->p, a->m, a->c->transform->getPosition(), a->c->transform->getScale(), a->c->transform->getRotation(), result);
+		default:
+			break;
+		}
+	case 3: //point
+		switch (b->type)
+		{
+		// case 0: // aabb
+		// 	break;
+		// case 1: // obb
+		// 	return testPointOBB(b->p,a->o);
+		// case 2: // mesh
+		// 	return testPointMesh(b->p,a->m,a->c->transform->getPosition(),a->c->transform->getRotation(), result);
 		default:
 			break;
 		}

@@ -68,32 +68,31 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;
-		if(cb->hasUpdate()){
+		if (cb->hasUpdate())
+		{
 			stopWatch.start();
 			cb->update();
 			appendStat(cb->name + "--update", stopWatch.stop());
-			this_thread::sleep_for(2ns);
 		}
 	}
 	// LATE //UPDATE
 	for (auto &j : ssb)
 	{
 		componentStorageBase *cb = j;
-		if(cb->hasLateUpdate()){
+		if (cb->hasLateUpdate())
+		{
 			stopWatch.start();
 			cb->lateUpdate();
 			appendStat(cb->name + "--late_update", stopWatch.stop());
 		}
-		this_thread::sleep_for(2ns);
 	}
-
 }
 
 void init()
 {
-	
+
 	// tbb::task_scheduler_init init;
-		// concurrency::pinningObserver.observe(true);
+	// concurrency::pinningObserver.observe(true);
 	audioManager::init();
 	audioSourceManager::init();
 	renderThreadReady.exchange(false);
@@ -102,10 +101,11 @@ void init()
 
 	while (!renderThreadReady.load())
 		this_thread::sleep_for(1ms);
-	waitForRenderJob([](){});
+	waitForRenderJob([]() {});
 
-	root = new Transform(0);
-	rootGameObject = new game_object(root);
+	// root = new Transform(0);
+	root2 = Transforms._new();
+	rootGameObject = new game_object(root2);
 	for (int i = 0; i < concurrency::numThreads; i++)
 	{
 		rootGameObject->addComponent<copyBuffers>()->id = i;
@@ -132,36 +132,62 @@ void run()
 		gameLoopMain.start();
 		// scripting
 		doLoopIteration(gameComponents);
-		for(auto & i : collisionGraph)
+		for (auto &i : collisionGraph)
 			collisionLayers[i.first].clear();
-		doLoopIteration(gameEngineComponents, false);
-		
+		// doLoopIteration(gameEngineComponents, false);
+
+		componentStorage<collider> *cb = COMPONENT_LIST(collider);
+		// if (cb->hasUpdate())
+		// {
+			stopWatch.start();
+			cb->update();
+			appendStat(cb->name + "--update", stopWatch.stop());
+		// }
+
+		stopWatch.start();		
+		_parallel_for(cb->data, [&](int i) {
+			if (cb->data.valid[i])
+			{
+				cb->data.data[i].midUpdate();
+			}
+		});
+		appendStat(cb->name + "--mid_update", stopWatch.stop());
+
+
+		// if (cb->hasLateUpdate())
+		// {
+			stopWatch.start();
+			cb->lateUpdate();
+			appendStat(cb->name + "--late_update", stopWatch.stop());
+		// }
+
 		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
-		
+
 		stopWatch.start();
-		tbb::parallel_for_each(toDestroy.range(),[](game_object* g){g->_destroy();});
+		tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
 		toDestroy.clear();
-		appendStat("destroy deffered",stopWatch.stop());
-		appendStat("game loop main",gameLoopMain.stop());
-
+		appendStat("destroy deffered", stopWatch.stop());
+		appendStat("game loop main", gameLoopMain.stop());
 
 		stopWatch.start();
-		waitForRenderJob([](){updateTiming();});
+		waitForRenderJob([]() { updateTiming(); });
 
 		renderLock.lock();
-		appendStat("wait for render",stopWatch.stop());
+		appendStat("wait for render", stopWatch.stop());
 
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
-		auto cameras = ((componentStorage<_camera>*)allcomponents.at(typeid(_camera).hash_code()));
-		
-		for(_camera& c : cameras->data.data){
+		auto cameras = ((componentStorage<_camera> *)allcomponents.at(typeid(_camera).hash_code()));
+
+		for (_camera &c : cameras->data.data)
+		{
 			c.view = c.GetViewMatrix();
 			c.rot = c.getRotationMatrix();
 			c.proj = c.getProjection();
 			c.screen = c.getScreen();
 			c.pos = c.transform->getPosition();
-			if(!c.lockFrustum){
+			if (!c.lockFrustum)
+			{
 				c.camInv = glm::mat3(c.rot);
 				c.cullpos = c.pos;
 			}
@@ -176,9 +202,12 @@ void run()
 		__renderMeta rm;
 		// rm.min = 0;
 		// rm.max = 1e32f;
-		for(auto &i : batchManager::batches.back()){
-			for(auto &j : i.second){
-				for(auto &k : j.second){
+		for (auto &i : batchManager::batches.back())
+		{
+			for (auto &j : i.second)
+			{
+				for (auto &k : j.second)
+				{
 					__renderer_offsets->storage->push_back(__renderersSize);
 					rm.radius = k.first->m.m->radius;
 					rm.isBillboard = k.first->isBillboard;
@@ -196,24 +225,27 @@ void run()
 		// });
 		// __RENDERERS_keys_out->tryRealloc(__renderersSize);
 		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
-		if(TRANSFORMS.density() > 0.5){
-			TRANSFORMS_TO_BUFFER.resize(TRANSFORMS.size());
-		}
+		// if (Transforms.density() > 0.5)
+		// {
+		// 	TRANSFORMS_TO_BUFFER.resize(Transforms.size());
+		// }
 		copyWorkers->update();
-		if(TRANSFORMS.density() <= 0.5){
+		// if (Transforms.density() <= 0.5)
+		// {
 			int bufferSize = 0;
-			for(int i = 0; i < concurrency::numThreads; i++){
-				((copyBuffers*)copyWorkers->get(i))->offset = bufferSize;
+			for (int i = 0; i < concurrency::numThreads; i++)
+			{
+				((copyBuffers *)copyWorkers->get(i))->offset = bufferSize;
 				bufferSize += transformIdThreadcache[i].size();
 			}
 			transformIdsToBuffer.resize(bufferSize);
 			transformsToBuffer.resize(bufferSize);
 			copyWorkers->lateUpdate();
 
-			_parallel_for(transformsToBuffer,[&](int i){
-				transformsToBuffer[i] = TRANSFORMS[transformIdsToBuffer[i]];
+			_parallel_for(transformsToBuffer, [&](int i) {
+				transformsToBuffer[i] = ((transform2)(transformIdsToBuffer[i])).getTransform();
 			});
-		}
+		// }
 		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
@@ -231,31 +263,31 @@ void run()
 		swapBurstBuffer();
 
 		////////////////////////////////////// cull objects //////////////////////////////////////
-		if(Input.getKeyDown(GLFW_KEY_B)){
+		if (Input.getKeyDown(GLFW_KEY_B))
+		{
 			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
 		}
 
-		renderJob* rj = new renderJob();
+		renderJob *rj = new renderJob();
 		rj->work = [&] { return; };
 		rj->type = renderNum::render;
 		renderDone.store(false);
 
 		renderWork.push(rj);
 		renderLock.unlock();
-		appendStat("game loop total",gameLoopTotal.stop());
-
+		appendStat("game loop total", gameLoopTotal.stop());
 	}
 
 	// log("end of program");
-	waitForRenderJob([&](){});
-	
+	waitForRenderJob([&]() {});
+
 	// concurrency::pinningObserver.observe(false);
 
 	rootGameObject->destroy();
 	destroyAllComponents();
 	audioManager::destroy();
 
-	renderJob* rj = new renderJob();
+	renderJob *rj = new renderJob();
 	rj->type = rquit;
 	renderLock.lock();
 	renderWork.push(rj);
@@ -273,5 +305,4 @@ void run()
 		cout << i->first << " -- avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
-
 }

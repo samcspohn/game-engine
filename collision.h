@@ -68,7 +68,8 @@ struct AABB2
 struct OBB
 {
     glm::vec3 c;    // OBB center point
-    glm::vec3 u[3]; // Local x-, y-, and z-axes
+    // glm::vec3 u[3]; // Local x-, y-, and z-axes
+    glm::quat u;
     glm::vec3 e;    // Positive halfwidth extents of OBB along each axis
 };
 
@@ -81,6 +82,12 @@ struct mesh
 class rigidBody;
 class collider;
 
+// struct vertex;
+struct point {
+    glm::vec3 pos1;
+    glm::vec3 pos2;
+};
+
 struct colDat
 {
     collider *c;
@@ -91,6 +98,7 @@ struct colDat
     {
         OBB o;
         mesh m;
+        point p;
     };
     bool valid;
     rigidBody *rb;
@@ -141,14 +149,15 @@ int TestOBBOBB(OBB &a, OBB &b)
     glm::mat3 R, AbsR;
 
     // Compute rotation matrix expressing b in a's coordinate frame
-    for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-            R[i][j] = glm::dot(a.u[i], b.u[j]);
+    // for (int i = 0; i < 3; i++)
+    //     for (int j = 0; j < 3; j++)
+    //         R[i][j] = glm::dot(a.u[i], b.u[j]);
+    R = glm::toMat3(inverse(a.u) * b.u);
 
     // Compute translation vector t
     glm::vec3 t = b.c - a.c;
     // Bring translation into a's coordinate frame
-    t = glm::vec3(glm::dot(t, a.u[0]), glm::dot(t, a.u[1]), glm::dot(t, a.u[2]));
+    t = glm::vec3(glm::dot(t, a.u * glm::vec3(1,0,0)), glm::dot(t, a.u * glm::vec3(0,1,0)), glm::dot(t, a.u * vec3(0,0,1)));
 
     // Compute common subexpressions. Add in an epsilon term to
     // counteract arithmetic errors when two edges are parallel and
@@ -329,34 +338,6 @@ float testPlane(glm::vec3 p, glm::vec4 plane){
 int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, glm::vec3 c,
                           float &u, float &v, float &w)
 {
-
-    // glm::vec3 ab = b-a;
-    // glm::vec3 ac = c-a;
-    // glm::vec3 abc = glm::cross(ab,ac);
-    // float _A = (b.y - a.y)*(c.z - a.z) - (c.y - a.y)*(b.z - a.z);
-    // float _B = (b.z - a.z)*(c.x - a.x) - (c.z - a.z)*(b.x - a.x);
-    // float _C = (b.x - a.x)*(c.y - a.y) - (c.x - a.x)*(b.y - a.y);
-    // float _D = _A*a.x + _B*a.y + _C*a.z;
-    // glm::vec4 plane(_A,_B,_C,_D);
-
-
-    // bool shouldContinue = false;
-    // if(testPlane(p,plane) < 0){
-    //     if(testPlane(q,plane) > 0){
-    //         // points are opposite
-    //         shouldContinue = true;
-    //     }
-    // }else{
-    //     if(testPlane(q,plane) < 0){
-    //         // points are opposite
-    //         shouldContinue = true;
-    //     }
-    // }
-    // if(!shouldContinue)
-    //     return 0;
-
-
-
     glm::vec3 pq = q - p;
     glm::vec3 pa = a - p;
     glm::vec3 pb = b - p;
@@ -397,8 +378,6 @@ int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b,
                              float &u, float &v, float &w, float &t)
 {
 
-    // std::swap(p,q);
-    // std::swap(b,c);
     glm::vec3 ab = b - a;
     glm::vec3 ac = c - a;
     glm::vec3 qp = p - q;
@@ -443,42 +422,6 @@ int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b,
 
     return 1;
     
-}
-
-bool RayIntersectsTriangle(glm::vec3 rayOrigin, 
-                           glm::vec3 rayVector, 
-                           vector<glm::vec3>& inTriangle,
-                           glm::vec3& outIntersectionPoint)
-{
-    glm::vec3 vertex0 = inTriangle[0];
-    glm::vec3 vertex1 = inTriangle[1];  
-    glm::vec3 vertex2 = inTriangle[2];
-    glm::vec3 edge1, edge2, h, s, q;
-    float a,f,u,v;
-    edge1 = vertex1 - vertex0;
-    edge2 = vertex2 - vertex0;
-    h = glm::cross(rayVector,edge2);//  rayVector.crossProduct(edge2);
-    a = glm::dot(edge1,h);//  edge1.dotProduct(h);
-    if (a > -EPSILON && a < EPSILON)
-        return false;    // This ray is parallel to this triangle.
-    f = 1.0/a;
-    s = rayOrigin - vertex0;
-    u = f * glm::dot(s,h);//s.dotProduct(h);
-    if (u < 0.0 || u > 1.0)
-        return false;
-    q = glm::cross(s,edge1);//s.crossProduct(edge1);
-    v = f * glm::dot(rayVector,q);//rayVector.dotProduct(q);
-    if (v < 0.0 || u + v > 1.0)
-        return false;
-    // At this stage we can compute t to find out where the intersection point is on the line.
-    float t = f * glm::dot(edge2,q);//edge2.dotProduct(q);
-    if (t > EPSILON) // ray intersection
-    {
-        outIntersectionPoint = rayOrigin + rayVector * t;
-        return true;
-    }
-    else // This means that there is a line intersection but not a ray intersection.
-        return false;
 }
 
 
@@ -577,4 +520,47 @@ bool testOBBMesh(OBB &o, const mat4 o_trans, mesh &m, const mat4 m_trans, glm::v
     o_m.points = &boxPoints;
     o_m.tris = &boxTris;
     return testMeshMesh(m, m_trans, o_m, o_trans, result);
+}
+
+bool testPointMesh(point& p, mesh& m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, glm::vec3& result){
+    // glm::vec3 pos1 = (1.f / mScl) * glm::inverse(mRot) * (p.pos1 - mPos);
+    // glm::vec3 pos2 = (1.f / mScl) * glm::inverse(mRot) * (p.pos2 - mPos);
+    mat4 trans = glm::inverse(glm::translate(mPos)*glm::toMat4(mRot)*glm::scale(mScl));
+    glm::vec3 pos1 = trans * vec4(p.pos1,1);
+    glm::vec3 pos2 = trans * vec4(p.pos2,1);
+    glm::vec3 p1;
+    vector<glm::vec3> tri1(3);
+    vector<glm::vec3> tri2(3);
+    float t;
+    for (int i = 0; i < m.tris->size(); i += 3)
+    {
+        // tri1[0] = trans1 * vec4((*m1.points)[ (*m1.tris)[i]     ],1);
+        // tri1[1] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 1] ],1);
+        // tri1[2] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 2] ],1);
+        tri1[0] = (*m.points)[ (*m.tris)[i]     ];
+        tri1[1] = (*m.points)[ (*m.tris)[i + 1] ];
+        tri1[2] = (*m.points)[ (*m.tris)[i + 2] ];
+        if(IntersectSegmentTriangle(pos2, pos1, tri1[0], tri1[1], tri1[2], p1.x, p1.y, p1.z, t)){
+            // result = mPos;
+            result = inverse(trans) * vec4(p1,1);
+            return true;
+        }
+    }
+    return false;
+
+}
+
+bool testPointOBB(point& p, OBB& o, glm::vec3& result){
+    glm::vec3 pos = glm::inverse(o.u) * (p.pos1 - o.c);
+
+    mesh o_m;
+    o_m.points = &boxPoints;
+    o_m.tris = &boxTris;
+    return testPointMesh(p,o_m,o.c,o.e,o.u,result);
+    // if(abs(pos.x) < o.e.x &&
+    //  abs(pos.y) < o.e.y &&
+    //  abs(pos.z) < o.e.z){
+    //      return true;
+    //  }
+    //  return false;
 }

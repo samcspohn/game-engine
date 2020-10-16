@@ -14,3 +14,15 @@ getDeps:
 	pacman -S --noconfirm openal
 	pacman -S --noconfirm freealut
 	# pacman -S --noconfirm clang
+
+getDebDeps:
+	apt-get install libglfw3-dev -y
+	apt install libsoil-dev -y
+	apt install libassimp-dev  -y
+	apt install libglm-dev -y
+	# apt install libgdb -y
+	apt install cmake -y
+	apt install libopenal-dev -y
+	apt install libalut-dev -y
+	apt install libxi-dev -y
+	apt install libxxf86vm-dev -y

@@ -471,7 +471,7 @@ vector<int> renderCounts = vector<int>(concurrency::numThreads);
 vector<vector<GLuint>> transformIdThreadcache;
 // vector<vector<_transform>> transformThreadcache;
 
-vector<GLuint> transformIdsToBuffer;
+vector<int> transformIdsToBuffer;
 vector<_transform> transformsToBuffer;
 
 class copyBuffers : public component
@@ -486,36 +486,42 @@ public:
 	void update()
 	{
 		int numt = concurrency::numThreads;
-		int step = TRANSFORMS.size() / concurrency::numThreads;
-		uint i = step * id;
+		int step = Transforms.size() / concurrency::numThreads;
+		int i = step * id;
 		transformIdThreadcache[id].clear();
-		if(TRANSFORMS.density() > 0.5){
+		// if(Transforms.density() > 0.5){
 
-			deque<_transform>::iterator from = TRANSFORMS.data.begin() + step * id;
-			deque<_transform>::iterator to = from + step;
+		// 	int from = step * id;
+		// 	int to = from + step;
 
-			if(id == concurrency::numThreads - 1)
-				to = TRANSFORMS.data.end();
-			for (auto itr = from; itr != to; itr++, i++){
-				TRANSFORMS_TO_BUFFER[i] = *itr;
-			}
+		// 	if(id == concurrency::numThreads - 1)
+		// 		to = Transforms.size();
+		// 	for (auto itr = from; itr != to; itr++, i++){
+		// 		TRANSFORMS_TO_BUFFER[i] = transform2(itr).getTransform();
+		// 		Transforms.transform_updates[itr].pos = false;
+		// 		Transforms.transform_updates[itr].rot = false;
+		// 		Transforms.transform_updates[itr].scl = false;
+		// 	}
 
-		}else{
+		// }else{
 
-			deque<bool>::iterator from = TRANSFORMS.valid.begin() + step * id;
-			deque<bool>::iterator to = from + step;
+			auto from = Transforms.transform_updates.begin() + step * id;
+			auto to = from + step;
 
 			transformIdThreadcache[id].reserve(step + 1);
 			if(id == concurrency::numThreads - 1)
-				to = TRANSFORMS.valid.end();
+				to = Transforms.transform_updates.end();
 			while (from != to){
-				if(*from){
+				if(from->pos || from->rot){
+					from->pos = false;
+					from->rot = false;
+					from->scl = false;
 					transformIdThreadcache[id].emplace_back(i);
 				}
 				++from;
 				++i;
 			}
-		}
+		// }
 
 		int __rendererId = 0;
 		int __rendererOffset = 0;

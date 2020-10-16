@@ -236,27 +236,27 @@ void batch::finalize(){
 		glBindVertexArray( this->VAO );
 		glBindBuffer( GL_ARRAY_BUFFER, this->VBO );
 		int offset = 0;
-		glBufferData(GL_ARRAY_BUFFER, sizeof(point) * vertexSize, 0, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * vertexSize, 0, GL_STATIC_DRAW);
 		for(auto &i : elements){
-			glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(point) * i.m->points.size(), i.m->points.data());
+			glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(vertex) * i.m->points.size(), i.m->points.data());
 			offset += i.m->points.size();
 		}
 		offset = 0;
 		// postion attribute
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 		offset += sizeof(glm::vec3);
 		// uvs attribute
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 		offset += sizeof(glm::vec2);
 		// uvs2 attribute
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 		offset += sizeof(glm::vec2);
 		// normals
 		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 
 
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, this->EBO );
@@ -346,7 +346,7 @@ void _renderer::onStart() {
 		set(meta);
 	else
 		set(shader,model);
-	transform->gameObject->renderer = this;
+	transform->gameObject()->renderer = this;
 }
 _renderer::_renderer() {}
 
@@ -375,7 +375,7 @@ void _renderer::set(_shader s, _model m) {
 	renderingManager::unlock();
 
 	meta = (r->second[m.m->name]);
-	transformIdRef = meta->ids.push_back(transform->_T);
+	transformIdRef = meta->ids.push_back(transform.id);
 }
 
 void _renderer::set_proto(_shader s, _model m) {
@@ -410,7 +410,7 @@ void _renderer::set(renderingMeta* _meta){
 		if(!transformIdRef.isNull()){
 			meta->ids.erase(transformIdRef);
 		}
-		transformIdRef = meta->ids.push_back(transform->_T);
+		transformIdRef = meta->ids.push_back(transform.id);
 	}
 }
 _renderer::_renderer(const _renderer& other) {

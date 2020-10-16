@@ -129,7 +129,7 @@ void updateTiming()
 	double currentFrame = glfwGetTime();
 	Time.unscaledTime = currentFrame;
 	Time.unscaledDeltaTime = currentFrame - lastFrame;
-	Time.deltaTime = _min(Time.unscaledDeltaTime, 1.f / 10.f) * Time.timeScale;
+	Time.deltaTime = glm::min(Time.unscaledDeltaTime, 1.f / 30.f) * Time.timeScale;
 	Time.time += Time.deltaTime;
 	Time.timeBuffer.add(Time.unscaledDeltaTime);
 	lastFrame = currentFrame;
@@ -140,7 +140,7 @@ void updateTiming()
 int frameCounter = 0;
 #include "thread"
 #include <tbb/tbb.h>
-#include <sched.h>
+// #include <sched.h>
 
 // void GLAPIENTRY
 // MessageCallback(GLenum source,
@@ -350,14 +350,14 @@ void renderThreadFunc()
 				gt_.start();
 				cpuTimer.start();
 				// buffer and allocate data
-				if (TRANSFORMS.density() > 0.5)
-				{
-					GPU_TRANSFORMS->bufferData(TRANSFORMS_TO_BUFFER);
-				}
-				else
-				{
+				// if (Transforms.density() > 0.5)
+				// {
+				// 	GPU_TRANSFORMS->bufferData(TRANSFORMS_TO_BUFFER);
+				// }
+				// else
+				// {
 
-					GPU_TRANSFORMS->tryRealloc(TRANSFORMS.size());
+					GPU_TRANSFORMS->grow(Transforms.size());
 					transformIds->bufferData(transformIdsToBuffer);
 					GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
 
@@ -371,7 +371,7 @@ void renderThreadFunc()
 					matProgram.setUint("num", transformsToBuffer.size());
 					glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				}
+				// }
 
 				
 					// //sort renderers

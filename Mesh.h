@@ -37,7 +37,7 @@ using namespace std;
 
 
 
-struct point{
+struct vertex{
     glm::vec3 position;
     glm::vec2 uv1;
     glm::vec2 uv2;
@@ -52,7 +52,7 @@ public:
 	vector<glm::vec2> uvs;
     vector<glm::vec2> uvs2;
 	vector<glm::vec3> normals;
-    vector<point> points;
+    vector<vertex> points;
     vector<GLuint> indices;
     texArray textures;
     bool ready = false;
@@ -201,7 +201,7 @@ private:
         // again translates to 3/2 floats which translates to a byte array.
 
 		int offset = 0;
-		glBufferData(GL_ARRAY_BUFFER, sizeof(point) * points.size(), points.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * points.size(), points.data(), GL_STATIC_DRAW);
 		// glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec3) * vertices.size(), vertices.data());
 		// offset += sizeof(glm::vec3) * vertices.size();
 		// glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(glm::vec2) * uvs.size(), uvs.data());
@@ -214,19 +214,19 @@ private:
 		offset = 0;
 		// postion attribute
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 		offset += sizeof(glm::vec3);
 		// uvs attribute
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 		offset += sizeof(glm::vec2);
         // uvs2 attribute
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 		offset += sizeof(glm::vec2);
 		// normals
 		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(point), (GLvoid*)offset);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)offset);
 
 		// instanced
 		//glGenBuffers(1, &instVBO);
