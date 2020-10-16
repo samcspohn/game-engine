@@ -129,7 +129,7 @@ void updateTiming()
 	double currentFrame = glfwGetTime();
 	Time.unscaledTime = currentFrame;
 	Time.unscaledDeltaTime = currentFrame - lastFrame;
-	Time.deltaTime = glm::min(Time.unscaledDeltaTime, 1.f / 30.f) * Time.timeScale;
+	Time.deltaTime = Time.unscaledDeltaTime * Time.timeScale;
 	Time.time += Time.deltaTime;
 	Time.timeBuffer.add(Time.unscaledDeltaTime);
 	lastFrame = currentFrame;
@@ -155,7 +155,7 @@ int frameCounter = 0;
 // 			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
 // 			type, severity, message);
 // }
-
+glm::vec3 floating_origin;
 atomic<bool> transformsBuffered;
 void renderThreadFunc()
 {
@@ -396,7 +396,7 @@ void renderThreadFunc()
 				plm.gpu_pointLights->bufferData();
 
 				gt_.start();
-				updateParticles(mainCamPos, emitterInitCount);
+				updateParticles(floating_origin, emitterInitCount);
 				appendStat("particles compute", gt_.stop());
 
 
