@@ -400,6 +400,7 @@ public:
 		shaderLightingPass.setMat4("proj",proj);
 		shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
 		shaderLightingPass.setVec3("viewPos", pos);
+		shaderLightingPass.setVec3("floatingOrigin", pos);
 		lv.Draw(plm.pointLights.size());
 
 		// Always good practice to set everything back to defaults once configured.

@@ -25,6 +25,7 @@ layout(std430, binding = 2) buffer t{_transform transforms[];};
 uniform mat4 view;
 uniform mat4 proj;
 uniform float FC;
+uniform vec3 floatingOrigin;
 out vec2 TexCoords;
 flat out pointLight light;
 
@@ -44,10 +45,11 @@ void main()
 	uint id = gl_InstanceID;
 	light = pointLights[id];
 	_transform t = transforms[light.transformId];
+    t.position -= floatingOrigin;
 	
 	lightPos = t.position;
 	direction = vec3(rotate(t.rotation) * vec4(0,0,1,1));
-	gl_Position = proj * view * vec4(t.position + position * light.radius,1);
+	gl_Position = proj * vec4(t.position + position * light.radius,1);
 	
 	logz = 1.0 + gl_Position.w;
 	gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
