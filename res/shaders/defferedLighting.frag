@@ -28,7 +28,7 @@ uniform sampler2D gAlbedoSpec;
 uniform sampler2D gDepth;
 uniform vec2 WindowSize;
 
-uniform vec3 viewPos;
+// uniform vec3 viewPos;
 in float logz;
 flat in vec3 lightPos;
 flat in pointLight light;
@@ -70,7 +70,7 @@ void main()
     
     // then calculate lighting as usual
     vec3 lighting = Diffuse * 0.0; // hard-coded ambient component
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(-FragPos);
 
     float theta     = dot(lightDir, normalize(-direction));
     float epsilon   = light.cutOff - light.outerCutOff;
