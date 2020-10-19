@@ -114,15 +114,15 @@ struct _Transforms {
 	// deque<glm::vec3> scales;
 	// deque<transform_meta> meta;
 	// deque<trans_update> transform_updates;
-
-	tbb::concurrent_queue<int> avail;
+	// tbb::concurrent_priority_queue<int> avail2;
+	tbb::concurrent_priority_queue<int> avail;
 	tbb::spin_mutex m;
 
 	transform2 _new(){
 		transform2 t;
 		if(!avail.try_pop(t.id)){
 			m.lock();
-			if(avail.unsafe_size() == 0){
+			if(avail.size() == 0){
 				t.id = positions.size();
 				m.unlock();
 
@@ -155,11 +155,11 @@ struct _Transforms {
 		return meta.size();
 	}
 	float density(){
-		return 1.f - avail.unsafe_size() / meta.size();
+		return 1.f - avail.size() / meta.size();
 	}
 
 	int active(){
-		return meta.size() - avail.unsafe_size();
+		return meta.size() - avail.size();
 	}
 };
 

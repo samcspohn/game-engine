@@ -412,7 +412,7 @@ public:
 		accel = 0;
 		thrust = 20;
 		maxReverse = 50;
-		maxForward = 100;
+		maxForward = 10000;
 		rotationSpeed = radians(10.f);
 	}
 	void update(){
@@ -791,7 +791,7 @@ class sun_sc : public component{
 	float distance = 30'000;
 	float day_cycle = 30;
 	void update(){
-		transform->setPosition(vec3(cos(Time.time / day_cycle),sin(Time.time / day_cycle),0) * distance * mat3(rotate(radians(45.f),vec3(0,0,1))));
+		transform->setPosition(root2.getPosition() + vec3(cos(Time.time / day_cycle),sin(Time.time / day_cycle),0) * distance * mat3(rotate(radians(45.f),vec3(0,0,1))));
 	}
 };
 

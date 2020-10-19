@@ -136,12 +136,12 @@ void run()
 			collisionLayers[i.first].clear();
 		// doLoopIteration(gameEngineComponents, false);
 
-/////////////////////////////////////////////////
+		/////////////////////////////////////////////////
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
 		stopWatch.start();
 		cb->update();
 		appendStat(cb->name + "--update", stopWatch.stop());
-		stopWatch.start();		
+		stopWatch.start();
 		_parallel_for(cb->data, [&](int i) {
 			if (cb->data.valid[i])
 			{
@@ -152,7 +152,7 @@ void run()
 		stopWatch.start();
 		cb->lateUpdate();
 		appendStat(cb->name + "--late_update", stopWatch.stop());
-//////////////////////////////////////////////////
+		//////////////////////////////////////////////////
 
 		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
 
@@ -162,13 +162,27 @@ void run()
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
 
-
 		auto cameras = COMPONENT_LIST(_camera);
-		// floating_origin = cameras->get(0)->transform.getPosition();
-		// _parallel_for(Transforms,[&](int i){
-		// 	Transforms.positions[i] -= floating_origin;
-		// });
+		auto colliders = COMPONENT_LIST(collider);
 
+		glm::vec3 fo = cameras->get(0)->transform.getPosition();
+		if (glm::length2(fo) > 1e8)
+		{
+			floating_origin.push(fo);
+			_parallel_for(Transforms, [&](int i) {
+				Transforms.positions[i] -= fo;
+				Transforms.transform_updates[i].pos = true;
+			});
+			_parallel_for(*colliders,[&](int i){
+				if(colliders->data.valid[i] && colliders->data.data[i].type == 3){
+					colliders->data.data[i].p.pos1 -= fo;
+				}
+			});
+		}
+		else
+		{
+			floating_origin.push(vec3(0));
+		}
 
 		stopWatch.start();
 		waitForRenderJob([]() { updateTiming(); });
@@ -232,19 +246,19 @@ void run()
 		copyWorkers->update();
 		// if (Transforms.density() <= 0.5)
 		// {
-			int bufferSize = 0;
-			for (int i = 0; i < concurrency::numThreads; i++)
-			{
-				((copyBuffers *)copyWorkers->get(i))->offset = bufferSize;
-				bufferSize += transformIdThreadcache[i].size();
-			}
-			transformIdsToBuffer.resize(bufferSize);
-			transformsToBuffer.resize(bufferSize);
-			copyWorkers->lateUpdate();
+		int bufferSize = 0;
+		for (int i = 0; i < concurrency::numThreads; i++)
+		{
+			((copyBuffers *)copyWorkers->get(i))->offset = bufferSize;
+			bufferSize += transformIdThreadcache[i].size();
+		}
+		transformIdsToBuffer.resize(bufferSize);
+		transformsToBuffer.resize(bufferSize);
+		copyWorkers->lateUpdate();
 
-			_parallel_for(transformsToBuffer, [&](int i) {
-				transformsToBuffer[i] = ((transform2)(transformIdsToBuffer[i])).getTransform();
-			});
+		_parallel_for(transformsToBuffer, [&](int i) {
+			transformsToBuffer[i] = ((transform2)(transformIdsToBuffer[i])).getTransform();
+		});
 		// }
 		appendStat("copy buffers", stopWatch.stop());
 
