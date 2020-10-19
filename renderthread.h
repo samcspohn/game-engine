@@ -155,7 +155,7 @@ int frameCounter = 0;
 // 			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
 // 			type, severity, message);
 // }
-glm::vec3 floating_origin;
+tbb::concurrent_queue<glm::vec3> floating_origin;
 atomic<bool> transformsBuffered;
 void renderThreadFunc()
 {
@@ -396,7 +396,9 @@ void renderThreadFunc()
 				plm.gpu_pointLights->bufferData();
 
 				gt_.start();
-				updateParticles(floating_origin, emitterInitCount);
+				glm::vec3 fo;
+				floating_origin.try_pop(fo);
+				updateParticles(fo, emitterInitCount);
 				appendStat("particles compute", gt_.stop());
 
 

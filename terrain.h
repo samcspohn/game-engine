@@ -61,6 +61,8 @@ class terrain;
 map<int,map<int,terrain*>> terrains;
 
 terrain* getTerrain(float x, float z){
+    x -= root2.getPosition().x;
+    z -= root2.getPosition().z;
     float width = terrainWidth;
     float scale = 20.f;
     auto xt = terrains.find((int)(x / scale / width + (x > 0 ? 1 : -1) * 0.5f));
@@ -147,7 +149,7 @@ public:
         {
             for(glm::vec3 p : scatterPos){
                 game_object* s = new game_object(*scatter_obj);
-                s->transform->setPosition(p);
+                s->transform->setPosition(p + root2.getPosition());
                 s->transform->rotate(vec3(1,0,0),radians(-90.f));
                 scatter.push_back(s);
             }
