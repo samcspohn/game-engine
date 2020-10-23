@@ -5,7 +5,7 @@
 const GLint WIDTH = 1920, HEIGHT = 1080;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
-void log(string log = ""){
+void log(string log){
     std::cout << log << std::endl;
 }
 

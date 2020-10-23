@@ -63,13 +63,8 @@ struct sorter
         // gpuTimer gt2;
         shader.use();
 
-        shader.setInt("stage", -1);
-        shader.setUint("count", count);
-        glDispatchCompute(count / 256 + 1, 1, 1); // count
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
         // gt2.start();
-        shader.setInt("stage", 0);
+        shader.setInt("stage", -1);
         uint subSortGroups = ceil(count / 8) / 256 + 1;
         shader.setUint("count", subSortGroups * 256);
         shader.setUint("nkeys", count);
@@ -77,6 +72,11 @@ struct sorter
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         // appendStat("sort particle list stage 0", gt2.stop());
 
+
+        shader.setInt("stage", 0);
+        shader.setUint("count", count);
+        glDispatchCompute(count / 256 + 1, 1, 1); // count
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
         // gt2.start();
         shader.setInt("stage", 1);
         shader.setUint("count", 256);

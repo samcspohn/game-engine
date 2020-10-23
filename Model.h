@@ -62,16 +62,6 @@ public:
         loaded = true;
     }
     
-    // Draws the model, and thus all its meshes
-    void Draw( Shader shader, /*GLuint instVBO, GLuint rotVBO,*/ size_t number )
-    {
-		if (number == 0)
-			return;
-        for ( GLuint i = 0; i < this->meshes.size(); i++ )
-        {
-            this->meshes[i].Draw( shader, /*instVBO, rotVBO, */number);
-        }
-    }
 	int numVerts=0;
     vector<Mesh> meshes;
     void loadModel()

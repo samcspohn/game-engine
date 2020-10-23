@@ -21,7 +21,7 @@
             "options": {
                 "cwd": "${workspaceFolder}/release"
             },
-            "command": "cmake -DBUILD_DEBUG=OFF ..", // Could be any other shell command
+            "command": "cmake -DBUILD_DEBUG=OFF ..", // Could be any other shell command      export CC=/usr/bin/clang; export CXX=/usr/bin/clang++; 
             "type": "shell"
         },
         {
@@ -30,8 +30,7 @@
             "options": {
                 "cwd": "${workspaceFolder}/debug"
             },
-            "command": "cmake", // Could be any other shell command
-            "args":["-DBUILD_DEBUG=ON", ".."],
+            "command": "cmake -DBUILD_DEBUG=ON ..", // Could be any other shell command        export CC=/usr/bin/clang; export CXX=/usr/bin/clang++; 
             "type": "shell"
         },
         {

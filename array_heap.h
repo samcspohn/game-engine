@@ -194,98 +194,98 @@ private:
 	uint extent = 0;
 };
 
-template<typename t>
-class heap2{
-	mutex m;
-	#define bit_shift 10
-	#define heap2BlockSize 1<<bit_shift
-	uint type_size = sizeof(m_element);
-	uint block_mask = ~0>>bit_shift;
-	struct m_element {
-		bool valid;
-		t data;
-	};
-	struct ref{
-		uint index;
-		heap2* a;
-		m_element* d;
-		t* operator->() {
-			return d->data;
-		}
-	};
-	struct m_block{
-		char* data;
-		m_block* next;
-		m_block* prev;
-		m_block(){
-			data = new char[type_size*heap2BlockSize];
-		}
-		m_element& operator[](uint i) {
-			return ((m_element*)data)[i];
-		}
-		m_element&at(uint i){
-			return ((m_element*)data)[i];
-		}
-		~m_block(){
-			delete[] data;
-		}
-	};
-	uint m_size;
-	std::map<uint,m_block*> index1;
-	std::map<uint,m_block*> index2;
-	std::map<uint,m_block*>* indexing;
+// template<typename t>
+// class heap2{
+// 	mutex m;
+// 	#define bit_shift 10
+// 	#define heap2BlockSize 1<<bit_shift
+// 	uint type_size = sizeof(m_element);
+// 	uint block_mask = ~0>>bit_shift;
+// 	struct m_element {
+// 		bool valid;
+// 		t data;
+// 	};
+// 	struct ref{
+// 		uint index;
+// 		heap2* a;
+// 		m_element* d;
+// 		t* operator->() {
+// 			return d->data;
+// 		}
+// 	};
+// 	struct m_block{
+// 		char* data;
+// 		m_block* next;
+// 		m_block* prev;
+// 		m_block(){
+// 			data = new char[type_size*heap2BlockSize];
+// 		}
+// 		m_element& operator[](uint i) {
+// 			return ((m_element*)data)[i];
+// 		}
+// 		m_element&at(uint i){
+// 			return ((m_element*)data)[i];
+// 		}
+// 		~m_block(){
+// 			delete[] data;
+// 		}
+// 	};
+// 	uint m_size;
+// 	std::map<uint,m_block*> index1;
+// 	std::map<uint,m_block*> index2;
+// 	std::map<uint,m_block*>* indexing;
 
-	deque<uint> avail;
+// 	deque<uint> avail;
 
-	heap2(){
-		m_size = 0;
-	}
-	t& operator[](unsigned int i){
-		return indexing->at(i>>bit_shift)->at(i&block_mask);
-	}
-	ref _new(){
-		ref ret;
-		ret.a = this;
+// 	heap2(){
+// 		m_size = 0;
+// 	}
+// 	t& operator[](unsigned int i){
+// 		return indexing->at(i>>bit_shift)->at(i&block_mask);
+// 	}
+// 	ref _new(){
+// 		ref ret;
+// 		ret.a = this;
 
-		m.lock();
-		if (avail.size() > 0) {
-			ret.index = *avail.begin();
-			avail.erase(avail.begin());;
-		}
-		else {
-			ret.index = m_size;
-			if(ret.index>>bit_shift >= indexing->size()){
-				std::map<uint,m_block*>* temp;
-				if(indexing == &index1)
-					temp = &index2;
-				else
-					temp = &index1;
-				*temp = *indexing;
-				m_block* new_block = new m_block();
-				temp->insert(std::pair<uint,m_block*>(ret.index>>bit_shift,new_block));
-				indexing = temp;
-			}
-			++m_size;
-		}
-		ret.d = indexing->at(ret.index>>bit_shift)[ret.index & block_mask];
-		ret.d->valid = false;
-		m.unlock();
-		ret.d->data.t();
-		return ret;
-	}
-	void _del(ref r){
-		if (r.a != this)
-			throw;
-		r.d->data.~t();
-		m.lock();
-		r.d->valid = false;
-		avail.emplace_front(r.index);
-		m.unlock();
-	}
+// 		m.lock();
+// 		if (avail.size() > 0) {
+// 			ret.index = *avail.begin();
+// 			avail.erase(avail.begin());;
+// 		}
+// 		else {
+// 			ret.index = m_size;
+// 			if(ret.index>>bit_shift >= indexing->size()){
+// 				std::map<uint,m_block*>* temp;
+// 				if(indexing == &index1)
+// 					temp = &index2;
+// 				else
+// 					temp = &index1;
+// 				*temp = *indexing;
+// 				m_block* new_block = new m_block();
+// 				temp->insert(std::pair<uint,m_block*>(ret.index>>bit_shift,new_block));
+// 				indexing = temp;
+// 			}
+// 			++m_size;
+// 		}
+// 		ret.d = indexing->at(ret.index>>bit_shift)[ret.index & block_mask];
+// 		ret.d->valid = false;
+// 		m.unlock();
+// 		ret.d->data.t();
+// 		return ret;
+// 	}
+// 	void _del(ref r){
+// 		if (r.a != this)
+// 			throw;
+// 		r.d->data.~t();
+// 		m.lock();
+// 		r.d->valid = false;
+// 		avail.emplace_front(r.index);
+// 		m.unlock();
+// 	}
 
-	~heap2(){
-		for(auto&i : *indexing){
-			delete i.second;
-		}
-	}
-};
+// 	~heap2(){
+// 		for(auto&i : *indexing){
+// 			delete i.second;
+// 		}
+// 	}
+// };
