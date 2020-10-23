@@ -10,39 +10,46 @@ glm::vec3 mainCamPos;
 glm::vec3 mainCamUp;
 glm::vec3 MainCamForward;
 
-void _transform::translate(glm::vec3 translation) {
+void _transform::translate(glm::vec3 translation)
+{
 	position += rotation * translation;
 }
-void _transform::rotate(glm::vec3 axis, float radians) {
+void _transform::rotate(glm::vec3 axis, float radians)
+{
 	rotation = glm::rotate(rotation, radians, axis);
 }
 
 atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 deque_heap<_transform> TRANSFORMS;
 vector<_transform> TRANSFORMS_TO_BUFFER;
-gpu_vector_proxy<_transform>* GPU_TRANSFORMS;
-gpu_vector_proxy<GLint>* transformIds;
-gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
-
+gpu_vector_proxy<_transform> *GPU_TRANSFORMS;
+gpu_vector_proxy<GLint> *transformIds;
+// gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
+gpu_vector_proxy<glm::vec3> *gpu_position_updates;
+gpu_vector_proxy<glm::quat> *gpu_rotation_updates;
+gpu_vector_proxy<glm::vec3> *gpu_scale_updates;
 
 _Transforms Transforms;
 transform2 root2;
 
-transform2::transform2() {	}
+transform2::transform2() {}
 
-void transform2::_init() {
+void transform2::_init()
+{
 	// gameLock.lock();
 	// _T = TRANSFORMS._new();
 	// gameLock.unlock();
 	// parent = 0;
 	root2.adopt(*this);
 }
-void transform2::init(game_object* g) {
+void transform2::init(game_object *g)
+{
 	Transforms.meta[id].gameObject = g;
 	_init();
 }
 
-void transform2::init(transform2 other, game_object* go) {
+void transform2::init(transform2 other, game_object *go)
+{
 	Transforms.meta[id].gameObject = go;
 	_init();
 	Transforms.positions[id] = other.getPosition();
@@ -50,12 +57,12 @@ void transform2::init(transform2 other, game_object* go) {
 	Transforms.scales[id] = other.getScale();
 }
 
-void transform2::init(transform2 & other) {
-
+void transform2::init(transform2 &other)
+{
 }
-transform2::~transform2() {	}
+transform2::~transform2() {}
 
-transform2::transform2(int i) : id(i) { }
+transform2::transform2(int i) : id(i) {}
 // transform2 transform2::operator=(const transform2& t) {
 // 	this->_T = t._T;
 // 	this->gameObject = t.gameObject;
@@ -64,7 +71,8 @@ transform2::transform2(int i) : id(i) { }
 // 	return *this;
 // }
 
-_transform transform2::getTransform(){
+_transform transform2::getTransform()
+{
 	_transform t;
 	t.position = getPosition();
 	t.rotation = getRotation();
@@ -72,33 +80,42 @@ _transform transform2::getTransform(){
 	return t;
 }
 
-void transform2::lookat(glm::vec3 direction, glm::vec3 up) {
+void transform2::lookat(glm::vec3 direction, glm::vec3 up)
+{
 	Transforms.transform_updates[id].rot = true;
-	Transforms.rotations[id] = quatLookAtLH(direction,up);
+	Transforms.rotations[id] = quatLookAtLH(direction, up);
 }
-glm::vec3 transform2::forward() {
+glm::vec3 transform2::forward()
+{
 	return glm::normalize(Transforms.rotations[id] * glm::vec3(0.0f, 0.0f, 1.0f));
 }
-glm::vec3 transform2::right() {
+glm::vec3 transform2::right()
+{
 	return glm::normalize(Transforms.rotations[id] * glm::vec3(1.0f, 0.0f, 0.0f));
 }
-glm::vec3 transform2::up() {
+glm::vec3 transform2::up()
+{
 	return glm::normalize(Transforms.rotations[id] * glm::vec3(0.0f, 1.0f, 0.0f));
 }
-glm::mat4 transform2::getModel() {
+glm::mat4 transform2::getModel()
+{
 	return (glm::translate(Transforms.positions[id]) * glm::toMat4(Transforms.rotations[id]) * glm::scale(Transforms.scales[id]));
 }
-glm::vec3 transform2::getScale() {
+glm::vec3 transform2::getScale()
+{
 	return Transforms.scales[id];
 }
-void transform2::setScale(glm::vec3 scale) {
+void transform2::setScale(glm::vec3 scale)
+{
 	Transforms.transform_updates[id].scl = true;
 	this->scale(scale / Transforms.scales[id]);
 }
-glm::vec3 transform2::getPosition() {
+glm::vec3 transform2::getPosition()
+{
 	return Transforms.positions[id];
 }
-void transform2::setPosition(glm::vec3 pos) {
+void transform2::setPosition(glm::vec3 pos)
+{
 	// m.lock();
 	Transforms.transform_updates[id].pos = true;
 	for (transform2 c : Transforms.meta[id].children)
@@ -106,22 +123,27 @@ void transform2::setPosition(glm::vec3 pos) {
 	Transforms.positions[id] = pos;
 	// m.unlock();
 }
-glm::quat transform2::getRotation() {
+glm::quat transform2::getRotation()
+{
 	return Transforms.rotations[id];
 }
-void transform2::setRotation(glm::quat r) {
+void transform2::setRotation(glm::quat r)
+{
 	Transforms.transform_updates[id].rot = true;
 	Transforms.rotations[id] = r;
 }
-list<transform2>& transform2::getChildren() {
+list<transform2> &transform2::getChildren()
+{
 	return Transforms.meta[id].children;
 }
-transform2 transform2::getParent() {
+transform2 transform2::getParent()
+{
 	return Transforms.meta[id].parent;
 }
 
-void transform2::adopt(transform2 transform) {
-	if(Transforms.meta[transform.id].parent.id == this->id)
+void transform2::adopt(transform2 transform)
+{
+	if (Transforms.meta[transform.id].parent.id == this->id)
 		return;
 	transform->orphan();
 	Transforms.meta[transform.id].parent.id = this->id;
@@ -131,14 +153,17 @@ void transform2::adopt(transform2 transform) {
 	Transforms.meta[transform.id].m.unlock();
 }
 
-game_object* transform2::gameObject(){
+game_object *transform2::gameObject()
+{
 	return Transforms.meta[id].gameObject;
 }
 
-void transform2::setGameObject(game_object* g){
+void transform2::setGameObject(game_object *g)
+{
 	Transforms.meta[id].gameObject = g;
 }
-void transform2::_destroy() {
+void transform2::_destroy()
+{
 	orphan();
 	Transforms._delete(*this);
 	// if (enabled) {
@@ -153,15 +178,18 @@ void transform2::_destroy() {
 	// delete this;
 }
 
-void transform2::move(glm::vec3 movement, bool hasChildren = false) {
+void transform2::move(glm::vec3 movement, bool hasChildren)
+{
 	Transforms.transform_updates[id].pos = true;
 	Transforms.positions[id] += movement;
-	if(hasChildren){
+	if (hasChildren)
+	{
 		for (auto a : Transforms.meta[id].children)
-		a->translate(movement, glm::quat(1,0,0,0));
+			a->translate(movement, glm::quat(1, 0, 0, 0));
 	}
 }
-void transform2::translate(glm::vec3 translation) {
+void transform2::translate(glm::vec3 translation)
+{
 	// m.lock();
 	Transforms.transform_updates[id].pos = true;
 	Transforms.positions[id] += Transforms.rotations[id] * translation;
@@ -169,7 +197,8 @@ void transform2::translate(glm::vec3 translation) {
 		a->translate(translation, Transforms.rotations[id]);
 	// m.unlock();
 }
-void transform2::translate(glm::vec3 translation, glm::quat r) {
+void transform2::translate(glm::vec3 translation, glm::quat r)
+{
 	// m.lock();
 	Transforms.transform_updates[id].pos = true;
 	Transforms.positions[id] += r * translation;
@@ -177,7 +206,8 @@ void transform2::translate(glm::vec3 translation, glm::quat r) {
 		a->translate(translation, r);
 	// m.unlock();
 }
-void transform2::scale(glm::vec3 scale) {
+void transform2::scale(glm::vec3 scale)
+{
 	// m.lock();
 	Transforms.transform_updates[id].scl = true;
 	Transforms.scales[id] *= scale;
@@ -185,7 +215,8 @@ void transform2::scale(glm::vec3 scale) {
 		a->scaleChild(Transforms.positions[id], scale);
 	// m.unlock();
 }
-void transform2::scaleChild(glm::vec3 pos, glm::vec3 scale) {
+void transform2::scaleChild(glm::vec3 pos, glm::vec3 scale)
+{
 	// m.lock();
 	Transforms.transform_updates[id].scl = true;
 	Transforms.positions[id] = (Transforms.positions[id] - pos) * scale + pos;
@@ -194,7 +225,8 @@ void transform2::scaleChild(glm::vec3 pos, glm::vec3 scale) {
 		a->scaleChild(pos, scale);
 	// m.unlock();
 }
-void transform2::rotate(glm::vec3 axis, float radians) {
+void transform2::rotate(glm::vec3 axis, float radians)
+{
 	// m.lock();
 	Transforms.transform_updates[id].rot = true;
 	Transforms.rotations[id] = glm::rotate(Transforms.rotations[id], radians, axis);
@@ -203,22 +235,23 @@ void transform2::rotate(glm::vec3 axis, float radians) {
 	Transforms.rotations[id] = normalize(Transforms.rotations[id]);
 	// m.unlock();
 }
-void transform2::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle) {
+void transform2::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle)
+{
 	// m.lock();
 	glm::vec3 ax = r * axis;
 	Transforms.transform_updates[id].rot = true;
 	Transforms.transform_updates[id].pos = true;
 	Transforms.positions[id] = pos + glm::rotate(Transforms.positions[id] - pos, angle, ax);
-	Transforms.rotations[id] = glm::rotate(Transforms.rotations[id], angle, glm::inverse(Transforms.rotations[id]) * ax);// glm::rotate(rotation, angle, axis);
+	Transforms.rotations[id] = glm::rotate(Transforms.rotations[id], angle, glm::inverse(Transforms.rotations[id]) * ax); // glm::rotate(rotation, angle, axis);
 	for (transform2 a : Transforms.meta[id].children)
 		a->rotateChild(axis, pos, r, angle);
 	Transforms.rotations[id] = normalize(Transforms.rotations[id]);
 	// m.unlock();
 }
 
-
-void transform2::orphan() {
-	if (Transforms.meta[id].parent.id == 0 )
+void transform2::orphan()
+{
+	if (Transforms.meta[id].parent.id == 0)
 		return;
 	Transforms.meta[getParent().id].m.lock();
 	getParent().getChildren().erase(Transforms.meta[getParent().id].childId);
@@ -226,90 +259,59 @@ void transform2::orphan() {
 	Transforms.meta[id].parent.id = 0;
 }
 
-
 // bool compareTransform(transform2* t1, transform2* t2){
 // 	return t1->_T < t2->_T;
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void initTransform(){
+void initTransform()
+{
 	GPU_TRANSFORMS = new gpu_vector_proxy<_transform>();
 	GPU_TRANSFORMS->usage = GL_STREAM_COPY;
-	GPU_TRANSFORMS_UPDATES = new gpu_vector_proxy<_transform>();
-	GPU_TRANSFORMS_UPDATES->usage = GL_STREAM_COPY;
+	// GPU_TRANSFORMS_UPDATES = new gpu_vector_proxy<_transform>();
+	// GPU_TRANSFORMS_UPDATES->usage = GL_STREAM_COPY;
+	gpu_position_updates = new gpu_vector_proxy<glm::vec3>();
+	gpu_position_updates->usage = GL_STREAM_COPY;
+	gpu_rotation_updates = new gpu_vector_proxy<glm::quat>();
+	gpu_rotation_updates->usage = GL_STREAM_COPY;
+	gpu_scale_updates = new gpu_vector_proxy<glm::vec3>();
+	gpu_scale_updates->usage = GL_STREAM_COPY;
+
 	transformIds = new gpu_vector_proxy<GLint>();
 	transformIds->usage = GL_STREAM_COPY;
 }
 
-int switchAH(int index) {
+int switchAH(int index)
+{
 	return ~index - 1;
 }
 unsigned int transforms_enabled = 0;
 
-Transform* root;
+Transform *root;
 
-
-void Transform::init() {
+void Transform::init()
+{
 	// gameLock.lock();
 	_T = TRANSFORMS._new();
 	// gameLock.unlock();
 	parent = 0;
 	root->adopt(this);
 }
-game_object* Transform::gameObject(){
+game_object *Transform::gameObject()
+{
 	return this->_gameObject;
 }
-void Transform::setGameObject(game_object* g){
+void Transform::setGameObject(game_object *g)
+{
 	this->_gameObject = g;
 }
-Transform::Transform(game_object* g) : m() {
+Transform::Transform(game_object *g) : m()
+{
 	this->setGameObject(g);
 	init();
 }
 
-Transform::Transform(Transform& other, game_object* go) : m() {
+Transform::Transform(Transform &other, game_object *go) : m()
+{
 	this->setGameObject(go);
 	init();
 	_T->position = other.getPosition();
@@ -325,52 +327,66 @@ Transform::Transform(Transform& other, game_object* go) : m() {
 // 	return *this;
 // }
 
-void Transform::lookat(glm::vec3 direction, glm::vec3 up) {
-	_T->rotation = quatLookAtLH(direction,up);
+void Transform::lookat(glm::vec3 direction, glm::vec3 up)
+{
+	_T->rotation = quatLookAtLH(direction, up);
 }
-glm::vec3 Transform::forward() {
+glm::vec3 Transform::forward()
+{
 	return glm::normalize(_T->rotation * glm::vec3(0.0f, 0.0f, 1.0f));
 }
-glm::vec3 Transform::right() {
+glm::vec3 Transform::right()
+{
 	return glm::normalize(_T->rotation * glm::vec3(1.0f, 0.0f, 0.0f));
 }
-glm::vec3 Transform::up() {
+glm::vec3 Transform::up()
+{
 	return glm::normalize(_T->rotation * glm::vec3(0.0f, 1.0f, 0.0f));
 }
-glm::mat4 Transform::getModel() {
+glm::mat4 Transform::getModel()
+{
 	return (glm::translate(_T->position) * glm::toMat4(_T->rotation) * glm::scale(_T->scale));
 }
-glm::vec3 Transform::getScale() {
+glm::vec3 Transform::getScale()
+{
 	return _T->scale;
 }
-void Transform::setScale(glm::vec3 scale) {
+void Transform::setScale(glm::vec3 scale)
+{
 	this->scale(scale / _T->scale);
 }
-glm::vec3 Transform::getPosition() {
+glm::vec3 Transform::getPosition()
+{
 	return _T->position;
 }
-void Transform::setPosition(glm::vec3 pos) {
+void Transform::setPosition(glm::vec3 pos)
+{
 	// m.lock();
-	for (Transform* c : children)
+	for (Transform *c : children)
 		c->translate(pos - _T->position, glm::quat());
 	_T->position = pos;
 	// m.unlock();
 }
-glm::quat Transform::getRotation() {
+glm::quat Transform::getRotation()
+{
 	return _T->rotation;
 }
-void Transform::setRotation(glm::quat r) {
+void Transform::setRotation(glm::quat r)
+{
 	_T->rotation = r;
 }
-list<Transform*>& Transform::getChildren() {
+list<Transform *> &Transform::getChildren()
+{
 	return children;
 }
-Transform* Transform::getParent() {
+Transform *Transform::getParent()
+{
 	return parent;
 }
 mutex m;
-void Transform::adopt(Transform * transform) {
-	if(transform->parent == this)
+void Transform::adopt(Transform *transform)
+{
+	if (transform->parent == this)
 		return;
 	transform->orphan();
 	transform->parent = this;
@@ -380,7 +396,8 @@ void Transform::adopt(Transform * transform) {
 	this->m.unlock();
 }
 
-void Transform::_destroy() {
+void Transform::_destroy()
+{
 	orphan();
 	_T._delete();
 	// if (enabled) {
@@ -395,68 +412,77 @@ void Transform::_destroy() {
 	delete this;
 }
 
-void Transform::move(glm::vec3 movement, bool hasChildren = false) {
+void Transform::move(glm::vec3 movement, bool hasChildren)
+{
 	_T->position += movement;
-	if(hasChildren){
+	if (hasChildren)
+	{
 		for (auto a : children)
-		a->translate(movement, glm::quat(1,0,0,0));
+			a->translate(movement, glm::quat(1, 0, 0, 0));
 	}
 }
-void Transform::translate(glm::vec3 translation) {
+void Transform::translate(glm::vec3 translation)
+{
 	// m.lock();
 	_T->position += _T->rotation * translation;
 	for (auto a : children)
 		a->translate(translation, _T->rotation);
 	// m.unlock();
 }
-void Transform::translate(glm::vec3 translation, glm::quat r) {
+void Transform::translate(glm::vec3 translation, glm::quat r)
+{
 	// m.lock();
 	_T->position += r * translation;
-	for (Transform* a : children)
+	for (Transform *a : children)
 		a->translate(translation, r);
 	// m.unlock();
 }
-void Transform::scale(glm::vec3 scale) {
+void Transform::scale(glm::vec3 scale)
+{
 	// m.lock();
 	_T->scale *= scale;
-	for (Transform* a : children)
+	for (Transform *a : children)
 		a->scaleChild(_T->position, scale);
 	// m.unlock();
 }
-void Transform::scaleChild(glm::vec3 pos, glm::vec3 scale) {
+void Transform::scaleChild(glm::vec3 pos, glm::vec3 scale)
+{
 	// m.lock();
 	_T->position = (_T->position - pos) * scale + pos;
 	_T->scale *= scale;
-	for (Transform* a : children)
+	for (Transform *a : children)
 		a->scaleChild(pos, scale);
 	// m.unlock();
 }
-void Transform::rotate(glm::vec3 axis, float radians) {
+void Transform::rotate(glm::vec3 axis, float radians)
+{
 	// m.lock();
 	_T->rotation = glm::rotate(_T->rotation, radians, axis);
-	for (Transform* a : children)
+	for (Transform *a : children)
 		a->rotateChild(axis, _T->position, _T->rotation, radians);
 	_T->rotation = normalize(_T->rotation);
 	// m.unlock();
 }
-void Transform::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle) {
+void Transform::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle)
+{
 	// m.lock();
 	glm::vec3 ax = r * axis;
 	_T->position = pos + glm::rotate(_T->position - pos, angle, ax);
-	_T->rotation = glm::rotate(_T->rotation, angle, glm::inverse(_T->rotation) * ax);// glm::rotate(rotation, angle, axis);
-	for (Transform* a : children)
+	_T->rotation = glm::rotate(_T->rotation, angle, glm::inverse(_T->rotation) * ax); // glm::rotate(rotation, angle, axis);
+	for (Transform *a : children)
 		a->rotateChild(axis, pos, r, angle);
 	_T->rotation = normalize(_T->rotation);
 	// m.unlock();
 }
 
-
-Transform::~Transform() {	}
-Transform::Transform(Transform & other) {
+Transform::~Transform() {}
+Transform::Transform(Transform &other)
+{
 }
 
-void Transform::orphan() {
-	if (this->parent == 0 )
+void Transform::orphan()
+{
+	if (this->parent == 0)
 		return;
 	this->parent->m.lock();
 	this->parent->children.erase(childId);
@@ -464,7 +490,7 @@ void Transform::orphan() {
 	this->parent = 0;
 }
 
-
-bool compareTransform(Transform* t1, Transform* t2){
+bool compareTransform(Transform *t1, Transform *t2)
+{
 	return t1->_T < t2->_T;
 }

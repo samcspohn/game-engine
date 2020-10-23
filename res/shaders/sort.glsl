@@ -45,7 +45,7 @@ barrier();
     }
     for(uint i = start; i < end; ++i){
         // uint k = key(_output[globalOffset + i]);
-        uint k = key(_input[globalOffset + i]) >> 16;
+        uint k = key(_input[globalOffset + i]) & 0x00FF;
         k >>= 5;
         _keys[i] = k;
         ids[i] = globalOffset + i;
@@ -93,10 +93,10 @@ void radix(uint g_id){
     // first pass
     switch(stage){
         case -1:
-            atomicAdd(histo[key(_input[g_id]) >> 16],1);
+            subSort(g_id);
             break;
         case 0:
-            subSort(g_id);
+            atomicAdd(histo[key(_output[g_id]) >> 16],1);
             break;
         case 1:
             uint start = g_id * block_sum_size;

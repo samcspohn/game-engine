@@ -34,7 +34,11 @@ extern atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 extern vector<_transform> TRANSFORMS_TO_BUFFER;
 extern gpu_vector_proxy<_transform>* GPU_TRANSFORMS;
 extern gpu_vector_proxy<GLint>* transformIds;
-extern gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
+// extern gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
+extern gpu_vector_proxy<glm::vec3>* gpu_position_updates;
+extern gpu_vector_proxy<glm::quat>* gpu_rotation_updates;
+extern gpu_vector_proxy<glm::vec3>* gpu_scale_updates;
+
 
 class game_object;
 

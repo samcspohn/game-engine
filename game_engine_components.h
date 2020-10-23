@@ -225,6 +225,7 @@ public:
 	glm::vec2 screen;
 
 	glm::vec3 pos;
+	glm::vec3 dir;
 	glm::vec3 cullpos;
 	glm::mat3 camInv;
 	glm::vec2 getScreen(){
@@ -319,6 +320,7 @@ public:
 			currShader->use();
 			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
 			currShader->setVec3("viewPos",pos);
+			currShader->setVec3("viewDir",dir);
 			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
 			currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
 			for(auto &j : i.second){
@@ -469,11 +471,14 @@ private:
 };
 
 vector<int> renderCounts = vector<int>(concurrency::numThreads);
-vector<vector<GLuint>> transformIdThreadcache;
+vector<vector<vector<GLint>>> transformIdThreadcache;
 // vector<vector<_transform>> transformThreadcache;
 
-vector<int> transformIdsToBuffer;
-vector<_transform> transformsToBuffer;
+// vector<int> transformIdsToBuffer;
+// vector<_transform> transformsToBuffer;
+vector<vector<glm::vec3>> positionsToBuffer;
+vector<vector<glm::quat>> rotationsToBuffer;
+vector<vector<glm::vec3>> scalesToBuffer;
 
 class copyBuffers : public component
 {
@@ -489,7 +494,7 @@ public:
 		int numt = concurrency::numThreads;
 		int step = Transforms.size() / concurrency::numThreads;
 		int i = step * id;
-		transformIdThreadcache[id].clear();
+		// transformIdThreadcache[id].clear();
 		// if(Transforms.density() > 0.5){
 
 		// 	int from = step * id;
@@ -505,19 +510,35 @@ public:
 		// 	}
 
 		// }else{
+			transformIdThreadcache[id][0].clear(); // pos
+			transformIdThreadcache[id][1].clear(); // scl
+			transformIdThreadcache[id][2].clear(); // rot
+
+			positionsToBuffer[id].clear();
+			rotationsToBuffer[id].clear();
+			scalesToBuffer[id].clear();
 
 			auto from = Transforms.transform_updates.begin() + step * id;
 			auto to = from + step;
 
-			transformIdThreadcache[id].reserve(step + 1);
+			// transformIdThreadcache[id].reserve(step + 1);
 			if(id == concurrency::numThreads - 1)
 				to = Transforms.transform_updates.end();
 			while (from != to){
-				if(from->pos || from->rot){
+				if(from->pos){
 					from->pos = false;
+					transformIdThreadcache[id][0].emplace_back(i);
+					positionsToBuffer[id].emplace_back( ((transform2)i).getPosition() );
+				}
+				if(from->rot){
 					from->rot = false;
+					transformIdThreadcache[id][1].emplace_back(i);
+					rotationsToBuffer[id].emplace_back( ((transform2)i).getRotation() );
+				}
+				if(from->scl){
 					from->scl = false;
-					transformIdThreadcache[id].emplace_back(i);
+					transformIdThreadcache[id][2].emplace_back(i);
+					scalesToBuffer[id].emplace_back( ((transform2)i).getScale() );
 				}
 				++from;
 				++i;
@@ -527,7 +548,6 @@ public:
 		int __rendererId = 0;
 		int __rendererOffset = 0;
 		typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
-		// typename vector<GLuint>::iterator __rk = __RENDERERS_keys_in->storage->begin();
 		for(auto &i : batchManager::batches.back()){
 			for(auto &j : i.second){
 				for(auto &k : j.second){
@@ -535,17 +555,14 @@ public:
 					typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
 					typename deque<GLuint>::iterator to = from + step;
 					__r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
-					// __rk =  __RENDERERS_keys_in->storage->begin() + __rendererOffset + step * id;
 					if(id == concurrency::numThreads - 1){
 						to = k.first->ids.data.end();
 					}
 					while(from != to){
 						__r->transform = *from;
 						__r->id = __rendererId;
-						// *__rk = *from >> 16;
 						++from;
 						++__r;
-						// ++__rk;
 					}
 					++__rendererId;
 					__rendererOffset += k.first->ids.size();
@@ -553,13 +570,13 @@ public:
 			}
 		}
 	}
-	void lateUpdate(){
+	// void lateUpdate(){
 		
-		for(int i = 0; i < transformIdThreadcache[id].size(); i++){
-			transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
-			// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
-		}
-	}
+	// 	for(int i = 0; i < transformIdThreadcache[id].size(); i++){
+	// 		transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
+	// 		// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
+	// 	}
+	// }
 public:
 	//UPDATE(copyBuffers, update);
 	COPY(copyBuffers);

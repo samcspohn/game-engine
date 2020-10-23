@@ -30,6 +30,10 @@ layout(std430,binding = 8) buffer rm{renderMeta renderMetas[];};
 layout(std430,binding = 6) buffer it{int transformIds[];};
 layout(std430,binding = 7) buffer ttc{_transform transformsToCopy[];};
 
+layout(std430,binding = 8) buffer tp{float positions[];};
+layout(std430,binding = 9) buffer tr{vec4 rotations[];};
+layout(std430,binding = 10) buffer ts{float scales[];};
+
 uniform int stage;
 uniform uint num;
 // uniform float radius;
@@ -52,6 +56,17 @@ bool planeIntersect(float plane[4], vec3 point) {
 void updateTransforms(uint id){
 	transforms[transformIds[id]] = transformsToCopy[id];
 }
+void updatePositions(uint id){
+	uint i = id * 3;
+	transforms[transformIds[id]].position = vec3(positions[i], positions[i + 1], positions[i + 2]);
+}
+void updateRotations(uint id){
+	transforms[transformIds[id]].rotation = rotations[id];
+}
+void updateScales(uint id){
+	uint i = id * 3;
+	transforms[transformIds[id]].scale = vec3(scales[i], scales[i + 1], scales[i + 2]);
+}
 layout( local_size_x = 64,  local_size_y = 1, local_size_z = 1) in;
 void main () {
 
@@ -61,6 +76,16 @@ void main () {
 			case -1:
 				updateTransforms(gid);
 				break;
+			case -2:
+				updatePositions(gid);
+				break;
+			case -3:
+				updateRotations(gid);
+				break;
+			case -4:
+				updateScales(gid);
+				break;
+			
 			default:
 			{
 				_transform transform = transforms[renderers[gid].transform];

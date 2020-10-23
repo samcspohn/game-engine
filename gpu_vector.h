@@ -67,6 +67,9 @@ public:
 	}
 
 	void bindData(uint index){
+		if(!inited){
+			_init();
+		}
 		glGetError();
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferId);
 		GLenum err = glGetError();
@@ -184,6 +187,9 @@ public:
 		inited = true;
 	}
 	void bindData(uint index){
+		if(!inited){
+			_init();
+		}
 		glGetError();
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferId);
 		GLenum err = glGetError();
@@ -284,8 +290,6 @@ public:
 
 private:
 	void realloc() {
-		glDeleteBuffers(1, &bufferId);
-		glGenBuffers(1, &bufferId);
 		glGetError();
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);

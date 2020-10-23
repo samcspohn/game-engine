@@ -180,7 +180,7 @@ public:
     { 
         glUniform1i(glGetUniformLocation(Program, name.c_str()), value); 
     }
-	void setUint(const std::string &name, int value) const
+	void setUint(const std::string &name, uint value) const
     { 
         glUniform1ui(glGetUniformLocation(Program, name.c_str()), value); 
     }

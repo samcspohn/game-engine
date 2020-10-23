@@ -129,7 +129,7 @@ void updateTiming()
 	double currentFrame = glfwGetTime();
 	Time.unscaledTime = currentFrame;
 	Time.unscaledDeltaTime = currentFrame - lastFrame;
-	Time.deltaTime = Time.unscaledDeltaTime * Time.timeScale;
+	Time.deltaTime = std::min(Time.unscaledDeltaTime, 1.f / 30.f) * Time.timeScale;
 	Time.time += Time.deltaTime;
 	Time.timeBuffer.add(Time.unscaledDeltaTime);
 	lastFrame = currentFrame;
@@ -243,7 +243,7 @@ void renderThreadFunc()
 
 	glEnable(GL_CULL_FACE);
 
-	Shader matProgram("res/shaders/mat.comp");
+	Shader matProgram("res/shaders/transform.comp");
 
 	GLint glIntv;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &glIntv);
@@ -289,6 +289,13 @@ void renderThreadFunc()
 	__rendererMetas = new gpu_vector<__renderMeta>();
 	__rendererMetas->ownStorage();
 	initTransform();
+	vector<glm::vec3> ughh(10);
+	vector<glm::quat> ughh2(10);
+	gpu_position_updates->bufferData(ughh);
+	gpu_rotation_updates->bufferData(ughh2);
+	gpu_scale_updates->bufferData(ughh);
+
+
 	initParticles();
 	particle_renderer::init();
 	lighting::init();
@@ -356,21 +363,74 @@ void renderThreadFunc()
 				// }
 				// else
 				// {
+					matProgram.use();
 
 					GPU_TRANSFORMS->grow(Transforms.size());
-					transformIds->bufferData(transformIdsToBuffer);
-					GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
-
-					matProgram.use();
-					// bind buffers
-					GPU_TRANSFORMS->bindData(0);
 					transformIds->bindData(6);
-					GPU_TRANSFORMS_UPDATES->bindData(7);
+					GPU_TRANSFORMS->bindData(0);
+					gpu_position_updates->bindData(8);
+					gpu_rotation_updates->bindData(9);
+					gpu_scale_updates->bindData(10);
 
-					matProgram.setInt("stage", -1);
-					matProgram.setUint("num", transformsToBuffer.size());
-					glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
-					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+
+					matProgram.setInt("stage", -2); // positions
+					for(int i = 0; i < concurrency::numThreads; i++){
+						transformIds->bufferData(transformIdThreadcache[i][0]);
+						// transformIds->bindData(6);
+
+						gpu_position_updates->bufferData(positionsToBuffer[i]);
+						// gpu_position_updates->bindData(8);
+					
+
+						matProgram.setUint("num", transformIdThreadcache[i][0].size());
+						glDispatchCompute(transformIdThreadcache[i][0].size() / 64 + 1, 1, 1);
+						glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+					}
+
+					matProgram.setInt("stage", -3); // rotations
+					for(int i = 0; i < concurrency::numThreads; i++){
+						transformIds->bufferData(transformIdThreadcache[i][1]);
+						// transformIds->bindData(6);
+						gpu_rotation_updates->bufferData(rotationsToBuffer[i]);
+						// gpu_rotation_updates->bindData(9);
+
+						matProgram.setUint("num", transformIdThreadcache[i][1].size());
+						glDispatchCompute(transformIdThreadcache[i][1].size() / 64 + 1, 1, 1);
+						glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+					}
+
+					matProgram.setInt("stage", -4); // scales
+					for(int i = 0; i < concurrency::numThreads; i++){
+						transformIds->bufferData(transformIdThreadcache[i][2]);
+						// transformIds->bindData(6);
+						gpu_scale_updates->bufferData(scalesToBuffer[i]);
+						// gpu_scale_updates->bindData(10);
+					
+
+						matProgram.setUint("num", transformIdThreadcache[i][2].size());
+						glDispatchCompute(transformIdThreadcache[i][2].size() / 64 + 1, 1, 1);
+						glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+					}
+
+
+
+
+
+
+					// transformIds->bufferData(transformIdsToBuffer);
+					// GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
+
+
+
+					// matProgram.use();
+					// // bind buffers
+					// GPU_TRANSFORMS->bindData(0);
+					// GPU_TRANSFORMS_UPDATES->bindData(7);
+
+					// matProgram.setInt("stage", -1);
+					// matProgram.setUint("num", transformsToBuffer.size());
+					// glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
+					// glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				// }
 
 				

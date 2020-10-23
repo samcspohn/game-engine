@@ -31,10 +31,6 @@ flat out uint id;
 layout (points) in;
 layout (triangle_strip, max_vertices=4) out;
 
-// in VS_OUT{
-// 	uint index;
-// }gs_in[];
-// out vec4 VertPos;
 in uint index_[];
 
 
@@ -55,43 +51,6 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
 
 }
 
-
-// void rotateX(inout vec3 vec, float angle){
-//     float y = vec.y;
-//     float z = vec.z;
-//     vec.y = y * cos(angle) - z * sin(angle);
-//     vec.z = y * sin(angle) + z * cos(angle);
-// }
-
-// void rotateY(inout vec3 vec, float angle){
-//     float x = vec.x;
-//     float z = vec.z;
-//     vec.x = x * cos(angle) + z * sin(angle);
-//     vec.z = -x * sin(angle) + z * cos(angle);
-// }
-
-
-// float getAngle(uint a){
-//     return float(a) / 65536 * 6.28318530718;
-// }
-// vec3 getPosition(inout d item){
-//     float anglex = getAngle(getX(item));
-//     float angley = getAngle(getY(item));
-//     vec3 p = vec3(0,0, getZ(item));
-//     rotateX(p,-anglex);
-//     rotateY(p,angley);
-//     // p.z = getDZ1(item);
-//     return p;
-// }
-// vec3 getPoint2(inout d item){
-//     float anglex = getAngle(getDX2(item));
-//     float angley = getAngle(getDY2(item));
-//     vec3 p = vec3(0,0, getDZ2(item));
-//     rotateX(p,-anglex);
-//     rotateY(p,angley);
-//     // p.z = getDZ2(item);
-//     return p;
-// }
 void main(){
     // uint index = data[index_[0]].id;
     uint index = index_[0];

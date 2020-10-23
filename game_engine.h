@@ -111,7 +111,11 @@ void init()
 		rootGameObject->addComponent<copyBuffers>()->id = i;
 	}
 	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
-	transformIdThreadcache = vector<vector<GLuint>>(copyWorkers->size());
+	transformIdThreadcache = vector<vector<vector<int>>>(copyWorkers->size(),vector<vector<int>>(3));
+	positionsToBuffer = vector<vector<glm::vec3>>(copyWorkers->size());
+	rotationsToBuffer = vector<vector<glm::quat>>(copyWorkers->size());
+	scalesToBuffer = vector<vector<glm::vec3>>(copyWorkers->size());
+
 	// transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
 	gameEngineComponents.erase(copyWorkers);
 }
@@ -200,6 +204,7 @@ void run()
 			c.proj = c.getProjection();
 			c.screen = c.getScreen();
 			c.pos = c.transform->getPosition();
+			c.dir = c.transform->forward();
 			if (!c.lockFrustum)
 			{
 				c.camInv = glm::mat3(c.rot);
@@ -246,19 +251,19 @@ void run()
 		copyWorkers->update();
 		// if (Transforms.density() <= 0.5)
 		// {
-		int bufferSize = 0;
-		for (int i = 0; i < concurrency::numThreads; i++)
-		{
-			((copyBuffers *)copyWorkers->get(i))->offset = bufferSize;
-			bufferSize += transformIdThreadcache[i].size();
-		}
-		transformIdsToBuffer.resize(bufferSize);
-		transformsToBuffer.resize(bufferSize);
-		copyWorkers->lateUpdate();
+		// int bufferSize = 0;
+		// for (int i = 0; i < concurrency::numThreads; i++)
+		// {
+		// 	((copyBuffers *)copyWorkers->get(i))->offset = bufferSize;
+		// 	bufferSize += transformIdThreadcache[i].size();
+		// }
+		// transformIdsToBuffer.resize(bufferSize);
+		// transformsToBuffer.resize(bufferSize);
+		// copyWorkers->lateUpdate();
 
-		_parallel_for(transformsToBuffer, [&](int i) {
-			transformsToBuffer[i] = ((transform2)(transformIdsToBuffer[i])).getTransform();
-		});
+		// _parallel_for(transformsToBuffer, [&](int i) {
+		// 	transformsToBuffer[i] = ((transform2)(transformIdsToBuffer[i])).getTransform();
+		// });
 		// }
 		appendStat("copy buffers", stopWatch.stop());
 
