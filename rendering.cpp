@@ -93,6 +93,10 @@ _shaderMeta::_shaderMeta( string vertex, string geom,string fragment) {
 	name = vertex + geom + fragment;
 	shader = new Shader(vertex, geom, fragment);
 }
+_shaderMeta::_shaderMeta( string vertex, string tess, string geom,string fragment) {
+	name = vertex + tess +  geom + fragment;
+	shader = new Shader(vertex, tess, geom, fragment);
+}
 _shaderMeta::~_shaderMeta() {
 	delete shader;
 }
@@ -137,10 +141,22 @@ _shader::_shader(string vertex, string geom,  string fragment) {
 		s = ms->second;
 	}
 	else {
-		shaderManager::shaders[geom + vertex + fragment] = new _shaderMeta(vertex, geom, fragment);
-		s = shaderManager::shaders[geom + vertex + fragment];
+		shaderManager::shaders[vertex + geom + fragment] = new _shaderMeta(vertex, geom, fragment);
+		s = shaderManager::shaders[vertex + geom + fragment];
 	}
 }
+
+_shader::_shader(string vertex,string tess, string geom,  string fragment) {
+	auto ms = shaderManager::shaders.find(vertex + tess + geom + fragment);
+	if (ms != shaderManager::shaders.end()) {
+		s = ms->second;
+	}
+	else {
+		shaderManager::shaders[vertex + tess + geom + fragment] = new _shaderMeta(vertex, tess, geom, fragment);
+		s = shaderManager::shaders[vertex + tess + geom + fragment];
+	}
+}
+
 
 Shader& _shader::operator->(){
 	return *(this->s->shader);

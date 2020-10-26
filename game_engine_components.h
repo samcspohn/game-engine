@@ -331,7 +331,7 @@ public:
 					if(count > 0){
 						currShader->setUint("matrixOffset", _rendererOffsets[counter]);
 						glBindVertexArray( k.second->VAO );
-						glDrawElementsInstanced(GL_TRIANGLES,k.second->indices.size(),GL_UNSIGNED_INT, 0,count);
+						glDrawElementsInstanced(currShader->primitiveType,k.second->indices.size(),GL_UNSIGNED_INT, 0,count);
 
 						glBindBuffer(GL_ARRAY_BUFFER,0);
 						glBindVertexArray( 0 );

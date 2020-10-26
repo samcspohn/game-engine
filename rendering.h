@@ -77,6 +77,7 @@ struct _shaderMeta {
 	_shaderMeta(string compute);
 	_shaderMeta(string vertex, string fragment);
 	_shaderMeta( string vertex, string geom, string fragment);
+	_shaderMeta( string vertex, string tess, string geom, string fragment);
 	~_shaderMeta();
 	string name;
 	Shader* shader = 0;
@@ -94,6 +95,7 @@ public:
 	_shader(string compute);
 	_shader(string vertex, string fragment);
 	_shader(string vertex, string geom,  string fragment);
+	_shader(string vertex, string tess, string geom,  string fragment);
 	_shaderMeta* s = 0;
 	Shader& ref();
 	Shader& operator->();

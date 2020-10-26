@@ -20,12 +20,12 @@ layout(std430,binding = 4) buffer _ids{
 struct VS_OUT{
     vec3 position;
 };
-out VS_OUT input;
+out VS_OUT vs_out;
 flat out uint id;
 uniform uint matrixOffset;
 
 void main()
 {
     id = gl_InstanceID + matrixOffset;
-    input.position = position;
+    vs_out.position = position;
 }
