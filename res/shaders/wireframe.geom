@@ -10,16 +10,17 @@ layout(std430,binding = 4) buffer _ids{
 	uint ids[];
 };
 
-// out vec3 Normal;
-out vec3 FragPos;
-out float logz;
-
 
 struct VS_OUT{
     vec3 position;
 };
-in VS_OUT input[];
+in VS_OUT ts_out[];
 flat in uint id[];
+
+
+out vec3 FragPos;
+out float logz;
+
 
 uniform vec3 viewDir;
 uniform float FC;
@@ -37,12 +38,12 @@ void createVert(uint id, vec3 pos, vec3 offset){
     EmitVertex();
 }
 void makeLine(uint matId, uint id1, uint id2){
-    vec3 alignment = normalize(input[id1].position - input[id2].position);
+    vec3 alignment = normalize(ts_out[id1].position - ts_out[id2].position);
     vec3 offset = normalize(cross(viewDir,alignment)) * 0.01f;
-	createVert(matId, input[id1].position, offset);
-    createVert(matId, input[id1].position, -offset);
-    createVert(matId, input[id2].position, offset);
-    createVert(matId, input[id2].position, -offset);
+	createVert(matId, ts_out[id1].position, offset);
+    createVert(matId, ts_out[id1].position, -offset);
+    createVert(matId, ts_out[id2].position, offset);
+    createVert(matId, ts_out[id2].position, -offset);
     EndPrimitive();
 }
 

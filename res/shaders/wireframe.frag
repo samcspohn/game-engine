@@ -3,8 +3,8 @@
 
 layout(depth_less) out float gl_FragDepth;
 
-in vec2 TexCoord;
-in vec3 Normal;
+// in vec2 TexCoord;
+// in vec3 Normal;
 in vec3 FragPos;
 in float logz;
 
@@ -20,7 +20,7 @@ uniform float FC;
 void main()
 {
     gPosition = vec4(FragPos,1);
-    gNormal = vec4(normalize(Normal),1);
+    gNormal = vec4(vec3(0),1);
     gAlbedoSpec.rgb = vec3(1);
     gAlbedoSpec.a = 1;
 	gl_FragDepth = log2(logz) * 0.5 * FC;
