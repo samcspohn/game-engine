@@ -751,7 +751,7 @@ class sun_sc : public component{
 
 
 void makeGun(transform2 ship,vec3 pos,transform2 target, bool forward, bool upright){
-    _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe.geom","res/shaders/wireframe.frag");
+    // _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe.geom","res/shaders/wireframe.frag");
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
 	_model turretm("res/models/ship1/maingun.obj");
 	_model gunsm("res/models/ship1/3guns.obj");
@@ -805,7 +805,7 @@ int level1()
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
 	_shader lampShader("res/shaders/model.vert", "res/shaders/lamp.frag");
 	_shader terrainShader("res/shaders/model.vert", "res/shaders/terrain.frag");
-    _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe_tess.geom","res/shaders/wireframe.geom","res/shaders/wireframe.frag");
+    _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe.tesc","res/shaders/wireframe.tese","res/shaders/wireframe.geom","res/shaders/wireframe.frag");
 	wireFrame.s->shader->primitiveType = GL_PATCHES;
 	_model cubeModel("res/models/cube/cube.obj");
 	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
@@ -1126,7 +1126,7 @@ int level1()
 	        terrain* t = g->getComponent<terrain>();
 			t->scatter_obj = tree_go;
             t->r = g->getComponent<_renderer>();
-            // g->addComponent<_renderer>()->set(wireFrame,t->r->getModel());
+            g->addComponent<_renderer>()->set(wireFrame,t->r->getModel());
 
             g->transform->setScale(vec3(20));
             g->transform->setPosition(vec3(20 * i * terrainWidth,-4500,20 * j * terrainWidth));
