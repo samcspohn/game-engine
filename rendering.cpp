@@ -93,9 +93,9 @@ _shaderMeta::_shaderMeta( string vertex, string geom,string fragment) {
 	name = vertex + geom + fragment;
 	shader = new Shader(vertex, geom, fragment);
 }
-_shaderMeta::_shaderMeta( string vertex, string tess, string geom,string fragment) {
-	name = vertex + tess +  geom + fragment;
-	shader = new Shader(vertex, tess, geom, fragment);
+_shaderMeta::_shaderMeta( string vertex, string tesc, string tese, string geom,string fragment) {
+	name = vertex + tesc + tese +  geom + fragment;
+	shader = new Shader(vertex, tesc, tese, geom, fragment);
 }
 _shaderMeta::~_shaderMeta() {
 	delete shader;
@@ -126,34 +126,37 @@ _shader::_shader(string compute) {
 	}
 }
 _shader::_shader(string vertex, string fragment) {
-	auto ms = shaderManager::shaders.find(vertex + fragment);
+	string id = vertex + fragment;
+	auto ms = shaderManager::shaders.find(id);
 	if (ms != shaderManager::shaders.end()) {
 		s = ms->second;
 	}
 	else {
-		shaderManager::shaders[vertex + fragment] = new _shaderMeta(vertex, fragment);
-		s = shaderManager::shaders[vertex + fragment];
+		shaderManager::shaders[id] = new _shaderMeta(vertex, fragment);
+		s = shaderManager::shaders[id];
 	}
 }
 _shader::_shader(string vertex, string geom,  string fragment) {
-	auto ms = shaderManager::shaders.find(vertex + geom + fragment);
+	string id = vertex + geom + fragment;
+	auto ms = shaderManager::shaders.find(id);
 	if (ms != shaderManager::shaders.end()) {
 		s = ms->second;
 	}
 	else {
-		shaderManager::shaders[vertex + geom + fragment] = new _shaderMeta(vertex, geom, fragment);
-		s = shaderManager::shaders[vertex + geom + fragment];
+		shaderManager::shaders[id] = new _shaderMeta(vertex, geom, fragment);
+		s = shaderManager::shaders[id];
 	}
 }
 
-_shader::_shader(string vertex,string tess, string geom,  string fragment) {
-	auto ms = shaderManager::shaders.find(vertex + tess + geom + fragment);
+_shader::_shader(string vertex, string tesc, string tese, string geom,  string fragment) {
+	string id = vertex + tesc + tese + geom + fragment;
+	auto ms = shaderManager::shaders.find(id);
 	if (ms != shaderManager::shaders.end()) {
 		s = ms->second;
 	}
 	else {
-		shaderManager::shaders[vertex + tess + geom + fragment] = new _shaderMeta(vertex, tess, geom, fragment);
-		s = shaderManager::shaders[vertex + tess + geom + fragment];
+		shaderManager::shaders[id] = new _shaderMeta(vertex, tesc, tese, geom, fragment);
+		s = shaderManager::shaders[id];
 	}
 }
 

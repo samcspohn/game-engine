@@ -8,7 +8,6 @@ layout (location = 2) in vec2 uvs2;
 layout (location = 3) in vec3 normal;
 
 
-//vector(matrixes, matrix, 3);
 layout(std430, binding = 3) buffer _m_buffs{
 	matrix matrixes[];
 };
@@ -21,11 +20,10 @@ struct VS_OUT{
     vec3 position;
 };
 out VS_OUT vs_out;
-flat out uint id;
 uniform uint matrixOffset;
 
 void main()
 {
-    id = gl_InstanceID + matrixOffset;
-    vs_out.position = position;
+    uint id = gl_InstanceID + matrixOffset;
+    vs_out.position = (matrixes[id].model * vec4(position,1)).xyz;
 }

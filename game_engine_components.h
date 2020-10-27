@@ -323,6 +323,8 @@ public:
 			currShader->setVec3("viewDir",dir);
 			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
 			currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
+			glm::mat4 vp = proj * rot;
+			currShader->setMat4("vp",vp);
 			for(auto &j : i.second){
 				texArray ta = j.first;
 				currShader->bindTextures(ta);
