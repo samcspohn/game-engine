@@ -22,7 +22,7 @@ uniform float FC;
 uniform float aspectRatio;
 out vec3 FragPos;
 out float logz;
-out vec4 col;
+// out vec4 col;
 out vec2 offset;
 out float _life_;
 flat out uint id;
@@ -42,7 +42,7 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
         FragPos = vec3(model * vec4(point,1.0f));
         // protoID(rp);
         // col = prototypes[protoID(rp)].color;
-        col.a *= _life;
+        // col.a *= _life;
         _life_ = _life;
 
         // col.a = 1;
@@ -72,7 +72,7 @@ void main(){
     mat4 mvp = projection * vRot * view * model;
 
     if(prototypes[proto_id].trail == 1)
-        life1 = life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
+        life1 = min(1.f, life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime);
 
     createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1);
     createVert(vec3(.5f,.5f,0),mvp,model,rp, life1);

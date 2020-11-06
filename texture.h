@@ -22,7 +22,7 @@ struct TextureMeta
     TextureMeta();
     TextureMeta( string path, string type);
     void load(string path);
-    void gen(int width, int height);
+    void gen(int width, int height, GLenum format = GL_RGBA, GLenum = GL_UNSIGNED_BYTE,  float* data = 0);
 };
 
 struct _texture{
@@ -32,5 +32,6 @@ struct _texture{
     void setType(string type);
     void load(string path, string type);
 };
+_texture getNamedTexture(string name);
 
 GLint TextureFromFile( const char *path, string directory );

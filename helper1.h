@@ -26,7 +26,6 @@ using namespace chrono;
 #ifndef HELPER
 #define HELPER
 
-
 extern const GLint WIDTH, HEIGHT;
 extern int SCREEN_WIDTH, SCREEN_HEIGHT;
 

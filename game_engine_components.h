@@ -19,9 +19,7 @@
 #include "lighting.h"
 #include "particles.h"
 
-
 using namespace std;
-
 
 typedef glm::vec4 plane;
 struct _frustum
@@ -31,45 +29,60 @@ struct _frustum
 	plane right;
 	plane bottom;
 };
-struct DrawElementsIndirectCommand{
-	uint  count;
-	uint  primCount;
-	uint  firstIndex;
-	uint  baseVertex;
-	uint  baseInstance;
-} ;
-
+struct DrawElementsIndirectCommand
+{
+	uint count;
+	uint primCount;
+	uint firstIndex;
+	uint baseVertex;
+	uint baseInstance;
+};
 
 // vector<glm::vec4> lightPos;
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
 void renderQuad()
 {
-    if (quadVAO == 0)
-    {
-        float quadVertices[] = {
-            // positions        // texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-        // setup plane VAO
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    }
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
+	if (quadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,
+			1.0f,
+			0.0f,
+			0.0f,
+			1.0f,
+			-1.0f,
+			-1.0f,
+			0.0f,
+			0.0f,
+			0.0f,
+			1.0f,
+			1.0f,
+			0.0f,
+			1.0f,
+			1.0f,
+			1.0f,
+			-1.0f,
+			0.0f,
+			1.0f,
+			0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
 }
-
 
 _shader billBoardGenerator;
 _shader billBoardShader;
@@ -77,35 +90,44 @@ _model bill;
 // _texture t;
 // t.namedTexture("bill1");
 // t.t->gen(1024,1024);
-void makeBillboard(_model m, _texture t, _renderer* r){
+void makeBillboard(_model m, _texture t, _renderer *r)
+{
 	// billBoardGenerator = _shader("res/shaders/defLighting.vert","res/shaders/red.frag");
-	billBoardGenerator = _shader("res/shaders/model_no_inst.vert","res/shaders/model.frag");
-	billBoardShader = _shader("res/shaders/model.vert","res/shaders/model.frag");
+	billBoardGenerator = _shader("res/shaders/model_no_inst.vert", "res/shaders/model.frag");
+	billBoardShader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
 
-	glm::vec3 max = [&]{
+	glm::vec3 max = [&] {
 		glm::vec3 vert(-INFINITY);
-		for(auto& i : m.meshes()){
-			for(auto v : i.vertices){
+		for (auto &i : m.meshes())
+		{
+			for (auto v : i.vertices)
+			{
 				// v = v * glm::mat3(glm::rotate(glm::radians(-90.f), vec3(1,0,0)));
-				if(vert.x < v.x){
+				if (vert.x < v.x)
+				{
 					vert.x = v.x;
 				}
-				if(vert.y < v.z){
+				if (vert.y < v.z)
+				{
 					vert.y = v.z;
 				}
 			}
 		}
 		return vert;
 	}();
-	glm::vec3 min = [&]{
+	glm::vec3 min = [&] {
 		glm::vec3 vert(INFINITY);
-		for(auto& i : m.meshes()){
-			for(auto v : i.vertices){
+		for (auto &i : m.meshes())
+		{
+			for (auto v : i.vertices)
+			{
 				// v = v * glm::mat3(glm::rotate(glm::radians(-90.f), vec3(1,0,0)));
-				if(vert.x > v.x){
+				if (vert.x > v.x)
+				{
 					vert.x = v.x;
 				}
-				if(vert.y > v.z){
+				if (vert.y > v.z)
+				{
 					vert.y = v.z;
 				}
 			}
@@ -113,88 +135,80 @@ void makeBillboard(_model m, _texture t, _renderer* r){
 		return vert;
 	}();
 	bill.makeProcedural();
-	waitForRenderJob([&](){
+	waitForRenderJob([&]() {
 		bill.meshes().push_back(Mesh());
-		bill.mesh().vertices = {glm::vec3(min.x,  max.y, 0.0f)
-		,glm::vec3(min.x, min.y, 0.0f)
-		,glm::vec3(max.x,  max.y, 0.0f)
-		,glm::vec3(max.x, min.y, 0.0f)};
+		bill.mesh().vertices = {glm::vec3(min.x, max.y, 0.0f), glm::vec3(min.x, min.y, 0.0f), glm::vec3(max.x, max.y, 0.0f), glm::vec3(max.x, min.y, 0.0f)};
 
 		// for(auto& i : bill.mesh().vertices){
 		// 	i *= 10;
 		// }
 
-		bill.mesh().normals = {glm::vec3(0,0,1),
-		glm::vec3(0,0,1),
-		glm::vec3(0,0,1),
-		glm::vec3(0,0,1)};
+		bill.mesh().normals = {glm::vec3(0, 0, 1),
+							   glm::vec3(0, 0, 1),
+							   glm::vec3(0, 0, 1),
+							   glm::vec3(0, 0, 1)};
 
-		bill.mesh().uvs = {glm::vec2(0.0f, 1.0f)
-		,glm::vec2(0.0f, 0.0f)
-		,glm::vec2(1.0f, 1.0f)
-		,glm::vec2(1.0f, 0.0f)};
+		bill.mesh().uvs = {glm::vec2(0.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(1.0f, 0.0f)};
 
-		bill.mesh().indices = {0,3,1,0,2,3};
+		bill.mesh().indices = {0, 3, 1, 0, 2, 3};
 
 		bill.mesh().makePoints();
 		bill.mesh().reloadMesh();
 		bill.recalcBounds();
 
 		renderTexture gBuffer;
-		
+
 		gBuffer.scr_width = t.t->dims.x + 1;
 		gBuffer.scr_height = t.t->dims.y + 1;
 		gBuffer.init();
-		gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
-		gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
-		gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
+		gBuffer.addColorAttachment("gAlbedoSpec", renderTextureType::UNSIGNED_BYTE, 0);
+		gBuffer.addColorAttachment("gPosition", renderTextureType::FLOAT, 1);
+		gBuffer.addColorAttachment("gNormal", renderTextureType::FLOAT, 2);
 		gBuffer.addDepthBuffer();
 		gBuffer.finalize();
 
 		gBuffer.use();
-		glClearColor(0,0,0,0);
+		glClearColor(0, 0, 0, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// billBoardGenerator.ref().use();
 		// renderQuad();
 		billBoardGenerator.ref().use();
 		billBoardGenerator.ref().setFloat("FC", 2.0 / log2(1e2 + 1));
-		billBoardGenerator.ref().setVec3("viewPos",glm::vec3(0));
+		billBoardGenerator.ref().setVec3("viewPos", glm::vec3(0));
 		billBoardGenerator.ref().setFloat("screenHeight", (float)t.t->dims.y);
 		billBoardGenerator.ref().setFloat("screenWidth", (float)t.t->dims.x);
-		mat4 mvp = 
-		// glm::perspective(radians(90.f),1.f,0.001f,20000.f) 
-		// * glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0,0,1), glm::vec3(0,1,0)) 
-		glm::translate(glm::vec3(-0.4f,-0.9f,-1)) 
-		* glm::rotate(glm::radians(-90.f), vec3(1,0,0))
-		* glm::scale(glm::vec3(1.2f/(abs(max.x) + abs(min.x)),0,1.95 / (abs(max.y) + abs(min.y))));
+		mat4 mvp =
+			// glm::perspective(radians(90.f),1.f,0.001f,20000.f)
+			// * glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0,0,1), glm::vec3(0,1,0))
+			glm::translate(glm::vec3(-0.4f, -0.9f, -1)) * glm::rotate(glm::radians(-90.f), vec3(1, 0, 0)) * glm::scale(glm::vec3(1.2f / (abs(max.x) + abs(min.x)), 0, 1.95 / (abs(max.y) + abs(min.y))));
 		billBoardGenerator.ref().setMat4("mvp", mvp);
-		
-		mat4 model = glm::translate(glm::vec3(0,0,-10)) * glm::rotate(glm::radians(-90.f), vec3(1,0,0));
+
+		mat4 model = glm::translate(glm::vec3(0, 0, -10)) * glm::rotate(glm::radians(-90.f), vec3(1, 0, 0));
 		billBoardGenerator.ref().setMat4("model", model);
-		
-		for(auto &mes : m.meshes()){
+
+		for (auto &mes : m.meshes())
+		{
 
 			billBoardGenerator.ref().bindTextures(mes.textures);
-			glBindVertexArray( mes.VAO );
-			glDrawElements(GL_TRIANGLES,mes.indices.size(),GL_UNSIGNED_INT, 0);
+			glBindVertexArray(mes.VAO);
+			glDrawElements(GL_TRIANGLES, mes.indices.size(), GL_UNSIGNED_INT, 0);
 
-			glBindBuffer(GL_ARRAY_BUFFER,0);
-			glBindVertexArray( 0 );
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
 			mes.textures.unbind();
 		}
-		
+
 		t.t->id = gBuffer.getTexture("gAlbedoSpec");
 		// t = gBuffer.getTex("gAlbedoSpec");
 		// glCopyImageSubData(gBuffer.getTexture("gAlbedoSpec"), GL_TEXTURE_2D, 0, 0, 0, 0,
-        //            t.t->id, GL_TEXTURE_2D, 0, 0, 0, 0,
-        //            gBuffer.scr_width, gBuffer.scr_height, 1);	
+		//            t.t->id, GL_TEXTURE_2D, 0, 0, 0, 0,
+		//            gBuffer.scr_width, gBuffer.scr_height, 1);
 	});
 	bill.mesh().textures.push_back(t);
-	r->set(billBoardShader,bill);
+	r->set(billBoardShader, bill);
 	r->meta->isBillboard = 1;
 }
-
 
 class _camera : public component
 {
@@ -218,7 +232,6 @@ public:
 	_model lightVolumeModel;
 	lightVolume lv;
 
-
 	glm::mat4 view;
 	glm::mat4 rot;
 	glm::mat4 proj;
@@ -228,8 +241,9 @@ public:
 	glm::vec3 dir;
 	glm::vec3 cullpos;
 	glm::mat3 camInv;
-	glm::vec2 getScreen(){
-		return glm::vec2(glm::tan(glm::radians(fov) / 2) * SCREEN_WIDTH / SCREEN_HEIGHT,glm::tan(glm::radians(fov) / 2));
+	glm::vec2 getScreen()
+	{
+		return glm::vec2(glm::tan(glm::radians(fov) / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(glm::radians(fov) / 2));
 	}
 
 	int order()
@@ -237,8 +251,9 @@ public:
 		return 1 - 2;
 	}
 
-	void onStart(){
-		waitForRenderJob([&](){
+	void onStart()
+	{
+		waitForRenderJob([&]() {
 			lightVolumeModel = _model("res/models/cube/cube.obj");
 			lightVolumeModel.m->model->loadModel();
 			// lightVolumeModel.m->loadModel();
@@ -249,20 +264,20 @@ public:
 			gBuffer.scr_width = SCREEN_WIDTH;
 			gBuffer.scr_height = SCREEN_HEIGHT;
 			gBuffer.init();
-			gBuffer.addColorAttachment("gAlbedoSpec",renderTextureType::UNSIGNED_BYTE,0);
-			gBuffer.addColorAttachment("gPosition",renderTextureType::FLOAT,1);
-			gBuffer.addColorAttachment("gNormal",renderTextureType::FLOAT,2);
+			gBuffer.addColorAttachment("gAlbedoSpec", renderTextureType::UNSIGNED_BYTE, 0);
+			gBuffer.addColorAttachment("gPosition", renderTextureType::FLOAT, 1);
+			gBuffer.addColorAttachment("gNormal", renderTextureType::FLOAT, 2);
 			gBuffer.addDepthBuffer();
 			gBuffer.finalize();
 		});
-		_shaderLightingPass = _shader("res/shaders/defferedLighting.vert","res/shaders/defferedLighting.frag");
-		_quadShader = _shader("res/shaders/defLighting.vert","res/shaders/defLighting.frag");
+		_shaderLightingPass = _shader("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
+		_quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
 	}
 	void prepRender(Shader &matProgram)
 	{
 
 		_rendererOffsets = *(__renderer_offsets->storage);
-		
+
 		GPU_MATRIXES->tryRealloc(__RENDERERS_in->size());
 		GPU_TRANSFORMS->bindData(0);
 		GPU_MATRIXES->bindData(3);
@@ -275,26 +290,30 @@ public:
 		mainCamPos = transform->getPosition();
 		MainCamForward = transform->forward();
 		mainCamUp = transform->up();
-		
+
 		matProgram.use();
-		matProgram.setMat4("view",view);
-		matProgram.setMat4("vRot",rot);
-		matProgram.setMat4("projection",proj);
-		matProgram.setVec3("floatingOrigin",pos);
-		matProgram.setInt("stage",1);
-		matProgram.setMat3("camInv",camInv);
-		matProgram.setVec3("cullPos",cullpos);
-		matProgram.setVec3("camUp",transform->up());
-		matProgram.setVec2("screen",screen);
-		matProgram.setUint("num",__RENDERERS_in->size());
-		
+		matProgram.setMat4("view", view);
+		matProgram.setMat4("vRot", rot);
+		matProgram.setMat4("projection", proj);
+		matProgram.setVec3("floatingOrigin", pos);
+		matProgram.setInt("stage", 1);
+		matProgram.setMat3("camInv", camInv);
+		matProgram.setVec3("cullPos", cullpos);
+		matProgram.setVec3("camUp", transform->up());
+		matProgram.setVec2("screen", screen);
+		matProgram.setUint("num", __RENDERERS_in->size());
+
 		glDispatchCompute(__RENDERERS_in->size() / 64 + 1, 1, 1);
 		glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 		__renderer_offsets->retrieveData();
-				
 	}
 	void render()
 	{
+			// _shader wireFrame("res/shaders/terrainShader/terrain.vert",
+			// 		  "res/shaders/terrainShader/terrain.tesc",
+			// 		  "res/shaders/terrainShader/terrain.tese",
+			// 		  "res/shaders/terrainShader/terrain.geom",
+			// 		  "res/shaders/terrainShader/terrain.frag");
 
 		// vector<GLuint>& _rendererOffsets = *(__renderer_offsets->storage);
 		gpuTimer t;
@@ -303,45 +322,78 @@ public:
 		t.start();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		gBuffer.use();
-		gBuffer.resize(SCREEN_WIDTH,SCREEN_HEIGHT);
+		gBuffer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);    
+		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 
 		int counter = 0;
 		GPU_MATRIXES->bindData(3);
-		for(auto &i : batchManager::batches.front()){
+		for (auto &i : batchManager::batches.front())
+		{
 			Shader *currShader = i.first.s->shader;
 			currShader->use();
 			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
-			currShader->setVec3("viewPos",pos);
-			currShader->setVec3("viewDir",dir);
+			currShader->setVec3("viewPos", pos);
+			currShader->setVec3("viewDir", dir);
 			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
 			currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
 			glm::mat4 vp = proj * rot;
-			currShader->setMat4("vp",vp);
-			for(auto &j : i.second){
-				texArray ta = j.first;
-				currShader->bindTextures(ta);
-				for(auto &k : j.second){
-					int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
-					if(count > 0){
-						currShader->setUint("matrixOffset", _rendererOffsets[counter]);
-						glBindVertexArray( k.second->VAO );
-						glDrawElementsInstanced(currShader->primitiveType,k.second->indices.size(),GL_UNSIGNED_INT, 0,count);
+			currShader->setMat4("vp", vp);
 
-						glBindBuffer(GL_ARRAY_BUFFER,0);
-						glBindVertexArray( 0 );
+			// if (currShader == wireFrame.s->shader)
+			// {
+			// 	_texture t = getNamedTexture("noise");
+			// 	currShader->setTexture(0,"noise",t.t->id);
+			// 	for (auto &j : i.second)
+			// 	{
+			// 		for (auto &k : j.second)
+			// 		{
+			// 			int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
+			// 			if (count > 0)
+			// 			{
+			// 				currShader->setUint("matrixOffset", _rendererOffsets[counter]);
+			// 				glBindVertexArray(k.second->VAO);
+			// 				glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
+
+			// 				glBindBuffer(GL_ARRAY_BUFFER, 0);
+			// 				glBindVertexArray(0);
+			// 			}
+			// 			++counter;
+			// 		}
+			// 	}
+			// 	glActiveTexture( GL_TEXTURE0 );
+			// 	glBindTexture( GL_TEXTURE_2D, 0 );
+				
+			// }
+			// else
+			// {
+				for (auto &j : i.second)
+				{
+					texArray ta = j.first;
+					currShader->bindTextures(ta);
+					for (auto &k : j.second)
+					{
+						int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
+						if (count > 0)
+						{
+							currShader->setUint("matrixOffset", _rendererOffsets[counter]);
+							glBindVertexArray(k.second->VAO);
+							glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
+
+							glBindBuffer(GL_ARRAY_BUFFER, 0);
+							glBindVertexArray(0);
+						}
+						++counter;
 					}
-					++counter;
+					ta.unbind();
 				}
-				ta.unbind();
-			}
+			// }
 		}
 		batchManager::batches.pop();
 		appendStat("render cam", t.stop());
@@ -352,13 +404,12 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-		Shader& quadShader = *_quadShader.s->shader;
+		Shader &quadShader = *_quadShader.s->shader;
 		quadShader.use();
 		quadShader.setInt("gAlbedoSpec", 0);
 		quadShader.setInt("gPosition", 1);
 		quadShader.setInt("gNormal", 2);
-		quadShader.setVec3("viewPos",pos);
+		quadShader.setVec3("viewPos", pos);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
@@ -367,21 +418,20 @@ public:
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
 		renderQuad();
-		
-		gBuffer.blitDepth(0,SCREEN_WIDTH,SCREEN_HEIGHT);
 
+		gBuffer.blitDepth(0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		// glEnable(GL_DEPTH_CLAMP);
-		glDisable(GL_DEPTH_TEST);  
+		glDisable(GL_DEPTH_TEST);
 		// glDisable(GL_CULL_FACE);
-		// glDepthFunc(GL_LEQUAL); 
-		glCullFace(GL_FRONT);  
+		// glDepthFunc(GL_LEQUAL);
+		glCullFace(GL_FRONT);
 		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		glBlendEquation(GL_FUNC_ADD);
 
-		Shader& shaderLightingPass = *_shaderLightingPass.s->shader;
+		Shader &shaderLightingPass = *_shaderLightingPass.s->shader;
 		shaderLightingPass.use();
 		shaderLightingPass.setInt("gAlbedoSpec", 0);
 		shaderLightingPass.setInt("gPosition", 1);
@@ -398,20 +448,20 @@ public:
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
-		shaderLightingPass.setVec2("WindowSize",glm::vec2(SCREEN_WIDTH,SCREEN_HEIGHT));
+		shaderLightingPass.setVec2("WindowSize", glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 
-		shaderLightingPass.setMat4("view",view);
-		shaderLightingPass.setMat4("proj",proj);
+		shaderLightingPass.setMat4("view", view);
+		shaderLightingPass.setMat4("proj", proj);
 		shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
 		shaderLightingPass.setVec3("viewPos", pos);
 		shaderLightingPass.setVec3("floatingOrigin", pos);
 		lv.Draw(plm.pointLights.size());
 
 		// Always good practice to set everything back to defaults once configured.
-		for ( GLuint i = 0; i < 4; i++ )
+		for (GLuint i = 0; i < 4; i++)
 		{
-			glActiveTexture( GL_TEXTURE0 + i );
-			glBindTexture( GL_TEXTURE_2D, 0 );
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 		// appendStat("render lighting", gt_.stop());
 		appendStat("render lighting cpu", t.stop());
@@ -421,7 +471,7 @@ public:
 		// render particle
 		t.start();
 		// gt_.start();
-		glEnable(GL_DEPTH_TEST);  
+		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glDisable(GL_CULL_FACE);
@@ -488,6 +538,7 @@ class copyBuffers : public component
 	{
 		return true;
 	}
+
 public:
 	int id;
 	int offset;
@@ -512,55 +563,64 @@ public:
 		// 	}
 
 		// }else{
-			transformIdThreadcache[id][0].clear(); // pos
-			transformIdThreadcache[id][1].clear(); // scl
-			transformIdThreadcache[id][2].clear(); // rot
+		transformIdThreadcache[id][0].clear(); // pos
+		transformIdThreadcache[id][1].clear(); // scl
+		transformIdThreadcache[id][2].clear(); // rot
 
-			positionsToBuffer[id].clear();
-			rotationsToBuffer[id].clear();
-			scalesToBuffer[id].clear();
+		positionsToBuffer[id].clear();
+		rotationsToBuffer[id].clear();
+		scalesToBuffer[id].clear();
 
-			auto from = Transforms.transform_updates.begin() + step * id;
-			auto to = from + step;
+		auto from = Transforms.transform_updates.begin() + step * id;
+		auto to = from + step;
 
-			// transformIdThreadcache[id].reserve(step + 1);
-			if(id == concurrency::numThreads - 1)
-				to = Transforms.transform_updates.end();
-			while (from != to){
-				if(from->pos){
-					from->pos = false;
-					transformIdThreadcache[id][0].emplace_back(i);
-					positionsToBuffer[id].emplace_back( ((transform2)i).getPosition() );
-				}
-				if(from->rot){
-					from->rot = false;
-					transformIdThreadcache[id][1].emplace_back(i);
-					rotationsToBuffer[id].emplace_back( ((transform2)i).getRotation() );
-				}
-				if(from->scl){
-					from->scl = false;
-					transformIdThreadcache[id][2].emplace_back(i);
-					scalesToBuffer[id].emplace_back( ((transform2)i).getScale() );
-				}
-				++from;
-				++i;
+		// transformIdThreadcache[id].reserve(step + 1);
+		if (id == concurrency::numThreads - 1)
+			to = Transforms.transform_updates.end();
+		while (from != to)
+		{
+			if (from->pos)
+			{
+				from->pos = false;
+				transformIdThreadcache[id][0].emplace_back(i);
+				positionsToBuffer[id].emplace_back(((transform2)i).getPosition());
 			}
+			if (from->rot)
+			{
+				from->rot = false;
+				transformIdThreadcache[id][1].emplace_back(i);
+				rotationsToBuffer[id].emplace_back(((transform2)i).getRotation());
+			}
+			if (from->scl)
+			{
+				from->scl = false;
+				transformIdThreadcache[id][2].emplace_back(i);
+				scalesToBuffer[id].emplace_back(((transform2)i).getScale());
+			}
+			++from;
+			++i;
+		}
 		// }
 
 		int __rendererId = 0;
 		int __rendererOffset = 0;
 		typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
-		for(auto &i : batchManager::batches.back()){
-			for(auto &j : i.second){
-				for(auto &k : j.second){
+		for (auto &i : batchManager::batches.back())
+		{
+			for (auto &j : i.second)
+			{
+				for (auto &k : j.second)
+				{
 					int step = k.first->ids.size() / concurrency::numThreads;
 					typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
 					typename deque<GLuint>::iterator to = from + step;
 					__r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
-					if(id == concurrency::numThreads - 1){
+					if (id == concurrency::numThreads - 1)
+					{
 						to = k.first->ids.data.end();
 					}
-					while(from != to){
+					while (from != to)
+					{
 						__r->transform = *from;
 						__r->id = __rendererId;
 						++from;
@@ -573,7 +633,7 @@ public:
 		}
 	}
 	// void lateUpdate(){
-		
+
 	// 	for(int i = 0; i < transformIdThreadcache[id].size(); i++){
 	// 		transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
 	// 		// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];

@@ -33,7 +33,8 @@ void _texture::load(string path){
 }
 
 void _texture::namedTexture(string name){
-    textureManager::textures.insert(std::pair<string,TextureMeta*>(name, new TextureMeta()));
+    if(textureManager::textures.find(name) == textureManager::textures.end())
+        textureManager::textures.insert(std::pair<string,TextureMeta*>(name, new TextureMeta()));
     this->t = textureManager::textures.at(name);
 
 }
@@ -52,6 +53,13 @@ void _texture::load(string path, string type){
 void _texture::setType(string type){
     this->t->type = type;
 }
+
+_texture getNamedTexture(string name){
+    _texture t;
+    t.namedTexture(name);
+    return t;
+}
+
 TextureMeta::TextureMeta(){}
 TextureMeta::TextureMeta( string path, string type){
     //Generate texture ID and load texture data
@@ -94,14 +102,14 @@ void TextureMeta::load(string path){
     SOIL_free_image_data( image );
 }
 
-void TextureMeta::gen(int width, int height){
+void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float* data = 0){
     // Assign texture to ID
     glGenTextures( 1, &id );
     
     dims.x = width;
     dims.y = height;
     glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+    glTexImage2D( GL_TEXTURE_2D, 0, (format == GL_RED ?  GL_R32F : format), dims.x, dims.y, 0, format, type, data );
     glGenerateMipmap( GL_TEXTURE_2D );
     
     // Parameters

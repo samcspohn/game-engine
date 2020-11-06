@@ -7,12 +7,13 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <map>
+#include <functional>
+#include <bits/stdc++.h>
 #include "helper1.h"
 #include "Shaderinclude.h"
 #include "texture.h"
 
 using namespace std;
-
 
 // struct shaderVariable {
 // 	int type = -1;
@@ -115,38 +116,55 @@ using namespace std;
 // };
 
 
-struct texArray{
-    vector<_texture> textures;
-    double hash;
-    void calcHash(){
-		if(textures.size() == 0){
+
+
+struct texArray
+{
+	vector<_texture> textures;
+	size_t hash;
+
+	size_t getTexARrayHash(vector<GLuint>& v){
+		
+
+	}
+	void calcHash()
+	{
+		if (textures.size() == 0)
+		{
 			hash = -1;
 			return;
 		}
-        hash = (double)textures[0].t->id * 10.0;
-        for(int i = 1; i < textures.size(); i++){
-            hash = hash / (10.0 * (double)textures[i].t->id);
-        }
-    }
-    void setTextures(vector<_texture>& texs){
-        this->textures = texs;
-        this->calcHash();
-    }
-    void push_back(_texture t){
-        this->textures.push_back(t);
-        hash = hash / (10.0 * t.t->id);
-    }
-    _texture& operator[](size_t index){
-        return textures[index];
-    }
-	void unbind(){
-		for ( GLuint i = 0; i < textures.size( ); i++ )
+		hash = textures[0].t->id;
+		for (int i = 1; i < textures.size(); i++)
 		{
-			glActiveTexture( GL_TEXTURE0 + i );
-			glBindTexture( GL_TEXTURE_2D, 0 );
+			hash *= 1e6;
+			hash += textures[i].t->id;
+		}
+	}
+	void setTextures(vector<_texture> &texs)
+	{
+		this->textures = texs;
+		this->calcHash();
+	}
+	void push_back(_texture t)
+	{
+		this->textures.push_back(t);
+		hash = hash / (10.0 * t.t->id);
+	}
+	_texture &operator[](size_t index)
+	{
+		return textures[index];
+	}
+	void unbind()
+	{
+		for (GLuint i = 0; i < textures.size(); i++)
+		{
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}
 };
+
 
 // class shaderVariables {
 // 	map<string, shaderVariable> variables;
@@ -164,52 +182,65 @@ public:
 	string computeFile;
 	GLenum primitiveType = GL_TRIANGLES;
 	bool shadowMap;
-	void use(){
+	void use()
+	{
 		glUseProgram(Program);
 	}
 	void setVec2(const std::string &name, const glm::vec2 &value) const
-    {	 
-        glUniform2fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(value)); 
-    }
-    void setVec3(const std::string &name, const glm::vec3 &value) const
-    { 
-        glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(value)); 
-    }
+	{
+		glUniform2fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(value));
+	}
+	void setVec3(const std::string &name, const glm::vec3 &value) const
+	{
+		glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(value));
+	}
 	void setFloat(const std::string &name, float value) const
-    { 
-        glUniform1f(glGetUniformLocation(Program, name.c_str()), value); 
-    }
+	{
+		glUniform1f(glGetUniformLocation(Program, name.c_str()), value);
+	}
 	void setInt(const std::string &name, int value) const
-    { 
-        glUniform1i(glGetUniformLocation(Program, name.c_str()), value); 
-    }
+	{
+		GLuint vid = glGetUniformLocation(Program, name.c_str());
+		if (vid == -1)
+			return;
+		glUniform1i(vid, value);
+	}
 	void setUint(const std::string &name, uint value) const
-    { 
-        glUniform1ui(glGetUniformLocation(Program, name.c_str()), value); 
-    }
-	void setMat3(const std::string &name, glm::mat3 &value){
+	{
+		glUniform1ui(glGetUniformLocation(Program, name.c_str()), value);
+	}
+	void setMat3(const std::string &name, glm::mat3 &value)
+	{
 		glUniformMatrix3fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 	}
-	void setMat4(const std::string &name, glm::mat4 &value){
+	void setMat4(const std::string &name, glm::mat4 &value)
+	{
 		glUniformMatrix4fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 	}
-	void bindTextures(texArray& ta){
+	void setTexture(int binding, string name, int texId)
+	{
+		glActiveTexture(GL_TEXTURE0 + binding);
+		setInt(name, binding);
+		glBindTexture(GL_TEXTURE_2D, texId);
+	}
+	void bindTextures(texArray &ta)
+	{
 		GLuint diffuseNr = 0;
 		GLuint specularNr = 0;
 		GLuint normalNr = 0;
-		for( GLuint tex = 0; tex < ta.textures.size( ); tex++ )
+		for (GLuint i = 0; i < ta.textures.size(); i++)
 		{
-			glActiveTexture( GL_TEXTURE0 + tex ); // Active proper texture unit before binding
+			glActiveTexture(GL_TEXTURE0 + i); // Active proper texture unit before binding
 			// Retrieve texture number (the N in diffuse_textureN)
 			stringstream ss;
 			string number;
-			string name = ta[tex].t->type;
-			
-			if( name == "texture_diffuse" )
+			string name = ta[i].t->type;
+
+			if (name == "texture_diffuse")
 			{
 				ss << diffuseNr++; // Transfer GLuint to stream
 			}
-			else if( name == "texture_specular" )
+			else if (name == "texture_specular")
 			{
 				ss << specularNr++; // Transfer GLuint to stream
 			}
@@ -217,41 +248,40 @@ public:
 			{
 				ss << normalNr++; // Transfer GLuint to stream
 			}
-			number = ss.str( );
-			// Now set the sampler to the correct texture unit
-			// GLint texname = glGetUniformLocation(currShader->Program, ("material." + name + number).c_str());
-			// glUniform1i(texname, tex );
-			setInt("material." + name + number,tex);
-			// And finally bind the texture
-			glBindTexture( GL_TEXTURE_2D, ta[tex].t->id );
+			number = ss.str();
+
+			setTexture(i,"material." + name + number,ta[i].t->id);
 		}
 	}
-	Shader(){}
-	Shader(const string computePath) {
+	Shader() {}
+	Shader(const string computePath)
+	{
 
 		this->computeFile = computePath;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
 		enqueRenderJob([&]() { _Shader(computeFile); });
 	}
 
-	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true) {
+	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
+	{
 		this->vertexFile = vertexPath;
 		this->fragmentFile = fragmentPath;
 		this->shadowMap = shadowMap;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
 		enqueRenderJob([&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); });
 	}
-	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true) {
+	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
+	{
 		this->vertexFile = vertexPath;
 		this->fragmentFile = fragmentPath;
 		this->geometryFile = geometryPath;
 		this->shadowMap = shadowMap;
 		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
 */
-		enqueRenderJob([&]() { _Shader(vertexFile,geometryFile, fragmentFile, this->shadowMap); });
-
+		enqueRenderJob([&]() { _Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap); });
 	}
-	Shader(const string vertexPath, const string tessControlPath,const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true) {
+	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
+	{
 		this->vertexFile = vertexPath;
 		this->fragmentFile = fragmentPath;
 		this->geometryFile = geometryPath;
@@ -261,9 +291,21 @@ public:
 		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
 */
 		enqueRenderJob([&]() { _Shader(vertexFile, tessCtrlFile, tessEvalFile, geometryFile, fragmentFile, this->shadowMap); });
-
 	}
-	GLuint loadFile(string file, GLenum ShaderType) {
+	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
+	{
+		this->vertexFile = vertexPath;
+		this->fragmentFile = fragmentPath;
+		// this->geometryFile = geometryPath;
+		this->tessCtrlFile = tessControlPath;
+		this->tessEvalFile = tessEvalPath;
+		this->shadowMap = shadowMap;
+		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
+*/
+		enqueRenderJob([&]() { _Shader(vertexFile, tessCtrlFile, tessEvalFile, fragmentFile, this->shadowMap); });
+	}
+	GLuint loadFile(string file, GLenum ShaderType)
+	{
 		std::string code;
 		code = shaderLoader::load(file);
 		const GLchar *vShaderCode = code.c_str();
@@ -281,12 +323,13 @@ public:
 		{
 			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
 			cout << file << endl;
-			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n"
+					  << infoLog << std::endl;
 		}
 		return shader;
-
 	}
-	GLuint loadFromString(string code, GLenum ShaderType){
+	GLuint loadFromString(string code, GLenum ShaderType)
+	{
 		const GLchar *vShaderCode = code.c_str();
 
 		GLuint shader;
@@ -301,17 +344,19 @@ public:
 		if (!success)
 		{
 			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
-			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n"
+					  << infoLog << std::endl;
 		}
 		return shader;
 	}
 
-	void compileShader(vector<GLuint>& shaders) {
+	void compileShader(vector<GLuint> &shaders)
+	{
 		GLint success;
 		GLchar infoLog[4096];
 		// Shader Program
 		this->Program = glCreateProgram();
-		for(auto &s : shaders)
+		for (auto &s : shaders)
 			glAttachShader(this->Program, s);
 
 		glLinkProgram(this->Program);
@@ -320,8 +365,9 @@ public:
 		if (!success)
 		{
 			glGetProgramInfoLog(this->Program, 4096, NULL, infoLog);
-			std::cout << this->vertexFile << ", " << this->tessCtrlFile <<  ", " << this->geometryFile << ", " << this->fragmentFile << ", " << this->computeFile << std::endl;
-			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+			std::cout << this->vertexFile << ", " << this->tessCtrlFile << ", " << this->geometryFile << ", " << this->fragmentFile << ", " << this->computeFile << std::endl;
+			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+					  << infoLog << std::endl;
 		}
 		// Delete the shaders as they're linked into our program now and no longer necessery
 		for (auto &s : shaders)
@@ -336,18 +382,29 @@ public:
 		shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
 		compileShader(shaders);
 	}
-	void _Shader(const string vertexPath, const string tessControlPath,const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
+	void _Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
 		vector<GLuint> shaders;
 		// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
 		shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
-		shaders.push_back(loadFile(tessControlPath,GL_TESS_CONTROL_SHADER));
-		shaders.push_back(loadFile(tessEvalPath,GL_TESS_EVALUATION_SHADER));
+		shaders.push_back(loadFile(tessControlPath, GL_TESS_CONTROL_SHADER));
+		shaders.push_back(loadFile(tessEvalPath, GL_TESS_EVALUATION_SHADER));
 		shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
 		shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
 		compileShader(shaders);
 	}
-	void _Shader(const string vertexPath, const string fragmentPath, bool shadowMap=true)
+	void _Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
+	{
+		vector<GLuint> shaders;
+		// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
+		shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
+		shaders.push_back(loadFile(tessControlPath, GL_TESS_CONTROL_SHADER));
+		shaders.push_back(loadFile(tessEvalPath, GL_TESS_EVALUATION_SHADER));
+		// shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
+		shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
+		compileShader(shaders);
+	}
+	void _Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
 	{
 
 		vector<GLuint> shaders;

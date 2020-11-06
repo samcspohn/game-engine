@@ -238,6 +238,9 @@ public:
 		iterator(_itr* i) {
 			itr = i;
 		}
+		void erase(){
+			itr->fl->erase(*this);
+		}
 		_itr* itr = nullptr;
 	};
 
