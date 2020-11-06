@@ -170,7 +170,7 @@ void run()
 		auto colliders = COMPONENT_LIST(collider);
 
 		glm::vec3 fo = cameras->get(0)->transform.getPosition();
-		if (glm::length2(fo) > 1e8)
+		if (glm::length2(fo) > 1e80)
 		{
 			floating_origin.push(fo);
 			_parallel_for(Transforms, [&](int i) {

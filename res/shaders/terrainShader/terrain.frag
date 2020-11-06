@@ -4,15 +4,14 @@
 layout(depth_less) out float gl_FragDepth;
 
 struct Material{
-	sampler2D texture_diffuse0;
+    sampler2D texture_diffuse0;
 	sampler2D texture_diffuse1;
 	sampler2D texture_diffuse2;
+	sampler2D texture_diffuse3;
 	sampler2D texture_specular0;
 	sampler2D texture_normal0;
 	float shininess;
 };
-
-
 
 in vec2 TexCoord;
 in vec2 TexCoord2;
@@ -37,14 +36,15 @@ uniform float FC;
 void main()
 {
 // debug / fun shaders
+//  vec3 color;
 //	color.rgb = vec3(texture(directionalShadowMap,DirLightSpacePos.xy * 0.5 + 0.5).rgb);
 //	color.rgb = vec3(DirLightSpacePos.z*.5 + 0.5,0,0);
 //	color.rgb = vec3(gl_FragCoord.z);
-//	color.rgb = (normalize(Normal) + vec3(1)) / 2;
+	// color.rgb = (normalize(Normal) + vec3(1)) / 2;
 
-	vec3 diffuseColor0 = texture(material.texture_diffuse0,TexCoord).rgb;
-	vec3 diffuseColor1 = texture(material.texture_diffuse1,TexCoord).rgb;
-	vec3 diffuseColor2 = texture(material.texture_diffuse2,TexCoord2).rgb;
+	vec3 diffuseColor0 = texture(material.texture_diffuse1,TexCoord).rgb;
+	vec3 diffuseColor1 = texture(material.texture_diffuse2,TexCoord).rgb;
+	vec3 diffuseColor2 = texture(material.texture_diffuse3,TexCoord2).rgb;
 // 	vec3 specColor = texture(material.texture_specular0,TexCoord).rgb;
 	if(diffuseColor0 == vec3(0,0,0)){
 		 diffuseColor0 = vec3(1,1,1);
@@ -56,7 +56,9 @@ void main()
 	// color.a = 1.0f;
     gPosition = vec4(FragPos,1);
     gNormal = vec4(normalize(Normal),1);
-    gAlbedoSpec.rgb = diffuseColor0 * r + (diffuseColor1 * (1 - r) + diffuseColor2 * (1 - r)) * 0.5f;
+    // vec3(max(0,min(1.f, (viewPos.y + FragPos.y + 100) / 30.f)))
+    gAlbedoSpec.rgb = (min(diffuseColor0 +  vec3(max(0,min(1.f, (viewPos.y + FragPos.y + 250) / 200.f))) , vec3(1)) * r // grass
+     + (diffuseColor1 + diffuseColor2) * (1 - r) * 0.5f); // rock
     gAlbedoSpec.a = 0;//texture(material.texture_specular0,TexCoord).r;
 	gl_FragDepth = log2(logz) * 0.5 * FC;
 }

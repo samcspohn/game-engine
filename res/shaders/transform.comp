@@ -109,7 +109,7 @@ void main () {
 					//  + (translate(transform.position) * rotate(lookAt(transform.position - cullPos,vec3(0,1,0))) * scale(transform.scale) * isBillboard);
 					if(renderMetas[renderers[gid].id].isBillboard == 1){
 						matrixes[buffsid].model = 
-						(translate(transform.position) * rotate(lookAt(transform.position,camUp + vec3(0.001))) * scale(transform.scale));// * renderMetas[renderers[gid].id].isBillboard
+						(translate(transform.position) * rotate(lookAt(transform.position,vec3(0,1,0) + vec3(0.001))) * scale(transform.scale));// * renderMetas[renderers[gid].id].isBillboard
 						//  + 
 						// (translate(transform.position) * rotate(transform.rotation) * scale(transform.scale)) * (1 - renderMetas[renderers[gid].id].isBillboard);
 					}else{

@@ -13,7 +13,7 @@ uniform float screenHeight;
 uniform float screenWidth;
 in vec3 FragPos;
 in float logz;
-in vec4 col;
+// in vec4 col;
 in vec2 offset;
 in float _life_;
 flat in uint id;
