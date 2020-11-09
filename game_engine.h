@@ -106,15 +106,15 @@ void init()
 	// root = new Transform(0);
 	root2 = Transforms._new();
 	rootGameObject = new game_object(root2);
-	for (int i = 0; i < concurrency::numThreads; i++)
-	{
-		rootGameObject->addComponent<copyBuffers>()->id = i;
-	}
-	copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
-	transformIdThreadcache = vector<vector<vector<int>>>(copyWorkers->size(),vector<vector<int>>(3));
-	positionsToBuffer = vector<vector<glm::vec3>>(copyWorkers->size());
-	rotationsToBuffer = vector<vector<glm::quat>>(copyWorkers->size());
-	scalesToBuffer = vector<vector<glm::vec3>>(copyWorkers->size());
+	// for (int i = 0; i < concurrency::numThreads; i++)
+	// {
+	// 	rootGameObject->addComponent<copyBuffers>()->id = i;
+	// }
+	// copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
+	transformIdThreadcache = vector<vector<vector<int>>>(concurrency::numThreads, vector<vector<int>>(3));
+	positionsToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
+	rotationsToBuffer = vector<vector<glm::quat>>(concurrency::numThreads);
+	scalesToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 
 	// transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
 	gameEngineComponents.erase(copyWorkers);
@@ -123,7 +123,7 @@ void init()
 void run()
 {
 	timer stopWatch;
-	copyWorkers = COMPONENT_LIST(copyBuffers);
+	// copyWorkers = COMPONENT_LIST(copyBuffers);
 	// eventsPollDone = true;
 	// for(auto & i : collisionGraph)
 	// 	collisionLayers[i.first].clear();
@@ -177,8 +177,9 @@ void run()
 				Transforms.positions[i] -= fo;
 				Transforms.transform_updates[i].pos = true;
 			});
-			_parallel_for(*colliders,[&](int i){
-				if(colliders->data.valid[i] && colliders->data.data[i].type == 3){
+			_parallel_for(*colliders, [&](int i) {
+				if (colliders->data.valid[i] && colliders->data.data[i].type == 3)
+				{
 					colliders->data.data[i].p.pos1 -= fo;
 				}
 			});
@@ -248,7 +249,92 @@ void run()
 		// {
 		// 	TRANSFORMS_TO_BUFFER.resize(Transforms.size());
 		// }
-		copyWorkers->update();
+
+		tbb::parallel_for(
+			tbb::blocked_range<unsigned int>(0, concurrency::numThreads, 1),
+			[&](const tbb::blocked_range<unsigned int> &r) {
+				for (unsigned int id = r.begin(); id < r.end(); ++id)
+				{
+
+					int numt = concurrency::numThreads;
+					int step = Transforms.size() / concurrency::numThreads;
+					int i = step * id;
+
+					transformIdThreadcache[id][0].clear(); // pos
+					transformIdThreadcache[id][1].clear(); // scl
+					transformIdThreadcache[id][2].clear(); // rot
+
+					positionsToBuffer[id].clear();
+					rotationsToBuffer[id].clear();
+					scalesToBuffer[id].clear();
+
+					auto from = Transforms.transform_updates.begin() + step * id;
+					auto to = from + step;
+
+					// transformIdThreadcache[id].reserve(step + 1);
+					if (id == concurrency::numThreads - 1)
+						to = Transforms.transform_updates.end();
+					while (from != to)
+					{
+						if (from->pos)
+						{
+							from->pos = false;
+							transformIdThreadcache[id][0].emplace_back(i);
+							positionsToBuffer[id].emplace_back(((transform2)i).getPosition());
+						}
+						if (from->rot)
+						{
+							from->rot = false;
+							transformIdThreadcache[id][1].emplace_back(i);
+							rotationsToBuffer[id].emplace_back(((transform2)i).getRotation());
+						}
+						if (from->scl)
+						{
+							from->scl = false;
+							transformIdThreadcache[id][2].emplace_back(i);
+							scalesToBuffer[id].emplace_back(((transform2)i).getScale());
+						}
+						++from;
+						++i;
+					}
+					// }
+
+					int __rendererId = 0;
+					int __rendererOffset = 0;
+					typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
+					for (auto &i : batchManager::batches.back())
+					{
+						for (auto &j : i.second)
+						{
+							for (auto &k : j.second)
+							{
+								int step = k.first->ids.size() / concurrency::numThreads;
+								typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
+								typename deque<GLuint>::iterator to = from + step;
+								__r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
+								if (id == concurrency::numThreads - 1)
+								{
+									to = k.first->ids.data.end();
+								}
+								while (from != to)
+								{
+									__r->transform = *from;
+									__r->id = __rendererId;
+									++from;
+									++__r;
+								}
+								++__rendererId;
+								__rendererOffset += k.first->ids.size();
+							}
+						}
+					}
+				}
+			}
+			// ,
+			// update_ap
+		);
+
+		// copyWorkers->update();
 		// if (Transforms.density() <= 0.5)
 		// {
 		// int bufferSize = 0;

@@ -175,8 +175,9 @@ public:
 	_renderer(const _renderer& other);
 	void onDestroy();
 	COPY(_renderer);
+	SERIALIZE_CLASS(_renderer) SCE;
 };
-
+SERIALIZE_STREAM(_renderer) SSE;
 // class camera : public component
 // {
 	

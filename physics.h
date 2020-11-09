@@ -105,7 +105,9 @@ private:
 	glm::vec3 vel = glm::vec3(0);
 	glm::quat axis;
 	float rotVel;
+	SERIALIZE_CLASS(rigidBody) & gravity & bounciness & mass & damping SCE
 };
+SERIALIZE_STREAM(rigidBody) << o.gravity << ' ' << o.bounciness << ' ' << o.mass << ' ' << o.damping SCE
 class collider : public component
 {
 public:
@@ -139,7 +141,9 @@ public:
 	void lateUpdate();
 	void update_data();
 	COPY(collider);
+	SERIALIZE_CLASS(collider) & layer & type SCE;
 };
+SERIALIZE_STREAM(collider) << o.layer << ' ' << o.type SSE;
 
 
 void rigidBody::collide(collider &a, collider &b, int &colCount)

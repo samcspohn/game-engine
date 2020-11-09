@@ -10,6 +10,7 @@
 #include <mutex>
 // #include "Component.h"
 #include "gpu_vector.h"
+#include "serialize.h"
 // ~-1 = 0
 
 using namespace std;
@@ -26,8 +27,6 @@ struct _transform {
 	glm::vec3 position; GLint id = -1;
 	glm::vec3 scale = glm::vec3(1); GLint parent = 0;
 	glm::quat rotation = glm::quat(1,0,0,0);
-	void translate(glm::vec3 translation);
-	void rotate(glm::vec3 axis, float radians);
 };
 extern atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 // extern deque_heap<_transform> TRANSFORMS;
@@ -89,8 +88,16 @@ struct transform2 {
 		friend void destroyRoot(transform2 * t);
 
 	void orphan();
-};
 
+	friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive  &os, const transform2 &t);
+    friend class boost::serialization::access;
+
+	template<class Archive>
+    void serialize(Archive & ar, const unsigned int /* file_version */){
+        ar & id;
+	}
+};
+SERIALIZE_STREAM(transform2) << o.id SSE;
 struct trans_update {
 	bool pos;
 	bool rot;
@@ -107,11 +114,11 @@ struct transform_meta{
 
 struct _Transforms {
 
-	tbb::concurrent_vector<glm::vec3> positions;
-	tbb::concurrent_vector<glm::quat> rotations;
-	tbb::concurrent_vector<glm::vec3> scales;
-	tbb::concurrent_vector<transform_meta> meta;
-	tbb::concurrent_vector<trans_update> transform_updates;
+	std::deque<glm::vec3> positions;
+	std::deque<glm::quat> rotations;
+	std::deque<glm::vec3> scales;
+	std::deque<transform_meta> meta;
+	std::deque<trans_update> transform_updates;
 
 	// deque<glm::vec3> positions;
 	// deque<glm::quat> rotations;
@@ -128,13 +135,13 @@ struct _Transforms {
 			m.lock();
 			if(avail.size() == 0){
 				t.id = positions.size();
-				m.unlock();
-
 				positions.emplace_back();
 				rotations.emplace_back();
 				scales.emplace_back();
 				meta.emplace_back();
 				transform_updates.emplace_back();
+
+				m.unlock();
 			}else{
 				avail.try_pop(t.id);
 				m.unlock();
@@ -165,6 +172,7 @@ struct _Transforms {
 	int active(){
 		return meta.size() - avail.size();
 	}
+	friend void loadTransforms();
 };
 
 extern _Transforms Transforms;

@@ -1,5 +1,6 @@
 #include "Transform.h"
 #include "concurrency.h"
+#include <fstream>
 using namespace std;
 
 mutex gameLock;
@@ -9,15 +10,6 @@ glm::vec3 vec3right(1, 0, 0);
 glm::vec3 mainCamPos;
 glm::vec3 mainCamUp;
 glm::vec3 MainCamForward;
-
-void _transform::translate(glm::vec3 translation)
-{
-	position += rotation * translation;
-}
-void _transform::rotate(glm::vec3 axis, float radians)
-{
-	rotation = glm::rotate(rotation, radians, axis);
-}
 
 atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 deque_heap<_transform> TRANSFORMS;
@@ -278,6 +270,44 @@ void initTransform()
 
 	transformIds = new gpu_vector_proxy<GLint>();
 	transformIds->usage = GL_STREAM_COPY;
+}
+
+void saveTransforms()
+{
+	ofstream f("transform.txt", std::fstream::binary);
+	_transform t;
+	for (int i = 0; i < Transforms.size(); i++)
+	{
+		t = transform2(i).getTransform();
+		t.parent = transform2(i).getParent().id;
+		f.write((char *)&t, sizeof(_transform));
+	}
+}
+
+void loadTransforms()
+{
+	ifstream f("transform.txt", std::fstream::binary);
+	f.seekg(0, f.end);
+	int size = f.tellg();
+	f.seekg(0, f.beg);
+
+	for (int i = 0; i < size; i++)
+	{
+		Transforms._new();
+	}
+	_transform t;
+	for (int i = 0; i < size; i++)
+	{
+		f.read((char *)&t, sizeof(_transform));
+		transform2 t2(i);
+		// transform2 t2 = Transforms._new();
+		Transforms.positions[i] = t.position;
+		Transforms.rotations[i] = t.rotation;
+		Transforms.scales[i] = t.scale;
+		Transforms.meta[i].parent = transform2(t.parent);
+		Transforms.meta[t.parent].children.push_back(t2);
+		Transforms.meta[t2.id].childId = (--Transforms.meta[t.parent].children.end());
+	}
 }
 
 int switchAH(int index)

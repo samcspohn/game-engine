@@ -83,6 +83,14 @@
         "locale": "cpp",
         "queue": "cpp",
         "cstdbool": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "csetjmp": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "cuchar": "cpp",
+        "forward_list": "cpp",
+        "numbers": "cpp",
+        "scoped_allocator": "cpp",
+        "span": "cpp"
     }
 }
