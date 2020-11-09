@@ -38,6 +38,7 @@ target_link_libraries(game assimp)
 target_link_libraries(game alut)
 target_link_libraries(game openal)
 target_link_libraries(game tbb)
+target_link_libraries(game boost_serialization)
 
 target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}

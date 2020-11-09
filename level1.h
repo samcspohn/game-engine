@@ -71,7 +71,9 @@ public:
 		// }
 	}
 	COPY(missile);
+	SERIALIZE_CLASS(missile) & life & vel SCE;
 };
+SERIALIZE_STREAM(missile) << o.life << ' ' << o.vel SSE;
 
 class gun : public component
 {
@@ -129,7 +131,9 @@ public:
 	}
 	// //UPDATE(gun, update);
 	COPY(gun);
+	SERIALIZE_CLASS(gun) & lastFire SCE;
 };
+SERIALIZE_STREAM(gun) << o.lastFire SSE;
 
 float ship_accel;
 float ship_vel;
@@ -183,7 +187,9 @@ public:
 	}
 	//UPDATE(spinner,update);
 	COPY(spinner);
+	SERIALIZE_CLASS(spinner) SCE;
 };
+SERIALIZE_STREAM(spinner) SSE;
 
 const float _pi = radians(180.f);
 class _turret : public component
@@ -313,7 +319,9 @@ public:
 	}
 	//UPDATE(_turret,update);
 	COPY(_turret);
+	SERIALIZE_CLASS(_turret) & target & guns SCE;
 };
+SERIALIZE_STREAM(_turret) << o.target << ' ' << o.guns SSE;
 
 class gunManager : public component
 {
@@ -363,7 +371,9 @@ public:
 public:
 	//UPDATE(gunManager,update);
 	COPY(gunManager);
+	SERIALIZE_CLASS(gunManager) SCE;
 };
+SERIALIZE_STREAM(gunManager) SSE;
 
 class autoShooter : public component
 {
@@ -385,7 +395,9 @@ public:
 	}
 	//UPDATE(autoShooter, update);
 	COPY(autoShooter);
+	SERIALIZE_CLASS(autoShooter) & shouldFire SCE;
 };
+SERIALIZE_STREAM(autoShooter) << o.shouldFire SSE;
 
 class _ship : public component
 {
@@ -440,20 +452,23 @@ public:
 	}
 	//UPDATE(_ship,update);
 	COPY(_ship);
+	SERIALIZE_CLASS(_ship) & maxReverse & maxForward SCE;
 };
+SERIALIZE_STREAM(_ship) << o.maxReverse << ' ' << o.maxForward SSE;
 
 class _boom : public component
 {
 public:
-	Transform *t;
+	transform2 t;
 	void update()
 	{
 		transform->setPosition(t->getPosition());
 	}
 	//UPDATE(_boom,update);
 	COPY(_boom);
+	SERIALIZE_CLASS(_boom) & t SCE;
 };
-
+SERIALIZE_STREAM(_boom) << o.t SSE;
 class player_sc : public component
 {
 	bool cursorReleased = false;
@@ -627,8 +642,9 @@ public:
 	}
 	//UPDATE(player_sc, update);
 	COPY(player_sc);
+	SERIALIZE_CLASS(player_sc) SCE;
 };
-
+SERIALIZE_STREAM(player_sc) SSE;
 class player_sc2 : public component
 {
 	float speed = 3.f;
@@ -711,8 +727,9 @@ public:
 		}
 	}
 	COPY(player_sc2);
+	SERIALIZE_CLASS(player_sc2) & speed & fov SCE;
 };
-
+SERIALIZE_STREAM(player_sc2) << o.speed << ' ' << o.fov SSE;
 class player_sc3 : public component
 {
 public:
@@ -787,12 +804,14 @@ public:
 		}
 	}
 	COPY(player_sc3);
+	SERIALIZE_CLASS(player_sc3) & speed & cursorReleased & fov SCE;
 };
+SERIALIZE_STREAM(player_sc3) << o.speed << ' ' << o.cursorReleased << ' ' << o.fov SSE;
 
 class sun_sc : public component
 {
 	COPY(sun_sc);
-
+	SERIALIZE_CLASS(sun_sc) & distance & day_cycle SCE;
 public:
 	float distance = 30'000;
 	float day_cycle = 30;
@@ -802,6 +821,7 @@ public:
 	}
 };
 
+SERIALIZE_STREAM(sun_sc) << o.distance << ' ' << o.day_cycle SSE;
 void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright)
 {
 	// _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe.geom","res/shaders/wireframe.frag");

@@ -357,5 +357,7 @@ public:
         model.recalcBounds();
         generated = true;
     }
+    SERIALIZE_CLASS(terrain) SCE;
 };
+SERIALIZE_STREAM(terrain) SSE;
 atomic<int> terrain::terrId;

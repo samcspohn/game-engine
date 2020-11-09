@@ -16,6 +16,10 @@
 #include "tbb/blocked_range.h"
 #include "tbb/parallel_for.h"
 #include "tbb/partitioner.h"
+
+
+#include "serialize.h"
+
 #include "Transform.h"
 #define ull unsigned long long
 // class game_object;
@@ -40,7 +44,32 @@ public:
 	transform2 transform;
 	int getThreadID();
 	ull getHash();
+
+	// friend std::ostream & operator<<(std::ostream &os, const component &c);
+    // friend class boost::serialization::access;
+
+	// template<class Archive>
+    // void serialize(Archive & ar, const unsigned int /* file_version */){
+    //     ar & transform;
+    // }
+	virtual void forceSerialize() = 0;
+	friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive &os, const component &c);
+    friend class boost::serialization::access;
+
+	template<class Archive>
+    void serialize(Archive & ar, const unsigned int /* file_version */){
+        ar & transform;
+	}
+
 };
+SERIALIZE_STREAM(component) << o.transform SSE;
+
+
+// std::ostream & operator<<(std::ostream &os, const component &c)
+// {
+//     return os << ' ' << c.transform;
+// }
+
 
 struct compItr
 {

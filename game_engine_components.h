@@ -518,9 +518,11 @@ public:
 		return f;
 	}
 	COPY(_camera);
-
+	SERIALIZE_CLASS(_camera) & fov & nearPlane & farPlane SCE;
 private:
 };
+
+SERIALIZE_STREAM(_camera) << o.fov << ' ' << o.nearPlane << ' ' << o.farPlane SSE;
 
 vector<int> renderCounts = vector<int>(concurrency::numThreads);
 vector<vector<vector<GLint>>> transformIdThreadcache;
@@ -532,114 +534,114 @@ vector<vector<glm::vec3>> positionsToBuffer;
 vector<vector<glm::quat>> rotationsToBuffer;
 vector<vector<glm::vec3>> scalesToBuffer;
 
-class copyBuffers : public component
-{
-	bool _registerEngineComponent()
-	{
-		return true;
-	}
+// class copyBuffers : public component
+// {
+// 	bool _registerEngineComponent()
+// 	{
+// 		return true;
+// 	}
 
-public:
-	int id;
-	int offset;
-	void update()
-	{
-		int numt = concurrency::numThreads;
-		int step = Transforms.size() / concurrency::numThreads;
-		int i = step * id;
-		// transformIdThreadcache[id].clear();
-		// if(Transforms.density() > 0.5){
+// public:
+// 	int id;
+// 	int offset;
+// 	void update()
+// 	{
+// 		int numt = concurrency::numThreads;
+// 		int step = Transforms.size() / concurrency::numThreads;
+// 		int i = step * id;
+// 		// transformIdThreadcache[id].clear();
+// 		// if(Transforms.density() > 0.5){
 
-		// 	int from = step * id;
-		// 	int to = from + step;
+// 		// 	int from = step * id;
+// 		// 	int to = from + step;
 
-		// 	if(id == concurrency::numThreads - 1)
-		// 		to = Transforms.size();
-		// 	for (auto itr = from; itr != to; itr++, i++){
-		// 		TRANSFORMS_TO_BUFFER[i] = transform2(itr).getTransform();
-		// 		Transforms.transform_updates[itr].pos = false;
-		// 		Transforms.transform_updates[itr].rot = false;
-		// 		Transforms.transform_updates[itr].scl = false;
-		// 	}
+// 		// 	if(id == concurrency::numThreads - 1)
+// 		// 		to = Transforms.size();
+// 		// 	for (auto itr = from; itr != to; itr++, i++){
+// 		// 		TRANSFORMS_TO_BUFFER[i] = transform2(itr).getTransform();
+// 		// 		Transforms.transform_updates[itr].pos = false;
+// 		// 		Transforms.transform_updates[itr].rot = false;
+// 		// 		Transforms.transform_updates[itr].scl = false;
+// 		// 	}
 
-		// }else{
-		transformIdThreadcache[id][0].clear(); // pos
-		transformIdThreadcache[id][1].clear(); // scl
-		transformIdThreadcache[id][2].clear(); // rot
+// 		// }else{
+// 		transformIdThreadcache[id][0].clear(); // pos
+// 		transformIdThreadcache[id][1].clear(); // scl
+// 		transformIdThreadcache[id][2].clear(); // rot
 
-		positionsToBuffer[id].clear();
-		rotationsToBuffer[id].clear();
-		scalesToBuffer[id].clear();
+// 		positionsToBuffer[id].clear();
+// 		rotationsToBuffer[id].clear();
+// 		scalesToBuffer[id].clear();
 
-		auto from = Transforms.transform_updates.begin() + step * id;
-		auto to = from + step;
+// 		auto from = Transforms.transform_updates.begin() + step * id;
+// 		auto to = from + step;
 
-		// transformIdThreadcache[id].reserve(step + 1);
-		if (id == concurrency::numThreads - 1)
-			to = Transforms.transform_updates.end();
-		while (from != to)
-		{
-			if (from->pos)
-			{
-				from->pos = false;
-				transformIdThreadcache[id][0].emplace_back(i);
-				positionsToBuffer[id].emplace_back(((transform2)i).getPosition());
-			}
-			if (from->rot)
-			{
-				from->rot = false;
-				transformIdThreadcache[id][1].emplace_back(i);
-				rotationsToBuffer[id].emplace_back(((transform2)i).getRotation());
-			}
-			if (from->scl)
-			{
-				from->scl = false;
-				transformIdThreadcache[id][2].emplace_back(i);
-				scalesToBuffer[id].emplace_back(((transform2)i).getScale());
-			}
-			++from;
-			++i;
-		}
-		// }
+// 		// transformIdThreadcache[id].reserve(step + 1);
+// 		if (id == concurrency::numThreads - 1)
+// 			to = Transforms.transform_updates.end();
+// 		while (from != to)
+// 		{
+// 			if (from->pos)
+// 			{
+// 				from->pos = false;
+// 				transformIdThreadcache[id][0].emplace_back(i);
+// 				positionsToBuffer[id].emplace_back(((transform2)i).getPosition());
+// 			}
+// 			if (from->rot)
+// 			{
+// 				from->rot = false;
+// 				transformIdThreadcache[id][1].emplace_back(i);
+// 				rotationsToBuffer[id].emplace_back(((transform2)i).getRotation());
+// 			}
+// 			if (from->scl)
+// 			{
+// 				from->scl = false;
+// 				transformIdThreadcache[id][2].emplace_back(i);
+// 				scalesToBuffer[id].emplace_back(((transform2)i).getScale());
+// 			}
+// 			++from;
+// 			++i;
+// 		}
+// 		// }
 
-		int __rendererId = 0;
-		int __rendererOffset = 0;
-		typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
-		for (auto &i : batchManager::batches.back())
-		{
-			for (auto &j : i.second)
-			{
-				for (auto &k : j.second)
-				{
-					int step = k.first->ids.size() / concurrency::numThreads;
-					typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
-					typename deque<GLuint>::iterator to = from + step;
-					__r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
-					if (id == concurrency::numThreads - 1)
-					{
-						to = k.first->ids.data.end();
-					}
-					while (from != to)
-					{
-						__r->transform = *from;
-						__r->id = __rendererId;
-						++from;
-						++__r;
-					}
-					++__rendererId;
-					__rendererOffset += k.first->ids.size();
-				}
-			}
-		}
-	}
-	// void lateUpdate(){
+// 		int __rendererId = 0;
+// 		int __rendererOffset = 0;
+// 		typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
+// 		for (auto &i : batchManager::batches.back())
+// 		{
+// 			for (auto &j : i.second)
+// 			{
+// 				for (auto &k : j.second)
+// 				{
+// 					int step = k.first->ids.size() / concurrency::numThreads;
+// 					typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
+// 					typename deque<GLuint>::iterator to = from + step;
+// 					__r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
+// 					if (id == concurrency::numThreads - 1)
+// 					{
+// 						to = k.first->ids.data.end();
+// 					}
+// 					while (from != to)
+// 					{
+// 						__r->transform = *from;
+// 						__r->id = __rendererId;
+// 						++from;
+// 						++__r;
+// 					}
+// 					++__rendererId;
+// 					__rendererOffset += k.first->ids.size();
+// 				}
+// 			}
+// 		}
+// 	}
+// 	// void lateUpdate(){
 
-	// 	for(int i = 0; i < transformIdThreadcache[id].size(); i++){
-	// 		transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
-	// 		// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
-	// 	}
-	// }
-public:
-	//UPDATE(copyBuffers, update);
-	COPY(copyBuffers);
-};
+// 	// 	for(int i = 0; i < transformIdThreadcache[id].size(); i++){
+// 	// 		transformIdsToBuffer[offset + i] = transformIdThreadcache[id][i];
+// 	// 		// transformsToBuffer[offset + i] = TRANSFORMS[transformIdThreadcache[id][i]];
+// 	// 	}
+// 	// }
+// public:
+// 	//UPDATE(copyBuffers, update);
+// 	COPY(copyBuffers);
+// };

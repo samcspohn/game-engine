@@ -226,7 +226,9 @@ public:
     void onDestroy(){
 
     }
+    SERIALIZE_CLASS(audiosource) SCE;
 };
+SERIALIZE_STREAM(audiosource) SSE;
 
 void audio::play(vec3 pos, float pitch, float gain){
     auto s = audioSourceManager::getSource();
