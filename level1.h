@@ -725,7 +725,7 @@ public:
 			guns[0]->fire();
 		}
 		if(Input.getKey(GLFW_KEY_0)){
-			save_game("game.txt");
+			save_game("game.lvl");
 		}
 	}
 	COPY(player_sc2);
@@ -1325,7 +1325,7 @@ int level1(bool load)
 			// cout << "\r" << (float)i / (float)n << "    " << flush;
 		}
 	}else{
-		load_game("game.txt");
+		load_game("game.lvl");
 	}
 
 	return 0;

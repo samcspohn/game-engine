@@ -274,7 +274,7 @@ void initTransform()
 
 void saveTransforms()
 {
-	ofstream f("transform.txt", std::fstream::binary);
+	ofstream f("transform.lvl", std::fstream::binary);
 	_transform t;
 	for (int i = 0; i < Transforms.size(); i++)
 	{
@@ -288,7 +288,7 @@ void saveTransforms()
 void setRootGameObject(transform2 r);
 void loadTransforms()
 {
-	ifstream f("transform.txt", std::fstream::binary);
+	ifstream f("transform.lvl", std::fstream::binary);
 	f.seekg(0, f.end);
 	size_t size = f.tellg();
 	size /= sizeof(_transform);

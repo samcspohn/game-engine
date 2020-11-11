@@ -40,3 +40,5 @@ particle_perf*.txt
 *-compiled.geom
 *-compiled.vert
 imgui.ini
+
+*.lvl
