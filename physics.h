@@ -141,7 +141,29 @@ public:
 	void lateUpdate();
 	void update_data();
 	COPY(collider);
-	SER2(layer,type);
+
+	 friend class boost::serialization::access;                                
+                                                                              
+    template <class Archive>                                                  
+    inline void serialize(Archive &ar, const unsigned int /* file_version */) 
+    {                                                                         
+        ar &boost::serialization::base_object<component>(*this);
+		ar & layer & type & r & dim;
+		switch (this->type)
+		{
+		case 0:
+			ar & this->o;
+			break;
+		// case 1:
+		// 	ar & this->m;
+		// 	break;
+		case 2:
+			ar & this->p;
+			break;
+		default:
+			break;
+		}
+	}
 };
 REGISTER_COMPONENT(collider)
 

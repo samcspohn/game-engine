@@ -17,6 +17,7 @@
 #include <boost/serialization/deque.hpp>
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/map.hpp>
+#include <boost/serialization/vector.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -36,6 +37,13 @@
 #define REGISTER_COMPONENT(comp) \
     BOOST_CLASS_EXPORT(comp)     \
     BOOST_CLASS_EXPORT(componentStorage<comp>)
+
+// #define SERUN()
+#define SER_HELPER                                                            \
+    friend class boost::serialization::access;                                \
+                                                                              \
+    template <class Archive>                                                  \
+    inline void serialize(Archive &ar, const unsigned int /* file_version */) 
 
 #define SER0() \
     SER_BASE   \
@@ -82,23 +90,23 @@ namespace boost::serialization
     template <typename Archive>
     inline void serialize(Archive &ar, glm::vec2 &v, unsigned /*unused*/)
     {
-        ar & v.x & v.y;
+        ar &v.x &v.y;
     }
 
     template <typename Archive>
     inline void serialize(Archive &ar, glm::vec3 &v, unsigned /*unused*/)
     {
-        ar & v.x & v.y &v.z;
+        ar &v.x &v.y &v.z;
     }
     template <typename Archive>
     inline void serialize(Archive &ar, glm::vec4 &v, unsigned /*unused*/)
     {
-        ar & v.x & v.y & v.z & v.w;
+        ar &v.x &v.y &v.z &v.w;
     }
     template <typename Archive>
     inline void serialize(Archive &ar, glm::quat &v, unsigned /*unused*/)
     {
-        ar & v.x & v.y & v.z & v.w;
+        ar &v.x &v.y &v.z &v.w;
     }
 
 } // namespace boost::serialization

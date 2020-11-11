@@ -77,27 +77,6 @@ float getNoise(float x, float y)
 }
 int terrainWidth = 1;
 
-class terrain;
-map<int, map<int, terrain *>> terrains;
-
-terrain *getTerrain(float x, float z)
-{
-    x -= root2.getPosition().x;
-    z -= root2.getPosition().z;
-    float width = terrainWidth;
-    float scale = 20.f;
-    auto xt = terrains.find((int)(x / scale / width + (x > 0 ? 1 : -1) * 0.5f));
-    if (xt != terrains.end())
-    {
-        auto zt = xt->second.find((int)(z / scale / width + (z > 0 ? 1 : -1) * 0.5f));
-        if (zt != xt->second.end())
-        {
-            return zt->second;
-        }
-    }
-    return 0;
-}
-
 struct terrainHit
 {
     vec3 normal;
@@ -122,12 +101,46 @@ public:
     float middle;
     float max_height;
     bool generated = false;
-    int xz(int x, int z)
+    vector<vector<float>> heightMap;
+    int xz(int x, int z);
+    terrainHit getHeight(float x, float z);
+    float makeHeight(float x, float z);
+    glm::vec3 makeVert(float x, float z);
+    void onStart();
+    // void update();
+    void genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ);
+    void generate();
+    SER4(width,depth,offsetX,offsetZ);
+
+};
+
+map<int, map<int, terrain *>> terrains;
+
+terrain *getTerrain(float x, float z)
+{
+    x -= root2.getPosition().x;
+    z -= root2.getPosition().z;
+    float width = terrains[0][0]->width;
+    float scale = terrains[0][0]->transform.getScale().x;
+    auto xt = terrains.find((int)(x / scale / width + (x > 0 ? 1 : -1) * 0.5f));
+    if (xt != terrains.end())
+    {
+        auto zt = xt->second.find((int)(z / scale / width + (z > 0 ? 1 : -1) * 0.5f));
+        if (zt != xt->second.end())
+        {
+            return zt->second;
+        }
+    }
+    return 0;
+}
+
+
+    int terrain::xz(int x, int z)
     {
         return x * width + z;
     }
-    vector<vector<float>> heightMap;
-    terrainHit getHeight(float x, float z)
+    
+    terrainHit terrain::getHeight(float x, float z)
     {
         if (!generated)
             return terrainHit(vec3(0, 1, 0), -INFINITY);
@@ -160,20 +173,20 @@ public:
         vec3 normal = normalize(cross(v1 - v2, v3 - v2));
         return terrainHit(normal, h);
     }
-    float makeHeight(float x, float z)
+    float terrain::makeHeight(float x, float z)
     {
         return getNoise((float)x / 20.f, (float)z / 20.f) * 300.f + getNoise(x, z) * 10.f + getNoise((float)x / 5.f, (float)z / 5.f) * 50.f + getNoise(x * 5.f, z * 5.f) * 2.f;
     }
-    glm::vec3 makeVert(float x, float z)
+    glm::vec3 terrain::makeVert(float x, float z)
     {
         return glm::vec3(x - width / 2, makeHeight(x + this->offsetX, z + this->offsetZ), z - width / 2);
     }
-    void onStart()
+    void terrain::onStart()
     {
         r = transform->gameObject()->getComponent<_renderer>();
         genHeightMap(width - 1, depth - 1, this->offsetX, this->offsetZ);
     }
-    // void update()
+    // void terrain::update()
     // {
     //     auto c = COMPONENT_LIST(_camera);
     //     vec3 pos = transform->getPosition();
@@ -199,7 +212,7 @@ public:
     //         scatter.clear();
     //     }
     // }
-    void genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ)
+    void terrain::genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ)
     {
         if (_width == -1)
             return;
@@ -250,7 +263,7 @@ public:
         // }
         enqueRenderJob([&]() { this->generate(); });
     }
-    void generate()
+    void terrain::generate()
     {
 
         if (r == 0)
@@ -365,7 +378,7 @@ public:
         model.recalcBounds();
         generated = true;
     }
-    SER4(width,depth,offsetX,offsetZ);
-};
+
 REGISTER_COMPONENT(terrain)
 atomic<int> terrain::terrId;
+

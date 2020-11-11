@@ -88,6 +88,10 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	}
 }
 
+void setRootGameObject(transform2 r){
+	rootGameObject = new game_object(root2);
+}
+
 void init()
 {
 
@@ -105,7 +109,7 @@ void init()
 
 	// root = new Transform(0);
 	root2 = Transforms._new();
-	rootGameObject = new game_object(root2);
+	setRootGameObject(root2);
 
 	transformIdThreadcache = vector<vector<vector<int>>>(concurrency::numThreads, vector<vector<int>>(3));
 	positionsToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);

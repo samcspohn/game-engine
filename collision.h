@@ -1,4 +1,5 @@
 #include <glm/glm.hpp>
+#include "serialize.h"
 namespace physics
 {
 
@@ -71,12 +72,18 @@ struct OBB
     // glm::vec3 u[3]; // Local x-, y-, and z-axes
     glm::quat u;
     glm::vec3 e;    // Positive halfwidth extents of OBB along each axis
+    SER_HELPER{
+        ar & c & u & e;
+    }
 };
 
 struct mesh
 {
     vector<glm::vec3> *points;
     vector<uint> *tris;
+    SER_HELPER{
+        ar & points & tris;
+    }
 };
 
 class rigidBody;
@@ -86,6 +93,9 @@ class collider;
 struct point {
     glm::vec3 pos1;
     glm::vec3 pos2;
+    SER_HELPER{
+        ar & pos1 & pos2;
+    }
 };
 
 // struct colDat

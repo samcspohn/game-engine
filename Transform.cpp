@@ -285,22 +285,32 @@ void saveTransforms()
 	f.close();
 }
 
+void setRootGameObject(transform2 r);
 void loadTransforms()
 {
 	ifstream f("transform.txt", std::fstream::binary);
 	f.seekg(0, f.end);
-	int size = f.tellg();
+	size_t size = f.tellg();
+	size /= sizeof(_transform);
 	f.seekg(0, f.beg);
-	// delete root2.gameObject();
-	// root2 = transform2(0);
+	delete root2.gameObject();
+	root2 = transform2(0);
 	// rootGameObject = new game_object(root2);
+	setRootGameObject(root2);
 
 	for (int i = 0; i < size; i++)
 	{
 		Transforms._new();
 	}
+	////////////////////////////////////
 	_transform _t;
-	for (int i = 0; i < size; i++)
+	f.read((char *)&_t, sizeof(_transform));
+	Transforms.positions[0] = _t.position;
+	Transforms.rotations[0] = _t.rotation;
+	Transforms.scales[0] = _t.scale;
+	Transforms.meta[0].parent = transform2(_t.parent);
+	////////////////////////////////////
+	for (int i = 1; i < size; i++)
 	{
 		f.read((char *)&_t, sizeof(_transform));
 		transform2 t(i);
@@ -310,9 +320,8 @@ void loadTransforms()
 		Transforms.scales[i] = _t.scale;
 		Transforms.meta[i].parent = transform2(_t.parent);
 		Transforms.meta[_t.parent].children.push_back(t);
-		Transforms.meta[t.id].childId = (--Transforms.meta[_t.parent].children.end());
-		if(i > 0)
-			newGameObject(t);
+		Transforms.meta[i].childId = (--Transforms.meta[_t.parent].children.end());
+		newGameObject(t);
 		// Transforms.meta[i].gameObject = new game_object()
 	}
 }
