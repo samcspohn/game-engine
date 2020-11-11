@@ -10,9 +10,13 @@
 // #include <bitset>
 
 #include "level1.h"
-
+// #include "boostSerilize.h"
 int main(int argc, char **argv)
 {
+
+	// boostSerialize(argc,argv);
+
+
 	if (argc > 1)
 		maxGameDuration = (float)stoi(argv[1]);
 
@@ -24,8 +28,10 @@ int main(int argc, char **argv)
 
 	cout << sizeof(tbb::spin_mutex) << " : " << sizeof(tbb::mutex) << endl;
 
+	bool load = false;
+	cin >> load;
 	::init();
-	level1();
+	level1(load);
 	run();
 
 	// delete[] heightData;

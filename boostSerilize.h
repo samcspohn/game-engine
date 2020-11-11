@@ -47,12 +47,12 @@ class gps_position
 {
     friend std::ostream & operator<<(std::ostream &os, const gps_position &gp);
     friend class boost::serialization::access;
-    int degrees;
-    int minutes;
-    float seconds;
+    int degrees{0};
+    int minutes{1};
+    float seconds{0.f};
     template<class Archive>
     void serialize(Archive & ar, const unsigned int /* file_version */){
-        ar & degrees & minutes & seconds;
+        ar & degrees & seconds;// & minutes;
     }
 public:
     // every serializable class needs a constructor
@@ -63,7 +63,7 @@ public:
 };
 std::ostream & operator<<(std::ostream &os, const gps_position &gp)
 {
-    return os << ' ' << gp.degrees << (unsigned char)186 << gp.minutes << '\'' << gp.seconds << '"';
+    return os << ' ' << gp.degrees << (unsigned char)186 << gp.seconds << '"';
 }
 
 /////////////////////////////////////////////////////////////
@@ -297,7 +297,7 @@ void restore_schedule(bus_schedule &s, const char * filename)
     ia >> s;
 }
 
-int _main(int argc, char *argv[])
+int boostSerialize(int argc, char *argv[])
 {   
     // make the schedule
     bus_schedule original_schedule;
@@ -368,9 +368,9 @@ int _main(int argc, char *argv[])
     std::cout << new_schedule;
     // should be the same as the old one. (except for the pointer values)
 
-    // delete bs0;
-    // delete bs1;
-    // delete bs2;
-    // delete bs3;
+    delete bs0;
+    delete bs1;
+    delete bs2;
+    delete bs3;
     return 0;
 }

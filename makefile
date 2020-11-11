@@ -26,3 +26,4 @@ getDebDeps:
 	apt install libalut-dev -y
 	apt install libxi-dev -y
 	apt install libxxf86vm-dev -y
+	apt install libboost-all-dev -y

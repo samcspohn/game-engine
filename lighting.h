@@ -74,6 +74,6 @@ public:
         plm.pointLights.erase(pl);
     }
     COPY(Light);
-    SERIALIZE_CLASS(Light) SCE;
+    SER0();
 };
-SERIALIZE_STREAM(Light) SCE;
+REGISTER_COMPONENT(Light)

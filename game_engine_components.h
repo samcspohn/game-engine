@@ -255,7 +255,7 @@ public:
 	{
 		waitForRenderJob([&]() {
 			lightVolumeModel = _model("res/models/cube/cube.obj");
-			lightVolumeModel.m->model->loadModel();
+			modelManager::models[lightVolumeModel.m]->model->loadModel();
 			// lightVolumeModel.m->loadModel();
 			lv.indices = lightVolumeModel.mesh().indices;
 			lv.vertices = lightVolumeModel.mesh().vertices;
@@ -336,7 +336,7 @@ public:
 		GPU_MATRIXES->bindData(3);
 		for (auto &i : batchManager::batches.front())
 		{
-			Shader *currShader = i.first.s->shader;
+			Shader *currShader = i.first.meta()->shader;
 			currShader->use();
 			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
 			currShader->setVec3("viewPos", pos);
@@ -404,7 +404,7 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		Shader &quadShader = *_quadShader.s->shader;
+		Shader &quadShader = *_quadShader.meta()->shader;
 		quadShader.use();
 		quadShader.setInt("gAlbedoSpec", 0);
 		quadShader.setInt("gPosition", 1);
@@ -431,7 +431,7 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		glBlendEquation(GL_FUNC_ADD);
 
-		Shader &shaderLightingPass = *_shaderLightingPass.s->shader;
+		Shader &shaderLightingPass = *_shaderLightingPass.meta()->shader;
 		shaderLightingPass.use();
 		shaderLightingPass.setInt("gAlbedoSpec", 0);
 		shaderLightingPass.setInt("gPosition", 1);
@@ -518,11 +518,10 @@ public:
 		return f;
 	}
 	COPY(_camera);
-	SERIALIZE_CLASS(_camera) & fov & nearPlane & farPlane SCE;
+	SER3(fov,nearPlane,farPlane);
 private:
 };
-
-SERIALIZE_STREAM(_camera) << o.fov << ' ' << o.nearPlane << ' ' << o.farPlane SSE;
+REGISTER_COMPONENT(_camera)
 
 vector<int> renderCounts = vector<int>(concurrency::numThreads);
 vector<vector<vector<GLint>>> transformIdThreadcache;

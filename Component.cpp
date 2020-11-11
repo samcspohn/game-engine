@@ -23,18 +23,59 @@ ull component::getHash()
 
 tbb::affinity_partitioner update_ap;
 
-std::map<ull, componentStorageBase *> allcomponents;
-std::set<componentStorageBase *> gameEngineComponents;
-std::set<componentStorageBase *> gameComponents;
-std::mutex componentLock;
+// std::map<ull, componentStorageBase *> componentRegistry;
+// std::set<componentStorageBase *> gameEngineComponents;
+// std::set<componentStorageBase *> gameComponents;
+// std::mutex componentLock;
+
+Registry ComponentRegistry;
+
+void save_game(const char * filename){
+	saveTransforms();
+
+    // make an archive
+    std::ofstream ofs(filename);
+	{
+    	boost::archive::binary_oarchive oa(ofs);
+    	oa << ComponentRegistry;
+	}
+	ofs.close();
+}
+void rebuildGameObject(componentStorageBase* base, int i);
+
+void load_game(const char * filename)
+{
+	loadTransforms();
+    // open the archive
+    std::ifstream ifs(filename);
+    boost::archive::binary_iarchive ia(ifs);
+
+    // restore the schedule from the archive
+    ia >> ComponentRegistry;
+
+	for(auto &i : ComponentRegistry.components){
+		for(int j = 0; j < i.second->size(); j++){
+			if(i.second->getv(j)){
+				rebuildGameObject(i.second,j);
+			}
+		}
+	}
+	for(auto &i : ComponentRegistry.components){
+		for(int j = 0; j < i.second->size(); j++){
+			if(i.second->getv(j)){
+				i.second->get(j)->onStart();
+			}
+		}
+	}
+}
 
 void destroyAllComponents(){
-	while (allcomponents.size() > 0){
-		delete allcomponents.begin()->second;
-		allcomponents.erase(allcomponents.begin());
+	while (ComponentRegistry.components.size() > 0){
+		delete ComponentRegistry.components.begin()->second;
+		ComponentRegistry.components.erase(ComponentRegistry.components.begin());
 	}
 
 }
 
-#define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
+// #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
 

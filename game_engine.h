@@ -57,7 +57,7 @@ tbb::tbb_thread *renderThread;
 vector<mutex> updateLocks(concurrency::numThreads);
 vector<queue<updateJob>> updateWork(concurrency::numThreads);
 
-componentStorageBase *copyWorkers;
+// componentStorageBase *copyWorkers;
 float maxGameDuration = INFINITY;
 
 void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
@@ -106,18 +106,12 @@ void init()
 	// root = new Transform(0);
 	root2 = Transforms._new();
 	rootGameObject = new game_object(root2);
-	// for (int i = 0; i < concurrency::numThreads; i++)
-	// {
-	// 	rootGameObject->addComponent<copyBuffers>()->id = i;
-	// }
-	// copyWorkers = allcomponents[typeid(copyBuffers).hash_code()];
+
 	transformIdThreadcache = vector<vector<vector<int>>>(concurrency::numThreads, vector<vector<int>>(3));
 	positionsToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 	rotationsToBuffer = vector<vector<glm::quat>>(concurrency::numThreads);
 	scalesToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 
-	// transformThreadcache = vector<vector<_transform>>(copyWorkers->size());
-	gameEngineComponents.erase(copyWorkers);
 }
 
 void run()
@@ -135,7 +129,7 @@ void run()
 		gameLoopTotal.start();
 		gameLoopMain.start();
 		// scripting
-		doLoopIteration(gameComponents);
+		doLoopIteration(ComponentRegistry.gameComponents);
 		for (auto &i : collisionGraph)
 			collisionLayers[i.first].clear();
 		// doLoopIteration(gameEngineComponents, false);
@@ -229,7 +223,7 @@ void run()
 				for (auto &k : j.second)
 				{
 					__renderer_offsets->storage->push_back(__renderersSize);
-					rm.radius = k.first->m.m->radius;
+					rm.radius = k.first->m.meta()->radius;
 					rm.isBillboard = k.first->isBillboard;
 					rm.min = k.first->minRadius;
 					rm.max = k.first->maxRadius;

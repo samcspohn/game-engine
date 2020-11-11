@@ -108,9 +108,8 @@ public:
     void setPrototype(emitter_prototype_ ep);
     void onStart();
     void onDestroy();
-    SERIALIZE_CLASS(particle_emitter) SCE;
+    SER0();
 };
-SERIALIZE_STREAM(particle_emitter) SSE;
 extern int particleCount;
 extern int actualParticles;
 void initParticles();

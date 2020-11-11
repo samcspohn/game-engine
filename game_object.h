@@ -56,7 +56,9 @@ class game_object
 	//friend component;
 	_renderer *renderer = 0;
 	friend _renderer;
-
+	friend void rebuildGameObject(componentStorageBase*, int);
+	friend void save_game(const char*);
+	friend void load_game(const char*);
 public:
 	_renderer *getRenderer()
 	{
@@ -110,7 +112,7 @@ public:
 	t *addComponent()
 	{
 		// gameLock.lock();
-		compInfo<t> ci = addComponentToAll(t());
+		compInfo ci = addComponentToRegistry(t());
 		t *ret = (t *)ci.compPtr;
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));
@@ -126,7 +128,7 @@ public:
 	t *addComponent(const t &c)
 	{
 		// gameLock.lock();
-		compInfo<t> ci = addComponentToAll(c);
+		compInfo ci = addComponentToRegistry(c);
 		t *ret = (t *)ci.compPtr;
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));
@@ -142,7 +144,7 @@ public:
 	t *dupComponent(const t &c)
 	{
 				// gameLock.lock();
-		compInfo<t> ci = addComponentToAll(c);
+		compInfo ci = addComponentToRegistry(c);
 		t *ret = (t *)ci.compPtr;
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));
@@ -274,4 +276,3 @@ public:
 
 	transform2 transform;
 };
-

@@ -282,6 +282,7 @@ void saveTransforms()
 		t.parent = transform2(i).getParent().id;
 		f.write((char *)&t, sizeof(_transform));
 	}
+	f.close();
 }
 
 void loadTransforms()
@@ -290,23 +291,29 @@ void loadTransforms()
 	f.seekg(0, f.end);
 	int size = f.tellg();
 	f.seekg(0, f.beg);
+	// delete root2.gameObject();
+	// root2 = transform2(0);
+	// rootGameObject = new game_object(root2);
 
 	for (int i = 0; i < size; i++)
 	{
 		Transforms._new();
 	}
-	_transform t;
+	_transform _t;
 	for (int i = 0; i < size; i++)
 	{
-		f.read((char *)&t, sizeof(_transform));
-		transform2 t2(i);
+		f.read((char *)&_t, sizeof(_transform));
+		transform2 t(i);
 		// transform2 t2 = Transforms._new();
-		Transforms.positions[i] = t.position;
-		Transforms.rotations[i] = t.rotation;
-		Transforms.scales[i] = t.scale;
-		Transforms.meta[i].parent = transform2(t.parent);
-		Transforms.meta[t.parent].children.push_back(t2);
-		Transforms.meta[t2.id].childId = (--Transforms.meta[t.parent].children.end());
+		Transforms.positions[i] = _t.position;
+		Transforms.rotations[i] = _t.rotation;
+		Transforms.scales[i] = _t.scale;
+		Transforms.meta[i].parent = transform2(_t.parent);
+		Transforms.meta[_t.parent].children.push_back(t);
+		Transforms.meta[t.id].childId = (--Transforms.meta[_t.parent].children.end());
+		if(i > 0)
+			newGameObject(t);
+		// Transforms.meta[i].gameObject = new game_object()
 	}
 }
 

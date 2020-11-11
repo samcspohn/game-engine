@@ -226,9 +226,10 @@ public:
     void onDestroy(){
 
     }
-    SERIALIZE_CLASS(audiosource) SCE;
+    SER0();
 };
-SERIALIZE_STREAM(audiosource) SSE;
+// BOOST_CLASS_EXPORT(componentStorage<audiosource>)
+REGISTER_COMPONENT(audiosource)
 
 void audio::play(vec3 pos, float pitch, float gain){
     auto s = audioSourceManager::getSource();

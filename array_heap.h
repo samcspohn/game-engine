@@ -7,50 +7,63 @@
 #include <mutex>
 #include <math.h>
 #include "concurrency.h"
+#include "serialize.h"
 using namespace std;
 
-
-template<typename t>
-class array_heap {
+template <typename t>
+class array_heap
+{
 	mutex m;
+
 public:
-	struct ref {
+	struct ref
+	{
 		int index;
-		array_heap<t>* a;
-		t* operator->() {
+		array_heap<t> *a;
+		t *operator->()
+		{
 			return &(a->data.at(index));
 		}
-		 operator int() {
+		operator int()
+		{
 			return index;
 		}
-		t& operator*() {
+		t &operator*()
+		{
 			return (*a->data)[index];
 		}
-		t& data() {
+		t &data()
+		{
 			return a->data.at(index);
 		}
 	};
 	friend array_heap::ref;
-	t& operator[](unsigned int i) {
-//		if (i >= extent)
-//			throw -10;//"out of bounds";
+	t &operator[](unsigned int i)
+	{
+		//		if (i >= extent)
+		//			throw -10;//"out of bounds";
 		//if(!valid[i])
 		//	throw exception("invalid");
 		return data.at(i);
 	}
-	ref _new() {
+	ref _new()
+	{
 		ref ret;
 		ret.a = this;
 		m.lock();
-		if (avail.size() > 0) {
+		if (avail.size() > 0)
+		{
 			ret.index = *avail.begin();
-			avail.erase(avail.begin());;
+			avail.erase(avail.begin());
+			;
 			valid[ret.index] = true;
-			if (ret.index >= extent) {
+			if (ret.index >= extent)
+			{
 				extent = ret.index + 1;
 			}
 		}
-		else {
+		else
+		{
 			ret.index = data.size();
 			data.emplace_back();
 			valid.emplace_back(true);
@@ -60,7 +73,8 @@ public:
 		m.unlock();
 		return ret;
 	}
-	void _delete(ref r) {
+	void _delete(ref r)
+	{
 		if (r.a != this)
 			throw;
 		m.lock();
@@ -79,71 +93,94 @@ public:
 		m.unlock();
 	}
 
-	float density() {
+	float density()
+	{
 		if (extent == 0)
 			return INFINITY;
 		return 1 - (float)avail.size() / (float)extent;
 	}
 
-	unsigned int size() {
+	unsigned int size()
+	{
 		return extent;
 	}
 	vector<t> data;
 	std::vector<bool> valid;
+
 private:
 	deque<uint> avail;
 	uint extent = 0;
 };
 
-
-
-
-
-template<typename t>
-class deque_heap {
+template <typename t>
+class deque_heap
+{
 	mutex m;
+
 public:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &ar, const unsigned int version)
+	{
+		ar & extent & active & avail & data & valid;
+	}
 	int active = 0;
-	struct ref {
+	struct ref
+	{
 		int index;
-		deque_heap<t>* a;
+		deque_heap<t> *a;
 		// t* d;
-		t* operator->() {
+		t *operator->()
+		{
 			// return d;
 			return &(a->data[index]);
 			// return &(a->data.at(index));
 		}
-		operator int() {
+		operator int()
+		{
 			return index;
 		}
-		t& operator*() {
+		t &operator*()
+		{
 			return (a->data)[index];
 		}
-		t& data() {
+		t &data()
+		{
 			return a->data.at(index);
 		}
-		void _delete(){
+		void _delete()
+		{
 			a->_delete(*this);
 		}
 	};
+	ref getRef(int i){
+		return ref{i,this};
+	}
+
 	friend deque_heap::ref;
-	t& operator[](unsigned int i) {
+	t &operator[](unsigned int i)
+	{
 		return data[i];
 	}
-	ref _new() {
+	ref _new()
+	{
 		ref ret;
 		ret.a = this;
 		m.lock();
-		if (avail.size() > 0) {
+		if (avail.size() > 0)
+		{
 			ret.index = *avail.begin();
-			avail.erase(avail.begin());;
+			avail.erase(avail.begin());
+			;
 			valid[ret.index] = true;
 			// ret.d = &data[ret.index];
-			if (ret.index >= extent) {
+			if (ret.index >= extent)
+			{
 				extent = ret.index + 1;
 			}
 		}
-		else {
+		else
+		{
 			ret.index = data.size();
 			data.emplace_back();
 			// ret.d = &data.back();
@@ -152,10 +189,11 @@ public:
 		}
 		++active;
 		m.unlock();
-		new(&data[ret.index]) t();
+		new (&data[ret.index]) t();
 		return ret;
 	}
-	void _delete(ref r) {
+	void _delete(ref r)
+	{
 		if (r.a != this)
 			throw;
 		m.lock();
@@ -176,19 +214,22 @@ public:
 		// }
 	}
 
-	float density() {
+	float density()
+	{
 		if (extent == 0)
 			return INFINITY;
 		return 1 - (float)avail.size() / (float)extent;
 	}
 	// unsigned int active(){
-		// return this->active;
+	// return this->active;
 	// }
-	unsigned int size() {
+	unsigned int size()
+	{
 		return extent;
 	}
-	deque<t> data ;
+	deque<t> data;
 	std::deque<bool> valid;
+
 private:
 	deque<uint> avail;
 	uint extent = 0;

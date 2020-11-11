@@ -14,12 +14,14 @@ using namespace std;
 using namespace glm;
 #define MAX_PARTICLES 1024 * 1024 * 8
 
-struct smquat{
-	uvec2 d;
+struct smquat
+{
+    uvec2 d;
 };
-struct smvec3{
-	uint xy;
-	float z;
+struct smvec3
+{
+    uint xy;
+    float z;
 };
 struct particle
 {
@@ -32,117 +34,143 @@ struct particle
 
     smquat rotation; // 2ints
     smvec3 velocity; // 2ints
-    
+
     vec3 position2;
     int next;
-    
+
     smvec3 velocity2; // 2ints
-    float p1;    
+    float p1;
     float l;
 };
 
 // vec4 color;
-void emitter_prototype::color(vec4 c){
-    for(int i = 0; i < 100; ++i){
+void emitter_prototype::color(vec4 c)
+{
+    for (int i = 0; i < 100; ++i)
+    {
         colorLife[i] = c;
     }
 }
-void emitter_prototype::color(vec4 c1, vec4 c2){
+void emitter_prototype::color(vec4 c1, vec4 c2)
+{
     vec4 step = (c2 - c1) / 100.f;
-    for(int i = 0; i < 100; ++i){
+    for (int i = 0; i < 100; ++i)
+    {
         colorLife[i] = c1 + step * (float)i;
     }
 }
-void emitter_prototype::size(float c){
-    for(int i = 0; i < 100; ++i){
+void emitter_prototype::size(float c)
+{
+    for (int i = 0; i < 100; ++i)
+    {
         sizeLife[i] = c;
     }
 }
-void emitter_prototype::size(float c1, float c2){
+void emitter_prototype::size(float c1, float c2)
+{
     float step = (c2 - c1) / 100.f;
-    for(int i = 0; i < 100; ++i){
+    for (int i = 0; i < 100; ++i)
+    {
         sizeLife[i] = c1 + step * (float)i;
     }
 }
 
-colorArray& colorArray::addKey(vec4 color, float position){
+colorArray &colorArray::addKey(vec4 color, float position)
+{
     key k;
     k.color = color;
     k.pos = position;
     keys.push_back(k);
     return *this;
 }
-void colorArray::setColorArray(vec4 *colors){
-    if(keys.size() == 0)
+void colorArray::setColorArray(vec4 *colors)
+{
+    if (keys.size() == 0)
         return;
     key k = keys.front();
-    if(keys.size() == 1){
-        for(int i = 0; i < 100; ++i){
+    if (keys.size() == 1)
+    {
+        for (int i = 0; i < 100; ++i)
+        {
             colors[i] = k.color;
         }
-    }else{
+    }
+    else
+    {
         int k1 = 0;
         int k2 = 1;
-        for(int i = 0; i < keys[k1].pos * 100; ++i){
+        for (int i = 0; i < keys[k1].pos * 100; ++i)
+        {
             colors[i] = keys[k1].color;
         }
-        while(k2 < keys.size()){
+        while (k2 < keys.size())
+        {
             vec4 step = (keys[k2].color - keys[k1].color) / ((keys[k2].pos - keys[k1].pos) * 100);
             int start = keys[k1].pos * 100;
             int stop = keys[k2].pos * 100;
             int j = 0;
-            for(int i = start; i < stop; i++,j++){
+            for (int i = start; i < stop; i++, j++)
+            {
                 colors[i] = keys[k1].color + step * (float)j;
             }
             k1 = k2++;
         }
-        for(int i = keys[k1].pos * 100; i < 100; ++i){
+        for (int i = keys[k1].pos * 100; i < 100; ++i)
+        {
             colors[i] = keys[k1].color;
         }
     }
 }
 
-
-floatArray& floatArray::addKey(float v, float position){
+floatArray &floatArray::addKey(float v, float position)
+{
     key k;
     k.value = v;
     k.pos = position;
     keys.push_back(k);
     return *this;
 }
-void floatArray::setFloatArray(float *floats){
-    if(keys.size() == 0)
+void floatArray::setFloatArray(float *floats)
+{
+    if (keys.size() == 0)
         return;
     key k = keys.front();
-    if(keys.size() == 1){
-        for(int i = 0; i < 100; ++i){
+    if (keys.size() == 1)
+    {
+        for (int i = 0; i < 100; ++i)
+        {
             floats[i] = k.value;
         }
-    }else{
+    }
+    else
+    {
         int k1 = 0;
         int k2 = 1;
-        for(int i = 0; i < keys[k1].pos * 100; ++i){
+        for (int i = 0; i < keys[k1].pos * 100; ++i)
+        {
             floats[i] = keys[k1].value;
         }
-        while(k2 < keys.size()){
+        while (k2 < keys.size())
+        {
             float step = (keys[k2].value - keys[k1].value) / ((keys[k2].pos - keys[k1].pos) * 100);
             int start = keys[k1].pos * 100;
             int stop = keys[k2].pos * 100;
             int j = 0;
-            for(int i = start; i < stop; i++,j++){
+            for (int i = start; i < stop; i++, j++)
+            {
                 floats[i] = keys[k1].value + step * (float)j;
             }
             k1 = k2++;
         }
-        for(int i = keys[k1].pos * 100; i < 100; ++i){
+        for (int i = keys[k1].pos * 100; i < 100; ++i)
+        {
             floats[i] = keys[k1].value;
         }
     }
 }
 
-
-
-struct _emission{
+struct _emission
+{
     vec3 position;
     uint emitter_prototype;
     vec3 direction;
@@ -150,7 +178,8 @@ struct _emission{
     vec3 scale;
     int last;
 };
-struct _burst{
+struct _burst
+{
     vec3 position;
     uint emitter_prototype;
     vec3 direction;
@@ -178,7 +207,8 @@ gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_p
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
 
 mutex burstLock;
-void swapBurstBuffer(){
+void swapBurstBuffer()
+{
     gpu_particle_bursts->storage->swap(particle_bursts);
     particle_bursts.clear();
 }
@@ -187,15 +217,16 @@ uint emitter_prototype_::getId()
 {
     return emitterPrototype.index;
 }
-emitter_prototype* emitter_prototype_::operator->()
+emitter_prototype *emitter_prototype_::operator->()
 {
     return &emitterPrototype.data();
 }
-emitter_prototype& emitter_prototype_::operator*()
+emitter_prototype &emitter_prototype_::operator*()
 {
     return emitterPrototype.data();
 }
-void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, uint count){
+void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, uint count)
+{
     _burst b;
     b.direction = dir;
     b.count = count;
@@ -206,7 +237,8 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, uint count){
     particle_bursts.push_back(b);
     burstLock.unlock();
 }
-void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir,glm::vec3 scale, uint count){
+void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, uint count)
+{
     _burst b;
     b.direction = dir;
     b.count = count;
@@ -272,7 +304,6 @@ void particle_emitter::onStart()
     lock.lock();
     emitter_inits[ei.id] = ei;
     lock.unlock();
-
 }
 void particle_emitter::onDestroy()
 {
@@ -289,6 +320,7 @@ void particle_emitter::onDestroy()
     emitter_inits[ei.id] = ei;
     lock.unlock();
 }
+REGISTER_COMPONENT(particle_emitter)
 
 mutex particle_emitter::lock;
 void initParticles()
@@ -311,7 +343,7 @@ void initParticles()
     atomicCounters->bufferData();
 
     gpu_particle_bursts->ownStorage();
-    
+
     livingParticles->tryRealloc(MAX_PARTICLES);
     // emitted->tryRealloc(MAX_PARTICLES);
     burstParticles->tryRealloc(MAX_PARTICLES);
@@ -333,10 +365,11 @@ Shader particleProgram3("res/shaders/particleUpdate_emitter.comp");
 int particleCount;
 int actualParticles;
 mutex pcMutex;
-int getParticleCount(){
+int getParticleCount()
+{
     int ret;
     pcMutex.lock();
-        ret = particleCount;
+    ret = particleCount;
     pcMutex.unlock();
     return ret;
 }
@@ -394,9 +427,8 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     fo = glGetUniformLocation(particleProgram3.Program, "floatingOrigin");
     glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
 
-
     particleProgram3.use();
-    
+
     // run program
     glUniform1ui(glGetUniformLocation(particleProgram3.Program, "count"), emitterInitCount);
     glUniform1ui(glGetUniformLocation(particleProgram3.Program, "stage"), 0);
@@ -408,8 +440,6 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(EMITTERS.size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-
-
     atomicCounters->retrieveData();
     (*atomicCounters)[1] = 0;
     (*atomicCounters)[2] = 0;
@@ -417,7 +447,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     // glFlush();
 
     vector<uint> acs = *(atomicCounters->storage);
-    
+
     particleProgram2.use();
     glUniform1ui(glGetUniformLocation(particleProgram2.Program, "burstOffset"), (*atomicCounters)[0]);
 
@@ -444,12 +474,11 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "count"), MAX_PARTICLES); // count particles
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 6);
     glDispatchCompute(MAX_PARTICLES / 256 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    
+
     atomicCounters->retrieveData();
     pcMutex.lock();
     particleCount = atomicCounters->storage->at(0);
@@ -462,15 +491,16 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
-
-struct d{
+struct d
+{
     // smvec3 pos;
     uint xy;
     uint z;
     smquat rot;
-	uint scale_xy;
-	uint protoID_life;
-    uint p1;uint p2;
+    uint scale_xy;
+    uint protoID_life;
+    uint p1;
+    uint p2;
 };
 
 #define COUNTER_THREADS 4096
@@ -506,11 +536,12 @@ namespace particle_renderer
     vector<d> res;
     ofstream output;
     rolling_buffer time;
-    sorter<d>* p_sort;
+    sorter<d> *p_sort;
 
-    void setCamCull(glm::mat3 ci, glm::vec3 cp){
+    void setCamCull(glm::mat3 ci, glm::vec3 cp)
+    {
         camInv = ci;
-		camP = cp;
+        camP = cp;
     }
     void init()
     {
@@ -542,7 +573,7 @@ namespace particle_renderer
         histo->bufferData();
 
         p_sort = new sorter<d>("d",
-"struct smquat{\
+                               "struct smquat{\
 	uvec2 d;\
 };\
 \
@@ -552,29 +583,28 @@ struct d{\
     smquat rot;\
 	uint scale_xy;\
 	uint protoID_life;\
-};", "z");
-
+};",
+                               "z");
     }
 
-    void end(){
+    void end()
+    {
         output << "sort:" << time.getAverageValue() << endl;
         output.close();
     }
-  
+
     void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec2 screen)
     {
         timer t1;
         particleSortProgram.use();
 
-
-        particleSortProgram.setMat3("camInv",camInv);
+        particleSortProgram.setMat3("camInv", camInv);
         particleSortProgram.setVec3("camPos", camPos);
-        particleSortProgram.setVec3("camp",camP);
-        particleSortProgram.setVec3("cameraForward",MainCamForward);
-        particleSortProgram.setVec3("cameraUp",mainCamUp);
-        particleSortProgram.setFloat("x_size",screen.x);
-        particleSortProgram.setFloat("y_size",screen.y);
-
+        particleSortProgram.setVec3("camp", camP);
+        particleSortProgram.setVec3("cameraForward", MainCamForward);
+        particleSortProgram.setVec3("cameraUp", mainCamUp);
+        particleSortProgram.setFloat("x_size", screen.x);
+        particleSortProgram.setFloat("y_size", screen.y);
 
         // particleSortProgram2.use();
         // particleSortProgram2.setMat3("camInv",camInv);
@@ -584,8 +614,6 @@ struct d{\
         // particleSortProgram2.setVec3("cameraUp",mainCamUp);
         // particleSortProgram2.setFloat("x_size",screen.x);
         // particleSortProgram2.setFloat("y_size",screen.y);
-
-        
 
         gpuTimer gt;
         t1.start();
@@ -602,8 +630,6 @@ struct d{\
         histo->bindData(7);
         gpu_emitter_prototypes->bindData(8);
 
-
-
         gt.start();
         particleSortProgram.use();
         // particleSortProgram.setInt("stage",-2);
@@ -611,7 +637,7 @@ struct d{\
         // glDispatchCompute(65536 / 256, 1, 1); // count
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        particleSortProgram.setInt("stage",-1);
+        particleSortProgram.setInt("stage", -1);
         particleSortProgram.setUint("count", actualParticles);
         glDispatchCompute(actualParticles / 256 + 1, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -622,11 +648,10 @@ struct d{\
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         gt.start();
-        p_sort->sort(numParticles,_input,_output);
+        p_sort->sort(numParticles, _input, _output);
         appendStat("particle list sort", gt.stop());
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-        
         // _input->bindData(1);   // input
         // _output->bindData(2); // output
 
@@ -656,7 +681,7 @@ struct d{\
         // particleSortProgram2.setUint("count", 1);
         // glDispatchCompute(1, 1, 1); // count
         // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        
+
         // particleSortProgram2.setInt("stage",3);
         // particleSortProgram2.setUint("count", 65536);
         // glDispatchCompute(65536 / 256, 1, 1); // count
@@ -673,7 +698,6 @@ struct d{\
         // // atomics->retrieveData();
         // // numParticles = atomics->storage->at(0);
 
-
         // double t = t1.stop();
         // appendStat("sort particle list", t);
         // time.add(t);
@@ -684,22 +708,30 @@ struct d{\
 
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         float farplane = 1e32f;
-        particleShader.s->shader->use();
-        GLuint matPView = glGetUniformLocation(particleShader.s->shader->Program, "view");
-        GLuint matvRot = glGetUniformLocation(particleShader.s->shader->Program, "vRot");
-        GLuint matProjection = glGetUniformLocation(particleShader.s->shader->Program, "projection");
-        GLuint cam = glGetUniformLocation(particleShader.s->shader->Program, "cameraPos");
-        glUniform3f(cam, mainCamPos.x, mainCamPos.y, mainCamPos.z);
+        particleShader.meta()->shader->use();
+        particleShader->setMat4("view", view);
+        // particleShader->setMat4("view",view);
+        // GLuint matPView = glGetUniformLocation(particleShader.s->shader->Program, "view");
+        particleShader->setMat4("vRot", rot);
+        particleShader->setMat4("projection", proj);
+        // GLuint matvRot = glGetUniformLocation(particleShader.s->shader->Program, "vRot");
+        // GLuint matProjection = glGetUniformLocation(particleShader.s->shader->Program, "projection");
+        // GLuint cam = glGetUniformLocation(particleShader.s->shader->Program, "cameraPos");
+        // glUniform3f(cam, mainCamPos.x, mainCamPos.y, mainCamPos.z);
+        particleShader->setVec3("cameraPos", mainCamPos);
+        particleShader->setFloat("aspectRatio", (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "aspectRatio"), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+        particleShader->setFloat("FC", 2.0 / log2(farplane + 1));
+        particleShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
+        particleShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
+        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "FC"), 2.0 / log2(farplane + 1));
+        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
+        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenWidth"), (float)SCREEN_WIDTH);
+        particleShader->setMat3("camInv", camInv);
 
-        glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "aspectRatio"), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
-        glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "FC"), 2.0 / log2(farplane + 1));
-        glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
-        glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenWidth"), (float)SCREEN_WIDTH);
-        particleShader.s->shader->setMat3("camInv",camInv);
-        
-        glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(matvRot, 1, GL_FALSE, glm::value_ptr(rot));
-        glUniformMatrix4fv(matProjection, 1, GL_FALSE, glm::value_ptr(proj));
+        // glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(view));
+        // glUniformMatrix4fv(matvRot, 1, GL_FALSE, glm::value_ptr(rot));
+        // glUniformMatrix4fv(matProjection, 1, GL_FALSE, glm::value_ptr(proj));
 
         GPU_TRANSFORMS->bindData(0);
         gpu_emitter_prototypes->bindData(3);
@@ -715,9 +747,10 @@ struct d{\
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-};
+}; // namespace particle_renderer
 
-void prepParticles(){
+void prepParticles()
+{
     gpu_emitter_inits->bufferData(emitterInits);
     gpu_emitter_prototypes->bufferData();
     gpu_particle_bursts->bufferData();

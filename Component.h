@@ -17,10 +17,10 @@
 #include "tbb/parallel_for.h"
 #include "tbb/partitioner.h"
 
-
 #include "serialize.h"
 
 #include "Transform.h"
+#include "fstream"
 #define ull unsigned long long
 // class game_object;
 
@@ -46,30 +46,23 @@ public:
 	ull getHash();
 
 	// friend std::ostream & operator<<(std::ostream &os, const component &c);
-    // friend class boost::serialization::access;
+	// friend class boost::serialization::access;
 
 	// template<class Archive>
-    // void serialize(Archive & ar, const unsigned int /* file_version */){
-    //     ar & transform;
-    // }
-	virtual void forceSerialize() = 0;
-	friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive &os, const component &c);
-    friend class boost::serialization::access;
+	// void serialize(Archive & ar, const unsigned int /* file_version */){
+	//     ar & transform;
+	// }
+	// virtual boost::archive::text_oarchive &forceSerialize(boost::archive::text_oarchive &ar) const = 0;
+	// friend boost::archive::text_oarchive &operator<<(boost::archive::text_oarchive &os, const component &c);
+	friend class boost::serialization::access;
 
 	template<class Archive>
-    void serialize(Archive & ar, const unsigned int /* file_version */){
-        ar & transform;
+	inline void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar & transform;
 	}
-
 };
-SERIALIZE_STREAM(component) << o.transform SSE;
-
-
-// std::ostream & operator<<(std::ostream &os, const component &c)
-// {
-//     return os << ' ' << c.transform;
-// }
-
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(component)
 
 struct compItr
 {
@@ -104,7 +97,6 @@ struct compItr_ : public compItr
 	compItr_() {}
 };
 
-template <typename t>
 struct compInfo
 {
 	component *compPtr;
@@ -116,6 +108,7 @@ extern tbb::affinity_partitioner update_ap;
 class componentStorageBase
 {
 public:
+	size_t hash;
 	bool h_update;
 	bool h_lateUpdate;
 	timer update_timer;
@@ -127,12 +120,27 @@ public:
 	bool hasLateUpdate() { return h_lateUpdate; }
 	virtual void update(){};
 	virtual void lateUpdate(){};
-	virtual component *get(int i) {return 0;}
-	virtual bool getv(int i) {return false;}
-	virtual int size(){ return 0;};
-	virtual unsigned int active(){return 0;};
+	virtual component *get(int i) { return 0; }
+	virtual bool getv(int i) { return false; }
+	virtual int size() { return 0; };
+	virtual unsigned int active() { return 0; };
 	virtual void sort(){};
+	virtual compInfo getInfo(int i){ return compInfo();};
+	// virtual string ser(){};
+
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar & name & h_update & h_lateUpdate;
+	}
 };
+
+// std::ostream & operator<<(std::ostream &os, const componentStorageBase &base)
+// {
+//     return os << base.name << base.h_update << base.h_lateUpdate << base.ser();
+// }
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(componentStorageBase)
 
 template <typename t>
 class componentStorage : public componentStorageBase
@@ -159,6 +167,19 @@ public:
 	bool getv(int i)
 	{
 		return data.valid[i];
+	}
+	compInfo getInfo(int i){
+		this->lock.lock();
+		typename deque_heap<t>::ref id = data.getRef(i);
+		this->lock.unlock();
+		// new (&(*id)) t(c);
+		// *id = std::move(c);
+
+		compInfo ret;
+		ret.compPtr = &(*id);
+		ret.CompItr = new compItr_<t>(id, &data);
+		ret.CompItr->hash = typeid(t).hash_code();
+		return ret;
 	}
 
 	void update()
@@ -211,49 +232,85 @@ public:
 		}
 		lateupdate_t = update_timer.stop();
 	}
+
+	friend class boost::serialization::access;
+
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar & boost::serialization::base_object<componentStorageBase>(*this) & data;
+	}
+	// string ser(){
+	// 	stringstream ss;
+	// 	ss << boost::serialization:: data;
+	// 	return string(ss.str());
+	// }
 };
 
-extern std::map<ull, componentStorageBase *> allcomponents;
-extern std::set<componentStorageBase *> gameEngineComponents;
-extern std::set<componentStorageBase *> gameComponents;
-extern std::mutex componentLock;
-template <typename t>
-inline compInfo<t> addComponentToAll(const t &c)
-{
-	ull hash = typeid(t).hash_code();
-	if (allcomponents.find(hash) == allcomponents.end())
+class Registry{
+public:
+	std::map<size_t, componentStorageBase *> components;
+	std::set<componentStorageBase *> gameEngineComponents;
+	std::set<componentStorageBase *> gameComponents;
+	std::mutex lock;
+
+	friend class boost::serialization::access;
+
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
-		componentLock.lock();
-		if (allcomponents.find(hash) == allcomponents.end())
+		ar & components & gameEngineComponents & gameComponents;
+	}
+};
+
+// extern std::map<ull, componentStorageBase *> componentRegistry;
+// extern std::set<componentStorageBase *> gameEngineComponents;
+// extern std::set<componentStorageBase *> gameComponents;
+// extern std::mutex componentLock;
+extern Registry ComponentRegistry;
+template <typename t>
+inline compInfo addComponentToRegistry(const t &c)
+{
+	size_t hash = typeid(t).hash_code();
+	if (ComponentRegistry.components.find(hash) == ComponentRegistry.components.end())
+	{
+		ComponentRegistry.lock.lock();
+		if (ComponentRegistry.components.find(hash) == ComponentRegistry.components.end())
 		{
 			componentStorageBase *csb = (componentStorageBase *)(new componentStorage<t>());
-			allcomponents[hash] = csb;
+			ComponentRegistry.components[hash] = csb;
 			csb->name = typeid(t).name();
 			csb->h_update = typeid(&t::update) != typeid(&component::update);
 			csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
+			csb->hash = hash;
 			if (((component *)&c)->_registerEngineComponent())
-				gameEngineComponents.insert(allcomponents[hash]);
+				ComponentRegistry.gameEngineComponents.insert(ComponentRegistry.components[hash]);
 			else
-				gameComponents.insert(allcomponents[hash]);
+				ComponentRegistry.gameComponents.insert(ComponentRegistry.components[hash]);
 		}
-		componentLock.unlock();
+		ComponentRegistry.lock.unlock();
 	}
-	componentStorage<t> *compStorage = static_cast<componentStorage<t> *>(allcomponents[hash]);
+	componentStorage<t> *compStorage = static_cast<componentStorage<t> *>(ComponentRegistry.components[hash]);
 	compStorage->lock.lock();
 	typename deque_heap<t>::ref id = compStorage->data._new();
 	compStorage->lock.unlock();
-	new(&(*id)) t(c);
+	new (&(*id)) t(c);
 	// *id = std::move(c);
 
-	compInfo<t> ret;
+	compInfo ret;
 	ret.compPtr = &(*id);
 	ret.CompItr = new compItr_<t>(id, &compStorage->data);
 	ret.CompItr->hash = hash;
 	return ret;
 }
 
+
+void save_game(const char * filename);
+
+void load_game(const char * filename);
+
 void destroyAllComponents();
-#define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(allcomponents[typeid(x).hash_code()])
+#define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(ComponentRegistry.components[typeid(x).hash_code()])
 
 #define COPY(component_type)                     \
 	void _copy(game_object *go)                  \

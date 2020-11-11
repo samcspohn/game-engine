@@ -11,6 +11,8 @@
 #include "fast_list.h"
 #include <atomic>
 #include "texture.h"
+// #include <hash_fun.h>
+#include <functional>
 using namespace std;
 
 
@@ -54,7 +56,7 @@ struct _modelMeta {
 	bool unique = false;
 };
 namespace modelManager {
-	extern map<string, _modelMeta*> models;
+	extern map<size_t, _modelMeta*> models;
 	void destroy();
 };
 
@@ -67,7 +69,15 @@ public:
 	void makeUnique();
 	void makeProcedural();
 	void recalcBounds();
-	_modelMeta* m = 0;
+	_modelMeta* meta() const;
+	// _modelMeta* m = 0;
+	size_t m = 0;
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar & m;
+	}
 };
 
 
@@ -85,7 +95,7 @@ struct _shaderMeta {
 
 namespace shaderManager {
 
-	extern map<string, _shaderMeta*> shaders;
+	extern map<size_t, _shaderMeta*> shaders;
 	void destroy();
 };
 
@@ -96,9 +106,17 @@ public:
 	_shader(string vertex, string fragment);
 	_shader(string vertex, string geom,  string fragment);
 	_shader(string vertex, string tess, string geom,  string fragment);
-	_shaderMeta* s = 0;
+	// _shaderMeta* s = 0;
+	size_t s = 0;
 	Shader& ref();
-	Shader& operator->();
+	Shader* operator->();
+	_shaderMeta* meta() const;
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar & s;
+	}
 };
 
 
@@ -120,7 +138,7 @@ private:
 namespace renderingManager {
 	extern mutex m;
 
-	extern map<string, map<string, renderingMeta*> > shader_model_vector;
+	extern map<size_t, map<size_t, renderingMeta *>> shader_model_vector;
 	void destroy();
 	void lock();
 	void unlock();
@@ -167,6 +185,7 @@ class _renderer : public component {
 public:
 	void setCullSizes(float min, float max);
 	_model getModel();
+	_shader getShader();
 	void onStart();
 	_renderer();
 	void set(_shader s, _model m);
@@ -175,10 +194,5 @@ public:
 	_renderer(const _renderer& other);
 	void onDestroy();
 	COPY(_renderer);
-	SERIALIZE_CLASS(_renderer) SCE;
+	SER2(shader, model);
 };
-SERIALIZE_STREAM(_renderer) SSE;
-// class camera : public component
-// {
-	
-// };

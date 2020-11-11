@@ -110,13 +110,13 @@ class terrain : public component
 {
 public:
     COPY(terrain);
-    game_object_proto *scatter_obj;
-    vector<game_object *> scatter;
-    vector<glm::vec3> scatterPos;
+    // game_object_proto *scatter_obj;
+    // vector<game_object *> scatter;
+    // vector<glm::vec3> scatterPos;
     _renderer *r = 0;
     static atomic<int> terrId;
-    int width;
-    int depth;
+    int width = 0;
+    int depth = 0;
     int offsetX;
     int offsetZ;
     float middle;
@@ -162,40 +162,47 @@ public:
     }
     float makeHeight(float x, float z)
     {
-        return  getNoise((float)x / 20.f, (float)z / 20.f) * 300.f + getNoise(x, z) * 10.f + getNoise((float)x / 5.f, (float)z / 5.f) * 50.f + getNoise(x * 5.f, z * 5.f) * 2.f;
+        return getNoise((float)x / 20.f, (float)z / 20.f) * 300.f + getNoise(x, z) * 10.f + getNoise((float)x / 5.f, (float)z / 5.f) * 50.f + getNoise(x * 5.f, z * 5.f) * 2.f;
     }
     glm::vec3 makeVert(float x, float z)
     {
         return glm::vec3(x - width / 2, makeHeight(x + this->offsetX, z + this->offsetZ), z - width / 2);
     }
-    void update()
+    void onStart()
     {
-        auto c = COMPONENT_LIST(_camera);
-        vec3 pos = transform->getPosition();
-        vec3 pos2 = c->get(0)->transform->getPosition();
-        pos.y = pos2.y = 0;
-        bool inThreshold = glm::length(pos - pos2) < 2000;
-        if (inThreshold && scatter.size() == 0)
-        {
-            for (glm::vec3 p : scatterPos)
-            {
-                game_object *s = new game_object(*scatter_obj);
-                s->transform->setPosition(p + root2.getPosition());
-                s->transform->rotate(vec3(1, 0, 0), radians(-90.f));
-                scatter.push_back(s);
-            }
-        }
-        else if (!inThreshold && scatter.size() > 0)
-        {
-            for (game_object *g : scatter)
-            {
-                g->destroy();
-            }
-            scatter.clear();
-        }
+        r = transform->gameObject()->getComponent<_renderer>();
+        genHeightMap(width - 1, depth - 1, this->offsetX, this->offsetZ);
     }
+    // void update()
+    // {
+    //     auto c = COMPONENT_LIST(_camera);
+    //     vec3 pos = transform->getPosition();
+    //     vec3 pos2 = c->get(0)->transform->getPosition();
+    //     pos.y = pos2.y = 0;
+    //     bool inThreshold = glm::length(pos - pos2) < 2000;
+    //     if (inThreshold && scatter.size() == 0)
+    //     {
+    //         for (glm::vec3 p : scatterPos)
+    //         {
+    //             game_object *s = new game_object(*scatter_obj);
+    //             s->transform->setPosition(p + root2.getPosition());
+    //             s->transform->rotate(vec3(1, 0, 0), radians(-90.f));
+    //             scatter.push_back(s);
+    //         }
+    //     }
+    //     else if (!inThreshold && scatter.size() > 0)
+    //     {
+    //         for (game_object *g : scatter)
+    //         {
+    //             g->destroy();
+    //         }
+    //         scatter.clear();
+    //     }
+    // }
     void genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ)
     {
+        if (_width == -1)
+            return;
         width = _width + 1;
         depth = _depth + 1;
         this->offsetX = _offsetX;
@@ -224,23 +231,23 @@ public:
         // game_object* tree_go = new game_object(scatter_obj);
         // tree_go->addComponent<_renderer>()->set(modelShader,tree);
         // tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
-        glm::vec3 pos = transform->getPosition();
-        for (int i = -width / 2; i < width / 2; i++)
-        {
-            for (int j = -depth / 2; j < depth / 2; j++)
-            {
-                float x = pos.x + (i + randf()) * 20.f;
-                float z = pos.z + (j + randf()) * 20.f;
-                terrainHit h = getHeight(x, z);
-                if (dot(h.normal, vec3(0, 1, 0)) > 0.85)
-                {
-                    // game_object* s = new game_object(*scatter_obj);
-                    scatterPos.emplace_back(x, h.height, z);
-                    // s->transform->setPosition(vec3(x,h.height,z));
-                    // s->transform->rotate(vec3(1,0,0),radians(-90.f));
-                }
-            }
-        }
+        // glm::vec3 pos = transform->getPosition();
+        // for (int i = -width / 2; i < width / 2; i++)
+        // {
+        //     for (int j = -depth / 2; j < depth / 2; j++)
+        //     {
+        //         float x = pos.x + (i + randf()) * 20.f;
+        //         float z = pos.z + (j + randf()) * 20.f;
+        //         terrainHit h = getHeight(x, z);
+        //         if (dot(h.normal, vec3(0, 1, 0)) > 0.85)
+        //         {
+        //             // game_object* s = new game_object(*scatter_obj);
+        //             scatterPos.emplace_back(x, h.height, z);
+        //             // s->transform->setPosition(vec3(x,h.height,z));
+        //             // s->transform->rotate(vec3(1,0,0),radians(-90.f));
+        //         }
+        //     }
+        // }
         enqueRenderJob([&]() { this->generate(); });
     }
     void generate()
@@ -249,6 +256,8 @@ public:
         if (r == 0)
             return;
         _model model = r->getModel();
+        model.makeUnique();
+        r->set(r->getShader(),model);
         if (model.meshes().size() == 0)
         {
             model.meshes().push_back(Mesh());
@@ -263,7 +272,6 @@ public:
         uvs = vector<glm::vec2>(width * depth);
         uvs2 = vector<glm::vec2>(width * depth);
 
-        
         model.mesh().addTexture(noise_tex);
 
         _texture grass;
@@ -357,7 +365,7 @@ public:
         model.recalcBounds();
         generated = true;
     }
-    SERIALIZE_CLASS(terrain) SCE;
+    SER4(width,depth,offsetX,offsetZ);
 };
-SERIALIZE_STREAM(terrain) SSE;
+REGISTER_COMPONENT(terrain)
 atomic<int> terrain::terrId;

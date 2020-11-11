@@ -89,7 +89,7 @@ struct transform2 {
 
 	void orphan();
 
-	friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive  &os, const transform2 &t);
+	// friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive  &os, const transform2 &t);
     friend class boost::serialization::access;
 
 	template<class Archive>
@@ -97,7 +97,10 @@ struct transform2 {
         ar & id;
 	}
 };
-SERIALIZE_STREAM(transform2) << o.id SSE;
+// boost::archive::text_oarchive & operator<<(boost::archive::text_oarchive  &os, const transform2 &t){
+// 	return os << t.id;
+// }
+
 struct trans_update {
 	bool pos;
 	bool rot;
@@ -175,13 +178,15 @@ struct _Transforms {
 	friend void loadTransforms();
 };
 
+void newGameObject(transform2 t);
 extern _Transforms Transforms;
 void initTransform();
 
 int switchAH(int index);
 extern unsigned int transforms_enabled;
 
-// extern Transform* root;
+void saveTransforms();
+void loadTransforms();
 
 extern transform2 root2;
 
