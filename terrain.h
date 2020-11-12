@@ -89,9 +89,9 @@ class terrain : public component
 {
 public:
     COPY(terrain);
-    // game_object_proto *scatter_obj;
-    // vector<game_object *> scatter;
-    // vector<glm::vec3> scatterPos;
+    game_object_proto *scatter_obj;
+    vector<transform2> scatter;
+    vector<glm::vec3> scatterPos;
     _renderer *r = 0;
     static atomic<int> terrId;
     int width = 0;
@@ -107,10 +107,10 @@ public:
     float makeHeight(float x, float z);
     glm::vec3 makeVert(float x, float z);
     void onStart();
-    // void update();
+    void update();
     void genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ);
     void generate();
-    SER4(width,depth,offsetX,offsetZ);
+    SER6(width,depth,offsetX,offsetZ, scatter_obj, scatter);
 
 };
 
@@ -186,32 +186,32 @@ terrain *getTerrain(float x, float z)
         r = transform->gameObject()->getComponent<_renderer>();
         genHeightMap(width - 1, depth - 1, this->offsetX, this->offsetZ);
     }
-    // void terrain::update()
-    // {
-    //     auto c = COMPONENT_LIST(_camera);
-    //     vec3 pos = transform->getPosition();
-    //     vec3 pos2 = c->get(0)->transform->getPosition();
-    //     pos.y = pos2.y = 0;
-    //     bool inThreshold = glm::length(pos - pos2) < 2000;
-    //     if (inThreshold && scatter.size() == 0)
-    //     {
-    //         for (glm::vec3 p : scatterPos)
-    //         {
-    //             game_object *s = new game_object(*scatter_obj);
-    //             s->transform->setPosition(p + root2.getPosition());
-    //             s->transform->rotate(vec3(1, 0, 0), radians(-90.f));
-    //             scatter.push_back(s);
-    //         }
-    //     }
-    //     else if (!inThreshold && scatter.size() > 0)
-    //     {
-    //         for (game_object *g : scatter)
-    //         {
-    //             g->destroy();
-    //         }
-    //         scatter.clear();
-    //     }
-    // }
+    void terrain::update()
+    {
+        auto c = COMPONENT_LIST(_camera);
+        vec3 pos = transform->getPosition();
+        vec3 pos2 = c->get(0)->transform->getPosition();
+        pos.y = pos2.y = 0;
+        bool inThreshold = glm::length(pos - pos2) < 2000;
+        if (inThreshold && scatter.size() == 0)
+        {
+            for (glm::vec3 p : scatterPos)
+            {
+                game_object *s = new game_object(*scatter_obj);
+                s->transform->setPosition(p + root2.getPosition());
+                s->transform->rotate(vec3(1, 0, 0), radians(-90.f));
+                scatter.push_back(s->transform);
+            }
+        }
+        else if (!inThreshold && scatter.size() > 0)
+        {
+            for (transform2 t : scatter)
+            {
+                t.gameObject()->destroy();
+            }
+            scatter.clear();
+        }
+    }
     void terrain::genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ)
     {
         if (_width == -1)
@@ -244,23 +244,25 @@ terrain *getTerrain(float x, float z)
         // game_object* tree_go = new game_object(scatter_obj);
         // tree_go->addComponent<_renderer>()->set(modelShader,tree);
         // tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
-        // glm::vec3 pos = transform->getPosition();
-        // for (int i = -width / 2; i < width / 2; i++)
-        // {
-        //     for (int j = -depth / 2; j < depth / 2; j++)
-        //     {
-        //         float x = pos.x + (i + randf()) * 20.f;
-        //         float z = pos.z + (j + randf()) * 20.f;
-        //         terrainHit h = getHeight(x, z);
-        //         if (dot(h.normal, vec3(0, 1, 0)) > 0.85)
-        //         {
-        //             // game_object* s = new game_object(*scatter_obj);
-        //             scatterPos.emplace_back(x, h.height, z);
-        //             // s->transform->setPosition(vec3(x,h.height,z));
-        //             // s->transform->rotate(vec3(1,0,0),radians(-90.f));
-        //         }
-        //     }
-        // }
+        glm::vec3 pos = transform->getPosition();
+        for (int i = -width / 2; i < width / 2; i++)
+        {
+            for (int j = -depth / 2; j < depth / 2; j++)
+            {
+                float gx = (i + randf());
+                float gy = (j + randf());
+                float x = pos.x + gx * 20.f;
+                float z = pos.z + gy * 20.f;
+                terrainHit h = getHeight(x, z);
+                if (dot(h.normal, vec3(0, 1, 0)) > 0.85)
+                {
+                    // game_object* s = new game_object(*scatter_obj);
+                    scatterPos.emplace_back(x, h.height, z);
+                    // s->transform->setPosition(vec3(x,h.height,z));
+                    // s->transform->rotate(vec3(1,0,0),radians(-90.f));
+                }
+            }
+        }
         enqueRenderJob([&]() { this->generate(); });
     }
     void terrain::generate()

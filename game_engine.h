@@ -42,6 +42,7 @@ void save_game(const char * filename){
 	{
     	boost::archive::text_oarchive oa(ofs);
 		saveEmitters(oa);
+		saveProto(oa);
 		saveTransforms(oa);
     	oa << ComponentRegistry;
 	}
@@ -55,6 +56,7 @@ void load_game(const char * filename)
     std::ifstream ifs(filename);
     boost::archive::text_iarchive ia(ifs);
 	loadEmitters(ia);
+	loadProto(ia);
 	loadTransforms(ia);
 
     // restore the schedule from the archive

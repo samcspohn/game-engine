@@ -4,17 +4,29 @@
 #include <map>
 #include <set>
 #include <unordered_set>
+#include <list>
 #include "plf_list.h"
 #include "fast_list.h"
+#include "serialize.h"
 
 using namespace std;
 
 class _renderer;
+class game_object_proto;
+#define protoListRef typename std::list<game_object_proto*>::iterator
+#define protoList std::list<game_object_proto*>
+
+protoListRef registerProto(game_object_proto* p);
+void deleteProtoRef(protoListRef r);
+
 class game_object_proto{
 public:
+	game_object_proto(){
+		ref = registerProto(this);
+	}
 	map<component *, ull> components;
+	protoListRef ref;
 
-	game_object_proto(){}
 	// game_object_proto(const game_object_proto& other){
 	// 	for()
 	// }
@@ -37,8 +49,18 @@ public:
 			}
 		return 0;
 	}
-	
+	~game_object_proto(){
+		for(auto& i : components)
+			delete i.first;
+		deleteProtoRef(ref);
+	}
+	SER_HELPER(){
+		ar & components;
+	}
 };
+
+void saveProto(boost::archive::text_oarchive& oa);
+void loadProto(boost::archive::text_iarchive& ia);
 
 class game_object;
 
