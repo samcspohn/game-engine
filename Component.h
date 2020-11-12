@@ -56,10 +56,10 @@ public:
 	// friend boost::archive::text_oarchive &operator<<(boost::archive::text_oarchive &os, const component &c);
 	friend class boost::serialization::access;
 
-	template<class Archive>
+	template <class Archive>
 	inline void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
-		ar & transform;
+		ar &transform;
 	}
 };
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(component)
@@ -125,14 +125,14 @@ public:
 	virtual int size() { return 0; };
 	virtual unsigned int active() { return 0; };
 	virtual void sort(){};
-	virtual compInfo getInfo(int i){ return compInfo();};
+	virtual compInfo getInfo(int i) { return compInfo(); };
 	// virtual string ser(){};
 
 	friend class boost::serialization::access;
 	template <class Archive>
 	void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
-		ar & name & h_update & h_lateUpdate;
+		ar &name &h_update &h_lateUpdate;
 	}
 };
 
@@ -168,13 +168,22 @@ public:
 	{
 		return data.valid[i];
 	}
-	compInfo getInfo(int i){
+	compInfo getInfo(int i)
+	{
 		this->lock.lock();
 		typename deque_heap<t>::ref id = data.getRef(i);
 		this->lock.unlock();
 		// new (&(*id)) t(c);
 		// *id = std::move(c);
 
+		compInfo ret;
+		ret.compPtr = &(*id);
+		ret.CompItr = new compItr_<t>(id, &data);
+		ret.CompItr->hash = typeid(t).hash_code();
+		return ret;
+	}
+	compInfo getInfo(typename deque_heap<t>::ref id)
+	{
 		compInfo ret;
 		ret.compPtr = &(*id);
 		ret.CompItr = new compItr_<t>(id, &data);
@@ -238,7 +247,7 @@ public:
 	template <class Archive>
 	void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
-		ar & boost::serialization::base_object<componentStorageBase>(*this) & data;
+		ar &boost::serialization::base_object<componentStorageBase>(*this) & data;
 	}
 	// string ser(){
 	// 	stringstream ss;
@@ -247,11 +256,12 @@ public:
 	// }
 };
 
-class Registry{
+class Registry
+{
 public:
 	std::map<size_t, componentStorageBase *> components;
-	std::set<componentStorageBase *> gameEngineComponents;
-	std::set<componentStorageBase *> gameComponents;
+	std::map<size_t, componentStorageBase *> gameEngineComponents;
+	std::map<size_t, componentStorageBase *> gameComponents;
 	std::mutex lock;
 
 	friend class boost::serialization::access;
@@ -259,7 +269,7 @@ public:
 	template <class Archive>
 	void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
-		ar & components & gameEngineComponents & gameComponents;
+		ar &components &gameEngineComponents &gameComponents;
 	}
 };
 
@@ -268,8 +278,9 @@ public:
 // extern std::set<componentStorageBase *> gameComponents;
 // extern std::mutex componentLock;
 extern Registry ComponentRegistry;
+
 template <typename t>
-inline compInfo addComponentToRegistry(const t &c)
+componentStorage<t> *GetStorage()
 {
 	size_t hash = typeid(t).hash_code();
 	if (ComponentRegistry.components.find(hash) == ComponentRegistry.components.end())
@@ -283,31 +294,35 @@ inline compInfo addComponentToRegistry(const t &c)
 			csb->h_update = typeid(&t::update) != typeid(&component::update);
 			csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
 			csb->hash = hash;
-			if (((component *)&c)->_registerEngineComponent())
-				ComponentRegistry.gameEngineComponents.insert(ComponentRegistry.components[hash]);
+			if (t()._registerEngineComponent())
+				ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
 			else
-				ComponentRegistry.gameComponents.insert(ComponentRegistry.components[hash]);
+				ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
 		}
 		ComponentRegistry.lock.unlock();
 	}
-	componentStorage<t> *compStorage = static_cast<componentStorage<t> *>(ComponentRegistry.components[hash]);
-	compStorage->lock.lock();
-	typename deque_heap<t>::ref id = compStorage->data._new();
-	compStorage->lock.unlock();
-	new (&(*id)) t(c);
-	// *id = std::move(c);
-
-	compInfo ret;
-	ret.compPtr = &(*id);
-	ret.CompItr = new compItr_<t>(id, &compStorage->data);
-	ret.CompItr->hash = hash;
-	return ret;
+	return static_cast<componentStorage<t> *>(ComponentRegistry.components[hash]);
 }
 
+template <typename t>
+inline compInfo addComponentToRegistry(const t &c)
+{
+	componentStorage<t> *compStorage = GetStorage<t>();
+	typename deque_heap<t>::ref id = compStorage->data._new(c);
+	return compStorage->getInfo(id);
+}
 
-void save_game(const char * filename);
+template <typename t>
+inline compInfo addComponentToRegistry()
+{
+	componentStorage<t> *compStorage = GetStorage<t>();
+	typename deque_heap<t>::ref id = compStorage->data._new();
+	return compStorage->getInfo(id);
+}
 
-void load_game(const char * filename);
+void save_game(const char *filename);
+
+void load_game(const char *filename);
 
 void destroyAllComponents();
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(ComponentRegistry.components[typeid(x).hash_code()])

@@ -272,55 +272,60 @@ void initTransform()
 	transformIds->usage = GL_STREAM_COPY;
 }
 
-void saveTransforms()
+void saveTransforms(boost::archive::text_oarchive &oa)
 {
-	ofstream f("transform.lvl", std::fstream::binary);
-	_transform t;
-	for (int i = 0; i < Transforms.size(); i++)
-	{
-		t = transform2(i).getTransform();
-		t.parent = transform2(i).getParent().id;
-		f.write((char *)&t, sizeof(_transform));
-	}
-	f.close();
+	oa << Transforms;
+	// ofstream f("transform.lvl", std::fstream::binary);
+	// _transform t;
+	// for (int i = 0; i < Transforms.size(); i++)
+	// {
+	// 	t = transform2(i).getTransform();
+	// 	t.parent = transform2(i).getParent().id;
+	// 	f.write((char *)&t, sizeof(_transform));
+	// }
+	// f.close();
 }
 
 void setRootGameObject(transform2 r);
-void loadTransforms()
+
+
+void loadTransforms(boost::archive::text_iarchive &ia)
 {
-	ifstream f("transform.lvl", std::fstream::binary);
-	f.seekg(0, f.end);
-	size_t size = f.tellg();
-	size /= sizeof(_transform);
-	f.seekg(0, f.beg);
+// 	ifstream f("transform.lvl", std::fstream::binary);
+// 	f.seekg(0, f.end);
+// 	size_t size = f.tellg();
+// 	size /= sizeof(_transform);
+// 	f.seekg(0, f.beg);
 	delete root2.gameObject();
-	root2 = transform2(0);
+	// root2 = transform2(0);
 	// rootGameObject = new game_object(root2);
+	Transforms.clear();
+	ia >> Transforms;
 	setRootGameObject(root2);
 
-	for (int i = 0; i < size; i++)
-	{
-		Transforms._new();
-	}
+	// for (int i = 0; i < size; i++)
+	// {
+	// 	Transforms._new();
+	// }
+	// ////////////////////////////////////
+	// _transform _t;
+	// f.read((char *)&_t, sizeof(_transform));
+	// Transforms.positions[0] = _t.position;
+	// Transforms.rotations[0] = _t.rotation;
+	// Transforms.scales[0] = _t.scale;
+	// Transforms.meta[0].parent = transform2(_t.parent);
 	////////////////////////////////////
-	_transform _t;
-	f.read((char *)&_t, sizeof(_transform));
-	Transforms.positions[0] = _t.position;
-	Transforms.rotations[0] = _t.rotation;
-	Transforms.scales[0] = _t.scale;
-	Transforms.meta[0].parent = transform2(_t.parent);
-	////////////////////////////////////
-	for (int i = 1; i < size; i++)
+	for (int i = 1; i < Transforms.size(); i++)
 	{
-		f.read((char *)&_t, sizeof(_transform));
+		// f.read((char *)&_t, sizeof(_transform));
 		transform2 t(i);
-		// transform2 t2 = Transforms._new();
-		Transforms.positions[i] = _t.position;
-		Transforms.rotations[i] = _t.rotation;
-		Transforms.scales[i] = _t.scale;
-		Transforms.meta[i].parent = transform2(_t.parent);
-		Transforms.meta[_t.parent].children.push_back(t);
-		Transforms.meta[i].childId = (--Transforms.meta[_t.parent].children.end());
+		// // transform2 t2 = Transforms._new();
+		// Transforms.positions[i] = _t.position;
+		// Transforms.rotations[i] = _t.rotation;
+		// Transforms.scales[i] = _t.scale;
+		// Transforms.meta[i].parent = t.getParent();
+		Transforms.meta[t.getParent().id].children.push_back(t);
+		Transforms.meta[i].childId = (--Transforms.meta[t.getParent().id].children.end());
 		newGameObject(t);
 		// Transforms.meta[i].gameObject = new game_object()
 	}

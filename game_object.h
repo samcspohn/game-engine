@@ -112,7 +112,7 @@ public:
 	t *addComponent()
 	{
 		// gameLock.lock();
-		compInfo ci = addComponentToRegistry(t());
+		compInfo ci = addComponentToRegistry<t>();
 		t *ret = (t *)ci.compPtr;
 		// ci.CompItr->goComponents = &this->components;
 		components.insert(std::make_pair(ret, ci.CompItr));

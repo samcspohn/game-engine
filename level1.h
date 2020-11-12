@@ -619,15 +619,15 @@ public:
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			cursorReleased = true;
 		}
-		// if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
 		// 	for(int i = 0; i <= Time.deltaTime * 100; i++){
 		// 		numBoxes++;
 		// 		auto g = new game_object(*physObj);
 		// 		vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
 		// 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
 		// 	}
-		// 	// guns[0]->fire();
-		// }
+			guns[0]->fire();
+		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
 		{
 			// for(int i = 0; i <= Time.deltaTime * 100; i++){
@@ -680,7 +680,7 @@ public:
 		guns[0]->rof = 3'000 / 60;
 		guns[0]->dispersion = 0.3f;
 		guns[0]->speed = 200;
-		guns[0]->setBarrels({vec3(-1.1, 0.4, 0.5)});
+		guns[0]->setBarrels({vec3(-2.0, 0.9, 1)});
 	}
 	void update()
 	{
@@ -1107,7 +1107,7 @@ int level1(bool load)
 		auto playerCam = player->addComponent<_camera>();
 		playerCam->fov = 80;
 		playerCam->farPlane = 1e32f;
-		// playerCam->nearPlane = 0.00001f;
+		playerCam->nearPlane = 0.00001f;
 		player->addComponent<gun>();
 		player->addComponent<gun>();
 		player->addComponent<player_sc2>();
@@ -1319,7 +1319,7 @@ int level1(bool load)
 			go = new game_object(*go);
 			go->transform->translate(randomSphere() * 1000.f);
 			vec3 pos = go->transform->getPosition();
-			go->transform->setPosition(vec3(fmod(pos.x, 8000), fmod(pos.y, 300.f) + 100.f, fmod(pos.z, 8000)));
+			go->transform->setPosition(vec3(fmod(pos.x, 8000), fmod(pos.y, 300.f) + 400.f, fmod(pos.z, 8000)));
 			go->transform->rotate(randomSphere(), randf() * 10.f);
 			// if (fmod((float)i, (n / 100)) < 0.01)
 			// cout << "\r" << (float)i / (float)n << "    " << flush;

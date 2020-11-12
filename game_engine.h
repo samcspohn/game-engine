@@ -60,14 +60,14 @@ vector<queue<updateJob>> updateWork(concurrency::numThreads);
 // componentStorageBase *copyWorkers;
 float maxGameDuration = INFINITY;
 
-void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
+void doLoopIteration(map<size_t, componentStorageBase *> &ssb, bool doCleanUp = true)
 {
 	timer stopWatch;
 
 	// //UPDATE
 	for (auto &j : ssb)
 	{
-		componentStorageBase *cb = j;
+		componentStorageBase *cb = j.second;
 		if (cb->hasUpdate())
 		{
 			stopWatch.start();
@@ -78,7 +78,7 @@ void doLoopIteration(set<componentStorageBase *> &ssb, bool doCleanUp = true)
 	// LATE //UPDATE
 	for (auto &j : ssb)
 	{
-		componentStorageBase *cb = j;
+		componentStorageBase *cb = j.second;
 		if (cb->hasLateUpdate())
 		{
 			stopWatch.start();

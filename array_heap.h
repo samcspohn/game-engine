@@ -162,7 +162,8 @@ public:
 	{
 		return data[i];
 	}
-	ref _new()
+	template<typename ...types>
+	ref _new(types... args)
 	{
 		ref ret;
 		ret.a = this;
@@ -189,7 +190,7 @@ public:
 		}
 		++active;
 		m.unlock();
-		new (&data[ret.index]) t();
+		new (&data[ret.index]) t(args...);
 		return ret;
 	}
 	void _delete(ref r)

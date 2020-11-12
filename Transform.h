@@ -23,32 +23,35 @@ extern glm::vec3 mainCamPos;
 extern glm::vec3 mainCamUp;
 extern glm::vec3 MainCamForward;
 
-struct _transform {
-	glm::vec3 position; GLint id = -1;
-	glm::vec3 scale = glm::vec3(1); GLint parent = 0;
-	glm::quat rotation = glm::quat(1,0,0,0);
+struct _transform
+{
+	glm::vec3 position;
+	GLint id = -1;
+	glm::vec3 scale = glm::vec3(1);
+	GLint parent = 0;
+	glm::quat rotation = glm::quat(1, 0, 0, 0);
 };
 extern atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 // extern deque_heap<_transform> TRANSFORMS;
 extern vector<_transform> TRANSFORMS_TO_BUFFER;
-extern gpu_vector_proxy<_transform>* GPU_TRANSFORMS;
-extern gpu_vector_proxy<GLint>* transformIds;
+extern gpu_vector_proxy<_transform> *GPU_TRANSFORMS;
+extern gpu_vector_proxy<GLint> *transformIds;
 // extern gpu_vector_proxy<_transform>* GPU_TRANSFORMS_UPDATES;
-extern gpu_vector_proxy<glm::vec3>* gpu_position_updates;
-extern gpu_vector_proxy<glm::quat>* gpu_rotation_updates;
-extern gpu_vector_proxy<glm::vec3>* gpu_scale_updates;
-
+extern gpu_vector_proxy<glm::vec3> *gpu_position_updates;
+extern gpu_vector_proxy<glm::quat> *gpu_rotation_updates;
+extern gpu_vector_proxy<glm::vec3> *gpu_scale_updates;
 
 class game_object;
 
-struct transform2 {
+struct transform2
+{
 	int id;
 	void _init();
 	transform2();
 	transform2(int i);
-	void init(game_object* g);
-	void init(transform2 other, game_object* go);
-	void init(transform2 & other);
+	void init(game_object *g);
+	void init(transform2 other, game_object *go);
+	void init(transform2 &other);
 
 	_transform getTransform();
 
@@ -64,58 +67,87 @@ struct transform2 {
 	void setPosition(glm::vec3 pos);
 	glm::quat getRotation();
 	void setRotation(glm::quat r);
-	list<transform2>& getChildren();
+	list<transform2> &getChildren();
 	transform2 getParent();
 	void adopt(transform2 transform);
-	game_object* gameObject();
-	void setGameObject(game_object* g);
+	game_object *gameObject();
+	void setGameObject(game_object *g);
 
 	void _destroy();
-	
+
 	void move(glm::vec3 movement, bool hasChildren = false);
 	void translate(glm::vec3 translation);
 	void translate(glm::vec3 translation, glm::quat r);
 	void scale(glm::vec3 scale);
 	void scaleChild(glm::vec3 pos, glm::vec3 scale);
-    void rotate(glm::vec3 axis, float radians);
+	void rotate(glm::vec3 axis, float radians);
 	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle);
 	~transform2();
-	inline transform2* operator->(){
+	inline transform2 *operator->()
+	{
 		return this;
 	}
 
-	private:
-		friend void destroyRoot(transform2 * t);
+private:
+	friend void destroyRoot(transform2 *t);
 
 	void orphan();
 
 	// friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive  &os, const transform2 &t);
-    friend class boost::serialization::access;
+	friend class boost::serialization::access;
 
-	template<class Archive>
-    void serialize(Archive & ar, const unsigned int /* file_version */){
-        ar & id;
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar &id;
 	}
 };
 // boost::archive::text_oarchive & operator<<(boost::archive::text_oarchive  &os, const transform2 &t){
 // 	return os << t.id;
 // }
 
-struct trans_update {
-	bool pos;
-	bool rot;
-	bool scl;
+struct trans_update
+{
+	bool pos = true;
+	bool rot = true;
+	bool scl = true;
+	SER_HELPER(){	}
 };
 
-struct transform_meta{
-	game_object* gameObject;
+struct transform_meta
+{
+	game_object *gameObject;
 	transform2 parent;
 	list<transform2> children;
 	list<transform2>::iterator childId;
 	tbb::spin_mutex m;
+	SER_HELPER(){
+		ar & parent;
+	}
 };
 
-struct _Transforms {
+struct my_spin_lock {
+    
+    std::atomic_flag flag;
+
+    void lock() {
+		for(;;){
+
+
+			
+		}
+        while(!flag.test_and_set(std::memory_order_acquire)){
+
+		}
+    }
+    void unlock() {
+        flag.clear(std::memory_order_release);  ;
+    }
+};
+
+
+struct _Transforms
+{
 
 	std::deque<glm::vec3> positions;
 	std::deque<glm::quat> rotations;
@@ -129,53 +161,104 @@ struct _Transforms {
 	// deque<transform_meta> meta;
 	// deque<trans_update> transform_updates;
 	// tbb::concurrent_priority_queue<int> avail2;
-	tbb::concurrent_priority_queue<int> avail;
+	std::priority_queue<int,vector<int>,std::greater<int>> avail;
+	// tbb::concurrent_priority_queue<int,std::greater<int>> avail;
+	// std::queue<int> avail;
 	tbb::spin_mutex m;
 
-	transform2 _new(){
-		transform2 t;
-		if(!avail.try_pop(t.id)){
-			m.lock();
-			if(avail.size() == 0){
-				t.id = positions.size();
-				positions.emplace_back();
-				rotations.emplace_back();
-				scales.emplace_back();
-				meta.emplace_back();
-				transform_updates.emplace_back();
 
-				m.unlock();
-			}else{
-				avail.try_pop(t.id);
-				m.unlock();
-			}
+
+	// transform2 _new(){
+	// 	transform2 t;
+	// 	if(!avail.try_pop(t.id)){
+	// 		m.lock();
+	// 		if(avail.size() == 0){
+	// 			t.id = positions.size();
+	// 			positions.emplace_back();
+	// 			rotations.emplace_back();
+	// 			scales.emplace_back();
+	// 			meta.emplace_back();
+	// 			transform_updates.emplace_back();
+
+	// 			m.unlock();
+	// 		}else{
+	// 			avail.try_pop(t.id);
+	// 			m.unlock();
+	// 		}
+	// 	}
+	// 	positions[t.id] = glm::vec3(0,0,0);
+	// 	rotations[t.id] =  glm::quat(1,0,0,0);
+	// 	scales[t.id] = glm::vec3(1,1,1);
+	// 	new(&meta[t.id]) transform_meta();
+	// 	new(&transform_updates[t.id]) trans_update();
+
+	// 	return t;
+	// }
+	void clear(){
+		positions.clear();
+		rotations.clear();
+		scales.clear();
+		meta.clear();
+		transform_updates.clear();
+		while(!avail.empty())
+			avail.pop();
+	}
+	transform2 _new()
+	{
+		transform2 t;
+		m.lock();
+		if (avail.size() == 0)
+		{
+			t.id = positions.size();
+			positions.emplace_back();
+			rotations.emplace_back();
+			scales.emplace_back();
+			meta.emplace_back();
+			transform_updates.emplace_back();
 		}
-		positions[t.id] = glm::vec3(0,0,0);
-		rotations[t.id] =  glm::quat(1,0,0,0);
-		scales[t.id] = glm::vec3(1,1,1);
-		new(&meta[t.id]) transform_meta();
-		transform_updates[t.id].pos = true;
-		transform_updates[t.id].rot = true;
-		transform_updates[t.id].scl = true;
+		else
+		{
+			t.id = avail.top();
+			// t.id = avail.front();
+			avail.pop();
+		}
+		m.unlock();
+		positions[t.id] = glm::vec3(0, 0, 0);
+		rotations[t.id] = glm::quat(1, 0, 0, 0);
+		scales[t.id] = glm::vec3(1, 1, 1);
+		new (&meta[t.id]) transform_meta();
+		new (&transform_updates[t.id]) trans_update();
+		// transform_updates[t.id].pos = true;
+		// transform_updates[t.id].rot = true;
+		// transform_updates[t.id].scl = true;
 
 		return t;
 	}
 
-	void _delete(transform2 t){
+	void _delete(transform2 t)
+	{
+		m.lock();
 		avail.push(t.id);
+		m.unlock();
 	}
 
-	int size(){
+	int size()
+	{
 		return meta.size();
 	}
-	float density(){
+	float density()
+	{
 		return 1.f - avail.size() / meta.size();
 	}
 
-	int active(){
+	int active()
+	{
 		return meta.size() - avail.size();
 	}
 	friend void loadTransforms();
+	SER_HELPER(){
+		ar & positions & rotations & scales & meta & transform_updates & avail;
+	}
 };
 
 void newGameObject(transform2 t);
@@ -185,27 +268,23 @@ void initTransform();
 int switchAH(int index);
 extern unsigned int transforms_enabled;
 
-void saveTransforms();
-void loadTransforms();
+void saveTransforms(boost::archive::text_oarchive &oa);
+void loadTransforms(boost::archive::text_iarchive &ia);
 
 extern transform2 root2;
 
-
-
-
-
-
-
-class Transform {
+class Transform
+{
 	// mutex m;
 	tbb::spin_mutex m;
+
 public:
 	deque_heap<_transform>::ref _T;
-	game_object* _gameObject;
+	game_object *_gameObject;
 
 	void init();
-	Transform(game_object* g);
-	Transform(Transform& other, game_object* go);
+	Transform(game_object *g);
+	Transform(Transform &other, game_object *go);
 
 	// Transform operator=(const Transform& t);
 	void lookat(glm::vec3 lookatPoint, glm::vec3 up);
@@ -219,33 +298,33 @@ public:
 	void setPosition(glm::vec3 pos);
 	glm::quat getRotation();
 	void setRotation(glm::quat r);
-	list<Transform*>& getChildren();
-	Transform* getParent();
-	void adopt(Transform * transform);
-	game_object* gameObject();
-	void setGameObject(game_object* g);
+	list<Transform *> &getChildren();
+	Transform *getParent();
+	void adopt(Transform *transform);
+	game_object *gameObject();
+	void setGameObject(game_object *g);
 
 	void _destroy();
-	
+
 	void move(glm::vec3 movement, bool hasChildren = false);
 	void translate(glm::vec3 translation);
 	void translate(glm::vec3 translation, glm::quat r);
 	void scale(glm::vec3 scale);
 	void scaleChild(glm::vec3 pos, glm::vec3 scale);
-    void rotate(glm::vec3 axis, float radians);
+	void rotate(glm::vec3 axis, float radians);
 	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle);
 
 private:
 	// bool enabled = true;
-	Transform * parent;
-	list<Transform*> children;
-	list<Transform*>::iterator childId;
+	Transform *parent;
+	list<Transform *> children;
+	list<Transform *>::iterator childId;
 
-	friend void destroyRoot(Transform * t);
+	friend void destroyRoot(Transform *t);
 	~Transform();
-	Transform(Transform & other);
+	Transform(Transform &other);
 
 	void orphan();
 };
 
-bool compareTransform(Transform* t1, Transform* t2);
+bool compareTransform(Transform *t1, Transform *t2);

@@ -1,6 +1,6 @@
 #pragma once
-// #include <boost/archive/text_iarchive.hpp>
-// #include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
@@ -18,6 +18,8 @@
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/priority_queue.hpp>
+#include <boost/serialization/queue.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -39,7 +41,7 @@
     BOOST_CLASS_EXPORT(componentStorage<comp>)
 
 // #define SERUN()
-#define SER_HELPER                                                            \
+#define SER_HELPER()                                                            \
     friend class boost::serialization::access;                                \
                                                                               \
     template <class Archive>                                                  \

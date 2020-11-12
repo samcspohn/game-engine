@@ -31,12 +31,12 @@ tbb::affinity_partitioner update_ap;
 Registry ComponentRegistry;
 
 void save_game(const char * filename){
-	saveTransforms();
 
     // make an archive
     std::ofstream ofs(filename);
 	{
-    	boost::archive::binary_oarchive oa(ofs);
+    	boost::archive::text_oarchive oa(ofs);
+		saveTransforms(oa);
     	oa << ComponentRegistry;
 	}
 	ofs.close();
@@ -45,10 +45,10 @@ void rebuildGameObject(componentStorageBase* base, int i);
 
 void load_game(const char * filename)
 {
-	loadTransforms();
     // open the archive
     std::ifstream ifs(filename);
-    boost::archive::binary_iarchive ia(ifs);
+    boost::archive::text_iarchive ia(ifs);
+	loadTransforms(ia);
 
     // restore the schedule from the archive
     ia >> ComponentRegistry;
