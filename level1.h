@@ -39,14 +39,15 @@ class missile : public component
 public:
 	// rigidBody *rb;
 	vec3 vel;
-	bullet b;
+	// bullet b;
+	emitter_prototype_ exp;
 	double life;
 	missile() {}
 
-	void setBullet(const bullet &_b)
-	{
-		b = _b;
-	}
+	// void setBullet(const bullet &_b)
+	// {
+	// 	b = _b;
+	// }
 	void update()
 	{
 
@@ -58,7 +59,7 @@ public:
 
 		if (length(normal) == 0)
 			normal = randomSphere();
-		b.primaryexplosion.burst(point, normal, transform->getScale() * 2.f, 5);
+		exp.burst(point, normal, transform->getScale() * 2.f, 5);
 		transform->gameObject()->destroy();
 		// }
 		// numCubes.fetch_add(-1);
@@ -71,7 +72,7 @@ public:
 		// }
 	}
 	COPY(missile);
-	SER2(life, vel);
+	SER3(life, vel, exp);
 };
 REGISTER_COMPONENT(missile)
 
@@ -131,7 +132,7 @@ public:
 	}
 	// //UPDATE(gun, update);
 	COPY(gun);
-	SER3(rof,speed,dispersion);
+	SER3(rof, speed, dispersion);
 };
 REGISTER_COMPONENT(gun)
 
@@ -223,7 +224,7 @@ public:
 		barrels = guns->gameObject()->getComponent<gun>();
 		sound = transform->gameObject()->getComponent<audiosource>();
 		sound->gain = 0.05;
-		muzzelFlash = getEmitterPrototypeByName("muzzelFlash");
+		muzzelFlash = getNamedEmitterProto("muzzelFlash");
 		// muzzelSmoke = getEmitterPrototypeByName("muzzelSmoke");
 	}
 	void update()
@@ -309,7 +310,7 @@ public:
 			{
 				// cout << "fire" << endl;
 				muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(), guns->forward(), 20);
-				getEmitterPrototypeByName("shockWave").burst(transform->getPosition(), guns->forward(), vec3(0.2), 60);
+				getNamedEmitterProto("shockWave").burst(transform->getPosition(), guns->forward(), vec3(0.2), 60);
 				sound->play();
 				// muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
 				return true;
@@ -446,7 +447,7 @@ public:
 
 	void onCollision(game_object *go, vec3 point, vec3 normal)
 	{
-		getEmitterPrototypeByName("shockWave").burst(point, transform->forward(), vec3(0.5), 25);
+		getNamedEmitterProto("shockWave").burst(point, transform->forward(), vec3(0.5), 25);
 	}
 	//UPDATE(_ship,update);
 	COPY(_ship);
@@ -619,14 +620,15 @@ public:
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			cursorReleased = true;
 		}
-		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-		// 	for(int i = 0; i <= Time.deltaTime * 100; i++){
-		// 		numBoxes++;
-		// 		auto g = new game_object(*physObj);
-		// 		vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
-		// 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
-		// 	}
-			guns[0]->fire();
+		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
+		{
+			// 	for(int i = 0; i <= Time.deltaTime * 100; i++){
+			// 		numBoxes++;
+			// 		auto g = new game_object(*physObj);
+			// 		vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+			// 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+			// 	}
+			// guns[0]->fire();
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
 		{
@@ -724,7 +726,8 @@ public:
 		{
 			guns[0]->fire();
 		}
-		if(Input.getKey(GLFW_KEY_0)){
+		if (Input.getKey(GLFW_KEY_0))
+		{
 			save_game("game.lvl");
 		}
 	}
@@ -828,6 +831,7 @@ REGISTER_COMPONENT(sun_sc)
 class sun_sc2 : public component
 {
 	COPY(sun_sc2);
+
 public:
 	void onStart()
 	{
@@ -922,136 +926,144 @@ int level1(bool load)
 	boxPoints = cubeModel.meta()->model->meshes[0].vertices;
 	boxTris = cubeModel.meta()->model->meshes[0].indices;
 
-	colorArray ca;
-	ca.addKey(vec4(1), 0.03)
-		.addKey(vec4(1, 1, 0.5f, 1), 0.05)
-		.addKey(vec4(1, 0.8f, 0.5f, 0.9f), 0.07)
-		// .addKey(vec4(1,0.6f,0.5f,0.9f),0.09)
-		.addKey(vec4(0.65, 0.65, 0.65, 0.3f), 0.09)
-		.addKey(vec4(0.65, 0.65, 0.65, 0.0f), 8.f / 9.f);
+	if (!load)
+	{
 
-	colorArray ca3;
-	ca3.addKey(vec4(1), 0.1)
-		.addKey(vec4(1, 1, 0.9f, 1), 0.15)
-		.addKey(vec4(1, 0.8f, 0.5f, 0.9f), 0.2)
-		.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.25)
-		.addKey(vec4(0.75, 0.65, 0.54, 0.6f), 0.30)
-		.addKey(vec4(0.75, 0.65, 0.54, 0.0f), 1.f);
+		colorArray ca;
+		ca.addKey(vec4(1), 0.03)
+			.addKey(vec4(1, 1, 0.5f, 1), 0.05)
+			.addKey(vec4(1, 0.8f, 0.5f, 0.9f), 0.07)
+			// .addKey(vec4(1,0.6f,0.5f,0.9f),0.09)
+			.addKey(vec4(0.65, 0.65, 0.65, 0.3f), 0.09)
+			.addKey(vec4(0.65, 0.65, 0.65, 0.0f), 8.f / 9.f);
 
-	colorArray ca2;
-	ca2.addKey(vec4(1), 0.05)
-		.addKey(vec4(1, 1, 0.9f, 1), 0.09)
-		.addKey(vec4(1, 0.8f, 0.5f, 0.9f), 0.12)
-		.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.17)
-		.addKey(vec4(0.5, 0.5f, 0.5f, 0.6f), 0.21)
-		.addKey(vec4(0.5, 0.5f, 0.5f, 0.0f), 1);
+		colorArray ca3;
+		ca3.addKey(vec4(1), 0.1)
+			.addKey(vec4(1, 1, 0.9f, 1), 0.15)
+			.addKey(vec4(1, 0.8f, 0.5f, 0.9f), 0.2)
+			.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.25)
+			.addKey(vec4(0.75, 0.65, 0.54, 0.6f), 0.30)
+			.addKey(vec4(0.75, 0.65, 0.54, 0.0f), 1.f);
 
-	floatArray fa;
-	fa.addKey(0.f, 0.f).addKey(0.4f, 0.02f).addKey(2.0, 1.0);
+		colorArray ca2;
+		ca2.addKey(vec4(1), 0.05)
+			.addKey(vec4(1, 1, 0.9f, 1), 0.09)
+			.addKey(vec4(1, 0.8f, 0.5f, 0.9f), 0.12)
+			.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.17)
+			.addKey(vec4(0.5, 0.5f, 0.5f, 0.6f), 0.21)
+			.addKey(vec4(0.5, 0.5f, 0.5f, 0.0f), 1);
 
-	emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
-	flameEmitterProto->dispersion = 3.14159f;
-	flameEmitterProto->emission_rate = 1.2f;
-	flameEmitterProto->lifetime = 3.f;
-	flameEmitterProto->lifetime2 = 3.f;
-	flameEmitterProto->size(1.f);
-	// flameEmitterProto->color(vec4(1, 1, 0.1f, 1.f));
-	flameEmitterProto->maxSpeed = 1.f;
-	flameEmitterProto->scale = vec3(1.f);
-	flameEmitterProto->billboard = 1;
-	flameEmitterProto->trail = 1;
-	ca.setColorArray(flameEmitterProto->colorLife);
+		floatArray fa;
+		fa.addKey(0.f, 0.f).addKey(0.4f, 0.02f).addKey(2.0, 1.0);
 
-	emitter_prototype_ _muzzelFlash = createNamedEmitter("muzzelFlash");
-	_muzzelFlash->dispersion = 0.5f;
-	_muzzelFlash->emission_rate = 1.f;
-	_muzzelFlash->lifetime = 4.f;
-	_muzzelFlash->lifetime2 = 2.f;
-	// _muzzelFlash->color(vec4(1, 1, 0.2f, 0.8f));
-	_muzzelFlash->maxSpeed = (10.f);
-	_muzzelFlash->size(0.5f, 1.f);
-	_muzzelFlash->scale = vec3(7.f);
-	_muzzelFlash->trail = 0;
-	ca2.setColorArray(_muzzelFlash->colorLife);
+		emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
+		flameEmitterProto->dispersion = 3.14159f;
+		flameEmitterProto->emission_rate = 1.2f;
+		flameEmitterProto->lifetime = 3.f;
+		flameEmitterProto->lifetime2 = 3.f;
+		flameEmitterProto->size(1.f);
+		// flameEmitterProto->color(vec4(1, 1, 0.1f, 1.f));
+		flameEmitterProto->maxSpeed = 1.f;
+		flameEmitterProto->scale = vec3(1.f);
+		flameEmitterProto->billboard = 1;
+		flameEmitterProto->trail = 1;
+		ca.setColorArray(flameEmitterProto->colorLife);
 
-	emitter_prototype_ expFlame = createNamedEmitter("expflame");
-	expFlame->dispersion = 3.14159f / 2.f;
-	expFlame->emission_rate = 50.f;
-	expFlame->lifetime = 2.2f;
-	expFlame->lifetime2 = 1.5f;
-	expFlame->maxSpeed = 30.f;
-	expFlame->scale = vec3(30.f);
-	expFlame->size(0.5f, 1.6f);
-	// fa.setFloatArray(expFlame->sizeLife);
-	expFlame->trail = 0;
-	_expFlame = expFlame;
-	ca2.setColorArray(expFlame->colorLife);
+		emitter_prototype_ _muzzelFlash = createNamedEmitter("muzzelFlash");
+		_muzzelFlash->dispersion = 0.5f;
+		_muzzelFlash->emission_rate = 1.f;
+		_muzzelFlash->lifetime = 4.f;
+		_muzzelFlash->lifetime2 = 2.f;
+		// _muzzelFlash->color(vec4(1, 1, 0.2f, 0.8f));
+		_muzzelFlash->maxSpeed = (10.f);
+		_muzzelFlash->size(0.5f, 1.f);
+		_muzzelFlash->scale = vec3(7.f);
+		_muzzelFlash->trail = 0;
+		ca2.setColorArray(_muzzelFlash->colorLife);
 
-	emitter_prototype_ shockWave = createNamedEmitter("shockWave");
-	shockWave->dispersion = 3.14159f / 2.f;
-	// shockWave->emission_rate = 50.f;
-	shockWave->lifetime = 0.3f;
-	shockWave->lifetime2 = 0.1f;
-	shockWave->maxSpeed = 300.f;
-	shockWave->minSpeed = 250.f;
-	shockWave->scale = vec3(40.f);
-	shockWave->size(0.5f, 1.f);
-	shockWave->trail = 0;
-	shockWave->color(vec4(1, 1, 1, 0.6), vec4(1, 1, 1, 0));
+		emitter_prototype_ expFlame = createNamedEmitter("expflame");
+		expFlame->dispersion = 3.14159f / 2.f;
+		expFlame->emission_rate = 50.f;
+		expFlame->lifetime = 2.2f;
+		expFlame->lifetime2 = 1.5f;
+		expFlame->maxSpeed = 30.f;
+		expFlame->scale = vec3(30.f);
+		expFlame->size(0.5f, 1.6f);
+		// fa.setFloatArray(expFlame->sizeLife);
+		expFlame->trail = 0;
+		_expFlame = expFlame;
+		ca2.setColorArray(expFlame->colorLife);
 
-	emitter_prototype_ debris = createNamedEmitter("debris");
-	debris->dispersion = 3.14159f / 2.f;
-	// debris->emission_rate = 50.f;
-	debris->lifetime = 5.f;
-	debris->lifetime2 = 3.f;
-	debris->maxSpeed = 15.f;
-	debris->minSpeed = 10.f;
-	debris->radius = 10.f;
-	debris->scale = vec3(5, 60, 0) * 2.f;
-	debris->size(0.5f, 1.f);
-	debris->velAlign = 1;
-	// debris->color(vec4(0.82,0.7,0.54,0.6),vec4(0.82,0.7,0.54,0));
-	ca3.setColorArray(debris->colorLife);
+		emitter_prototype_ shockWave = createNamedEmitter("shockWave");
+		shockWave->dispersion = 3.14159f / 2.f;
+		// shockWave->emission_rate = 50.f;
+		shockWave->lifetime = 0.3f;
+		shockWave->lifetime2 = 0.1f;
+		shockWave->maxSpeed = 300.f;
+		shockWave->minSpeed = 250.f;
+		shockWave->scale = vec3(40.f);
+		shockWave->size(0.5f, 1.f);
+		shockWave->trail = 0;
+		shockWave->color(vec4(1, 1, 1, 0.6), vec4(1, 1, 1, 0));
 
-	bullet laser;
-	laser.primarybullet = createNamedEmitter("laserbeam");
-	laser.primarybullet->dispersion = 3.14159f;
-	laser.primarybullet->color(vec4(.8, .8, 1, 1), vec4(.6, .6, 1, 0.0));
-	laser.primarybullet->lifetime = 0.3f;
-	laser.primarybullet->lifetime2 = 0.3f;
-	laser.primarybullet->emission_rate = 20.f;
-	laser.primarybullet->trail = 1;
-	laser.primarybullet->scale = vec3(20.f);
-	laser.primarybullet->size(1.f);
-	laser.primarybullet->maxSpeed = 1.f;
-	laser.primaryexplosion = getEmitterPrototypeByName("expflame");
+		emitter_prototype_ debris = createNamedEmitter("debris");
+		debris->dispersion = 3.14159f / 2.f;
+		// debris->emission_rate = 50.f;
+		debris->lifetime = 5.f;
+		debris->lifetime2 = 3.f;
+		debris->maxSpeed = 15.f;
+		debris->minSpeed = 10.f;
+		debris->radius = 10.f;
+		debris->scale = vec3(5, 60, 0) * 2.f;
+		debris->size(0.5f, 1.f);
+		debris->velAlign = 1;
+		// debris->color(vec4(0.82,0.7,0.54,0.6),vec4(0.82,0.7,0.54,0));
+		ca3.setColorArray(debris->colorLife);
 
-	emitter_prototype_ engineTrail = createNamedEmitter("engineTrail");
-	*engineTrail = *flameEmitterProto;
-	engineTrail->dispersion = 0.0f;
-	engineTrail->emission_rate = 2.f;
-	engineTrail->lifetime = 7.f;
-	engineTrail->lifetime2 = 7.f;
-	engineTrail->color(vec4(0.6f, 0.7f, 1.f, 0.6f), vec4(0.05f, 0.1f, 1.f, 0.0f));
-	engineTrail->size(1.f);
-	engineTrail->maxSpeed = (0.f);
-	engineTrail->scale = vec3(1);
-	engineTrail->trail = 1;
+		// bullet laser;
+		// laser.primarybullet = createNamedEmitter("laserbeam");
+		// laser.primarybullet->dispersion = 3.14159f;
+		// laser.primarybullet->color(vec4(.8, .8, 1, 1), vec4(.6, .6, 1, 0.0));
+		// laser.primarybullet->lifetime = 0.3f;
+		// laser.primarybullet->lifetime2 = 0.3f;
+		// laser.primarybullet->emission_rate = 20.f;
+		// laser.primarybullet->trail = 1;
+		// laser.primarybullet->scale = vec3(20.f);
+		// laser.primarybullet->size(1.f);
+		// laser.primarybullet->maxSpeed = 1.f;
+		// laser.primaryexplosion = getEmitterPrototypeByName("expflame");
 
-	emitter_prototype_ engineFlame = createNamedEmitter("engineFlame");
-	engineFlame->dispersion = 0.5f;
-	engineFlame->emission_rate = 15.f;
-	engineFlame->lifetime = 4.f;
-	engineFlame->lifetime2 = 3.f;
-	engineFlame->color(vec4(0.2f, 0.5f, 0.9f, 0.2f), vec4(0.05f, 0.1f, 0.9f, 0.2f));
-	engineFlame->maxSpeed = (-3.f);
-	engineFlame->size(1.f, 0.f);
-	engineFlame->scale = vec3(2.f);
-	engineFlame->trail = 0;
+		emitter_prototype_ engineTrail = createNamedEmitter("engineTrail");
+		*engineTrail = *flameEmitterProto;
+		engineTrail->dispersion = 0.0f;
+		engineTrail->emission_rate = 2.f;
+		engineTrail->lifetime = 7.f;
+		engineTrail->lifetime2 = 7.f;
+		engineTrail->color(vec4(0.6f, 0.7f, 1.f, 0.6f), vec4(0.05f, 0.1f, 1.f, 0.0f));
+		engineTrail->size(1.f);
+		engineTrail->maxSpeed = (0.f);
+		engineTrail->scale = vec3(1);
+		engineTrail->trail = 1;
+
+		emitter_prototype_ engineFlame = createNamedEmitter("engineFlame");
+		engineFlame->dispersion = 0.5f;
+		engineFlame->emission_rate = 15.f;
+		engineFlame->lifetime = 4.f;
+		engineFlame->lifetime2 = 3.f;
+		engineFlame->color(vec4(0.2f, 0.5f, 0.9f, 0.2f), vec4(0.05f, 0.1f, 0.9f, 0.2f));
+		engineFlame->maxSpeed = (-3.f);
+		engineFlame->size(1.f, 0.f);
+		engineFlame->scale = vec3(2.f);
+		engineFlame->trail = 0;
+	}
+	else
+	{
+		load_game("game.lvl");
+	}
 
 	bullet bomb;
-	bomb.primarybullet = flameEmitterProto;
-	bomb.primaryexplosion = expFlame;
+	bomb.primarybullet = getNamedEmitterProto("flame");
+	bomb.primaryexplosion = getNamedEmitterProto("expflame");
 
 	game_object_proto *bomb_proto = new game_object_proto();
 	bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
@@ -1062,20 +1074,19 @@ int level1(bool load)
 	// bomb_proto->addComponent<audiosource>()->set(gunSound);
 	bomb_proto->addComponent<particle_emitter>();
 	bomb.proto = bomb_proto;
-	bomb_proto->addComponent<missile>()->setBullet(bomb);
+	bomb_proto->addComponent<missile>()->exp = bomb.primaryexplosion;//setBullet(bomb);
 	bullets["bomb"] = bomb;
-	ammo =  bullets["bomb"].proto;
+	ammo = bullets["bomb"].proto;
 
-	game_object_proto *laser_proto = new game_object_proto();
-	laser_proto->addComponent<collider>()->setLayer(0);
-	laser_proto->getComponent<collider>()->setPoint();
-	laser_proto->addComponent<particle_emitter>();
-	laser.proto = laser_proto;
-	laser_proto->addComponent<missile>()->setBullet(laser);
-	bullets["laser"] = laser;
+	// game_object_proto *laser_proto = new game_object_proto();
+	// laser_proto->addComponent<collider>()->setLayer(0);
+	// laser_proto->getComponent<collider>()->setPoint();
+	// laser_proto->addComponent<particle_emitter>();
+	// laser.proto = laser_proto;
+	// laser_proto->addComponent<missile>()->setBullet(laser);
+	// bullets["laser"] = laser;
 
 	//////////////////////////////////////////////////////////
-
 
 	if (!load)
 	{
@@ -1278,7 +1289,7 @@ int level1(bool load)
 		nanosuitMan->removeComponent<missile>();
 
 		emitter_prototype_ ep2 = createNamedEmitter("emitter2");
-		*ep2 = *flameEmitterProto;
+		*ep2 = *getNamedEmitterProto("flame");
 		ep2->billboard = 0;
 		ep2->trail = 0;
 		ep2->emission_rate = 5.0f;
@@ -1324,8 +1335,6 @@ int level1(bool load)
 			// if (fmod((float)i, (n / 100)) < 0.01)
 			// cout << "\r" << (float)i / (float)n << "    " << flush;
 		}
-	}else{
-		load_game("game.lvl");
 	}
 
 	return 0;

@@ -30,44 +30,45 @@ tbb::affinity_partitioner update_ap;
 
 Registry ComponentRegistry;
 
-void save_game(const char * filename){
+// void save_game(const char * filename){
 
-    // make an archive
-    std::ofstream ofs(filename);
-	{
-    	boost::archive::text_oarchive oa(ofs);
-		saveTransforms(oa);
-    	oa << ComponentRegistry;
-	}
-	ofs.close();
-}
-void rebuildGameObject(componentStorageBase* base, int i);
+//     // make an archive
+//     std::ofstream ofs(filename);
+// 	{
+//     	boost::archive::text_oarchive oa(ofs);
+// 		saveEmitters(oa);
+// 		saveTransforms(oa);
+//     	oa << ComponentRegistry;
+// 	}
+// 	ofs.close();
+// }
+// void rebuildGameObject(componentStorageBase* base, int i);
 
-void load_game(const char * filename)
-{
-    // open the archive
-    std::ifstream ifs(filename);
-    boost::archive::text_iarchive ia(ifs);
-	loadTransforms(ia);
+// void load_game(const char * filename)
+// {
+//     // open the archive
+//     std::ifstream ifs(filename);
+//     boost::archive::text_iarchive ia(ifs);
+// 	loadTransforms(ia);
 
-    // restore the schedule from the archive
-    ia >> ComponentRegistry;
+//     // restore the schedule from the archive
+//     ia >> ComponentRegistry;
 
-	for(auto &i : ComponentRegistry.components){
-		for(int j = 0; j < i.second->size(); j++){
-			if(i.second->getv(j)){
-				rebuildGameObject(i.second,j);
-			}
-		}
-	}
-	for(auto &i : ComponentRegistry.components){
-		for(int j = 0; j < i.second->size(); j++){
-			if(i.second->getv(j)){
-				i.second->get(j)->onStart();
-			}
-		}
-	}
-}
+// 	for(auto &i : ComponentRegistry.components){
+// 		for(int j = 0; j < i.second->size(); j++){
+// 			if(i.second->getv(j)){
+// 				rebuildGameObject(i.second,j);
+// 			}
+// 		}
+// 	}
+// 	for(auto &i : ComponentRegistry.components){
+// 		for(int j = 0; j < i.second->size(); j++){
+// 			if(i.second->getv(j)){
+// 				i.second->get(j)->onStart();
+// 			}
+// 		}
+// 	}
+// }
 
 void destroyAllComponents(){
 	while (ComponentRegistry.components.size() > 0){

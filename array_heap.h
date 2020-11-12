@@ -14,10 +14,18 @@ template <typename t>
 class array_heap
 {
 	mutex m;
+	SER_HELPER()
+	{
+		ar & extent & avail & data & valid;
+	}
 
 public:
 	struct ref
 	{
+		SER_HELPER(){
+			ar & a & index;
+		}
+
 		int index;
 		array_heap<t> *a;
 		t *operator->()
@@ -37,7 +45,7 @@ public:
 			return a->data.at(index);
 		}
 	};
-	friend array_heap::ref;
+	
 	t &operator[](unsigned int i)
 	{
 		//		if (i >= extent)
@@ -118,9 +126,7 @@ class deque_heap
 	mutex m;
 
 public:
-	friend class boost::serialization::access;
-	template <typename Archive>
-	void serialize(Archive &ar, const unsigned int version)
+	SER_HELPER()
 	{
 		ar & extent & active & avail & data & valid;
 	}
@@ -157,7 +163,6 @@ public:
 		return ref{i,this};
 	}
 
-	friend deque_heap::ref;
 	t &operator[](unsigned int i)
 	{
 		return data[i];

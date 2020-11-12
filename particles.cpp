@@ -206,6 +206,15 @@ array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
 
+
+void saveEmitters(boost::archive::text_oarchive& oa){
+    oa << emitter_prototypes_ << emitter_prototypes;
+}
+void loadEmitters(boost::archive::text_iarchive& ia){
+    ia >> emitter_prototypes_ >> emitter_prototypes;
+}
+
+
 mutex burstLock;
 void swapBurstBuffer()
 {
@@ -257,7 +266,7 @@ emitter_prototype_ createNamedEmitter(string name)
     ret.emitterPrototype = emitter_prototypes.at(name);
     return ret;
 }
-emitter_prototype_ getEmitterPrototypeByName(string name)
+emitter_prototype_ getNamedEmitterProto(string name)
 {
     emitter_prototype_ ret;
     ret.emitterPrototype = emitter_prototypes.at(name);

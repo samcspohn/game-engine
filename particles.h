@@ -12,26 +12,34 @@ using namespace glm;
 
 
 
+void saveEmitters(boost::archive::text_oarchive& oa);
+void loadEmitters(boost::archive::text_iarchive& ia);
+
 class component;
-struct colorArray{
-    struct key{
+struct colorArray
+{
+    struct key
+    {
         vec4 color;
         float pos;
     };
     vector<key> keys;
-    colorArray& addKey(vec4 color, float position);
+    colorArray &addKey(vec4 color, float position);
     void setColorArray(vec4 *colors);
 };
-struct floatArray{
-    struct key{
+struct floatArray
+{
+    struct key
+    {
         float value;
         float pos;
     };
     vector<key> keys;
-    floatArray& addKey(float v, float position);
+    floatArray &addKey(float v, float position);
     void setFloatArray(float *floats);
 };
-struct emitter_prototype{
+struct emitter_prototype
+{
     float emission_rate;
     float lifetime;
     float rotation_rate;
@@ -51,30 +59,40 @@ struct emitter_prototype{
     vec2 scale;
     int billboard;
     int p3;
-    
+
     int velAlign;
     float radius;
     int p2;
     int trail;
     vec4 colorLife[100];
     float sizeLife[100];
+    SER_HELPER()
+    {
+        ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
+                &maxSpeed &lifetime2 &live &scale &billboard &velAlign
+                    &radius &trail &colorLife &sizeLife;
+    }
 };
 class emitter_prototype_
 {
     typename array_heap<emitter_prototype>::ref emitterPrototype;
     friend emitter_prototype_ createNamedEmitter(string name);
-    friend emitter_prototype_ getEmitterPrototypeByName(string name);
+    friend emitter_prototype_ getNamedEmitterProto(string name);
+
 public:
     uint getId();
     emitter_prototype *operator->();
     emitter_prototype &operator*();
     void burst(glm::vec3 pos, glm::vec3 dir, uint count);
-    void burst(glm::vec3 pos, glm::vec3 dir,glm::vec3 scale, uint count);
+    void burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, uint count);
     friend emitter_prototype_ createNamedEmitter(string name);
-    friend emitter_prototype_ getEmitterPrototypeByName(string name);
+    friend emitter_prototype_ getNamedEmitterProto(string name);
+    SER_HELPER(){
+        ar & emitterPrototype;
+    }
 };
 emitter_prototype_ createNamedEmitter(string name);
-emitter_prototype_ getEmitterPrototypeByName(string name);
+emitter_prototype_ getNamedEmitterProto(string name);
 
 struct emitterInit
 {
@@ -83,7 +101,8 @@ struct emitterInit
     int live;
     int id;
 };
-struct emitter{
+struct emitter
+{
     uint transform;
     uint emitter_prototype;
     float emission;
@@ -103,12 +122,12 @@ class particle_emitter : public component
 
 public:
     typename array_heap<emitter>::ref emitter;
-    typename array_heap<GLint>::ref emitter_last_particle;
+    // typename array_heap<GLint>::ref emitter_last_particle;
     COPY(particle_emitter);
     void setPrototype(emitter_prototype_ ep);
     void onStart();
     void onDestroy();
-    SER0();
+    SER1(prototype);
 };
 extern int particleCount;
 extern int actualParticles;
@@ -122,11 +141,11 @@ namespace particle_renderer
     void init();
 
     void end();
-  
+
     void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec2 screen);
 
     void drawParticles(mat4 view, mat4 rot, mat4 proj);
-};
+}; // namespace particle_renderer
 
 void prepParticles();
 void swapBurstBuffer();

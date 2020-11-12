@@ -8,6 +8,8 @@
 #include <iostream>
 #include <mutex>
 #include "Component.h"
+#include "serialize.h"
+
 using namespace std;
 
 template<typename t>
@@ -18,10 +20,16 @@ class fast_list {
 private:
 	mutex m;
 public:
-	vector<t> data = vector<t>();
+	SER_HELPER(){
+		ar & data & iterators;
+	}
+	vector<t> data;
 
 	struct _itr {
 	public:
+	SER_HELPER(){
+		ar & fl & index & it;
+	}
 		bool operator==(const size_t& rhs) {
 			return index == rhs;
 		}
@@ -58,6 +66,9 @@ public:
 	vector<_itr*> iterators;
 	struct iterator {
 	public:
+	SER_HELPER(){
+		ar & itr;
+	}
         bool isNull(){
             return itr == nullptr;
 	    }

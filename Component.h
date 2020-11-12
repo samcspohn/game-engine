@@ -320,9 +320,9 @@ inline compInfo addComponentToRegistry()
 	return compStorage->getInfo(id);
 }
 
-void save_game(const char *filename);
+// void save_game(const char *filename);
 
-void load_game(const char *filename);
+// void load_game(const char *filename);
 
 void destroyAllComponents();
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(ComponentRegistry.components[typeid(x).hash_code()])
