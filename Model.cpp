@@ -41,7 +41,8 @@ Model::Model()
 
 void Model::loadModel()
 {
-    loadModel(this->modelPath);
+    if(this->modelPath != "")
+        loadModel(this->modelPath);
 }
 
 void Model::loadModel(string path)

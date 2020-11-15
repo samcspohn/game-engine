@@ -78,10 +78,7 @@ public:
 	_modelMeta* meta() const;
 	// _modelMeta* m = 0;
 	size_t m = 0;
-	friend class boost::serialization::access;
-	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
+	SER_HELPER(){
 		ar & m;
 	}
 };
@@ -97,12 +94,17 @@ struct _shaderMeta {
 	~_shaderMeta();
 	string name;
 	Shader* shader = 0;
+	SER_HELPER(){
+		ar & name & shader;
+	}
 };
 
 namespace shaderManager {
 
 	extern map<size_t, _shaderMeta*> shaders;
 	void destroy();
+	void save(OARCHIVE& oa);
+	void load(IARCHIVE& ia);
 };
 
 class _shader {

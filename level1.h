@@ -910,19 +910,19 @@ int level1(bool load)
 
 	gunSound = audio("res/audio/explosion1.wav");
 
-	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
-	_shader lampShader("res/shaders/model.vert", "res/shaders/lamp.frag");
-	// _shader terrainShader("res/shaders/model.vert", "res/shaders/terrain.frag");
-	_shader terrainShader("res/shaders/terrainShader/terrain.vert",
-						  "res/shaders/terrainShader/terrain.tesc",
-						  "res/shaders/terrainShader/terrain.tese",
-						  //   "res/shaders/terrainShader/terrain.geom",
-						  "res/shaders/terrainShader/terrain.frag");
-	terrainShader.meta()->shader->primitiveType = GL_PATCHES;
-	_shader wireFrame2("res/shaders/wireframe.vert", "res/shaders/wireframe.geom", "res/shaders/wireframe.frag");
-
 	if (!load)
 	{
+		_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
+		_shader lampShader("res/shaders/model.vert", "res/shaders/lamp.frag");
+		// _shader terrainShader("res/shaders/model.vert", "res/shaders/terrain.frag");
+		_shader terrainShader("res/shaders/terrainShader/terrain.vert",
+							  "res/shaders/terrainShader/terrain.tesc",
+							  "res/shaders/terrainShader/terrain.tese",
+							  //   "res/shaders/terrainShader/terrain.geom",
+							  "res/shaders/terrainShader/terrain.frag");
+		terrainShader.meta()->shader->primitiveType = GL_PATCHES;
+		_shader wireFrame2("res/shaders/wireframe.vert", "res/shaders/wireframe.geom", "res/shaders/wireframe.frag");
+
 		_model cubeModel("res/models/cube/cube.obj");
 		_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
 		_model terrainModel("res/models/terrain/terrain.obj");

@@ -51,9 +51,7 @@ namespace modelManager
 		ia >> models;
 		waitForRenderJob([&](){
 			for(auto& m : models){
-				if(m.second->model->modelPath != ""){
-					m.second->model->loadModel();
-				}
+				m.second->model->loadModel();
 			}
 		});
 	}
@@ -147,6 +145,18 @@ namespace shaderManager
 			delete shaders.begin()->second;
 			shaders.erase(shaders.begin());
 		}
+	}
+	void save(OARCHIVE& oa){
+		oa << shaders;
+	}
+	void load(IARCHIVE& ia){
+		ia >> shaders;
+		waitForRenderJob([&](){
+			for(auto& i : shaders){
+				i.second->shader->_Shader();
+			}
+
+		});
 	}
 }; // namespace shaderManager
 

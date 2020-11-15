@@ -43,6 +43,7 @@ void save_game(const char * filename){
 	{
     	OARCHIVE oa(ofs);
 		// OARCHIVE op(oproto);
+		shaderManager::save(oa);
 		modelManager::save(oa);
 		saveEmitters(oa);
 		// saveProto(oa);
@@ -61,6 +62,7 @@ void load_game(const char * filename)
 	// std::ifstream ifsp("proto.lvl");
     IARCHIVE ia(ifs);
 	// IARCHIVE ip(ifsp);
+	shaderManager::load(ia);
 	modelManager::load(ia);
 	loadEmitters(ia);
 	// loadProto(ip);
