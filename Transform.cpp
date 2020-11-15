@@ -272,7 +272,7 @@ void initTransform()
 	transformIds->usage = GL_STREAM_COPY;
 }
 
-void saveTransforms(boost::archive::text_oarchive &oa)
+void saveTransforms(OARCHIVE &oa)
 {
 	oa << Transforms;
 	// ofstream f("transform.lvl", std::fstream::binary);
@@ -289,7 +289,7 @@ void saveTransforms(boost::archive::text_oarchive &oa)
 void setRootGameObject(transform2 r);
 
 
-void loadTransforms(boost::archive::text_iarchive &ia)
+void loadTransforms(IARCHIVE &ia)
 {
 // 	ifstream f("transform.lvl", std::fstream::binary);
 // 	f.seekg(0, f.end);

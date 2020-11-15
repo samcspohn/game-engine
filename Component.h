@@ -52,8 +52,8 @@ public:
 	// void serialize(Archive & ar, const unsigned int /* file_version */){
 	//     ar & transform;
 	// }
-	// virtual boost::archive::text_oarchive &forceSerialize(boost::archive::text_oarchive &ar) const = 0;
-	// friend boost::archive::text_oarchive &operator<<(boost::archive::text_oarchive &os, const component &c);
+	// virtual OARCHIVE &forceSerialize(OARCHIVE &ar) const = 0;
+	// friend OARCHIVE &operator<<(OARCHIVE &os, const component &c);
 	friend class boost::serialization::access;
 
 	template <class Archive>

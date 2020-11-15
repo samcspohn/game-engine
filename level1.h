@@ -34,7 +34,7 @@ emitter_prototype_ _expFlame;
 // map<string, bullet> bullets;
 
 audio explosionSound;
-class missile : public component
+class missile final : public component
 {
 public:
 	// rigidBody *rb;
@@ -76,7 +76,7 @@ public:
 };
 REGISTER_COMPONENT(missile)
 
-class gun : public component
+class gun final : public component
 {
 	float lastFire;
 	vector<vec3> barrels = {vec3(0, -12, 10)};
@@ -173,7 +173,7 @@ float ship_vel;
 // 	//UPDATE(nbody, update);
 // 	COPY(nbody);
 // };
-class spinner : public component
+class spinner final : public component
 {
 	vec3 axis;
 
@@ -193,7 +193,7 @@ public:
 REGISTER_COMPONENT(spinner)
 
 const float _pi = radians(180.f);
-class _turret : public component
+class _turret final : public component
 {
 	transform2 target;
 	transform2 guns;
@@ -324,7 +324,7 @@ public:
 };
 REGISTER_COMPONENT(_turret)
 
-class gunManager : public component
+class gunManager final : public component
 {
 
 	vector<_turret *> turrets;
@@ -374,7 +374,7 @@ public:
 };
 REGISTER_COMPONENT(gunManager)
 
-class autoShooter : public component
+class autoShooter final : public component
 {
 public:
 	bool shouldFire;
@@ -498,7 +498,7 @@ class player_sc : public component
 	gui::window *reticule;
 	gui::image *crosshair;
 	_texture crosshairtex;
-	game_object_proto* ammo_proto;
+	game_object_proto *ammo_proto;
 
 public:
 	terrain *t;
@@ -658,9 +658,8 @@ class player_sc2 : public component
 	gui::text *particleCounter;
 	vector<gun *> guns;
 
-
 public:
-	game_object_proto* ammo_proto;
+	game_object_proto *ammo_proto;
 	void onStart()
 	{
 		info = new gui::window();
@@ -681,7 +680,7 @@ public:
 
 		guns = transform->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
-		guns[0]->ammo = ammo_proto;//bullets["bomb"].proto;
+		guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
 		guns[0]->rof = 3'000 / 60;
 		guns[0]->dispersion = 0.3f;
 		guns[0]->speed = 200;
@@ -748,7 +747,7 @@ public:
 	gui::window *info;
 	gui::text *fps;
 	vector<gun *> guns;
-	game_object_proto* ammo_proto;
+	game_object_proto *ammo_proto;
 
 	void onStart()
 	{
@@ -766,7 +765,7 @@ public:
 
 		guns = transform->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
-		guns[0]->ammo = ammo_proto;//bullets["bomb"].proto;
+		guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
 		guns[0]->rof = 3'000 / 60;
 		guns[0]->dispersion = 0.3f;
 		guns[0]->speed = 200;
@@ -849,7 +848,7 @@ public:
 };
 REGISTER_COMPONENT(sun_sc2)
 
-void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright,game_object_proto* ammo_proto)
+void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright, game_object_proto *ammo_proto)
 {
 	// _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe.geom","res/shaders/wireframe.frag");
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
@@ -868,7 +867,7 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	vector<vec3> barrels = {vec3(-.56, 0, 2.3), vec3(0, 0, 2.3), vec3(0.56, 0, 2.3)};
 	auto g = guns->addComponent<gun>();
 	g->setBarrels(barrels);
-	g->ammo = ammo_proto;//bullets["bomb"].proto;
+	g->ammo = ammo_proto; //bullets["bomb"].proto;
 	g->rof = 1.f / 4.f;
 	g->dispersion = 0.01f;
 	g->speed = 500;
@@ -902,6 +901,13 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 
 int level1(bool load)
 {
+
+	seedRand(vec3(123456789, 345678901, 567890123));
+	genNoise(512, 512, 4);
+
+	collisionGraph[0] = {1};
+	collisionGraph[1] = {0, 1};
+
 	gunSound = audio("res/audio/explosion1.wav");
 
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
@@ -914,24 +920,18 @@ int level1(bool load)
 						  "res/shaders/terrainShader/terrain.frag");
 	terrainShader.meta()->shader->primitiveType = GL_PATCHES;
 	_shader wireFrame2("res/shaders/wireframe.vert", "res/shaders/wireframe.geom", "res/shaders/wireframe.frag");
-	_model cubeModel("res/models/cube/cube.obj");
-	_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
-	_model terrainModel("res/models/terrain/terrain.obj");
-	_model tree("res/models/Spruce_obj/Spruce.obj");
-
-	seedRand(vec3(123456789, 345678901, 567890123));
-	genNoise(512, 512, 4);
-
-	collisionGraph[0] = {1};
-	collisionGraph[1] = {0, 1};
-
-	while (!cubeModel.meta()->model->ready())
-		this_thread::yield();
-	boxPoints = cubeModel.meta()->model->meshes[0].vertices;
-	boxTris = cubeModel.meta()->model->meshes[0].indices;
 
 	if (!load)
 	{
+		_model cubeModel("res/models/cube/cube.obj");
+		_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
+		_model terrainModel("res/models/terrain/terrain.obj");
+		_model tree("res/models/Spruce_obj/Spruce.obj");
+
+		// while (!cubeModel.meta()->model->ready())
+		// 	this_thread::yield();
+		// boxPoints = cubeModel.meta()->model->meshes[0].vertices;
+		// boxTris = cubeModel.meta()->model->meshes[0].indices;
 
 		colorArray ca;
 		ca.addKey(vec4(1), 0.03)
@@ -1076,6 +1076,7 @@ int level1(bool load)
 		bomb_proto->addComponent<missile>()->exp = getNamedEmitterProto("expflame"); //bomb.primaryexplosion;//setBullet(bomb);
 																					 // bullets["bomb"] = bomb;
 																					 // ammo = bullets["bomb"].proto;
+		registerProto(bomb_proto);
 
 		// game_object_proto *laser_proto = new game_object_proto();
 		// laser_proto->addComponent<collider>()->setLayer(0);
@@ -1200,6 +1201,7 @@ int level1(bool load)
 		// groundModel.makeUnique();
 		r->set(terrainShader, groundModel);
 		ground->addComponent<terrain>();
+		registerProto(ground);
 
 		// terrainWidth = 1024;
 		terrainWidth = 64;
@@ -1211,7 +1213,8 @@ int level1(bool load)
 		game_object_proto *tree_go = new game_object_proto();
 		_renderer *tree_rend = tree_go->addComponent<_renderer>();
 		tree_rend->set(modelShader, tree);
-		tree_rend->setCullSizes(0.04f, INFINITY);
+		registerProto(tree_go);
+		// tree_rend->setCullSizes(0.04f, INFINITY);
 		// _renderer *tree_billboard = tree_go->addComponent<_renderer>();
 		// _texture tree_bill_tex;
 		// tree_bill_tex.namedTexture("bill1");
@@ -1338,6 +1341,11 @@ int level1(bool load)
 	{
 		load_game("game.lvl");
 	}
+	// 	_model cubeModel("res/models/cube/cube.obj");
+	// while (!cubeModel.meta()->model->ready())
+	// 		this_thread::yield();
+	// boxPoints = cubeModel.meta()->model->meshes[0].vertices;
+	// boxTris = cubeModel.meta()->model->meshes[0].indices;
 
 	return 0;
 }

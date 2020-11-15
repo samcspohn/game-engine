@@ -105,14 +105,22 @@ private:
 	glm::vec3 vel = glm::vec3(0);
 	glm::quat axis;
 	float rotVel;
-	SER4(gravity,bounciness,mass,damping);
+	SER4(gravity, bounciness, mass, damping);
+};
+
+enum colType
+{
+	aaabbType,
+	obbType,
+	meshType,
+	pointType
 };
 REGISTER_COMPONENT(rigidBody)
 class collider : public component
 {
 public:
 	int layer;
-	int type = 1;
+	colType type = obbType;
 	// colDat *posInTree = 0;
 	glm::vec3 r = glm::vec3(1);
 	// colDat cd;
@@ -131,7 +139,7 @@ public:
 	bool _registerEngineComponent();
 	void setLayer(int l);
 	void onStart();
-	
+
 	void onDestroy();
 
 	void setMesh(Mesh &_m);
@@ -142,22 +150,25 @@ public:
 	void update_data();
 	COPY(collider);
 
-	 friend class boost::serialization::access;                                
-                                                                              
-    template <class Archive>                                                  
-    inline void serialize(Archive &ar, const unsigned int /* file_version */) 
-    {                                                                         
-        ar &boost::serialization::base_object<component>(*this);
-		ar & layer & type & r & dim;
+	friend class boost::serialization::access;
+
+	template <class Archive>
+	inline void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar &boost::serialization::base_object<component>(*this);
+		ar &layer &type &r &dim;
 		switch (this->type)
 		{
-		case 0:
+		case aaabbType:
 			ar & this->o;
 			break;
-		// case 1:
-		// 	ar & this->m;
-		// 	break;
-		case 2:
+		case obbType:
+			ar & this->o;
+			break;
+		case meshType:
+			ar & this->m;
+			break;
+		case pointType:
 			ar & this->p;
 			break;
 		default:
@@ -273,13 +284,13 @@ struct octree
 
 		if (myCol.a.max[curr.axis] > curr.d && myCol.a.min[curr.axis] < curr.d)
 		{
-			query( myCol, colCount, this->nodes[curr.children]);
-			query( myCol, colCount, this->nodes[curr.children + 1]);
+			query(myCol, colCount, this->nodes[curr.children]);
+			query(myCol, colCount, this->nodes[curr.children + 1]);
 		}
 		else if (myCol.a.max[curr.axis] < curr.d)
-			query( myCol, colCount, this->nodes[curr.children]);
+			query(myCol, colCount, this->nodes[curr.children]);
 		else if (myCol.a.min[curr.axis] > curr.d)
-			query( myCol, colCount, this->nodes[curr.children + 1]);
+			query(myCol, colCount, this->nodes[curr.children + 1]);
 	}
 	void query(collider &myCol, int &colCount)
 	{
@@ -422,193 +433,192 @@ float size(glm::vec3 a)
 	return a.x * a.y * a.z;
 }
 
-	bool collider::_registerEngineComponent()
+bool collider::_registerEngineComponent()
+{
+	return true;
+}
+void collider::setLayer(int l)
+{
+	layer = l;
+}
+void collider::onStart()
+{
+	// posInTree = 0;
+	auto _rb = transform->gameObject()->getComponent<rigidBody>();
+	if (_rb != 0)
 	{
-		return true;
+		rb = _rb;
 	}
-	void collider::setLayer(int l)
-	{
-		layer = l;
-	}
-	void collider::onStart()
-	{
-		// posInTree = 0;
-		auto _rb = transform->gameObject()->getComponent<rigidBody>();
-		if (_rb != 0)
-		{
-			rb = _rb;
-		}
-	}
-	void collider::onDestroy()
-	{
-		// if (posInTree)
-		// 	posInTree->valid = false;
-		this->valid = false;
-	}
+}
+void collider::onDestroy()
+{
+	// if (posInTree)
+	// 	posInTree->valid = false;
+	this->valid = false;
+}
 
-	void collider::setMesh(Mesh &_m)
-	{
-		// cd.type = 2;
-		this->type = 2;
-		this->m.points = &_m.vertices;
-		this->m.tris = &_m.indices;
-	}
-	void collider::setPoint()
-	{
-		// cd.type = 3;
-		this->type = 3;
-		this->p = point();
-	}
-	void collider::update()
-	{
+void collider::setMesh(Mesh &_m)
+{
+	// cd.type = 2;
+	this->type = meshType;
+	this->m.points = &_m.vertices;
+	this->m.tris = &_m.indices;
+}
+void collider::setPoint()
+{
+	// cd.type = 3;
+	this->type = pointType;
+	this->p = point();
+}
+void collider::update()
+{
 
-		// posInTree = 0;
-		switch (type)
+	// posInTree = 0;
+	switch (type)
+	{
+	case aaabbType:
+	case obbType:
+	case meshType:
+	{
+		glm::vec3 sc = transform->getScale() * dim;
+		// glm::mat3 rot = glm::toMat3(transform->getRotation());
+		glm::vec3 r = vec3(length(sc));
+		glm::vec3 pos = transform->getPosition();
+		a = AABB2(pos - r, pos + r);
+		this->collider_shape_updated = false;
+	}
+	break;
+	case pointType:
+	{
+		if (this->p.pos1 == vec3(0))
 		{
-		case 0:
-		case 1:
-		case 2:
-		{
-			glm::vec3 sc = transform->getScale() * dim;
-			// glm::mat3 rot = glm::toMat3(transform->getRotation());
-			glm::vec3 r = vec3(length(sc));
-			glm::vec3 pos = transform->getPosition();
-			a = AABB2(pos - r, pos + r);
-			this->collider_shape_updated = false;
+			this->p.pos2 = transform->getPosition();
 		}
-		break;
-		case 3:
+		else
 		{
-			if (this->p.pos1 == vec3(0))
+			this->p.pos2 = this->p.pos1;
+		}
+		this->p.pos1 = transform->getPosition();
+		// this->a.max = this->p.pos1;
+		// this->a.min = this->p.pos2;
+		// if(this->a.max.x < this->a.min.x)
+		// 	std::swap(this->a.max.x,this->a.min.x);
+		// if(this->a.max.y < this->a.min.y)
+		// 	std::swap(this->a.max.y,this->a.min.y);
+		// if(this->a.max.z < this->a.min.z)
+		// 	std::swap(this->a.max.z,this->a.min.z);
+
+		new (&a.max) glm::vec3(glm::max(this->p.pos1.x, this->p.pos2.x),
+							   glm::max(this->p.pos1.y, this->p.pos2.y),
+							   glm::max(this->p.pos1.z, this->p.pos2.z));
+
+		new (&a.min) glm::vec3(glm::min(this->p.pos1.x, this->p.pos2.x),
+							   glm::min(this->p.pos1.y, this->p.pos2.y),
+							   glm::min(this->p.pos1.z, this->p.pos2.z));
+
+		// // x
+		// if(this->p.pos1.x > this->p.pos2.x){
+		// 	this->a.max.x = this->p.pos1.x;this->a.min.x = this->p.pos2.x;
+		// }else{
+		// 	this->a.max.x = this->p.pos2.x;this->a.min.x = this->p.pos1.x;
+		// }
+		// // y
+		// if(this->p.pos1.y > this->p.pos2.y){
+		// 	this->a.max.y = this->p.pos1.y;this->a.min.y = this->p.pos2.y;
+		// }else{
+		// 	this->a.max.y = this->p.pos2.y;this->a.min.y = this->p.pos1.y;
+		// }
+		// // z
+		// if(this->p.pos1.z > this->p.pos2.z){
+		// 	this->a.max.z = this->p.pos1.z;this->a.min.z = this->p.pos2.z;
+		// }else{
+		// 	this->a.max.z = this->p.pos2.z;this->a.min.z = this->p.pos1.z;
+		// }
+		this->collider_shape_updated = true;
+	}
+	}
+	// glm::vec3 sc = transform->getScale() * dim;
+	// // glm::mat3 rot = glm::toMat3(transform->getRotation());
+	// glm::vec3 r = vec3(length(sc));
+	// glm::vec3 pos = transform->getPosition();
+	// this->a = AABB2(pos - r, pos + r);
+	this->type = type;
+	// this->c = this;
+	this->valid = true;
+	this->rb = rb;
+	// this->collider_shape_updated = false;
+
+	// int depth = 0;
+	// if (layer == 1)
+	// 	collisionLayers[layer].insert(cd, depth);
+}
+void collider::midUpdate()
+{
+	int depth = 0;
+	if (layer == 1)
+		collisionLayers[layer].insert(a, *this, depth);
+}
+
+void collider::lateUpdate()
+{
+	int colCount = 0;
+	for (auto &i : collisionGraph[layer])
+	{
+		// if(collisionLayers[i].nodes.size() <= collisionLayers[layer].nodes.size())
+		collisionLayers[i].query(*this, colCount);
+	}
+	// Octree->query(this->a, cd, colCount);
+	// for (auto &i : terrains)
+	// {
+	// terrainHit h = i.second->getHeight(this->a.c.x, this->a.c.z);
+	glm::vec3 center = a.getCenter();
+	terrain *t = getTerrain(center.x, center.z);
+	if (t != 0)
+	{
+		if (a.min.y > t->max_height * t->transform->getScale().y + t->transform->getPosition().y)
+			return;
+		terrainHit h = t->getHeight(center.x, center.z);
+		if (a.min.y < h.height)
+		{
+			glm::vec3 p = transform->getPosition();
+			if (rb != 0)
 			{
-				this->p.pos2 = transform->getPosition();
+				rb->vel = glm::reflect(rb->vel, h.normal) * rb->bounciness;
+				// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
+				transform->setPosition(glm::vec3(p.x, h.height + a.min.y + 0.1f, p.z));
 			}
-			else
-			{
-				this->p.pos2 = this->p.pos1;
-			}
-			this->p.pos1 = transform->getPosition();
-			// this->a.max = this->p.pos1;
-			// this->a.min = this->p.pos2;
-			// if(this->a.max.x < this->a.min.x)
-			// 	std::swap(this->a.max.x,this->a.min.x);
-			// if(this->a.max.y < this->a.min.y)
-			// 	std::swap(this->a.max.y,this->a.min.y);
-			// if(this->a.max.z < this->a.min.z)
-			// 	std::swap(this->a.max.z,this->a.min.z);
-
-			new (&a.max) glm::vec3(glm::max(this->p.pos1.x, this->p.pos2.x),
-								   glm::max(this->p.pos1.y, this->p.pos2.y),
-								   glm::max(this->p.pos1.z, this->p.pos2.z));
-
-			new (&a.min) glm::vec3(glm::min(this->p.pos1.x, this->p.pos2.x),
-								   glm::min(this->p.pos1.y, this->p.pos2.y),
-								   glm::min(this->p.pos1.z, this->p.pos2.z));
-
-			// // x
-			// if(this->p.pos1.x > this->p.pos2.x){
-			// 	this->a.max.x = this->p.pos1.x;this->a.min.x = this->p.pos2.x;
-			// }else{
-			// 	this->a.max.x = this->p.pos2.x;this->a.min.x = this->p.pos1.x;
-			// }
-			// // y
-			// if(this->p.pos1.y > this->p.pos2.y){
-			// 	this->a.max.y = this->p.pos1.y;this->a.min.y = this->p.pos2.y;
-			// }else{
-			// 	this->a.max.y = this->p.pos2.y;this->a.min.y = this->p.pos1.y;
-			// }
-			// // z
-			// if(this->p.pos1.z > this->p.pos2.z){
-			// 	this->a.max.z = this->p.pos1.z;this->a.min.z = this->p.pos2.z;
-			// }else{
-			// 	this->a.max.z = this->p.pos2.z;this->a.min.z = this->p.pos1.z;
-			// }
-			this->collider_shape_updated = true;
-		}
-		}
-		// glm::vec3 sc = transform->getScale() * dim;
-		// // glm::mat3 rot = glm::toMat3(transform->getRotation());
-		// glm::vec3 r = vec3(length(sc));
-		// glm::vec3 pos = transform->getPosition();
-		// this->a = AABB2(pos - r, pos + r);
-		this->type = type;
-		// this->c = this;
-		this->valid = true;
-		this->rb = rb;
-		// this->collider_shape_updated = false;
-
-		// int depth = 0;
-		// if (layer == 1)
-		// 	collisionLayers[layer].insert(cd, depth);
-	}
-	void collider::midUpdate()
-	{
-		int depth = 0;
-		if (layer == 1)
-			collisionLayers[layer].insert(a, *this, depth);
-	}
-
-	void collider::lateUpdate()
-	{
-		int colCount = 0;
-		for (auto &i : collisionGraph[layer])
-		{
-			// if(collisionLayers[i].nodes.size() <= collisionLayers[layer].nodes.size())
-			collisionLayers[i].query(*this, colCount);
-		}
-		// Octree->query(this->a, cd, colCount);
-		// for (auto &i : terrains)
-		// {
-		// terrainHit h = i.second->getHeight(this->a.c.x, this->a.c.z);
-		glm::vec3 center = a.getCenter();
-		terrain *t = getTerrain(center.x, center.z);
-		if (t != 0)
-		{
-			if (a.min.y > t->max_height * t->transform->getScale().y + t->transform->getPosition().y)
-				return;
-			terrainHit h = t->getHeight(center.x, center.z);
-			if (a.min.y < h.height)
-			{
-				glm::vec3 p = transform->getPosition();
-				if (rb != 0)
-				{
-					rb->vel = glm::reflect(rb->vel, h.normal) * rb->bounciness;
-					// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
-					transform->setPosition(glm::vec3(p.x, h.height + a.min.y + 0.1f, p.z));
-				}
-				// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
-				transform->gameObject()->collide(t->transform->gameObject(), glm::vec3(p.x, h.height, p.z), h.normal);
-			}
+			// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
+			transform->gameObject()->collide(t->transform->gameObject(), glm::vec3(p.x, h.height, p.z), h.normal);
 		}
 	}
+}
 
-	void collider::update_data()
+void collider::update_data()
+{
+	switch (type)
 	{
-		switch (type)
-		{
-		case 1: // obb
-		{
-			glm::vec3 sc = this->transform->getScale() * this->dim;
-			glm::mat3 rot = glm::toMat3(this->transform->getRotation());
+	case obbType: // obb
+	{
+		glm::vec3 sc = this->transform->getScale() * this->dim;
+		glm::mat3 rot = glm::toMat3(this->transform->getRotation());
 
-			o.c = this->transform->getPosition();
-			o.u = rot;
-			o.e = sc;
-		}
+		o.c = this->transform->getPosition();
+		o.u = rot;
+		o.e = sc;
+	}
+	break;
+	// case meshType:
+	// 	break;
+	// case pointType: // point
+	// {
+	// 	// p.pos2 = p.pos1;
+	// 	// p.pos1 = c->transform->getPosition();
+	// }
+	// break;
+	default:
 		break;
-		case 2:
-			break;
-		case 3: // point
-		{
-			// p.pos2 = p.pos1;
-			// p.pos1 = c->transform->getPosition();
-		}
-		break;
-		default:
-			break;
-		}
 	}
-
+}
 
 void assignRigidBody(collider *c, rigidBody *rb)
 {
@@ -665,39 +675,39 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 	}
 	switch (a->type)
 	{
-	case 0: // aabb
+	case aaabbType: // aabb
 		switch (b->type)
 		{
-		case 0: // aabb
+		case aaabbType: // aabb
 			return true;
 			break;
-		case 1: //aabb - obb
+		case obbType: //aabb - obb
 
 			break;
 		default:
 			break;
 		}
 		break;
-	case 1: // obb
+	case obbType: // obb
 		switch (b->type)
 		{
-		case 1: // obb
+		case obbType: // obb
 			return TestOBBOBB(a->o, b->o);
 			break;
-		case 2: // mesh
+		case meshType: // mesh
 			trans = a->transform->getModel();
 			trans2 = b->transform->getModel();
 			return testOBBMesh(a->o, trans, b->m, trans2, result);
 			break;
-		case 3:
+		case pointType:
 			return testPointOBB(b->p, a->o, result);
 		default:
 			break;
 		}
-	case 2: // mesh
+	case meshType: // mesh
 		switch (b->type)
 		{
-		case 2:
+		case meshType:
 			mesh *m1;
 			mesh *m2;
 			if (a->m.tris->size() <= b->m.tris->size())
@@ -714,12 +724,12 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 			}
 			return testMeshMesh(*m1, trans, *m2, trans2, result);
 			break;
-		case 3: // point
+		case pointType: // point
 			return testPointMesh(b->p, a->m, a->transform->getPosition(), a->transform->getScale(), a->transform->getRotation(), result);
 		default:
 			break;
 		}
-	case 3: //point
+	case pointType: //point
 		switch (b->type)
 		{
 		// case 0: // aabb

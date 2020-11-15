@@ -283,7 +283,7 @@ std::ostream & operator<<(std::ostream &os, const bus_schedule &bs)
 void save_schedule(const bus_schedule &s, const char * filename){
     // make an archive
     std::ofstream ofs(filename);
-    boost::archive::text_oarchive oa(ofs);
+    OARCHIVE oa(ofs);
     oa << s;
 }
 
@@ -291,7 +291,7 @@ void restore_schedule(bus_schedule &s, const char * filename)
 {
     // open the archive
     std::ifstream ifs(filename);
-    boost::archive::text_iarchive ia(ifs);
+    IARCHIVE ia(ifs);
 
     // restore the schedule from the archive
     ia >> s;

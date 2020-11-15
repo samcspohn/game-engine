@@ -35,7 +35,7 @@ Registry ComponentRegistry;
 //     // make an archive
 //     std::ofstream ofs(filename);
 // 	{
-//     	boost::archive::text_oarchive oa(ofs);
+//     	OARCHIVE oa(ofs);
 // 		saveEmitters(oa);
 // 		saveTransforms(oa);
 //     	oa << ComponentRegistry;
@@ -48,7 +48,7 @@ Registry ComponentRegistry;
 // {
 //     // open the archive
 //     std::ifstream ifs(filename);
-//     boost::archive::text_iarchive ia(ifs);
+//     IARCHIVE ia(ifs);
 // 	loadTransforms(ia);
 
 //     // restore the schedule from the archive

@@ -12,8 +12,8 @@ using namespace glm;
 
 
 
-void saveEmitters(boost::archive::text_oarchive& oa);
-void loadEmitters(boost::archive::text_iarchive& ia);
+void saveEmitters(OARCHIVE& oa);
+void loadEmitters(IARCHIVE& ia);
 
 class component;
 struct colorArray
@@ -115,7 +115,7 @@ struct emitter
 extern vector<emitterInit> emitterInits;
 extern vector<emitterInit> emitterInitsdb;
 extern unordered_map<uint, emitterInit> emitter_inits;
-class particle_emitter : public component
+class particle_emitter final : public component
 {
     emitter_prototype_ prototype;
     static mutex lock;

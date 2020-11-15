@@ -11,20 +11,19 @@ void rebuildGameObject(componentStorageBase* base, int i){
     base->get(i)->transform->gameObject()->components.insert(std::make_pair(base->get(i), base->getInfo(i).CompItr));
 }
 
-protoListRef registerProto(game_object_proto* p){
+void registerProto(game_object_proto* p){
 	prototypeRegistry.push_back(p);
-	protoListRef ret = prototypeRegistry.end();
-	--ret;
-	return ret;
+	p->ref = prototypeRegistry.end();
+    --p->ref;
 }
 void deleteProtoRef(protoListRef r){
 	prototypeRegistry.erase(r);
 }
 
 
-void saveProto(boost::archive::text_oarchive& oa){
+void saveProto(OARCHIVE& oa){
 	oa << prototypeRegistry;
 }
-void loadProto(boost::archive::text_iarchive& ia){
+void loadProto(IARCHIVE& ia){
 	ia >> prototypeRegistry;
 }

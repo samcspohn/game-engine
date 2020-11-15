@@ -34,7 +34,6 @@ _modelMeta::~_modelMeta()
 
 namespace modelManager
 {
-
 	map<size_t, _modelMeta *> models;
 	void destroy()
 	{
@@ -43,6 +42,20 @@ namespace modelManager
 			delete models.begin()->second;
 			models.erase(models.begin());
 		}
+	}
+
+	void save(OARCHIVE& oa){
+		oa << models;
+	}
+	void load(IARCHIVE& ia){
+		ia >> models;
+		waitForRenderJob([&](){
+			for(auto& m : models){
+				if(m.second->model->modelPath != ""){
+					m.second->model->loadModel();
+				}
+			}
+		});
 	}
 }; // namespace modelManager
 

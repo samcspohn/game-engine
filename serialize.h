@@ -23,9 +23,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-// #define ARCHIVE boost::archive::text_oarchive
 
-// friend boost::archive::text_oarchive &operator<<(boost::archive::text_oarchive &os, const component &c);
+#define IARCHIVE boost::archive::binary_iarchive
+#define OARCHIVE boost::archive::binary_oarchive
 
 #define SER_BASE                                                              \
     friend class boost::serialization::access;                                \

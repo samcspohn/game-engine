@@ -93,7 +93,7 @@ private:
 
 	void orphan();
 
-	// friend boost::archive::text_oarchive  & operator<<(boost::archive::text_oarchive  &os, const transform2 &t);
+	// friend OARCHIVE  & operator<<(OARCHIVE  &os, const transform2 &t);
 	friend class boost::serialization::access;
 
 	template <class Archive>
@@ -102,7 +102,7 @@ private:
 		ar &id;
 	}
 };
-// boost::archive::text_oarchive & operator<<(boost::archive::text_oarchive  &os, const transform2 &t){
+// OARCHIVE & operator<<(OARCHIVE  &os, const transform2 &t){
 // 	return os << t.id;
 // }
 
@@ -268,8 +268,8 @@ void initTransform();
 int switchAH(int index);
 extern unsigned int transforms_enabled;
 
-void saveTransforms(boost::archive::text_oarchive &oa);
-void loadTransforms(boost::archive::text_iarchive &ia);
+void saveTransforms(OARCHIVE &oa);
+void loadTransforms(IARCHIVE &ia);
 
 extern transform2 root2;
 

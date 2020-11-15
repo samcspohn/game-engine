@@ -39,10 +39,14 @@ void save_game(const char * filename){
 
     // make an archive
     std::ofstream ofs(filename);
+	// std::ofstream oproto("proto.lvl");
 	{
-    	boost::archive::text_oarchive oa(ofs);
+    	OARCHIVE oa(ofs);
+		// OARCHIVE op(oproto);
+		modelManager::save(oa);
 		saveEmitters(oa);
-		saveProto(oa);
+		// saveProto(oa);
+		oa << prototypeRegistry;
 		saveTransforms(oa);
     	oa << ComponentRegistry;
 	}
@@ -54,9 +58,14 @@ void load_game(const char * filename)
 {
     // open the archive
     std::ifstream ifs(filename);
-    boost::archive::text_iarchive ia(ifs);
+	// std::ifstream ifsp("proto.lvl");
+    IARCHIVE ia(ifs);
+	// IARCHIVE ip(ifsp);
+	modelManager::load(ia);
 	loadEmitters(ia);
-	loadProto(ia);
+	// loadProto(ip);
+	ia >> prototypeRegistry;
+
 	loadTransforms(ia);
 
     // restore the schedule from the archive
@@ -159,6 +168,19 @@ void init()
 	positionsToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 	rotationsToBuffer = vector<vector<glm::quat>>(concurrency::numThreads);
 	scalesToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
+
+	// _model cubeModel("res/models/cube/cube.obj");
+	// while (!cubeModel.meta()->model->ready())
+	// 		this_thread::yield();
+	// boxPoints = cubeModel.meta()->model->meshes[0].vertices;
+	// boxTris = cubeModel.meta()->model->meshes[0].indices;
+
+	// ifstream f("CUUBEE");
+	// boost::archive::text_iarchive ia(f);
+	// boxPoints.clear();
+	// boxTris.clear();
+	// ia >> boxPoints;
+	// ia >> boxTris;
 
 }
 

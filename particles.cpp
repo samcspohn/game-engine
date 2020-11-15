@@ -207,10 +207,10 @@ gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_p
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
 
 
-void saveEmitters(boost::archive::text_oarchive& oa){
+void saveEmitters(OARCHIVE& oa){
     oa << emitter_prototypes_ << emitter_prototypes;
 }
-void loadEmitters(boost::archive::text_iarchive& ia){
+void loadEmitters(IARCHIVE& ia){
     ia >> emitter_prototypes_ >> emitter_prototypes;
 }
 

@@ -21,6 +21,7 @@
 #include "Shader.h"
 #include "helper1.h"
 #include <string>
+#include "serialize.h"
 
 using namespace std;
 
@@ -40,6 +41,9 @@ public:
 	int numVerts=0;
     vector<Mesh> meshes;
     void loadModel();
+    SER_HELPER(){
+        ar & modelPath;
+    }
 private:
   
     string directory;

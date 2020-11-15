@@ -16,13 +16,13 @@ class game_object_proto;
 #define protoListRef typename std::list<game_object_proto*>::iterator
 #define protoList std::list<game_object_proto*>
 
-protoListRef registerProto(game_object_proto* p);
+void registerProto(game_object_proto* p);
 void deleteProtoRef(protoListRef r);
 
 class game_object_proto{
 public:
 	game_object_proto(){
-		ref = registerProto(this);
+		// ref = registerProto(this);
 	}
 	map<component *, ull> components;
 	protoListRef ref;
@@ -59,13 +59,13 @@ public:
 	}
 };
 
-void saveProto(boost::archive::text_oarchive& oa);
-void loadProto(boost::archive::text_iarchive& ia);
+void saveProto(OARCHIVE& oa);
+void loadProto(IARCHIVE& ia);
 
 class game_object;
 
 extern tbb::concurrent_unordered_set<game_object*> toDestroy;
-
+extern std::list<game_object_proto*> prototypeRegistry;
 class game_object
 {
 	mutex lock;

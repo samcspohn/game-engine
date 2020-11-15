@@ -13,6 +13,7 @@
 #include "texture.h"
 // #include <hash_fun.h>
 #include <functional>
+#include "serialize.h"
 using namespace std;
 
 
@@ -54,10 +55,15 @@ struct _modelMeta {
 	float radius;
 	void getBounds();
 	bool unique = false;
+	SER_HELPER(){
+		ar & name & model & bounds & radius & unique;
+	}
 };
 namespace modelManager {
 	extern map<size_t, _modelMeta*> models;
 	void destroy();
+	void save(OARCHIVE& oa);
+	void load(IARCHIVE& ia);
 };
 
 class _model {
@@ -175,7 +181,7 @@ namespace batchManager{
 
 void destroyRendering();
 
-class _renderer : public component {
+class _renderer final : public component {
 	_shader shader;
 	_model model;
 	renderingMeta* meta = 0;

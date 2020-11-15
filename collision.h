@@ -68,12 +68,13 @@ struct AABB2
 };
 struct OBB
 {
-    glm::vec3 c;    // OBB center point
+    glm::vec3 c; // OBB center point
     // glm::vec3 u[3]; // Local x-, y-, and z-axes
     glm::quat u;
-    glm::vec3 e;    // Positive halfwidth extents of OBB along each axis
-    SER_HELPER(){
-        ar & c & u & e;
+    glm::vec3 e; // Positive halfwidth extents of OBB along each axis
+    SER_HELPER()
+    {
+        ar &c &u &e;
     }
 };
 
@@ -81,8 +82,9 @@ struct mesh
 {
     vector<glm::vec3> *points;
     vector<uint> *tris;
-    SER_HELPER(){
-        ar & points & tris;
+    SER_HELPER()
+    {
+        ar &points &tris;
     }
 };
 
@@ -90,11 +92,13 @@ class rigidBody;
 class collider;
 
 // struct vertex;
-struct point {
+struct point
+{
     glm::vec3 pos1;
     glm::vec3 pos2;
-    SER_HELPER(){
-        ar & pos1 & pos2;
+    SER_HELPER()
+    {
+        ar &pos1 &pos2;
     }
 };
 
@@ -116,9 +120,10 @@ struct point {
 //     void update();
 // };
 
-struct octDat{
+struct octDat
+{
     AABB2 a;
-    collider* d;
+    collider *d;
 };
 
 bool _testAABB(const AABB &a, const AABB &b)
@@ -171,7 +176,7 @@ int TestOBBOBB(OBB &a, OBB &b)
     // Compute translation vector t
     glm::vec3 t = b.c - a.c;
     // Bring translation into a's coordinate frame
-    t = glm::vec3(glm::dot(t, a.u * glm::vec3(1,0,0)), glm::dot(t, a.u * glm::vec3(0,1,0)), glm::dot(t, a.u * vec3(0,0,1)));
+    t = glm::vec3(glm::dot(t, a.u * glm::vec3(1, 0, 0)), glm::dot(t, a.u * glm::vec3(0, 1, 0)), glm::dot(t, a.u * vec3(0, 0, 1)));
 
     // Compute common subexpressions. Add in an epsilon term to
     // counteract arithmetic errors when two edges are parallel and
@@ -345,9 +350,9 @@ float ScalarTriple(glm::vec3 &a, glm::vec3 &b, glm::vec3 &c)
     return glm::dot(glm::cross(a, b), c);
 }
 
-
-float testPlane(glm::vec3 p, glm::vec4 plane){
-    return plane.x * p.x + plane.y*p.y + plane.z * p.z + plane.w;
+float testPlane(glm::vec3 p, glm::vec4 plane)
+{
+    return plane.x * p.x + plane.y * p.y + plane.z * p.z + plane.w;
 }
 int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, glm::vec3 c,
                           float &u, float &v, float &w)
@@ -360,7 +365,7 @@ int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, gl
     // that the signed tetrahedral volumes, computed using scalar triple
     glm::vec3 m = glm::cross(pq, pc);
     // products, are all positive
-    
+
     // u = ScalarTriple(pq, pc, pb);
     u = glm::dot(pq, glm::cross(c, b)) + glm::dot(m, c - b);
     if (u < 0.0f)
@@ -381,7 +386,7 @@ int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, gl
     v *= denom;
     w *= denom; // w = 1.0f - u - v;
     glm::vec3 r;
-    r = u*a + v*b + w*c;
+    r = u * a + v * b + w * c;
     u = r.x;
     v = r.y;
     w = r.z;
@@ -403,22 +408,27 @@ int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b,
     // Compute denominator d. If d <= 0, segment is parallel to or points
     // away from triangle, so exit early
     float d = glm::dot(qp, n);
-    if (d <= 0.0f) return 0;
+    if (d <= 0.0f)
+        return 0;
 
     // Compute intersection t value of pq with plane of triangle. A ray
     // intersects iff 0 <= t. Segment intersects iff 0 <= t <= 1. Delay
     // dividing by d until intersection has been found to pierce triangle
     glm::vec3 ap = p - a;
     t = glm::dot(ap, n);
-    if (t < 0.0f) return 0;
-    if (t > d) return 0; // For segment; exclude this code line for a ray test
+    if (t < 0.0f)
+        return 0;
+    if (t > d)
+        return 0; // For segment; exclude this code line for a ray test
 
     // Compute barycentric coordinate components and test if within bounds
     glm::vec3 e = glm::cross(qp, ap);
     v = glm::dot(ac, e);
-    if (v < 0.0f || v > d) return 0;
+    if (v < 0.0f || v > d)
+        return 0;
     w = -glm::dot(ab, e);
-    if (w < 0.0f || v + w > d) return 0;
+    if (w < 0.0f || v + w > d)
+        return 0;
 
     // Segment/ray intersects triangle. Perform delayed division and
     // compute the last barycentric coordinate component
@@ -428,16 +438,14 @@ int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b,
     w *= ood;
     u = 1.0f - v - w;
 
-        glm::vec3 r;
-    r = u*a + v*b + w*c;
+    glm::vec3 r;
+    r = u * a + v * b + w * c;
     u = r.x;
     v = r.y;
     w = r.z;
 
     return 1;
-    
 }
-
 
 int IntersectTriangleTriangle(vector<glm::vec3> &t1, vector<glm::vec3> &t2, glm::vec3 &result)
 {
@@ -500,22 +508,22 @@ int IntersectTriangleTriangle(vector<glm::vec3> &t1, vector<glm::vec3> &t2, glm:
 }
 
 bool testMeshMesh(mesh &m1, // longer tris
-                  const mat4& trans1,
+                  const mat4 &trans1,
                   mesh &m2, // shorter tris
-                  const mat4& trans2, glm::vec3 &result)
+                  const mat4 &trans2, glm::vec3 &result)
 {
     vector<glm::vec3> tri1(3);
     vector<glm::vec3> tri2(3);
     for (int i = 0; i < m1.tris->size(); i += 3)
     {
-        tri1[0] = trans1 * vec4((*m1.points)[ (*m1.tris)[i]     ],1);
-        tri1[1] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 1] ],1);
-        tri1[2] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 2] ],1);
+        tri1[0] = trans1 * vec4((*m1.points)[(*m1.tris)[i]], 1);
+        tri1[1] = trans1 * vec4((*m1.points)[(*m1.tris)[i + 1]], 1);
+        tri1[2] = trans1 * vec4((*m1.points)[(*m1.tris)[i + 2]], 1);
         for (int j = 0; j < m2.tris->size(); j += 3)
         {
-            tri2[0] = trans2 * vec4((*m2.points)[ (*m2.tris)[j]     ],1);
-            tri2[1] = trans2 * vec4((*m2.points)[ (*m2.tris)[j + 1] ],1);
-            tri2[2] = trans2 * vec4((*m2.points)[ (*m2.tris)[j + 2] ],1);
+            tri2[0] = trans2 * vec4((*m2.points)[(*m2.tris)[j]], 1);
+            tri2[1] = trans2 * vec4((*m2.points)[(*m2.tris)[j + 1]], 1);
+            tri2[2] = trans2 * vec4((*m2.points)[(*m2.tris)[j + 2]], 1);
             if (IntersectTriangleTriangle(tri1, tri2, result))
             {
                 return true;
@@ -525,8 +533,29 @@ bool testMeshMesh(mesh &m1, // longer tris
     return false;
 }
 
-vector<glm::vec3> boxPoints;
-vector<uint> boxTris;
+using namespace glm;
+vector<glm::vec3> boxPoints{
+    vec3(1.000000, -1.000000, -1.000000),
+    vec3(1.000000, -1.000000, 1.000000),
+    vec3(-1.000000, -1.000000, 1.000000),
+    vec3(-1.000000, -1.000000, -1.000000),
+    vec3(1.000000, 1.000000, -1),
+    vec3(1, 1.000000, 1.00000),
+    vec3(-1.000000, 1.000000, 1.000000),
+    vec3(-1.000000, 1.000000, -1.000000)};
+vector<uint> boxTris{
+    0, 1, 2,
+    0, 2, 3,
+    4, 7, 6,
+    4, 7, 5,
+    0, 4, 5,
+    0, 5, 1,
+    1, 5, 6,
+    1, 6, 2,
+    2, 6, 7,
+    2, 7, 3,
+    4, 0, 3,
+    4, 3, 7};
 
 bool testOBBMesh(OBB &o, const mat4 o_trans, mesh &m, const mat4 m_trans, glm::vec3 &result)
 {
@@ -536,12 +565,13 @@ bool testOBBMesh(OBB &o, const mat4 o_trans, mesh &m, const mat4 m_trans, glm::v
     return testMeshMesh(m, m_trans, o_m, o_trans, result);
 }
 
-bool testPointMesh(point& p, mesh& m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, glm::vec3& result){
+bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, glm::vec3 &result)
+{
     // glm::vec3 pos1 = (1.f / mScl) * glm::inverse(mRot) * (p.pos1 - mPos);
     // glm::vec3 pos2 = (1.f / mScl) * glm::inverse(mRot) * (p.pos2 - mPos);
-    mat4 trans = glm::inverse(glm::translate(mPos)*glm::toMat4(mRot)*glm::scale(mScl));
-    glm::vec3 pos1 = trans * vec4(p.pos1,1);
-    glm::vec3 pos2 = trans * vec4(p.pos2,1);
+    mat4 trans = glm::inverse(glm::translate(mPos) * glm::toMat4(mRot) * glm::scale(mScl));
+    glm::vec3 pos1 = trans * vec4(p.pos1, 1);
+    glm::vec3 pos2 = trans * vec4(p.pos2, 1);
     glm::vec3 p1;
     vector<glm::vec3> tri1(3);
     vector<glm::vec3> tri2(3);
@@ -551,26 +581,27 @@ bool testPointMesh(point& p, mesh& m, glm::vec3 mPos, glm::vec3 mScl, glm::quat 
         // tri1[0] = trans1 * vec4((*m1.points)[ (*m1.tris)[i]     ],1);
         // tri1[1] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 1] ],1);
         // tri1[2] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 2] ],1);
-        tri1[0] = (*m.points)[ (*m.tris)[i]     ];
-        tri1[1] = (*m.points)[ (*m.tris)[i + 1] ];
-        tri1[2] = (*m.points)[ (*m.tris)[i + 2] ];
-        if(IntersectSegmentTriangle(pos2, pos1, tri1[0], tri1[1], tri1[2], p1.x, p1.y, p1.z, t)){
+        tri1[0] = (*m.points)[(*m.tris)[i]];
+        tri1[1] = (*m.points)[(*m.tris)[i + 1]];
+        tri1[2] = (*m.points)[(*m.tris)[i + 2]];
+        if (IntersectSegmentTriangle(pos2, pos1, tri1[0], tri1[1], tri1[2], p1.x, p1.y, p1.z, t))
+        {
             // result = mPos;
-            result = inverse(trans) * vec4(p1,1);
+            result = inverse(trans) * vec4(p1, 1);
             return true;
         }
     }
     return false;
-
 }
 
-bool testPointOBB(point& p, OBB& o, glm::vec3& result){
+bool testPointOBB(point &p, OBB &o, glm::vec3 &result)
+{
     glm::vec3 pos = glm::inverse(o.u) * (p.pos1 - o.c);
 
     mesh o_m;
     o_m.points = &boxPoints;
     o_m.tris = &boxTris;
-    return testPointMesh(p,o_m,o.c,o.e,o.u,result);
+    return testPointMesh(p, o_m, o.c, o.e, o.u, result);
     // if(abs(pos.x) < o.e.x &&
     //  abs(pos.y) < o.e.y &&
     //  abs(pos.z) < o.e.z){
