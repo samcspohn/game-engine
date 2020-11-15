@@ -1,8 +1,8 @@
 #pragma once
 
-#include<vector>
-#include<deque>
-#include<set>
+#include <vector>
+#include <deque>
+#include <set>
 #include <map>
 #include <algorithm>
 #include <iostream>
@@ -12,137 +12,168 @@
 
 using namespace std;
 
-template<typename t>
+template <typename t>
 class componentStorage;
 
-template<typename t>
-class fast_list {
+template <typename t>
+class fast_list
+{
 private:
 	mutex m;
+
 public:
-	SER_HELPER(){
-		ar & data & iterators;
+	SER_HELPER()
+	{
+		ar &data &iterators;
 	}
 	vector<t> data;
 
-	struct _itr {
-	public:
-	SER_HELPER(){
-		ar & fl & index & it;
-	}
-		bool operator==(const size_t& rhs) {
+	struct _itr
+	{
+		bool operator==(const size_t &rhs)
+		{
 			return index == rhs;
 		}
-		bool operator!=(const size_t& rhs) {
+		bool operator!=(const size_t &rhs)
+		{
 			return index != rhs;
 		}
-		bool operator==(const _itr& rhs) {
+		bool operator==(const _itr &rhs)
+		{
 			return index == rhs.index;
 		}
-		bool operator!=(const _itr& rhs) {
+		bool operator!=(const _itr &rhs)
+		{
 			return index != rhs.index;
 		}
-		bool operator<(const _itr& rhs) const {
+		bool operator<(const _itr &rhs) const
+		{
 			return index < rhs.index;
 		}
-		t& operator*() {
+		t &operator*()
+		{
 			return this->fl->data.at(index);
-
 		}
 
 		//t operator->() {
 		//	return data[ref];
 		//}
-		_itr() {};
-		_itr(size_t i, fast_list* _fl) {
+		_itr(){};
+		_itr(size_t i, fast_list *_fl)
+		{
 			index = i;
 			fl = _fl;
 		};
-		_itr(const _itr& other) { index = other.index; fl = other.fl; };
+		_itr(const _itr &other)
+		{
+			index = other.index;
+			fl = other.fl;
+		};
 		size_t index;
-		fast_list* fl;
+		fast_list *fl;
 		unsigned int it;
+		SER_HELPER()
+		{
+			ar &fl &index &it;
+		}
 	};
-	vector<_itr*> iterators;
-	struct iterator {
+	vector<_itr *> iterators;
+	struct iterator
+	{
 	public:
-	SER_HELPER(){
-		ar & itr;
-	}
-        bool isNull(){
-            return itr == nullptr;
-	    }
-		bool operator==(const size_t& rhs) {
+		SER_HELPER()
+		{
+			ar &itr;
+		}
+		bool isNull()
+		{
+			return itr == nullptr;
+		}
+		bool operator==(const size_t &rhs)
+		{
 			return *itr == rhs;
 		}
-		bool operator!=(const size_t& rhs) {
+		bool operator!=(const size_t &rhs)
+		{
 			return *itr != rhs;
 		}
-		t* operator->()const {
+		t *operator->() const
+		{
 			return &itr->fl->data.at(itr->index);
 		}
-		operator unsigned int() {
+		operator unsigned int()
+		{
 			return this->itr->index;
 		}
-		t& data() {
+		t &data()
+		{
 			return itr->fl->data[itr->index];
 		}
-		t& operator *(){
-            return itr->fl->data[itr->index];
+		t &operator*()
+		{
+			return itr->fl->data[itr->index];
 		}
-		iterator() {};
-		iterator(_itr* i) {
+		iterator(){};
+		iterator(_itr *i)
+		{
 			itr = i;
 		}
 		//iterator(const _itr& other) {  };
-		_itr* itr = nullptr;
+		_itr *itr = nullptr;
 		//size_t _Ptr;
 	};
 
-	iterator back() {
+	iterator back()
+	{
 		return iterator(iterators.back());
 	}
-	iterator begin() {
+	iterator begin()
+	{
 		return iterator(iterators.front());
 	}
 
 	//////////// end iterator
-	fast_list() {
+	fast_list()
+	{
 		//iteratorMap[0] = new _itr(0, this);
 	}
 
-	size_t size() {
+	size_t size()
+	{
 		return data.size();
 	}
-	t& operator[](int index)
+	t &operator[](int index)
 	{
 		if (index > data.size())
 			cout << "out of bounds" << endl;
-			// throw exception("out of bounds");
+		// throw exception("out of bounds");
 		return data[index];
 	}
-	t& front() {
+	t &front()
+	{
 		return data[0];
 	}
-	iterator push_back(t element) {
+	iterator push_back(t element)
+	{
 		m.lock();
 		data.push_back(element);
-		_itr* it = new _itr(data.size() - 1, this);
+		_itr *it = new _itr(data.size() - 1, this);
 		it->it = iterators.size();
 		iterators.push_back(it);
 		m.unlock();
 		return iterator(it);
 	}
 
-	void erase(iterator& itr) {
+	void erase(iterator &itr)
+	{
 		if (itr.itr->fl != this)
 			throw;
 		m.lock();
 		size_t index = itr.itr->index;
 		data[index] = std::move(data.back());
-		iterators.back()->index = index;//itr->index
-		iterators.back()->it = itr.itr->it;// int
-		iterators[itr.itr->it] = iterators.back();//this pointer = back pointer
+		iterators.back()->index = index;		   //itr->index
+		iterators.back()->it = itr.itr->it;		   // int
+		iterators[itr.itr->it] = iterators.back(); //this pointer = back pointer
 		iterators.erase(--(iterators.end()));
 		data.pop_back();
 		delete itr.itr;
@@ -150,17 +181,18 @@ public:
 		m.unlock();
 		//m.unlock();
 	}
-	void clear() {
-		for (typename vector<_itr*>::iterator i = iterators.begin(); i != iterators.end(); i++)
-			delete * i;
+	void clear()
+	{
+		for (typename vector<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
+			delete *i;
 		iterators.clear();
 		data.clear();
 	}
 
-
-	void swap(unsigned int l, unsigned int r) {
-		_itr* itl = iterators[l];
-		_itr* itr = iterators[r];
+	void swap(unsigned int l, unsigned int r)
+	{
+		_itr *itl = iterators[l];
+		_itr *itr = iterators[r];
 		itl->it = r;
 		itr->it = l;
 		iterators[l] = itr;
@@ -173,153 +205,182 @@ public:
 		data[r] = std::move(tempt);
 	}
 
-	~fast_list() {
-		for (typename vector<_itr*>::iterator i = iterators.begin(); i != iterators.end(); i++)
-			delete * i;
+	~fast_list()
+	{
+		for (typename vector<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
+			delete *i;
 	}
-
 };
 
-
-
-template<typename t>
-class fast_list_deque {
+template <typename t>
+class fast_list_deque
+{
 private:
 	mutex m;
+
 public:
 	deque<t> data = deque<t>();
 
-	struct _itr {
+	struct _itr
+	{
 	public:
-		bool operator==(const size_t& rhs) {
+		bool operator==(const size_t &rhs)
+		{
 			return index == rhs;
 		}
-		bool operator!=(const size_t& rhs) {
+		bool operator!=(const size_t &rhs)
+		{
 			return index != rhs;
 		}
-		bool operator==(const _itr& rhs) {
+		bool operator==(const _itr &rhs)
+		{
 			return index == rhs.index;
 		}
-		bool operator!=(const _itr& rhs) {
+		bool operator!=(const _itr &rhs)
+		{
 			return index != rhs.index;
 		}
-		bool operator<(const _itr& rhs) const {
+		bool operator<(const _itr &rhs) const
+		{
 			return index < rhs.index;
 		}
-		t& operator*() {
+		t &operator*()
+		{
 			return this->fl->data.at(index);
-
 		}
 
 		//t operator->() {
 		//	return data[ref];
 		//}
-		_itr() {};
-		_itr(size_t i, fast_list_deque* _fl) {
+		_itr(){};
+		_itr(size_t i, fast_list_deque *_fl)
+		{
 			index = i;
 			fl = _fl;
 		};
-		_itr(const _itr& other) { index = other.index; fl = other.fl; };
+		_itr(const _itr &other)
+		{
+			index = other.index;
+			fl = other.fl;
+		};
 		size_t index;
-		fast_list_deque* fl;
+		fast_list_deque *fl;
 		unsigned int it;
 	};
-	deque<_itr*> iterators;
-	struct iterator {
+	deque<_itr *> iterators;
+	struct iterator
+	{
 	public:
-	    bool isNull(){
-            return itr == nullptr;
-	    }
-		bool operator==(const size_t& rhs) {
+		bool isNull()
+		{
+			return itr == nullptr;
+		}
+		bool operator==(const size_t &rhs)
+		{
 			return *itr == rhs;
 		}
-		bool operator!=(const size_t& rhs) {
+		bool operator!=(const size_t &rhs)
+		{
 			return *itr != rhs;
 		}
-		t* operator->()const {
+		t *operator->() const
+		{
 			return &itr->fl->data.at(itr->index);
 		}
-		t& data() {
+		t &data()
+		{
 			return itr->fl->data[itr->index];
 		}
-		t& operator *(){
-            return itr->fl->data[itr->index];
+		t &operator*()
+		{
+			return itr->fl->data[itr->index];
 		}
-		iterator() {};
-		iterator(_itr* i) {
+		iterator(){};
+		iterator(_itr *i)
+		{
 			itr = i;
 		}
-		void erase(){
+		void erase()
+		{
 			itr->fl->erase(*this);
 		}
-		_itr* itr = nullptr;
+		_itr *itr = nullptr;
 	};
 
-	iterator back() {
+	iterator back()
+	{
 		return iterator(iterators.back());
 	}
-	iterator begin() {
+	iterator begin()
+	{
 		return iterator(iterators.front());
 	}
 
 	//////////// end iterator
-	fast_list_deque() : m() {
+	fast_list_deque() : m()
+	{
 		//iteratorMap[0] = new _itr(0, this);
 	}
 
-	size_t size() {
+	size_t size()
+	{
 		return data.size();
 	}
-	t& operator[](int index)
+	t &operator[](int index)
 	{
 		if (index > data.size())
 			cout << "out of bounds" << endl;
-			// throw exception("out of bounds");
+		// throw exception("out of bounds");
 		return data[index];
 	}
-	t& front() {
+	t &front()
+	{
 		return data[0];
 	}
-	iterator push_back(t element) {
+	iterator push_back(t element)
+	{
 		m.lock();
 		data.push_back(element);
-		_itr* it = new _itr(data.size() - 1, this);
+		_itr *it = new _itr(data.size() - 1, this);
 		it->it = iterators.size();
 		iterators.push_back(it);
 		m.unlock();
 		return iterator(it);
 	}
 
-	void erase(iterator& itr) {
+	void erase(iterator &itr)
+	{
 		if (itr.itr->fl != this)
 			throw;
 		m.lock();
 		size_t index = itr.itr->index;
 		data[index] = std::move(data.back());
-		iterators.back()->index = index;//itr->index
-		iterators.back()->it = itr.itr->it;// int
-		iterators[itr.itr->it] = iterators.back();//this pointer = back pointer
+		iterators.back()->index = index;		   //itr->index
+		iterators.back()->it = itr.itr->it;		   // int
+		iterators[itr.itr->it] = iterators.back(); //this pointer = back pointer
 		iterators.erase(--(iterators.end()));
 
-//        swap(itr.itr->index, data.size() - 1);
+		//        swap(itr.itr->index, data.size() - 1);
 		data.pop_back();
 		delete itr.itr;
 
 		m.unlock();
 		//m.unlock();
 	}
-	void clear() {
+	void clear()
+	{
 		m.lock();
-		for (typename deque<_itr*>::iterator i = iterators.begin(); i != iterators.end(); i++)
-			delete * i;
+		for (typename deque<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
+			delete *i;
 		iterators.clear();
 		data.clear();
 		m.unlock();
 	}
 
-	void swap(unsigned int l, unsigned int r) {
-		_itr* itl = iterators[l];
-		_itr* itr = iterators[r];
+	void swap(unsigned int l, unsigned int r)
+	{
+		_itr *itl = iterators[l];
+		_itr *itr = iterators[r];
 		itl->it = r;
 		itr->it = l;
 		iterators[l] = itr;
@@ -332,10 +393,11 @@ public:
 		data[r] = std::move(tempt);
 	}
 
-	~fast_list_deque() {
-		for (typename deque<_itr*>::iterator i = iterators.begin(); i != iterators.end(); i++)
-			delete * i;
+	~fast_list_deque()
+	{
+		for (typename deque<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
+			delete *i;
 	}
-//	friend class componentStorage;
-//    friend void sort();
+	//	friend class componentStorage;
+	//    friend void sort();
 };

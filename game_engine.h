@@ -46,6 +46,7 @@ void save_game(const char * filename){
 		shaderManager::save(oa);
 		modelManager::save(oa);
 		saveEmitters(oa);
+		lightingManager::save(oa);
 		// saveProto(oa);
 		oa << prototypeRegistry;
 		saveTransforms(oa);
@@ -65,6 +66,7 @@ void load_game(const char * filename)
 	shaderManager::load(ia);
 	modelManager::load(ia);
 	loadEmitters(ia);
+	lightingManager::load(ia);
 	// loadProto(ip);
 	ia >> prototypeRegistry;
 

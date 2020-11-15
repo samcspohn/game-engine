@@ -831,22 +831,6 @@ public:
 };
 REGISTER_COMPONENT(sun_sc)
 
-class sun_sc2 : public component
-{
-	COPY(sun_sc2);
-
-public:
-	void onStart()
-	{
-
-		auto l = transform->gameObject()->addComponent<Light>();
-		l->setColor(glm::vec3(24000));
-		l->setConstant(1.f);
-		l->setlinear(0.000014f);
-		l->setQuadratic(0.000007f);
-	}
-};
-REGISTER_COMPONENT(sun_sc2)
 
 void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright, game_object_proto *ammo_proto)
 {
@@ -1091,11 +1075,10 @@ int level1(bool load)
 		game_object *light = new game_object();
 		light->transform->setScale(vec3(1000));
 		light->transform->setPosition(glm::vec3(30000));
-		light->addComponent<sun_sc2>();
-		// light->addComponent<Light>()->setColor(glm::vec3(24000));
-		// light->getComponent<Light>()->setConstant(1.f);
-		// light->getComponent<Light>()->setlinear(0.000014f);
-		// light->getComponent<Light>()->setQuadratic(0.000007f);
+		light->addComponent<Light>()->setColor(glm::vec3(24000));
+		light->getComponent<Light>()->setConstant(1.f);
+		light->getComponent<Light>()->setlinear(0.000014f);
+		light->getComponent<Light>()->setQuadratic(0.000007f);
 		// auto sun = light->addComponent<sun_sc>();
 		// sun->distance = 50'000;
 		// sun->day_cycle = 100;

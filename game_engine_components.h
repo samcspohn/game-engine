@@ -438,7 +438,7 @@ public:
 		shaderLightingPass.setInt("gNormal", 2);
 		shaderLightingPass.setInt("gDepth", 3);
 
-		plm.gpu_pointLights->bindData(1);
+		lightingManager::gpu_pointLights->bindData(1);
 		GPU_TRANSFORMS->bindData(2);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
@@ -455,7 +455,7 @@ public:
 		shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
 		shaderLightingPass.setVec3("viewPos", pos);
 		shaderLightingPass.setVec3("floatingOrigin", pos);
-		lv.Draw(plm.pointLights.size());
+		lv.Draw(lightingManager::pointLights.size());
 
 		// Always good practice to set everything back to defaults once configured.
 		for (GLuint i = 0; i < 4; i++)

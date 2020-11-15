@@ -1,17 +1,19 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#define GLM_SWIZZLE 
+#define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include "Component.h"
 #include "fast_list.h"
 
-struct pointLight{
+struct pointLight
+{
     glm::vec3 color;
     float constant;
 
     float linear;
     float quadratic;
     int transfromId;
+
 private:
     float radius;
 
@@ -20,60 +22,83 @@ public:
     float cutOff = -1;
     float outerCutOff = -1;
 
-    void setRadius(){
-        float lightMax  = std::fmaxf(std::fmaxf(color.r, color.g), color.b);
-         radius  = (-linear +  std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * lightMax))) 
-         / (2 * quadratic);  
+    void setRadius()
+    {
+        float lightMax = std::fmaxf(std::fmaxf(color.r, color.g), color.b);
+        radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * lightMax))) / (2 * quadratic);
         // radius2 *= radius2;
+    }
+    SER_HELPER()
+    {
+        ar &color &constant &linear &quadratic &transfromId &radius &cutOff &outerCutOff;
     }
 };
 
-class lightingManager{
-public:
+namespace lightingManager
+{
     fast_list<pointLight> pointLights;
-    gpu_vector<pointLight>* gpu_pointLights;
-} plm;
-
-namespace lighting{
-    void init(){
-        plm.gpu_pointLights = new gpu_vector<pointLight>();
-        plm.gpu_pointLights->storage = &plm.pointLights.data;
+    gpu_vector<pointLight> *gpu_pointLights;
+    void save(OARCHIVE &oa)
+    {
+        oa << pointLights;
     }
-}
+    void load(IARCHIVE &ia)
+    {
+        ia >> pointLights;
+    }
+}; // namespace lightingManager
 
-class Light : public component {
+namespace lighting
+{
+    void init()
+    {
+        lightingManager::gpu_pointLights = new gpu_vector<pointLight>();
+        lightingManager::gpu_pointLights->storage = &lightingManager::pointLights.data;
+    }
+} // namespace lighting
+
+class Light : public component
+{
     typename fast_list<pointLight>::iterator pl;
+
 public:
-    void setColor(glm::vec3 col){
+    void setColor(glm::vec3 col)
+    {
         pl->color = col;
     }
-    void setlinear(float l){
+    void setlinear(float l)
+    {
         pl->linear = l;
         pl->setRadius();
     }
-    void setQuadratic(float q){
+    void setQuadratic(float q)
+    {
         pl->quadratic = q;
         pl->setRadius();
     }
-    void setConstant(float c){
+    void setConstant(float c)
+    {
         pl->constant = c;
         pl->setRadius();
     }
-    void setOuterCutoff(float radians){
+    void setOuterCutoff(float radians)
+    {
         pl->outerCutOff = glm::cos(radians);
     }
-    void setInnerCutoff(float radians){
+    void setInnerCutoff(float radians)
+    {
         pl->cutOff = glm::cos(radians);
     }
-    void onStart(){
-        pl = plm.pointLights.push_back(pointLight());
+    void onStart()
+    {
+        pl = lightingManager::pointLights.push_back(pointLight());
         pl->transfromId = transform.id;
-        
     }
-    void onDestroy(){
-        plm.pointLights.erase(pl);
+    void onDestroy()
+    {
+        lightingManager::pointLights.erase(pl);
     }
     COPY(Light);
-    SER0();
+    SER1(pl);
 };
 REGISTER_COMPONENT(Light)

@@ -453,7 +453,7 @@ void renderThreadFunc()
 				// _camera::initPrepRender(matProgram);
 				// appendStat("render init cpu", cpuTimer.stop());
 
-				plm.gpu_pointLights->bufferData();
+				lightingManager::gpu_pointLights->bufferData();
 
 				gt_.start();
 				glm::vec3 fo;
