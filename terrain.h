@@ -192,7 +192,7 @@ terrain *getTerrain(float x, float z)
         vec3 pos = transform->getPosition();
         vec3 pos2 = c->get(0)->transform->getPosition();
         pos.y = pos2.y = 0;
-        bool inThreshold = glm::length(pos - pos2) < 2000;
+        bool inThreshold = glm::length(pos - pos2) < 2;
         if (inThreshold && scatter.size() == 0)
         {
             for (glm::vec3 p : scatterPos)

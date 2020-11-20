@@ -24,8 +24,8 @@
 #include <glm/gtx/quaternion.hpp>
 
 
-#define IARCHIVE boost::archive::binary_iarchive
-#define OARCHIVE boost::archive::binary_oarchive
+#define IARCHIVE boost::archive::text_iarchive
+#define OARCHIVE boost::archive::text_oarchive
 
 #define SER_BASE                                                              \
     friend class boost::serialization::access;                                \

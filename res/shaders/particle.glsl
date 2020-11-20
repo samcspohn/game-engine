@@ -10,7 +10,6 @@ struct particle
 
     smquat rotation; // 2ints
     smvec3 velocity; // 2ints
-    
     vec3 position2;
     int next;
     

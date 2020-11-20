@@ -54,7 +54,7 @@ struct transform2
 	void init(transform2 &other);
 
 	_transform getTransform();
-
+	string& name();
 	// Transform operator=(const Transform& t);
 	void lookat(glm::vec3 lookatPoint, glm::vec3 up);
 	glm::vec3 forward();
@@ -117,12 +117,13 @@ struct trans_update
 struct transform_meta
 {
 	game_object *gameObject;
-	transform2 parent;
+	transform2 parent{-1};
 	list<transform2> children;
 	list<transform2>::iterator childId;
+	string name;
 	tbb::spin_mutex m;
 	SER_HELPER(){
-		ar & parent;
+		ar & parent & name;
 	}
 };
 
@@ -153,7 +154,7 @@ struct _Transforms
 	std::deque<glm::quat> rotations;
 	std::deque<glm::vec3> scales;
 	std::deque<transform_meta> meta;
-	std::deque<trans_update> transform_updates;
+	std::deque<trans_update> updates;
 
 	// deque<glm::vec3> positions;
 	// deque<glm::quat> rotations;
@@ -199,7 +200,7 @@ struct _Transforms
 		rotations.clear();
 		scales.clear();
 		meta.clear();
-		transform_updates.clear();
+		updates.clear();
 		while(!avail.empty())
 			avail.pop();
 	}
@@ -214,7 +215,7 @@ struct _Transforms
 			rotations.emplace_back();
 			scales.emplace_back();
 			meta.emplace_back();
-			transform_updates.emplace_back();
+			updates.emplace_back();
 		}
 		else
 		{
@@ -227,7 +228,7 @@ struct _Transforms
 		rotations[t.id] = glm::quat(1, 0, 0, 0);
 		scales[t.id] = glm::vec3(1, 1, 1);
 		new (&meta[t.id]) transform_meta();
-		new (&transform_updates[t.id]) trans_update();
+		new (&updates[t.id]) trans_update();
 		// transform_updates[t.id].pos = true;
 		// transform_updates[t.id].rot = true;
 		// transform_updates[t.id].scl = true;
@@ -237,6 +238,7 @@ struct _Transforms
 
 	void _delete(transform2 t)
 	{
+		meta[t.id].parent = -1;
 		m.lock();
 		avail.push(t.id);
 		m.unlock();
@@ -257,7 +259,7 @@ struct _Transforms
 	}
 	friend void loadTransforms();
 	SER_HELPER(){
-		ar & positions & rotations & scales & meta & transform_updates & avail;
+		ar & positions & rotations & scales & meta & updates & avail;
 	}
 };
 

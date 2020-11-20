@@ -96,17 +96,22 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 		if (action == GLFW_PRESS)
 		{
 			Input.keys[key] = true;
+			ImGui::GetIO().KeysDown[key] = true;
 			Input.keyDowns[key] = true;
 		}
 		else if (action == GLFW_RELEASE)
 		{
 			Input.keys[key] = false;
+			ImGui::GetIO().KeysDown[key] = false;
 		}
 	}
 }
 void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
 {
 	Input.Mouse.mouseScroll = yOffset;
+	ImGuiIO &io = ImGui::GetIO();
+	io.MouseWheelH += (float)xOffset;
+	io.MouseWheel += (float)yOffset;
 	//camera.ProcessMouseScroll(yOffset);
 }
 void window_size_callback(GLFWwindow *window, int width, int height)
@@ -125,7 +130,11 @@ void updateTiming()
 	Input.resetKeyDowns();
 	mouseFrameBegin();
 	glfwPollEvents();
-
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	// if(Input.getKeyDown(GLFW_KEY_BACKSPACE))
+	// 	ImGui::GetIO().AddInputCharacter(259);
 	double currentFrame = glfwGetTime();
 	Time.unscaledTime = currentFrame;
 	Time.unscaledDeltaTime = currentFrame - lastFrame;
@@ -168,8 +177,8 @@ void renderThreadFunc()
 
 	glfwInit();
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -192,8 +201,8 @@ void renderThreadFunc()
 	ImGui::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();
 	(void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
 
 	// Setup style
 	ImGui::StyleColorsDark();
@@ -204,6 +213,7 @@ void renderThreadFunc()
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 130");
+	IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
 
 	/////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////
@@ -255,12 +265,12 @@ void renderThreadFunc()
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &glIntv);
 	cout << "max buffer size: " << glIntv << endl;
 
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,0,&glIntv);
-	cout << "max compute work group count x: " << glIntv << endl;	
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,1,&glIntv);
-	cout << "max compute work group count y: " << glIntv << endl;	
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,2,&glIntv);
-	cout << "max compute work group count z: " << glIntv << endl;	
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &glIntv);
+	cout << "max compute work group count x: " << glIntv << endl;
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &glIntv);
+	cout << "max compute work group count y: " << glIntv << endl;
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &glIntv);
+	cout << "max compute work group count z: " << glIntv << endl;
 
 	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &glIntv);
 	cout << "max compute work group size x: " << glIntv << endl;
@@ -295,7 +305,6 @@ void renderThreadFunc()
 	gpu_rotation_updates->bufferData(ughh2);
 	gpu_scale_updates->bufferData(ughh);
 
-
 	initParticles();
 	particle_renderer::init();
 	lighting::init();
@@ -313,11 +322,11 @@ void renderThreadFunc()
 	_block_sums = new gpu_vector<GLuint>();
 	_histo = new gpu_vector<GLuint>();
 
-	sorter<__renderer> renderer_sorter("renderer","struct renderer {\
+	sorter<__renderer> renderer_sorter("renderer", "struct renderer {\
 	uint transform;\
 	uint id;\
-};", "transform");
-
+};",
+									   "transform");
 
 	while (true)
 	{
@@ -363,84 +372,75 @@ void renderThreadFunc()
 				// }
 				// else
 				// {
-					matProgram.use();
+				matProgram.use();
 
-					GPU_TRANSFORMS->grow(Transforms.size());
-					transformIds->bindData(6);
-					GPU_TRANSFORMS->bindData(0);
-					gpu_position_updates->bindData(8);
-					gpu_rotation_updates->bindData(9);
-					gpu_scale_updates->bindData(10);
+				GPU_TRANSFORMS->grow(Transforms.size());
+				transformIds->bindData(6);
+				GPU_TRANSFORMS->bindData(0);
+				gpu_position_updates->bindData(8);
+				gpu_rotation_updates->bindData(9);
+				gpu_scale_updates->bindData(10);
 
+				matProgram.setInt("stage", -2); // positions
+				for (int i = 0; i < concurrency::numThreads; i++)
+				{
+					transformIds->bufferData(transformIdThreadcache[i][0]);
+					// transformIds->bindData(6);
 
-					matProgram.setInt("stage", -2); // positions
-					for(int i = 0; i < concurrency::numThreads; i++){
-						transformIds->bufferData(transformIdThreadcache[i][0]);
-						// transformIds->bindData(6);
+					gpu_position_updates->bufferData(positionsToBuffer[i]);
+					// gpu_position_updates->bindData(8);
 
-						gpu_position_updates->bufferData(positionsToBuffer[i]);
-						// gpu_position_updates->bindData(8);
-					
+					matProgram.setUint("num", transformIdThreadcache[i][0].size());
+					glDispatchCompute(transformIdThreadcache[i][0].size() / 64 + 1, 1, 1);
+					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				}
 
-						matProgram.setUint("num", transformIdThreadcache[i][0].size());
-						glDispatchCompute(transformIdThreadcache[i][0].size() / 64 + 1, 1, 1);
-						glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-					}
+				matProgram.setInt("stage", -3); // rotations
+				for (int i = 0; i < concurrency::numThreads; i++)
+				{
+					transformIds->bufferData(transformIdThreadcache[i][1]);
+					// transformIds->bindData(6);
+					gpu_rotation_updates->bufferData(rotationsToBuffer[i]);
+					// gpu_rotation_updates->bindData(9);
 
-					matProgram.setInt("stage", -3); // rotations
-					for(int i = 0; i < concurrency::numThreads; i++){
-						transformIds->bufferData(transformIdThreadcache[i][1]);
-						// transformIds->bindData(6);
-						gpu_rotation_updates->bufferData(rotationsToBuffer[i]);
-						// gpu_rotation_updates->bindData(9);
+					matProgram.setUint("num", transformIdThreadcache[i][1].size());
+					glDispatchCompute(transformIdThreadcache[i][1].size() / 64 + 1, 1, 1);
+					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				}
 
-						matProgram.setUint("num", transformIdThreadcache[i][1].size());
-						glDispatchCompute(transformIdThreadcache[i][1].size() / 64 + 1, 1, 1);
-						glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-					}
+				matProgram.setInt("stage", -4); // scales
+				for (int i = 0; i < concurrency::numThreads; i++)
+				{
+					transformIds->bufferData(transformIdThreadcache[i][2]);
+					// transformIds->bindData(6);
+					gpu_scale_updates->bufferData(scalesToBuffer[i]);
+					// gpu_scale_updates->bindData(10);
 
-					matProgram.setInt("stage", -4); // scales
-					for(int i = 0; i < concurrency::numThreads; i++){
-						transformIds->bufferData(transformIdThreadcache[i][2]);
-						// transformIds->bindData(6);
-						gpu_scale_updates->bufferData(scalesToBuffer[i]);
-						// gpu_scale_updates->bindData(10);
-					
+					matProgram.setUint("num", transformIdThreadcache[i][2].size());
+					glDispatchCompute(transformIdThreadcache[i][2].size() / 64 + 1, 1, 1);
+					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				}
 
-						matProgram.setUint("num", transformIdThreadcache[i][2].size());
-						glDispatchCompute(transformIdThreadcache[i][2].size() / 64 + 1, 1, 1);
-						glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-					}
+				// transformIds->bufferData(transformIdsToBuffer);
+				// GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
 
+				// matProgram.use();
+				// // bind buffers
+				// GPU_TRANSFORMS->bindData(0);
+				// GPU_TRANSFORMS_UPDATES->bindData(7);
 
-
-
-
-
-					// transformIds->bufferData(transformIdsToBuffer);
-					// GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
-
-
-
-					// matProgram.use();
-					// // bind buffers
-					// GPU_TRANSFORMS->bindData(0);
-					// GPU_TRANSFORMS_UPDATES->bindData(7);
-
-					// matProgram.setInt("stage", -1);
-					// matProgram.setUint("num", transformsToBuffer.size());
-					// glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
-					// glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+				// matProgram.setInt("stage", -1);
+				// matProgram.setUint("num", transformsToBuffer.size());
+				// glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
+				// glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				// }
 
-				
-					// //sort renderers
+				// //sort renderers
 				// gt_.start();
 				__RENDERERS_in->bufferData();
 				// __RENDERERS_out->tryRealloc(__RENDERERS_in->size());
 				// renderer_sorter.sort(__RENDERERS_in->size(),__RENDERERS_in,__RENDERERS_out);
 				// appendStat("renderer sort", gt_.stop());
-
 
 				transformsBuffered.store(true);
 				appendStat("transforms buffer cpu", cpuTimer.stop());
@@ -461,7 +461,6 @@ void renderThreadFunc()
 				updateParticles(fo, emitterInitCount);
 				appendStat("particles compute", gt_.stop());
 
-
 				for (_camera &c : cameras->data.data)
 				{
 					gt_.start();
@@ -480,15 +479,25 @@ void renderThreadFunc()
 
 					c.render();
 				}
-				renderLock.unlock();
 
-				/////////////////////////////////////////////////////////////
 				///////////////////////// GUI ////////////////////////////////
-				/////////////////////////////////////////////////////////////
-				IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
-				ImGui_ImplOpenGL3_NewFrame();
-				ImGui_ImplGlfw_NewFrame();
-				ImGui::NewFrame();
+
+				// Input.resetKeyDowns();
+				// mouseFrameBegin();
+				// glfwPollEvents();
+				// ImGui_ImplOpenGL3_NewFrame();
+				// ImGui_ImplGlfw_NewFrame();
+				// ImGui::NewFrame();
+				// // if(Input.getKeyDown(GLFW_KEY_BACKSPACE))
+				// // 	ImGui::GetIO().AddInputCharacter(259);
+				// double currentFrame = glfwGetTime();
+				// Time.unscaledTime = currentFrame;
+				// Time.unscaledDeltaTime = currentFrame - lastFrame;
+				// Time.deltaTime = std::min(Time.unscaledDeltaTime, 1.f / 30.f) * Time.timeScale;
+				// Time.time += Time.deltaTime;
+				// Time.timeBuffer.add(Time.unscaledDeltaTime);
+				// lastFrame = currentFrame;
+				// Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
 
 				ImGui::PushFont(font_default);
 
@@ -500,10 +509,10 @@ void renderThreadFunc()
 				// Rendering
 				ImGui::Render();
 				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+				ImGui::EndFrame();
 
-				/////////////////////////////////////////////////////////////
 				///////////////////////// GUI ////////////////////////////////
-				/////////////////////////////////////////////////////////////
+				renderLock.unlock();
 
 				glfwSwapBuffers(window);
 

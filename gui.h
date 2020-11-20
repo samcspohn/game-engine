@@ -6,6 +6,7 @@
 #include <list>
 #include <string>
 #include "texture.h"
+#include <functional>
 
 namespace gui{
 
@@ -29,19 +30,23 @@ public:
         gui_windows.push_back(this);
         itr = --gui_windows.end();
     }
+    window(const char* n) : name(n){
+        gui_windows.push_back(this);
+        itr = --gui_windows.end();
+    }
     void adopt(gui_base* g){
         children.push_back(g);
     }
     inline void render(){
-        ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-        ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+        ImGui::SetNextWindowPos(pos, ImGuiCond_Once);
+        ImGui::SetNextWindowSize(size, ImGuiCond_Once);
 
         // // Main body of the Demo window starts here.
         // flags |= ImGuiWindowFlags_NoTitleBar;
         // flags |= ImGuiWindowFlags_NoMove;
         // flags |= ImGuiWindowFlags_NoResize;
-        // flags |= ImGuiWindowFlags_NoBackground;
-        ImGui::Begin(name.c_str(), &p_open, flags);  
+        // flags |= ImGuiWindowFlags_NavFlattened;
+        ImGui::Begin(name.c_str(), &p_open);  
          for(auto& i : children){
             i->render();
         }
@@ -72,5 +77,33 @@ public:
         ImGui::SetCursorPos(currPos);
     }
 };
+
+class button : public gui_base{
+public:
+    std::string label;
+    ImVec2 size{-FLT_MIN, 0.0f};
+    std::function<void()> callBack;
+    inline void render(){
+        if(ImGui::Button(label.c_str(), size))
+            callBack();
+    }
+};
+
+
+class tree : public gui_base{
+public:
+    std::string label;
+    // ImVec2 size;
+    vector<gui_base*> children;
+    bool selected{false};
+    inline void render(){
+        if(ImGui::TreeNode(label.c_str())){
+            for(auto& i : children)
+                i->render();
+                ImGui::TreePop();
+        }
+    }
+};
+
 
 }

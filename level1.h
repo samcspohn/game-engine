@@ -8,6 +8,7 @@
 #include <locale>
 // #include "bullet/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include <bitset>
+
 terrain *terr;
 int numBoxes = 0;
 
@@ -646,13 +647,142 @@ public:
 	COPY(player_sc);
 	SER1(speed);
 };
+
+
+int node_clicked = 0;
+
+class transformWindow : public gui::gui_base
+{
+public:
+	unordered_map<int,bool> selected;
+	// int offset;
+	ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+	void renderTransform(transform2 t)
+	{
+		ImGuiTreeNodeFlags flags = base_flags;
+		if(selected[t.id]){
+			flags |= ImGuiTreeNodeFlags_Selected;
+		}
+		bool open;
+		if(t.name() == "")
+			 open = ImGui::TreeNodeEx(("game object " + to_string(t.id)).c_str(), flags);
+		else
+			open = ImGui::TreeNodeEx(t.name().c_str(), flags);
+		if (ImGui::IsItemClicked()){
+			if(Input.getKey(GLFW_KEY_LEFT_CONTROL))
+				selected[t.id] = true;
+			else{
+				selected.clear();
+				selected[t.id] = true;
+			}
+			node_clicked = t.id;
+		}
+		if (open)
+		{
+			for (auto &i : t.getChildren())
+				renderTransform(i);
+			ImGui::TreePop();
+		}
+	}
+	void render()
+	{
+		// ImGui::Text(("counter: " + to_string(offset)).c_str());
+		renderTransform(root2);
+		// if (ImGui::IsWindowHovered())
+		// {
+		// 	offset -= ImGui::GetIO().MouseWheel;
+		// }
+	}
+};
+
+class inspectorWindow : public gui::gui_base{
+
+	void render(){
+		transform2 t(node_clicked);
+		ImGui::DragFloat3("position",&Transforms.positions[node_clicked].x);
+		ImGui::DragFloat3("scale",&Transforms.scales[node_clicked].x);
+		Transforms.updates[node_clicked].pos = true;
+		Transforms.updates[node_clicked].scl = true;
+		Transforms.updates[node_clicked].rot = true;
+	}
+};
+
+struct InputTextCallback_UserData
+{
+    std::string*            Str;
+    ImGuiInputTextCallback  ChainCallback;
+    void*                   ChainCallbackUserData;
+};
+static int InputTextCallback(ImGuiInputTextCallbackData* data)
+{
+    InputTextCallback_UserData* user_data = (InputTextCallback_UserData*)data->UserData;
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+    {
+        // Resize string callback
+        // If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
+        std::string* str = user_data->Str;
+        IM_ASSERT(data->Buf == str->c_str());
+        str->resize(data->BufTextLen);
+        data->Buf = (char*)str->c_str();
+    }
+    else if (user_data->ChainCallback)
+    {
+        // Forward to user callback, if any
+        data->UserData = user_data->ChainCallbackUserData;
+        return user_data->ChainCallback(data);
+    }
+    return 0;
+}
+bool InputString(const char* label, std::string* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+{
+    IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
+    flags |= ImGuiInputTextFlags_CallbackResize;
+
+    InputTextCallback_UserData cb_user_data;
+    cb_user_data.Str = str;
+    cb_user_data.ChainCallback = callback;
+    cb_user_data.ChainCallbackUserData = user_data;
+    return ImGui::InputText(label, (char*)str->c_str(), str->capacity() + 1, flags, InputTextCallback, &cb_user_data);
+}
+class protoWindow : public gui::gui_base{
+
+	ImVec2 button_sz{40, 40};
+	void render(){
+		ImGuiStyle& style = ImGui::GetStyle();
+        int buttons_count = 20;
+        float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+		auto it = prototypeRegistry.begin();
+        for (int n = 0; n < prototypeRegistry.size(); n++)
+        {
+			ImGui::BeginGroup();
+			ImGui::PushItemWidth(50);
+            ImGui::PushID(n);
+			ImGui::InputText("",(*it)->name,1024,ImGuiInputTextFlags_None);
+            ImGui::PopID();
+			ImGui::PopItemWidth();
+            ImGui::Button((*it)->name, button_sz);
+            float last_button_x2 = ImGui::GetItemRectMax().x;
+            float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
+            ImGui::EndGroup();
+            if (n + 1 < buttons_count && next_button_x2 < window_visible_x2)
+                ImGui::SameLine();
+			it++;
+        }
+
+	}
+};
+
 REGISTER_COMPONENT(player_sc)
 class player_sc2 : public component
 {
 	float speed = 3.f;
-	bool cursorReleased = false;
+	bool cursorReleased = true;
 	float fov = 80;
 	gui::window *info;
+	gui::window *transWindow;
+	gui::window *inspWindow;
+	gui::window *protWindow;
+
 	gui::text *fps;
 	gui::text *missileCounter;
 	gui::text *particleCounter;
@@ -663,6 +793,27 @@ public:
 	void onStart()
 	{
 		info = new gui::window();
+		info->pos = {20, 20};
+		info->size = {200, 150};
+
+		transWindow = new gui::window("Hierarchy");
+		transWindow->adopt(new transformWindow());
+		transWindow->pos.y = 160;
+		transWindow->size = {200,800};
+
+		inspWindow = new gui::window("Inspector");
+		inspWindow->adopt(new inspectorWindow());
+		inspWindow->pos.x = 1600;
+		inspWindow->size = {300,150};
+
+		protWindow = new gui::window("prototypes");
+		protWindow->adopt(new protoWindow());
+		protWindow->pos = {220,700};
+		protWindow->size = {1000,200};
+
+
+
+
 		fps = new gui::text();
 		info->adopt(fps);
 		info->name = "game info";
@@ -670,14 +821,7 @@ public:
 		info->adopt(missileCounter);
 		particleCounter = new gui::text();
 		info->adopt(particleCounter);
-		// ImGuiWindowFlags flags = 0;
-		// flags |= ImGuiWindowFlags_NoTitleBar;
-		// flags |= ImGuiWindowFlags_NoMove;
-		// flags |= ImGuiWindowFlags_NoResize;
-		// info->flags = flags;
-		info->pos = ImVec2(20, 20);
-		info->size = ImVec2(200, 150);
-
+		
 		guns = transform->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
 		guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
@@ -694,18 +838,6 @@ public:
 		missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
 		particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
 
-		transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
-		transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
-		transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
-		// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
-		transform->rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
-		transform->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
-		transform->lookat(transform->forward(), vec3(0, 1, 0));
-
-		fov -= Input.Mouse.getScroll() * 5;
-		fov = glm::clamp(fov, 5.f, 80.f);
-		transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
-
 		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
 		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -716,17 +848,33 @@ public:
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			cursorReleased = true;
 		}
-		if (Input.getKeyDown(GLFW_KEY_R))
+
+		if (!cursorReleased)
 		{
-			speed *= 2;
-		}
-		if (Input.getKeyDown(GLFW_KEY_F))
-		{
-			speed /= 2;
-		}
-		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
-		{
-			guns[0]->fire();
+			transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+			transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+			transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+			// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+			transform->rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
+			transform->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
+			transform->lookat(transform->forward(), vec3(0, 1, 0));
+
+			fov -= Input.Mouse.getScroll() * 5;
+			fov = glm::clamp(fov, 5.f, 80.f);
+			transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
+
+			if (Input.getKeyDown(GLFW_KEY_R))
+			{
+				speed *= 2;
+			}
+			if (Input.getKeyDown(GLFW_KEY_F))
+			{
+				speed /= 2;
+			}
+			if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
+			{
+				guns[0]->fire();
+			}
 		}
 		if (Input.getKey(GLFW_KEY_0))
 		{
@@ -830,7 +978,6 @@ public:
 	}
 };
 REGISTER_COMPONENT(sun_sc)
-
 
 void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright, game_object_proto *ammo_proto)
 {
@@ -1049,6 +1196,7 @@ int level1(bool load)
 		// bomb.primaryexplosion = getNamedEmitterProto("expflame");
 
 		game_object_proto *bomb_proto = new game_object_proto();
+		sprintf(bomb_proto->name,"bomb");
 		bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
 		bomb_proto->addComponent<collider>()->setLayer(0);
 		bomb_proto->getComponent<collider>()->dim = vec3(0.1f);
@@ -1073,6 +1221,7 @@ int level1(bool load)
 		//////////////////////////////////////////////////////////
 
 		game_object *light = new game_object();
+		light->transform.name() = "sun";
 		light->transform->setScale(vec3(1000));
 		light->transform->setPosition(glm::vec3(30000));
 		light->addComponent<Light>()->setColor(glm::vec3(24000));
@@ -1096,6 +1245,7 @@ int level1(bool load)
 		// }
 
 		game_object *player = new game_object();
+		player->transform.name() = "player";
 		auto playerCam = player->addComponent<_camera>();
 		playerCam->fov = 80;
 		playerCam->farPlane = 1e32f;
@@ -1103,6 +1253,13 @@ int level1(bool load)
 		player->addComponent<gun>();
 		player->addComponent<gun>();
 		player->addComponent<player_sc2>()->ammo_proto = bomb_proto;
+
+		// player->addComponent<Light>()->setColor(glm::vec3(3, 3, 20));
+		// player->getComponent<Light>()->setConstant(1.f);
+		// player->getComponent<Light>()->setlinear(0.0005f);
+		// player->getComponent<Light>()->setQuadratic(0.000015f);
+		// player->getComponent<Light>()->setInnerCutoff(radians(7.5f));
+		// player->getComponent<Light>()->setOuterCutoff(radians(9.f));
 
 		////////////////////////////////////////////
 
@@ -1177,13 +1334,21 @@ int level1(bool load)
 
 		// ship->transform->setScale(vec3(10));
 
+
+		game_object_proto *tree_go = new game_object_proto();
+		sprintf(tree_go->name,"tree");
+		_renderer *tree_rend = tree_go->addComponent<_renderer>();
+		tree_rend->set(modelShader, tree);
+		registerProto(tree_go);
+
 		game_object_proto *ground = new game_object_proto();
+		sprintf(ground->name,"ground");
 		// ground->transform->scale(vec3(20));
 		auto r = ground->addComponent<_renderer>();
 		_model groundModel = _model();
 		// groundModel.makeUnique();
 		r->set(terrainShader, groundModel);
-		ground->addComponent<terrain>();
+		ground->addComponent<terrain>()->scatter_obj = tree_go;
 		registerProto(ground);
 
 		// terrainWidth = 1024;
@@ -1193,10 +1358,6 @@ int level1(bool load)
 		int terrainsDim = 8;
 		// int terrainsDim = 16;
 
-		game_object_proto *tree_go = new game_object_proto();
-		_renderer *tree_rend = tree_go->addComponent<_renderer>();
-		tree_rend->set(modelShader, tree);
-		registerProto(tree_go);
 		// tree_rend->setCullSizes(0.04f, INFINITY);
 		// _renderer *tree_billboard = tree_go->addComponent<_renderer>();
 		// _texture tree_bill_tex;
@@ -1214,8 +1375,9 @@ int level1(bool load)
 			for (int j = -terrainsDim; j < terrainsDim + 1; j++)
 			{
 				game_object *g = new game_object(*ground);
+				g->transform.name() = "terrain:" + to_string(i) + "," + to_string(j);
 				terrain *t = g->getComponent<terrain>();
-				t->scatter_obj = tree_go;
+				// t->scatter_obj = tree_go;
 				// t->r = g->getComponent<_renderer>();
 				// g->addComponent<_renderer>()->set(wireFrame, t->r->getModel());
 
@@ -1302,6 +1464,7 @@ int level1(bool load)
 		for (int i = 0; i < 5; ++i) //20
 		{
 			proto2 = new game_object(*proto2);
+			proto2->transform.name() = "box " + to_string(i);
 			proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));
 			proto2->transform->scale(vec3(2, 1, 1));
 			proto2->transform->translate(glm::vec3(pow(10.f, (float)(i + 1))) * 4.f);
@@ -1312,6 +1475,7 @@ int level1(bool load)
 		for (int i = 0; i < numshooters; ++i)
 		{
 			go = new game_object(*go);
+			go->transform.name() = "shooter " + to_string(i);
 			go->transform->translate(randomSphere() * 1000.f);
 			vec3 pos = go->transform->getPosition();
 			go->transform->setPosition(vec3(fmod(pos.x, 8000), fmod(pos.y, 300.f) + 400.f, fmod(pos.z, 8000)));

@@ -243,7 +243,7 @@ void run()
 			floating_origin.push(fo);
 			_parallel_for(Transforms, [&](int i) {
 				Transforms.positions[i] -= fo;
-				Transforms.transform_updates[i].pos = true;
+				Transforms.updates[i].pos = true;
 			});
 			_parallel_for(*colliders, [&](int i) {
 				if (colliders->data.valid[i] && colliders->data.data[i].type == 3)
@@ -257,9 +257,9 @@ void run()
 			floating_origin.push(vec3(0));
 		}
 
-		stopWatch.start();
 		waitForRenderJob([]() { updateTiming(); });
 
+		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
 
@@ -307,16 +307,6 @@ void run()
 			}
 		}
 		__RENDERERS_in->storage->resize(__renderersSize);
-		// __RENDERERS_keys_in->storage->resize(__renderersSize);
-		// enqueRenderJob([&](){
-		// 	__RENDERERS_out->tryRealloc(__renderersSize);
-		// });
-		// __RENDERERS_keys_out->tryRealloc(__renderersSize);
-		////////////////////////////////////// copy transforms/renderer data to buffer //////////////////////////////////////
-		// if (Transforms.density() > 0.5)
-		// {
-		// 	TRANSFORMS_TO_BUFFER.resize(Transforms.size());
-		// }
 
 		tbb::parallel_for(
 			tbb::blocked_range<unsigned int>(0, concurrency::numThreads, 1),
@@ -336,12 +326,12 @@ void run()
 					rotationsToBuffer[id].clear();
 					scalesToBuffer[id].clear();
 
-					auto from = Transforms.transform_updates.begin() + step * id;
+					auto from = Transforms.updates.begin() + step * id;
 					auto to = from + step;
 
 					// transformIdThreadcache[id].reserve(step + 1);
 					if (id == concurrency::numThreads - 1)
-						to = Transforms.transform_updates.end();
+						to = Transforms.updates.end();
 					while (from != to)
 					{
 						if (from->pos)
@@ -401,24 +391,6 @@ void run()
 			// ,
 			// update_ap
 		);
-
-		// copyWorkers->update();
-		// if (Transforms.density() <= 0.5)
-		// {
-		// int bufferSize = 0;
-		// for (int i = 0; i < concurrency::numThreads; i++)
-		// {
-		// 	((copyBuffers *)copyWorkers->get(i))->offset = bufferSize;
-		// 	bufferSize += transformIdThreadcache[i].size();
-		// }
-		// transformIdsToBuffer.resize(bufferSize);
-		// transformsToBuffer.resize(bufferSize);
-		// copyWorkers->lateUpdate();
-
-		// _parallel_for(transformsToBuffer, [&](int i) {
-		// 	transformsToBuffer[i] = ((transform2)(transformIdsToBuffer[i])).getTransform();
-		// });
-		// }
 		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////

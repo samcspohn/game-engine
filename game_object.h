@@ -21,6 +21,7 @@ void deleteProtoRef(protoListRef r);
 
 class game_object_proto{
 public:
+	char name[1024];
 	game_object_proto(){
 		// ref = registerProto(this);
 	}
@@ -55,7 +56,7 @@ public:
 		deleteProtoRef(ref);
 	}
 	SER_HELPER(){
-		ar & components;
+		ar & name & components;
 	}
 };
 
@@ -81,7 +82,9 @@ class game_object
 	friend void rebuildGameObject(componentStorageBase*, int);
 	friend void save_game(const char*);
 	friend void load_game(const char*);
+	friend void loadTransforms(IARCHIVE &ia);
 public:
+	// string name;
 	_renderer *getRenderer()
 	{
 		return (_renderer *)&*renderer;
@@ -225,6 +228,7 @@ public:
 		destroyed = false;
 		// this->transform = new Transform(this);
 		this->transform = Transforms._new();
+		this->transform->init(this);
 		// root->Adopt(this->transform);
 		// gameLock.unlock();
 	};

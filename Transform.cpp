@@ -1,6 +1,8 @@
 #include "Transform.h"
 #include "concurrency.h"
 #include <fstream>
+#include "game_object.h"
+
 using namespace std;
 
 mutex gameLock;
@@ -43,7 +45,7 @@ void transform2::init(game_object *g)
 void transform2::init(transform2 other, game_object *go)
 {
 	Transforms.meta[id].gameObject = go;
-	_init();
+	other.getParent().adopt(*this);
 	Transforms.positions[id] = other.getPosition();
 	Transforms.rotations[id] = other.getRotation();
 	Transforms.scales[id] = other.getScale();
@@ -71,10 +73,13 @@ _transform transform2::getTransform()
 	t.scale = getScale();
 	return t;
 }
+string& transform2::name(){
+	return Transforms.meta[id].name;
+}
 
 void transform2::lookat(glm::vec3 direction, glm::vec3 up)
 {
-	Transforms.transform_updates[id].rot = true;
+	Transforms.updates[id].rot = true;
 	Transforms.rotations[id] = quatLookAtLH(direction, up);
 }
 glm::vec3 transform2::forward()
@@ -99,7 +104,7 @@ glm::vec3 transform2::getScale()
 }
 void transform2::setScale(glm::vec3 scale)
 {
-	Transforms.transform_updates[id].scl = true;
+	Transforms.updates[id].scl = true;
 	this->scale(scale / Transforms.scales[id]);
 }
 glm::vec3 transform2::getPosition()
@@ -109,7 +114,7 @@ glm::vec3 transform2::getPosition()
 void transform2::setPosition(glm::vec3 pos)
 {
 	// m.lock();
-	Transforms.transform_updates[id].pos = true;
+	Transforms.updates[id].pos = true;
 	for (transform2 c : Transforms.meta[id].children)
 		c->translate(pos - Transforms.positions[id], glm::quat());
 	Transforms.positions[id] = pos;
@@ -121,7 +126,7 @@ glm::quat transform2::getRotation()
 }
 void transform2::setRotation(glm::quat r)
 {
-	Transforms.transform_updates[id].rot = true;
+	Transforms.updates[id].rot = true;
 	Transforms.rotations[id] = r;
 }
 list<transform2> &transform2::getChildren()
@@ -172,7 +177,7 @@ void transform2::_destroy()
 
 void transform2::move(glm::vec3 movement, bool hasChildren)
 {
-	Transforms.transform_updates[id].pos = true;
+	Transforms.updates[id].pos = true;
 	Transforms.positions[id] += movement;
 	if (hasChildren)
 	{
@@ -183,7 +188,7 @@ void transform2::move(glm::vec3 movement, bool hasChildren)
 void transform2::translate(glm::vec3 translation)
 {
 	// m.lock();
-	Transforms.transform_updates[id].pos = true;
+	Transforms.updates[id].pos = true;
 	Transforms.positions[id] += Transforms.rotations[id] * translation;
 	for (auto a : Transforms.meta[id].children)
 		a->translate(translation, Transforms.rotations[id]);
@@ -192,7 +197,7 @@ void transform2::translate(glm::vec3 translation)
 void transform2::translate(glm::vec3 translation, glm::quat r)
 {
 	// m.lock();
-	Transforms.transform_updates[id].pos = true;
+	Transforms.updates[id].pos = true;
 	Transforms.positions[id] += r * translation;
 	for (transform2 a : Transforms.meta[id].children)
 		a->translate(translation, r);
@@ -201,7 +206,7 @@ void transform2::translate(glm::vec3 translation, glm::quat r)
 void transform2::scale(glm::vec3 scale)
 {
 	// m.lock();
-	Transforms.transform_updates[id].scl = true;
+	Transforms.updates[id].scl = true;
 	Transforms.scales[id] *= scale;
 	for (transform2 a : Transforms.meta[id].children)
 		a->scaleChild(Transforms.positions[id], scale);
@@ -210,7 +215,7 @@ void transform2::scale(glm::vec3 scale)
 void transform2::scaleChild(glm::vec3 pos, glm::vec3 scale)
 {
 	// m.lock();
-	Transforms.transform_updates[id].scl = true;
+	Transforms.updates[id].scl = true;
 	Transforms.positions[id] = (Transforms.positions[id] - pos) * scale + pos;
 	Transforms.scales[id] *= scale;
 	for (transform2 a : Transforms.meta[id].children)
@@ -220,7 +225,7 @@ void transform2::scaleChild(glm::vec3 pos, glm::vec3 scale)
 void transform2::rotate(glm::vec3 axis, float radians)
 {
 	// m.lock();
-	Transforms.transform_updates[id].rot = true;
+	Transforms.updates[id].rot = true;
 	Transforms.rotations[id] = glm::rotate(Transforms.rotations[id], radians, axis);
 	for (transform2 a : Transforms.meta[id].children)
 		a->rotateChild(axis, Transforms.positions[id], Transforms.rotations[id], radians);
@@ -231,8 +236,8 @@ void transform2::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float a
 {
 	// m.lock();
 	glm::vec3 ax = r * axis;
-	Transforms.transform_updates[id].rot = true;
-	Transforms.transform_updates[id].pos = true;
+	Transforms.updates[id].rot = true;
+	Transforms.updates[id].pos = true;
 	Transforms.positions[id] = pos + glm::rotate(Transforms.positions[id] - pos, angle, ax);
 	Transforms.rotations[id] = glm::rotate(Transforms.rotations[id], angle, glm::inverse(Transforms.rotations[id]) * ax); // glm::rotate(rotation, angle, axis);
 	for (transform2 a : Transforms.meta[id].children)
@@ -243,12 +248,12 @@ void transform2::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float a
 
 void transform2::orphan()
 {
-	if (Transforms.meta[id].parent.id == 0)
+	if (Transforms.meta[id].parent.id == -1)
 		return;
 	Transforms.meta[getParent().id].m.lock();
-	getParent().getChildren().erase(Transforms.meta[getParent().id].childId);
+	getParent().getChildren().erase(Transforms.meta[id].childId);
 	Transforms.meta[getParent().id].m.unlock();
-	Transforms.meta[id].parent.id = 0;
+	Transforms.meta[id].parent.id = -1;
 }
 
 // bool compareTransform(transform2* t1, transform2* t2){
@@ -301,7 +306,7 @@ void loadTransforms(IARCHIVE &ia)
 	// rootGameObject = new game_object(root2);
 	Transforms.clear();
 	ia >> Transforms;
-	setRootGameObject(root2);
+	// setRootGameObject(root2);
 
 	// for (int i = 0; i < size; i++)
 	// {
@@ -324,9 +329,11 @@ void loadTransforms(IARCHIVE &ia)
 		// Transforms.rotations[i] = _t.rotation;
 		// Transforms.scales[i] = _t.scale;
 		// Transforms.meta[i].parent = t.getParent();
-		Transforms.meta[t.getParent().id].children.push_back(t);
-		Transforms.meta[i].childId = (--Transforms.meta[t.getParent().id].children.end());
-		newGameObject(t);
+		if(t.getParent().id != -1){
+			Transforms.meta[t.getParent().id].children.push_back(t);
+			Transforms.meta[i].childId = (--Transforms.meta[t.getParent().id].children.end());
+			newGameObject(t);
+		}
 		// Transforms.meta[i].gameObject = new game_object()
 	}
 }
@@ -398,6 +405,8 @@ glm::mat4 Transform::getModel()
 {
 	return (glm::translate(_T->position) * glm::toMat4(_T->rotation) * glm::scale(_T->scale));
 }
+
+
 glm::vec3 Transform::getScale()
 {
 	return _T->scale;
