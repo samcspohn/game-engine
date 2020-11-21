@@ -5,7 +5,7 @@
 #include <typeinfo>
 #include <glm/glm.hpp>
 #include "concurrency.h"
-#include "plf_list.h"
+// #include "plf_list.h"
 #include <stdexcept>
 // #include "game_object.h"
 #include "fast_list.h"
@@ -38,27 +38,14 @@ public:
 	virtual void onCollision(game_object *go, glm::vec3 point, glm::vec3 normal);
 	virtual void update();
 	virtual void lateUpdate();
-	// virtual void _update(int index, unsigned int _start, unsigned int _end);
-	// virtual void _lateUpdate(int index, unsigned int _start, unsigned int _end);
+
+	// virtual void onEdit() = 0;
 	virtual void _copy(game_object *go) = 0;
 	transform2 transform;
 	int getThreadID();
 	ull getHash();
 
-	// friend std::ostream & operator<<(std::ostream &os, const component &c);
-	// friend class boost::serialization::access;
-
-	// template<class Archive>
-	// void serialize(Archive & ar, const unsigned int /* file_version */){
-	//     ar & transform;
-	// }
-	// virtual OARCHIVE &forceSerialize(OARCHIVE &ar) const = 0;
-	// friend OARCHIVE &operator<<(OARCHIVE &os, const component &c);
-	friend class boost::serialization::access;
-
-	template <class Archive>
-	inline void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
+	SER_HELPER(){
 		ar &transform;
 	}
 };
@@ -270,6 +257,10 @@ public:
 	void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
 		ar &components &gameEngineComponents &gameComponents;
+	}
+	template<typename t>
+	inline componentStorage<t> * registry(){
+		return static_cast<componentStorage<t> *>(components[typeid(t).hash_code()]);
 	}
 };
 

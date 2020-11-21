@@ -198,6 +198,8 @@ void run()
 
 	timer gameLoopTotal;
 	timer gameLoopMain;
+	float tot = gameLoopTotal.stop();
+
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
 		gameLoopTotal.start();
@@ -262,6 +264,7 @@ void run()
 		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
+		
 
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
@@ -420,7 +423,10 @@ void run()
 
 		renderWork.push(rj);
 		renderLock.unlock();
-		appendStat("game loop total", gameLoopTotal.stop());
+		
+		tot = gameLoopTotal.stop();
+		appendStat("game loop total", tot);
+		this_thread::sleep_for((30.f - tot / 3.f) * 1000 * 1us);
 	}
 
 	// log("end of program");

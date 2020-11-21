@@ -5,7 +5,7 @@
 #include <set>
 #include <unordered_set>
 #include <list>
-#include "plf_list.h"
+// #include "plf_list.h"
 #include "fast_list.h"
 #include "serialize.h"
 
@@ -21,7 +21,7 @@ void deleteProtoRef(protoListRef r);
 
 class game_object_proto{
 public:
-	char name[1024];
+	string name;
 	game_object_proto(){
 		// ref = registerProto(this);
 	}

@@ -30,9 +30,9 @@ struct sorter
             code.replace(code.begin() + index, code.begin() + index + 3, element);
             index = code.find("_T_", index);
         }
-        ofstream f(element + "_sort.glsl");
-        f << code;
-        f.close();
+        // ofstream f(element + "_sort.glsl");
+        // f << code;
+        // f.close();
         vector<GLuint> shaders;
         shaders.push_back(shader.loadFromString(code, GL_COMPUTE_SHADER));
         shader.compileShader(shaders);

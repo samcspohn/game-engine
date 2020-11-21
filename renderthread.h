@@ -19,10 +19,10 @@
 #include <atomic>
 #include "game_object.h"
 #include "rendering.h"
-#include "game_engine_components.h"
+#include "camera.h"
 // #include "physics.h"
 // #include "particles.h"
-#include "physics_.h"
+// #include "Components/physics.h"
 #include "audio.h"
 #include "gui.h"
 #include "gpu_sort.h"

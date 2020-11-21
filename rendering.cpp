@@ -543,6 +543,10 @@ void _renderer::onDestroy()
 		meta->ids.erase(transformIdRef);
 	}
 }
+
+void onEdit(){
+	
+}
 REGISTER_COMPONENT(_renderer)
 
 // COPY(_renderer);
