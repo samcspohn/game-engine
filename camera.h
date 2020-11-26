@@ -241,6 +241,14 @@ public:
 	glm::vec3 dir;
 	glm::vec3 cullpos;
 	glm::mat3 camInv;
+
+	void onEdit(){
+		RENDER(fov);
+		RENDER(nearPlane);
+		RENDER(farPlane);
+		
+	}
+
 	glm::vec2 getScreen()
 	{
 		return glm::vec2(glm::tan(glm::radians(fov) / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(glm::radians(fov) / 2));

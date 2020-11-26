@@ -8,6 +8,7 @@
 #include <fstream>
 #include "helper1.h"
 #include "gpu_sort.h"
+#include "editor.h"
 // #include "Shader.h"
 
 using namespace std;
@@ -280,6 +281,13 @@ vector<emitterInit> emitterInits;
 vector<emitterInit> emitterInitsdb;
 unordered_map<uint, emitterInit> emitter_inits;
 
+void renderEdit(string name, emitter_prototype_& ep){
+     for(auto& i : emitter_prototypes){
+        if(ep.getId() == i.second.index)
+            ImGui::Text(i.first.c_str());
+    }
+}
+
 // COPY(particle_emitter);
 void particle_emitter::setPrototype(emitter_prototype_ ep)
 {
@@ -328,6 +336,12 @@ void particle_emitter::onDestroy()
     lock.lock();
     emitter_inits[ei.id] = ei;
     lock.unlock();
+}
+void particle_emitter::onEdit(){
+    for(auto& i : emitter_prototypes){
+        if(this->prototype.getId() == i.second.index)
+            ImGui::Text(i.first.c_str());
+    }
 }
 REGISTER_COMPONENT(particle_emitter)
 

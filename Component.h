@@ -39,7 +39,7 @@ public:
 	virtual void update();
 	virtual void lateUpdate();
 
-	// virtual void onEdit() = 0;
+	virtual void onEdit() = 0;
 	virtual void _copy(game_object *go) = 0;
 	transform2 transform;
 	int getThreadID();
@@ -103,6 +103,7 @@ public:
 	float lateupdate_t;
 	string name;
 	mutex lock;
+	virtual string getName() {return "component";}
 	bool hasUpdate() { return h_update; }
 	bool hasLateUpdate() { return h_lateUpdate; }
 	virtual void update(){};
@@ -176,6 +177,9 @@ public:
 		ret.CompItr = new compItr_<t>(id, &data);
 		ret.CompItr->hash = typeid(t).hash_code();
 		return ret;
+	}
+	string getName(){
+		return name;
 	}
 
 	void update()

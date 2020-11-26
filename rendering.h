@@ -194,6 +194,7 @@ public:
 	void setCullSizes(float min, float max);
 	_model getModel();
 	_shader getShader();
+	void onEdit();
 	void onStart();
 	_renderer();
 	void set(_shader s, _model m);
@@ -201,7 +202,9 @@ public:
 	void set(renderingMeta* _meta);
 	_renderer(const _renderer& other);
 	void onDestroy();
-	void onEdit();
 	COPY(_renderer);
 	SER2(shader, model);
 };
+
+void renderEdit(const char* name, _model& m);
+void renderEdit(const char* name, _shader& s);

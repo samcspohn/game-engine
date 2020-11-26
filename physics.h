@@ -68,6 +68,12 @@ public:
 		if (gravity)
 			vel += Time.deltaTime * glm::vec3(0, -9.81f, 0);
 	}
+	void onEdit(){
+		RENDER(mass);
+		RENDER(damping)
+		RENDER(bounciness);
+		RENDER(gravity);
+	}
 	//UPDATE(rigidBody, update);
 	COPY(rigidBody);
 
@@ -110,7 +116,7 @@ private:
 
 enum colType
 {
-	aaabbType,
+	aabbType,
 	obbType,
 	meshType,
 	pointType
@@ -148,19 +154,16 @@ public:
 	void midUpdate();
 	void lateUpdate();
 	void update_data();
+	void onEdit();
 	COPY(collider);
 
-	friend class boost::serialization::access;
-
-	template <class Archive>
-	inline void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
+	SER_HELPER(){
 		ar &boost::serialization::base_object<component>(*this);
 		ar &layer &type &r &dim;
 		switch (this->type)
 		{
-		case aaabbType:
-			ar & this->o;
+		case aabbType:
+			ar & this->a;
 			break;
 		case obbType:
 			ar & this->o;
@@ -476,7 +479,7 @@ void collider::update()
 	// posInTree = 0;
 	switch (type)
 	{
-	case aaabbType:
+	case aabbType:
 	case obbType:
 	case meshType:
 	{
@@ -675,10 +678,10 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 	}
 	switch (a->type)
 	{
-	case aaabbType: // aabb
+	case aabbType: // aabb
 		switch (b->type)
 		{
-		case aaabbType: // aabb
+		case aabbType: // aabb
 			return true;
 			break;
 		case obbType: //aabb - obb
@@ -746,4 +749,19 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		break;
 	}
 	return false;
+}
+
+void collider::onEdit(){
+	// RENDER(type);
+	static map<colType,string> types = {{aabbType,"aabb"},{obbType,"obb"},{meshType,"mesh"},{pointType,"point"}};
+	if (ImGui::BeginPopup("type"))
+        {
+            ImGui::Text("Aquarium");
+            ImGui::Separator();
+            for (int i = 0; i < 4; i++)
+                if (ImGui::Selectable(types[(colType)i].c_str()))
+                    type = (colType)i;
+            ImGui::EndPopup();
+        }
+	RENDER(dim);
 }

@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include "Component.h"
 #include "fast_list.h"
+#include "editor.h"
 
 struct pointLight
 {
@@ -97,6 +98,32 @@ public:
     void onDestroy()
     {
         lightingManager::pointLights.erase(pl);
+    }
+    void onEdit()
+    {
+        renderEdit("color", pl->color);
+        if (ImGui::DragFloat("linear", &pl->linear))
+        {
+            pl->setRadius();
+        }
+        if (ImGui::DragFloat("quadratic", &pl->quadratic))
+        {
+            pl->setRadius();
+        }
+        if (ImGui::DragFloat("constant", &pl->constant))
+        {
+            pl->setRadius();
+        }
+        float angle = glm::degrees(pl->cutOff);
+        if (ImGui::DragFloat("cutoff", &angle))
+        {
+            pl->cutOff = glm::radians(angle);
+        }
+        angle = glm::degrees(pl->outerCutOff);
+        if (ImGui::DragFloat("cutoff", &pl->outerCutOff))
+        {
+            pl->outerCutOff = glm::radians(angle);
+        }
     }
     COPY(Light);
     SER1(pl);

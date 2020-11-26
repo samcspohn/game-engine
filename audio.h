@@ -6,6 +6,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alut.h>
+#include "editor.h"
  
 using namespace std;
 
@@ -196,6 +197,10 @@ class audiosource : public component{
 public:
     ALfloat pitch = 1;
     ALfloat gain = 1;
+    void onEdit(){
+        RENDER(pitch);
+        RENDER(gain);
+    }
     COPY(audiosource);
     audiosource() : isPlaying(false) {};
     audiosource(const audiosource& as) : isPlaying(false), a(as.a) {};

@@ -76,6 +76,7 @@ struct emitter_prototype
 class emitter_prototype_
 {
     typename array_heap<emitter_prototype>::ref emitterPrototype;
+    string name;
     friend emitter_prototype_ createNamedEmitter(string name);
     friend emitter_prototype_ getNamedEmitterProto(string name);
 
@@ -91,6 +92,8 @@ public:
         ar & emitterPrototype;
     }
 };
+
+void renderEdit(string name, emitter_prototype_& ep);
 emitter_prototype_ createNamedEmitter(string name);
 emitter_prototype_ getNamedEmitterProto(string name);
 
@@ -123,6 +126,7 @@ class particle_emitter final : public component
 public:
     typename array_heap<emitter>::ref emitter;
     // typename array_heap<GLint>::ref emitter_last_particle;
+    void onEdit();
     COPY(particle_emitter);
     void setPrototype(emitter_prototype_ ep);
     void onStart();

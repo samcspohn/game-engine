@@ -89,6 +89,7 @@ class terrain : public component
 {
 public:
     COPY(terrain);
+    void onEdit();
     game_object_proto *scatter_obj;
     vector<transform2> scatter;
     vector<glm::vec3> scatterPos;
@@ -264,6 +265,9 @@ terrain *getTerrain(float x, float z)
             }
         }
         enqueRenderJob([&]() { this->generate(); });
+    }
+    void terrain::onEdit(){
+
     }
     void terrain::generate()
     {

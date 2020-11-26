@@ -67,6 +67,7 @@ class game_object;
 
 extern tbb::concurrent_unordered_set<game_object*> toDestroy;
 extern std::list<game_object_proto*> prototypeRegistry;
+class insectorWindow;
 class game_object
 {
 	mutex lock;
@@ -83,6 +84,7 @@ class game_object
 	friend void save_game(const char*);
 	friend void load_game(const char*);
 	friend void loadTransforms(IARCHIVE &ia);
+	friend class inspectorWindow;
 public:
 	// string name;
 	_renderer *getRenderer()

@@ -43,7 +43,10 @@ public:
 	vec3 vel;
 	// bullet b;
 	emitter_prototype_ exp;
-	double life;
+	void onEdit()
+	{
+		RENDER(exp);
+	}
 	missile() {}
 
 	// void setBullet(const bullet &_b)
@@ -74,7 +77,7 @@ public:
 		// }
 	}
 	COPY(missile);
-	SER3(life, vel, exp);
+	SER2(vel, exp);
 };
 REGISTER_COMPONENT(missile)
 
@@ -133,6 +136,20 @@ public:
 		return false;
 	}
 	// //UPDATE(gun, update);
+	void onEdit()
+	{
+		RENDER(rof)
+		RENDER(speed)
+		RENDER(dispersion)
+		if (ImGui::TreeNode("barrels"))
+		{
+			for (int i{0}; i < barrels.size(); ++i)
+			{
+				renderEdit(to_string(i).c_str(), barrels[i]);
+			}
+			ImGui::TreePop();
+		}
+	}
 	COPY(gun);
 	SER4(rof, speed, dispersion, ammo);
 };
@@ -188,6 +205,7 @@ public:
 	{
 		axis = normalize(randomSphere());
 	}
+	void onEdit() {}
 	//UPDATE(spinner,update);
 	COPY(spinner);
 	SER0();
@@ -199,7 +217,6 @@ class _turret final : public component
 {
 	transform2 target;
 	transform2 guns;
-	emitter_prototype_ muzzelFlash;
 	// emitter_prototype_ muzzelSmoke;
 	gun *barrels;
 	audiosource *sound;
@@ -208,6 +225,7 @@ class _turret final : public component
 	bool canFire;
 
 public:
+	emitter_prototype_ muzzelFlash;
 	float turret_speed = radians(30.f);
 	float gun_speed = radians(30.f);
 	float t_angles[3];
@@ -320,6 +338,12 @@ public:
 		}
 		return false;
 	}
+	void onEdit()
+	{
+		RENDER(turret_speed);
+		RENDER(gun_speed);
+		RENDER(muzzelFlash);
+	}
 	//UPDATE(_turret,update);
 	COPY(_turret);
 	SER2(target, guns);
@@ -370,6 +394,7 @@ public:
 	}
 
 public:
+	void onEdit() {}
 	//UPDATE(gunManager,update);
 	COPY(gunManager);
 	SER0();
@@ -394,6 +419,7 @@ public:
 		if (shouldFire)
 			g->fire();
 	}
+	void onEdit() {}
 	//UPDATE(autoShooter, update);
 	COPY(autoShooter);
 	SER1(shouldFire);
@@ -451,6 +477,14 @@ public:
 	{
 		getNamedEmitterProto("shockWave").burst(point, transform->forward(), vec3(0.5), 25);
 	}
+	void onEdit()
+	{
+		RENDER(accel);
+		RENDER(thrust);
+		RENDER(maxReverse);
+		RENDER(maxForward);
+		RENDER(rotationSpeed);
+	}
 	//UPDATE(_ship,update);
 	COPY(_ship);
 	SER2(maxReverse, maxForward);
@@ -464,6 +498,10 @@ public:
 	void update()
 	{
 		transform->setPosition(t->getPosition());
+	}
+	void onEdit()
+	{
+		RENDER(t.id);
 	}
 	//UPDATE(_boom,update);
 	COPY(_boom);
@@ -504,6 +542,10 @@ class player_sc : public component
 
 public:
 	terrain *t;
+	void onEdit()
+	{
+		RENDER(speed);
+	}
 
 	// void onCollision(game_object *collidee)
 	// {
@@ -649,30 +691,32 @@ public:
 	SER1(speed);
 };
 
-
 int node_clicked = 0;
 
 class transformWindow : public gui::gui_base
 {
 public:
-	unordered_map<int,bool> selected;
+	unordered_map<int, bool> selected;
 	// int offset;
 	ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 	void renderTransform(transform2 t)
 	{
 		ImGuiTreeNodeFlags flags = base_flags;
-		if(selected[t.id]){
+		if (selected[t.id])
+		{
 			flags |= ImGuiTreeNodeFlags_Selected;
 		}
 		bool open;
-		if(t.name() == "")
-			 open = ImGui::TreeNodeEx(("game object " + to_string(t.id)).c_str(), flags);
+		if (t.name() == "")
+			open = ImGui::TreeNodeEx(("game object " + to_string(t.id)).c_str(), flags);
 		else
 			open = ImGui::TreeNodeEx(t.name().c_str(), flags);
-		if (ImGui::IsItemClicked()){
-			if(Input.getKey(GLFW_KEY_LEFT_CONTROL))
+		if (ImGui::IsItemClicked())
+		{
+			if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
 				selected[t.id] = true;
-			else{
+			else
+			{
 				selected.clear();
 				selected[t.id] = true;
 			}
@@ -696,47 +740,64 @@ public:
 	}
 };
 
-class inspectorWindow : public gui::gui_base{
+class inspectorWindow : public gui::gui_base
+{
 
-	void render(){
+	void render()
+	{
+
 		transform2 t(node_clicked);
-		ImGui::DragFloat3("position",&Transforms.positions[node_clicked].x);
+		ImGui::DragFloat3("position", &Transforms.positions[node_clicked].x);
 		renderEdit("rotation", Transforms.rotations[node_clicked]);
-		ImGui::DragFloat3("scale",&Transforms.scales[node_clicked].x);
+		ImGui::DragFloat3("scale", &Transforms.scales[node_clicked].x);
 		Transforms.updates[node_clicked].pos = true;
 		Transforms.updates[node_clicked].scl = true;
 		Transforms.updates[node_clicked].rot = true;
+
+		int n{0};
+		for(auto i = t.gameObject()->components.begin();
+		 i != t.gameObject()->components.end();
+		  i++){
+			ImGui::PushID(n);
+			if(ImGui::TreeNode(ComponentRegistry.components[i->second->hash]->getName().c_str())){
+				i->first->onEdit();
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+			n++;
+		}
 	}
 };
 
-class protoWindow : public gui::gui_base{
+class protoWindow : public gui::gui_base
+{
 
 	ImVec2 button_sz{40, 40};
-	void render(){
-		ImGuiStyle& style = ImGui::GetStyle();
-        int buttons_count = 20;
-        float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+	void render()
+	{
+		ImGuiStyle &style = ImGui::GetStyle();
+		int buttons_count = 20;
+		float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 		auto it = prototypeRegistry.begin();
 		char input[1024];
-        for (int n = 0; n < prototypeRegistry.size(); n++)
-        {
+		for (int n = 0; n < prototypeRegistry.size(); n++)
+		{
 			ImGui::BeginGroup();
 			ImGui::PushItemWidth(50);
-            ImGui::PushID(n);
-			sprintf(input,(*it)->name.c_str());
-			if(ImGui::InputText("",input,1024,ImGuiInputTextFlags_None))
+			ImGui::PushID(n);
+			sprintf(input, (*it)->name.c_str());
+			if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
 				(*it)->name = {input};
-            ImGui::PopID();
+			ImGui::PopID();
 			ImGui::PopItemWidth();
-            ImGui::Button((*it)->name.c_str(), button_sz);
-            float last_button_x2 = ImGui::GetItemRectMax().x;
-            float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
-            ImGui::EndGroup();
-            if (n + 1 < buttons_count && next_button_x2 < window_visible_x2)
-                ImGui::SameLine();
+			ImGui::Button((*it)->name.c_str(), button_sz);
+			float last_button_x2 = ImGui::GetItemRectMax().x;
+			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
+			ImGui::EndGroup();
+			if (n + 1 < buttons_count && next_button_x2 < window_visible_x2)
+				ImGui::SameLine();
 			it++;
-        }
-
+		}
 	}
 };
 
@@ -767,20 +828,17 @@ public:
 		transWindow = new gui::window("Hierarchy");
 		transWindow->adopt(new transformWindow());
 		transWindow->pos.y = 160;
-		transWindow->size = {200,800};
+		transWindow->size = {200, 800};
 
 		inspWindow = new gui::window("Inspector");
 		inspWindow->adopt(new inspectorWindow());
 		inspWindow->pos.x = 1600;
-		inspWindow->size = {300,150};
+		inspWindow->size = {300, 150};
 
 		protWindow = new gui::window("prototypes");
 		protWindow->adopt(new protoWindow());
-		protWindow->pos = {220,700};
-		protWindow->size = {1000,200};
-
-
-
+		protWindow->pos = {220, 700};
+		protWindow->size = {1000, 200};
 
 		fps = new gui::text();
 		info->adopt(fps);
@@ -789,7 +847,7 @@ public:
 		info->adopt(missileCounter);
 		particleCounter = new gui::text();
 		info->adopt(particleCounter);
-		
+
 		guns = transform->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
 		guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
@@ -848,6 +906,10 @@ public:
 		{
 			save_game("game.lvl");
 		}
+	}
+	void onEdit()
+	{
+		RENDER(speed);
 	}
 	COPY(player_sc2);
 	SER3(speed, fov, ammo_proto);
@@ -928,6 +990,7 @@ public:
 			guns[0]->fire();
 		}
 	}
+	void onEdit(){}
 	COPY(player_sc3);
 	SER3(speed, cursorReleased, fov);
 };
@@ -943,6 +1006,10 @@ public:
 	void update()
 	{
 		transform->setPosition(root2.getPosition() + vec3(cos(Time.time / day_cycle), sin(Time.time / day_cycle), 0) * distance * mat3(rotate(radians(45.f), vec3(0, 0, 1))));
+	}
+	void onEdit(){
+		RENDER(distance);
+		RENDER(day_cycle);
 	}
 };
 REGISTER_COMPONENT(sun_sc)
@@ -1164,7 +1231,7 @@ int level1(bool load)
 		// bomb.primaryexplosion = getNamedEmitterProto("expflame");
 
 		game_object_proto *bomb_proto = new game_object_proto();
-		bomb_proto->name ="bomb";
+		bomb_proto->name = "bomb";
 		bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
 		bomb_proto->addComponent<collider>()->setLayer(0);
 		bomb_proto->getComponent<collider>()->dim = vec3(0.1f);
@@ -1301,7 +1368,6 @@ int level1(bool load)
 		// ship->transform->adopt(boom->transform);
 
 		// ship->transform->setScale(vec3(10));
-
 
 		game_object_proto *tree_go = new game_object_proto();
 		tree_go->name = "tree";

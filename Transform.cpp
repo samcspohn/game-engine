@@ -301,7 +301,7 @@ void loadTransforms(IARCHIVE &ia)
 // 	size_t size = f.tellg();
 // 	size /= sizeof(_transform);
 // 	f.seekg(0, f.beg);
-	delete root2.gameObject();
+	// delete root2.gameObject();
 	// root2 = transform2(0);
 	// rootGameObject = new game_object(root2);
 	Transforms.clear();

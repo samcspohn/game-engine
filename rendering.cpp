@@ -1,5 +1,6 @@
 #include "rendering.h"
-
+#include "editor.h"
+// #include "imgui.h"
 using namespace std;
 
 gpu_vector_proxy<matrix> *GPU_MATRIXES;
@@ -544,14 +545,21 @@ void _renderer::onDestroy()
 	}
 }
 
-void onEdit(){
-	
+
+void renderEdit(const char* name, _model& m){
+    // ImGui::DragInt(name,&i);
+	ImGui::Text(m.meta()->name.c_str());
+}
+
+
+void renderEdit(const char* name, _shader& s){
+    // ImGui::DragInt(name,&i);
+	ImGui::Text(s.meta()->name.c_str());
+}
+
+void _renderer::onEdit(){
+	RENDER(model);
+	RENDER(shader);
 }
 REGISTER_COMPONENT(_renderer)
 
-// COPY(_renderer);
-
-// class camera : public component
-// {
-
-// };

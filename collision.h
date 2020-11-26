@@ -38,6 +38,10 @@ struct AABB2
 {
     glm::vec3 min;
     glm::vec3 max;
+    SER_HELPER()
+    {
+        ar &min &max;
+    }
     AABB2(glm::vec3 _min, glm::vec3 _max) : min(_min), max(_max){};
     AABB2(){};
     AABB2(float x)

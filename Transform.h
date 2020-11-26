@@ -196,11 +196,11 @@ struct _Transforms
 	// 	return t;
 	// }
 	void clear(){
-		positions.clear();
-		rotations.clear();
-		scales.clear();
-		meta.clear();
-		updates.clear();
+		positions.resize(1);
+		rotations.resize(1);
+		scales.resize(1);
+		meta.resize(1);
+		updates.resize(1);
 		while(!avail.empty())
 			avail.pop();
 	}
