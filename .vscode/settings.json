@@ -91,6 +91,13 @@
         "forward_list": "cpp",
         "numbers": "cpp",
         "scoped_allocator": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "ccomplex": "cpp",
+        "ciso646": "cpp",
+        "cstdalign": "cpp",
+        "ctgmath": "cpp",
+        "filesystem": "cpp",
+        "stack": "cpp",
+        "version": "cpp"
     }
 }

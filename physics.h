@@ -150,6 +150,7 @@ public:
 
 	void setMesh(Mesh &_m);
 	void setPoint();
+	void setOBB();
 	void update();
 	void midUpdate();
 	void lateUpdate();
@@ -473,6 +474,11 @@ void collider::setPoint()
 	this->type = pointType;
 	this->p = point();
 }
+void collider::setOBB(){
+	this->type = obbType;
+	this->o = OBB();
+}
+
 void collider::update()
 {
 
@@ -754,13 +760,35 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 void collider::onEdit(){
 	// RENDER(type);
 	static map<colType,string> types = {{aabbType,"aabb"},{obbType,"obb"},{meshType,"mesh"},{pointType,"point"}};
+	// static bool isTypeOpen = false;
+	 if (ImGui::Button(types[this->type].c_str()))
+            ImGui::OpenPopup("type");
+        // ImGui::SameLine();
 	if (ImGui::BeginPopup("type"))
         {
-            ImGui::Text("Aquarium");
+            ImGui::Text("collider type");
             ImGui::Separator();
             for (int i = 0; i < 4; i++)
-                if (ImGui::Selectable(types[(colType)i].c_str()))
-                    type = (colType)i;
+                if (ImGui::Selectable(types[(colType)i].c_str())){
+					switch ((colType)i)
+					{
+					case aabbType:
+						/* code */
+						break;
+					case obbType:
+						setOBB();
+						break;
+					case meshType:
+						// setMesh({0});
+						break;
+					case pointType:
+						setPoint();
+						break;
+					default:
+						break;
+					}
+                    this->type = (colType)i;
+				}
             ImGui::EndPopup();
         }
 	RENDER(dim);

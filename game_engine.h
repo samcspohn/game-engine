@@ -43,10 +43,12 @@ void save_game(const char * filename){
 	{
     	OARCHIVE oa(ofs);
 		// OARCHIVE op(oproto);
+		audioManager::save(oa);
 		shaderManager::save(oa);
 		modelManager::save(oa);
 		saveEmitters(oa);
 		lightingManager::save(oa);
+		assets::save(oa);
 		// saveProto(oa);
 		oa << prototypeRegistry;
 		saveTransforms(oa);
@@ -63,10 +65,12 @@ void load_game(const char * filename)
 	// std::ifstream ifsp("proto.lvl");
     IARCHIVE ia(ifs);
 	// IARCHIVE ip(ifsp);
+	audioManager::load(ia);
 	shaderManager::load(ia);
 	modelManager::load(ia);
 	loadEmitters(ia);
 	lightingManager::load(ia);
+	assets::load(ia);
 	// loadProto(ip);
 	ia >> prototypeRegistry;
 

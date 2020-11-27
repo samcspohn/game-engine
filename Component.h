@@ -49,7 +49,7 @@ public:
 		ar &transform;
 	}
 };
-BOOST_SERIALIZATION_ASSUME_ABSTRACT(component)
+REGISTER_BASE(component)
 
 struct compItr
 {
@@ -128,7 +128,7 @@ public:
 // {
 //     return os << base.name << base.h_update << base.h_lateUpdate << base.ser();
 // }
-BOOST_SERIALIZATION_ASSUME_ABSTRACT(componentStorageBase)
+REGISTER_BASE(componentStorageBase)
 
 template <typename t>
 class componentStorage : public componentStorageBase

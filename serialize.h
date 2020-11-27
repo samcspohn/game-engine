@@ -27,7 +27,7 @@
 #define IARCHIVE boost::archive::text_iarchive
 #define OARCHIVE boost::archive::text_oarchive
 
-#define SER_BASE                                                              \
+#define _SER_BASE                                                              \
     friend class boost::serialization::access;                                \
                                                                               \
     template <class Archive>                                                  \
@@ -40,7 +40,16 @@
     BOOST_CLASS_EXPORT(comp)     \
     BOOST_CLASS_EXPORT(componentStorage<comp>)
 
-// #define SERUN()
+#define REGISTER_ASSET(asset) \
+    BOOST_CLASS_EXPORT(asset) 
+
+#define REGISTER_BASE(base)
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(base)
+
+#define SER_BASE(base) ar &boost::serialization::base_object<base>(*this);\
+
+#define SER_BASE_ASSET SER_BASE(assets::asset)
+
 #define SER_HELPER()                                                            \
     friend class boost::serialization::access;                                \
                                                                               \
@@ -48,42 +57,42 @@
     inline void serialize(Archive &ar, const unsigned int /* file_version */) 
 
 #define SER0() \
-    SER_BASE   \
+    _SER_BASE   \
     ar;        \
     SER_BASE_END
 
 #define SER1(_1) \
-    SER_BASE     \
+    _SER_BASE     \
     ar &_1;      \
     SER_BASE_END
 
 #define SER2(_1, _2) \
-    SER_BASE         \
+    _SER_BASE         \
     ar &_1 &_2;      \
     SER_BASE_END
 
 #define SER3(_1, _2, _3) \
-    SER_BASE             \
+    _SER_BASE             \
     ar &_1 &_2 &_3;      \
     SER_BASE_END
 
 #define SER4(_1, _2, _3, _4) \
-    SER_BASE                 \
+    _SER_BASE                 \
     ar &_1 &_2 &_3 &_4;      \
     SER_BASE_END
 
 #define SER5(_1, _2, _3, _4, _5) \
-    SER_BASE                     \
+    _SER_BASE                     \
     ar &_1 &_2 &_3 &_4 &_5;      \
     SER_BASE_END
 
 #define SER6(_1, _2, _3, _4, _5, _6) \
-    SER_BASE                         \
+    _SER_BASE                         \
     ar &_1 &_2 &_3 &_4 &_5 &_6;      \
     SER_BASE_END
 
 #define SER7(_1, _2, _3, _4, _5, _6, _7) \
-    SER_BASE                             \
+    _SER_BASE                             \
     ar &_1 &_2 &_3 &_4 &_5 &_6 &_7;      \
     SER_BASE_END
 

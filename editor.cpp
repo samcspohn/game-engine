@@ -1,5 +1,27 @@
 #include "editor.h"
 
+namespace assets{
+
+    int assetIdGenerator;
+    void asset::onEdit(){}
+    int asset::genID(){
+        if(this->id == -1)
+            this->id = assetIdGenerator++;
+        return id;
+    }
+    map<int, asset*> assets;
+    void registerAsset(asset* ass){
+        assets[ass->id] = ass;
+    }
+    void save(OARCHIVE& oa){
+        oa << assets << assetIdGenerator;
+    }
+    void load(IARCHIVE& ia){
+        ia >> assets >> assetIdGenerator;
+    }
+}
+REGISTER_BASE(assets::asset)
+
 void renderEdit(const char* name, bool& b){
     ImGui::Checkbox(name,&b);
 }

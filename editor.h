@@ -1,3 +1,4 @@
+#pragma once
 #define IMGUI_IMPL_OPENGL_LOADER_GLEW
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -10,10 +11,26 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-
+#include "serialize.h"
 
 using namespace std;
 
+namespace assets{
+    class asset{
+        public:
+        int id = -1;
+        string name;
+        int genID();
+        virtual void onEdit();
+        SER_HELPER(){
+            ar & id & name;
+        }
+    };
+    extern map<int, asset*> assets;;
+    void registerAsset(asset*);
+    void save(OARCHIVE& oa);
+    void load(IARCHIVE& ia);
+}
 
 #define RENDER(name)\
     renderEdit(#name,name);

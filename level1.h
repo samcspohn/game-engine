@@ -35,13 +35,13 @@ emitter_prototype_ _expFlame;
 
 // map<string, bullet> bullets;
 
-audio explosionSound;
 class missile final : public component
 {
 public:
 	// rigidBody *rb;
 	vec3 vel;
 	// bullet b;
+	audio explosionSound;
 	emitter_prototype_ exp;
 	void onEdit()
 	{
@@ -70,14 +70,14 @@ public:
 		// numCubes.fetch_add(-1);
 
 		// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		// sound->play(transform->getPosition());
+		explosionSound.play(transform->getPosition(),1,1);
 		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// hit = true;
 		// }
 	}
 	COPY(missile);
-	SER2(vel, exp);
+	SER3(vel, exp, explosionSound);
 };
 REGISTER_COMPONENT(missile)
 
@@ -769,7 +769,7 @@ class inspectorWindow : public gui::gui_base
 	}
 };
 
-class protoWindow : public gui::gui_base
+class assetWindow : public gui::gui_base
 {
 
 	ImVec2 button_sz{40, 40};
@@ -797,6 +797,24 @@ class protoWindow : public gui::gui_base
 			if (n + 1 < buttons_count && next_button_x2 < window_visible_x2)
 				ImGui::SameLine();
 			it++;
+		}
+
+		for(auto& i : assets::assets){
+			ImGui::BeginGroup();
+			ImGui::PushItemWidth(50);
+			ImGui::PushID(i.first + 3);
+			i.second->onEdit();
+			// sprintf(input, i.second->name.c_str());
+			// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+			// 	i.second->name = {input};
+			// ImGui::PopID();
+			// ImGui::PopItemWidth();
+			// ImGui::Button(i.second->name.c_str(), button_sz);
+			float last_button_x2 = ImGui::GetItemRectMax().x;
+			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
+			ImGui::EndGroup();
+			if (i.first + 3 + 1 < buttons_count && next_button_x2 < window_visible_x2)
+				ImGui::SameLine();
 		}
 	}
 };
@@ -836,7 +854,7 @@ public:
 		inspWindow->size = {300, 150};
 
 		protWindow = new gui::window("prototypes");
-		protWindow->adopt(new protoWindow());
+		protWindow->adopt(new assetWindow());
 		protWindow->pos = {220, 700};
 		protWindow->size = {1000, 200};
 
@@ -1074,12 +1092,19 @@ int level1(bool load)
 	collisionGraph[0] = {1};
 	collisionGraph[1] = {0, 1};
 
-	gunSound = audio("res/audio/explosion1.wav");
 
 	if (!load)
 	{
+		gunSound = audio("res/audio/explosion1.wav");
+		gunSound.meta()->name = "gunSound";
+		assets::registerAsset(gunSound.meta());
 		_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
+		modelShader.meta()->name = "modelShader";
+		assets::registerAsset(modelShader.meta());
 		_shader lampShader("res/shaders/model.vert", "res/shaders/lamp.frag");
+		lampShader.meta()->name = "lampShader";
+		assets::registerAsset(lampShader.meta());
+
 		// _shader terrainShader("res/shaders/model.vert", "res/shaders/terrain.frag");
 		_shader terrainShader("res/shaders/terrainShader/terrain.vert",
 							  "res/shaders/terrainShader/terrain.tesc",
@@ -1087,7 +1112,12 @@ int level1(bool load)
 							  //   "res/shaders/terrainShader/terrain.geom",
 							  "res/shaders/terrainShader/terrain.frag");
 		terrainShader.meta()->shader->primitiveType = GL_PATCHES;
+		terrainShader.meta()->name = "terrainShader";
+		assets::registerAsset(terrainShader.meta());
+
 		_shader wireFrame2("res/shaders/wireframe.vert", "res/shaders/wireframe.geom", "res/shaders/wireframe.frag");
+		wireFrame2.meta()->name = "wireFrameShader";
+		assets::registerAsset(wireFrame2.meta());
 
 		_model cubeModel("res/models/cube/cube.obj");
 		_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
@@ -1243,6 +1273,7 @@ int level1(bool load)
 		bomb_proto->addComponent<missile>()->exp = getNamedEmitterProto("expflame"); //bomb.primaryexplosion;//setBullet(bomb);
 																					 // bullets["bomb"] = bomb;
 																					 // ammo = bullets["bomb"].proto;
+		bomb_proto->getComponent<missile>()->explosionSound = gunSound;
 		registerProto(bomb_proto);
 
 		// game_object_proto *laser_proto = new game_object_proto();

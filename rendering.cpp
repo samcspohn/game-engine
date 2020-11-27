@@ -45,13 +45,16 @@ namespace modelManager
 		}
 	}
 
-	void save(OARCHIVE& oa){
+	void save(OARCHIVE &oa)
+	{
 		oa << models;
 	}
-	void load(IARCHIVE& ia){
+	void load(IARCHIVE &ia)
+	{
 		ia >> models;
-		waitForRenderJob([&](){
-			for(auto& m : models){
+		waitForRenderJob([&]() {
+			for (auto &m : models)
+			{
 				m.second->model->loadModel();
 			}
 		});
@@ -113,32 +116,34 @@ _modelMeta *_model::meta() const
 _shaderMeta::_shaderMeta() {}
 _shaderMeta::_shaderMeta(string compute)
 {
-	name = compute;
+	// name = compute;
 	shader = new Shader(compute);
 }
 _shaderMeta::_shaderMeta(string vertex, string fragment)
 {
-	name = vertex + fragment;
+	// name = vertex + fragment;
 	shader = new Shader(vertex, fragment);
 }
 _shaderMeta::_shaderMeta(string vertex, string geom, string fragment)
 {
-	name = vertex + geom + fragment;
+	// name = vertex + geom + fragment;
 	shader = new Shader(vertex, geom, fragment);
 }
 _shaderMeta::_shaderMeta(string vertex, string tess, string geom, string fragment)
 {
-	name = vertex + tess + geom + fragment;
+	// name = vertex + tess + geom + fragment;
 	shader = new Shader(vertex, tess, geom, fragment);
 }
 _shaderMeta::~_shaderMeta()
 {
 	delete shader;
 }
+REGISTER_ASSET(_shaderMeta);
 
 namespace shaderManager
 {
 	map<size_t, _shaderMeta *> shaders;
+	map<int, _shaderMeta *> shaders_ids;
 	void destroy()
 	{
 		while (shaders.size() > 0)
@@ -147,78 +152,87 @@ namespace shaderManager
 			shaders.erase(shaders.begin());
 		}
 	}
-	void save(OARCHIVE& oa){
-		oa << shaders;
+	void save(OARCHIVE &oa)
+	{
+		oa << shaders << shaders_ids;
 	}
-	void load(IARCHIVE& ia){
-		ia >> shaders;
-		waitForRenderJob([&](){
-			for(auto& i : shaders){
+	void load(IARCHIVE &ia)
+	{
+		ia >> shaders >> shaders_ids;
+		waitForRenderJob([&]() {
+			for (auto &i : shaders)
+			{
 				i.second->shader->_Shader();
 			}
-
 		});
 	}
 }; // namespace shaderManager
 
 _shader::_shader() {}
+#define FIND_SHADER_META(meta)                        \
+	auto ms = shaderManager::shaders.find(key);       \
+	if (ms == shaderManager::shaders.end())           \
+	{                                                 \
+		auto sm = new meta;                           \
+		shaderManager::shaders[key] = sm;             \
+		shaderManager::shaders_ids[sm->genID()] = sm; \
+		ms = shaderManager::shaders.find(key);        \
+	}                                                 \
+	s = ms->second->id;
+
 _shader::_shader(string compute)
 {
 	std::hash<string> x;
 	size_t key = x(compute);
-	auto ms = shaderManager::shaders.find(key);
-	if (ms == shaderManager::shaders.end())
-	{
-		shaderManager::shaders[key] = new _shaderMeta(compute);
-	}
-	s = key;
+	FIND_SHADER_META(_shaderMeta(compute))
 }
 _shader::_shader(string vertex, string fragment)
 {
 	std::hash<string> x;
 	size_t key = x(vertex + fragment);
-	auto ms = shaderManager::shaders.find(key);
-	if (ms == shaderManager::shaders.end())
-	{
-		shaderManager::shaders[key] = new _shaderMeta(vertex, fragment);
-	}
-	s = key;
+	FIND_SHADER_META(_shaderMeta(vertex, fragment))
 }
 _shader::_shader(string vertex, string geom, string fragment)
 {
 	std::hash<string> x;
 	size_t key = x(vertex + geom + fragment);
-	auto ms = shaderManager::shaders.find(key);
-	if (ms == shaderManager::shaders.end())
-	{
-		shaderManager::shaders[key] = new _shaderMeta(vertex, geom, fragment);
-	}
-	s = key;
+	FIND_SHADER_META(_shaderMeta(vertex, geom, fragment))
 }
 
 _shader::_shader(string vertex, string tess, string geom, string fragment)
 {
 	std::hash<string> x;
 	size_t key = x(vertex + tess + geom + fragment);
-	auto ms = shaderManager::shaders.find(key);
-	if (ms == shaderManager::shaders.end())
-	{
-		shaderManager::shaders[key] = new _shaderMeta(vertex, tess, geom, fragment);
-	}
-	s = key;
+	FIND_SHADER_META(_shaderMeta(vertex, tess, geom, fragment))
 }
 
-Shader* _shader::operator->()
+Shader *_shader::operator->()
 {
-	return shaderManager::shaders[s]->shader;
+	return shaderManager::shaders_ids[s]->shader;
 }
 Shader &_shader::ref()
 {
-	return *(shaderManager::shaders[s]->shader);
+	return *(shaderManager::shaders_ids[s]->shader);
 }
 _shaderMeta *_shader::meta() const
 {
-	return shaderManager::shaders[s];
+	return shaderManager::shaders_ids[s];
+}
+void _shaderMeta::onEdit()
+{
+	char input[1024];
+	sprintf(input, name.c_str());
+	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+		name = {input};
+	ImGui::PopID();
+	ImGui::PopItemWidth();
+	ImGui::Button(name.c_str(), {40, 40});
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+	{
+		// Set payload to carry the index of our item (could be anything)
+		ImGui::SetDragDropPayload("SHADER_DRAG_AND_DROP", &id, sizeof(int));
+		ImGui::EndDragDropSource();
+	}
 }
 
 int renderingId = 0;
@@ -247,14 +261,14 @@ renderingMeta::renderingMeta(_shader _s, _model _m)
 {
 	s = _s;
 	m = _m;
-	if(m.meta() == 0){
+	if (m.meta() == 0)
+	{
 		modelManager::models[m.m] = new _modelMeta();
 		// m = modelManager::models.at(m);
 		string idStr = {(char)(m.m >> 24), (char)(m.m >> 16), (char)(m.m >> 8), (char)m.m, 0};
 		modelManager::models[m.m]->name = idStr;
 		modelManager::models[m.m]->unique = true;
 	}
-	
 }
 renderingMeta::renderingMeta(const renderingMeta &other) {}
 
@@ -435,7 +449,8 @@ _model _renderer::getModel()
 {
 	return model;
 }
-_shader _renderer::getShader(){
+_shader _renderer::getShader()
+{
 	return shader;
 }
 
@@ -522,12 +537,12 @@ void _renderer::set(renderingMeta *_meta)
 	// }
 	// else
 	// {
-		meta = _meta;
-		if (!transformIdRef.isNull())
-		{
-			meta->ids.erase(transformIdRef);
-		}
-		transformIdRef = meta->ids.push_back(transform.id);
+	meta = _meta;
+	if (!transformIdRef.isNull())
+	{
+		meta->ids.erase(transformIdRef);
+	}
+	transformIdRef = meta->ids.push_back(transform.id);
 	// }
 }
 _renderer::_renderer(const _renderer &other)
@@ -545,21 +560,37 @@ void _renderer::onDestroy()
 	}
 }
 
-
-void renderEdit(const char* name, _model& m){
-    // ImGui::DragInt(name,&i);
-	ImGui::Text(m.meta()->name.c_str());
+void renderEdit(const char *name, _model &m)
+{
+	// ImGui::DragInt(name,&i);
+	ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
 }
 
-
-void renderEdit(const char* name, _shader& s){
-    // ImGui::DragInt(name,&i);
-	ImGui::Text(s.meta()->name.c_str());
+void renderEdit(const char *name, _shader &s)
+{
+	// ImGui::DragInt(name,&i);
+	ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SHADER_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			s.s = payload_n;
+		}
+		ImGui::EndDragDropTarget();
+	}
 }
 
-void _renderer::onEdit(){
+void _renderer::onEdit()
+{
+	_shader curr_s = shader;
+	_model curr_m = model;
 	RENDER(model);
 	RENDER(shader);
+
+	if(model.m != curr_m.m || shader.s != curr_s.s){
+		this->set(shader,model);
+	}
 }
 REGISTER_COMPONENT(_renderer)
-
