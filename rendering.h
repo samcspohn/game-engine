@@ -48,25 +48,30 @@ extern gpu_vector<__renderMeta> *__rendererMetas;
 class _renderer;
 
 // model data
-struct _modelMeta
+class _model;
+struct _modelMeta : public assets::asset
 {
 	_modelMeta();
 	_modelMeta(string file);
 	~_modelMeta();
-	string name;
+	void onEdit();
+	string file;
 	Model *model = 0;
 	glm::vec3 bounds;
 	float radius;
 	void getBounds();
 	bool unique = false;
+	friend class _model;
 	SER_HELPER()
 	{
+		SER_BASE_ASSET
 		ar &name &model &bounds &radius &unique;
 	}
 };
 namespace modelManager
 {
 	extern map<size_t, _modelMeta *> models;
+	extern map<int, _modelMeta *> models_id;
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
@@ -84,7 +89,7 @@ public:
 	void recalcBounds();
 	_modelMeta *meta() const;
 	// _modelMeta* m = 0;
-	size_t m = 0;
+	int m = 0;
 	SER_HELPER()
 	{
 		ar &m;
@@ -130,7 +135,7 @@ public:
 	_shader(string vertex, string geom, string fragment);
 	_shader(string vertex, string tess, string geom, string fragment);
 	// _shaderMeta* s = 0;
-	int s = -1;
+	int s = 0;
 	Shader &ref();
 	Shader *operator->();
 	_shaderMeta *meta() const;
@@ -161,7 +166,7 @@ namespace renderingManager
 {
 	extern mutex m;
 
-	extern map<size_t, map<size_t, renderingMeta *>> shader_model_vector;
+	extern map<int, map<int, renderingMeta *>> shader_model_vector;
 	void destroy();
 	void lock();
 	void unlock();

@@ -3,6 +3,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+
 #include <vector>
 #include <list>
 #include <string>
@@ -18,7 +19,7 @@ using namespace std;
 namespace assets{
     class asset{
         public:
-        int id = -1;
+        int id = 0;
         string name;
         int genID();
         virtual void onEdit();
@@ -26,7 +27,7 @@ namespace assets{
             ar & id & name;
         }
     };
-    extern map<int, asset*> assets;;
+    extern map<int, asset*> assets;
     void registerAsset(asset*);
     void save(OARCHIVE& oa);
     void load(IARCHIVE& ia);

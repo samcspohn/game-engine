@@ -1,11 +1,14 @@
 #include "editor.h"
-
+#define IMGUI_IMPL_OPENGL_LOADER_GLEW
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 namespace assets{
 
-    int assetIdGenerator;
+    int assetIdGenerator{1};
     void asset::onEdit(){}
     int asset::genID(){
-        if(this->id == -1)
+        if(this->id == 0)
             this->id = assetIdGenerator++;
         return id;
     }
@@ -29,7 +32,7 @@ void renderEdit(const char* name, int& i){
     ImGui::DragInt(name,&i);
 }
 void renderEdit(const char* name, float& f){
-    ImGui::DragFloat(name,&f);
+    ImGui::DragFloat(name,&f,1,0,0,"%.%",ImGuiSliderFlags_NoRoundToFormat);
 }
 void renderEdit(const char* name, glm::vec2& v){
     ImGui::DragFloat2(name,&v.x);

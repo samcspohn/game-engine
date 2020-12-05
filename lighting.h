@@ -92,7 +92,8 @@ public:
     }
     void onStart()
     {
-        pl = lightingManager::pointLights.push_back(pointLight());
+        if(pl.isNull())
+            pl = lightingManager::pointLights.push_back(pointLight());
         pl->transfromId = transform.id;
     }
     void onDestroy()

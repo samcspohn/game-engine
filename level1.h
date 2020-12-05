@@ -759,7 +759,8 @@ class inspectorWindow : public gui::gui_base
 		 i != t.gameObject()->components.end();
 		  i++){
 			ImGui::PushID(n);
-			if(ImGui::TreeNode(ComponentRegistry.components[i->second->hash]->getName().c_str())){
+			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if(ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second->hash]->getName()).c_str())){
 				i->first->onEdit();
 				ImGui::TreePop();
 			}
@@ -825,6 +826,7 @@ class player_sc2 : public component
 	float speed = 3.f;
 	bool cursorReleased = true;
 	float fov = 80;
+	// gui::window *base;
 	gui::window *info;
 	gui::window *transWindow;
 	gui::window *inspWindow;
@@ -839,21 +841,41 @@ public:
 	game_object_proto *ammo_proto;
 	void onStart()
 	{
+
+		// base = new gui::window("base");
+		// // ImGuiWindowFlags flags = 0;
+		
+		// // base->flags |= ImGuiWindowFlags_NoDocking;
+		// // base->flags |= ImGuiWindowFlags_DockNodeHost;
+		// base->flags |= ImGuiWindowFlags_NoNavInputs;
+		// base->flags |= ImGuiWindowFlags_NoBackground;
+		// base->flags |= ImGuiWindowFlags_NoScrollbar;
+		// base->flags |= ImGuiWindowFlags_NoMove;
+		// // base->neverFocused = true;
+		// // base->flags = flags;
+		// // base->name = "base";
+		// base->pos = {0, 0};
+
+
 		info = new gui::window();
 		info->pos = {20, 20};
 		info->size = {200, 150};
+		info->loadConfig = ImGuiCond_FirstUseEver;
 
 		transWindow = new gui::window("Hierarchy");
 		transWindow->adopt(new transformWindow());
+		transWindow->loadConfig = ImGuiCond_FirstUseEver;
 		transWindow->pos.y = 160;
 		transWindow->size = {200, 800};
 
 		inspWindow = new gui::window("Inspector");
 		inspWindow->adopt(new inspectorWindow());
+		inspWindow->loadConfig = ImGuiCond_FirstUseEver;
 		inspWindow->pos.x = 1600;
 		inspWindow->size = {300, 150};
 
 		protWindow = new gui::window("prototypes");
+		protWindow->loadConfig = ImGuiCond_FirstUseEver;
 		protWindow->adopt(new assetWindow());
 		protWindow->pos = {220, 700};
 		protWindow->size = {1000, 200};
@@ -881,6 +903,7 @@ public:
 		fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 		missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
 		particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
+		// base->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
 		{
@@ -1083,6 +1106,10 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	t->gun_speed = glm::radians(100.f);
 }
 
+#define REG_ASSET(_name)\
+_name.meta()->name = #_name;\
+assets::registerAsset(_name.meta());
+
 int level1(bool load)
 {
 
@@ -1120,9 +1147,13 @@ int level1(bool load)
 		assets::registerAsset(wireFrame2.meta());
 
 		_model cubeModel("res/models/cube/cube.obj");
+		REG_ASSET(cubeModel);
 		_model nanoSuitModel("res/models/nanosuit/nanosuit.obj");
+		REG_ASSET(nanoSuitModel);
 		_model terrainModel("res/models/terrain/terrain.obj");
+		REG_ASSET(terrainModel);
 		_model tree("res/models/Spruce_obj/Spruce.obj");
+		REG_ASSET(tree);
 
 		// while (!cubeModel.meta()->model->ready())
 		// 	this_thread::yield();

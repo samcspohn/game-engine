@@ -22,9 +22,9 @@ _modelMeta::_modelMeta()
 	model = new Model();
 	getBounds();
 }
-_modelMeta::_modelMeta(string file)
+_modelMeta::_modelMeta(string _file)
 {
-	name = file;
+	file = _file;
 	model = new Model(file);
 	getBounds();
 }
@@ -32,10 +32,29 @@ _modelMeta::~_modelMeta()
 {
 	delete model;
 }
+void _modelMeta::onEdit()
+{
+	char input[1024];
+	sprintf(input, name.c_str());
+	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+		name = {input};
+	ImGui::PopID();
+	ImGui::PopItemWidth();
+	ImGui::Button(name.c_str(), {40, 40});
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+	{
+		// Set payload to carry the index of our item (could be anything)
+		ImGui::SetDragDropPayload("MODEL_DRAG_AND_DROP", &id, sizeof(int));
+		ImGui::EndDragDropSource();
+	}
+}
+REGISTER_ASSET(_modelMeta);
 
 namespace modelManager
 {
 	map<size_t, _modelMeta *> models;
+	map<int, _modelMeta *> models_id;
+	// map<int, _modelMeta *> unique_models;
 	void destroy()
 	{
 		while (models.size() > 0)
@@ -47,11 +66,11 @@ namespace modelManager
 
 	void save(OARCHIVE &oa)
 	{
-		oa << models;
+		oa << models << models_id;
 	}
 	void load(IARCHIVE &ia)
 	{
-		ia >> models;
+		ia >> models >> models_id;
 		waitForRenderJob([&]() {
 			for (auto &m : models)
 			{
@@ -71,44 +90,45 @@ _model::_model(string fileName)
 	auto mm = modelManager::models.find(key);
 	if (mm != modelManager::models.end())
 	{
-		m = key;
+		m = mm->second->id;
 	}
 	else
 	{
-		modelManager::models[key] = new _modelMeta(fileName);
-		m = key;
+		_modelMeta* _mm = new _modelMeta(fileName);
+		modelManager::models[key] = _mm;
+		modelManager::models_id[_mm->genID()] = _mm;
+		m = _mm->id;
 	}
 }
 
 vector<Mesh> &_model::meshes()
 {
-	return modelManager::models[m]->model->meshes;
+	return modelManager::models_id[m]->model->meshes;
 }
 Mesh &_model::mesh()
 {
-	return modelManager::models[m]->model->meshes[0];
+	return modelManager::models_id[m]->model->meshes[0];
 }
 void _model::makeUnique()
 {
 	int id = uniqueMeshIdGenerator.fetch_add(1);
-	m = id;
+	m = -id;
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	modelManager::models[m] = new _modelMeta();
-	// m = modelManager::models.at(m);
-	modelManager::models[m]->name = idStr;
-	modelManager::models[m]->unique = true;
+	modelManager::models_id[m] = new _modelMeta();
+	modelManager::models_id[m]->name = idStr;
+	modelManager::models_id[m]->unique = true;
 }
 void _model::makeProcedural()
 {
 	int id = uniqueMeshIdGenerator.fetch_add(1);
-	m = id;
+	m = -id;
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	modelManager::models[m] = new _modelMeta();
-	modelManager::models[m]->name = idStr;
+	modelManager::models_id[m] = new _modelMeta();
+	modelManager::models_id[m]->name = idStr;
 }
 _modelMeta *_model::meta() const
 {
-	return modelManager::models[m];
+	return modelManager::models_id[m];
 }
 
 //shader data
@@ -263,11 +283,10 @@ renderingMeta::renderingMeta(_shader _s, _model _m)
 	m = _m;
 	if (m.meta() == 0)
 	{
-		modelManager::models[m.m] = new _modelMeta();
-		// m = modelManager::models.at(m);
+		modelManager::models_id[m.m] = new _modelMeta();
 		string idStr = {(char)(m.m >> 24), (char)(m.m >> 16), (char)(m.m >> 8), (char)m.m, 0};
-		modelManager::models[m.m]->name = idStr;
-		modelManager::models[m.m]->unique = true;
+		modelManager::models_id[m.m]->name = idStr;
+		modelManager::models_id[m.m]->unique = true;
 	}
 }
 renderingMeta::renderingMeta(const renderingMeta &other) {}
@@ -275,7 +294,7 @@ renderingMeta::renderingMeta(const renderingMeta &other) {}
 namespace renderingManager
 {
 	mutex m;
-	map<size_t, map<size_t, renderingMeta *>> shader_model_vector;
+	map<int, map<int, renderingMeta *>> shader_model_vector;
 	void destroy()
 	{
 		while (shader_model_vector.size() > 0)
@@ -442,7 +461,7 @@ void _model::recalcBounds()
 {
 	if (m != 0)
 	{
-		modelManager::models[m]->getBounds();
+		modelManager::models_id[m]->getBounds();
 	}
 }
 _model _renderer::getModel()
@@ -563,13 +582,29 @@ void _renderer::onDestroy()
 void renderEdit(const char *name, _model &m)
 {
 	// ImGui::DragInt(name,&i);
-	ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if(m.m == 0) // uninitialized
+		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	else
+		ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("MODEL_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			m.m = payload_n;
+		}
+		ImGui::EndDragDropTarget();
+	}
 }
 
 void renderEdit(const char *name, _shader &s)
 {
 	// ImGui::DragInt(name,&i);
-	ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if(s.s == 0) // uninitialized
+		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	else
+		ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SHADER_DRAG_AND_DROP"))

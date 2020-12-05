@@ -22,10 +22,11 @@ public:
     std::vector<gui_base*> children;
     ImVec2 pos = ImVec2(20,20);
     ImVec2 size = ImVec2(60,60);
-    ImGuiWindowFlags flags = 0;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_None;
     std::string name;
     bool p_open = true;
     typename std::list<gui_base*>::iterator itr;
+    enum ImGuiCond_ loadConfig = ImGuiCond_Once;
     window(){
         gui_windows.push_back(this);
         itr = --gui_windows.end();
@@ -38,15 +39,15 @@ public:
         children.push_back(g);
     }
     inline void render(){
-        ImGui::SetNextWindowPos(pos, ImGuiCond_Once);
-        ImGui::SetNextWindowSize(size, ImGuiCond_Once);
+        ImGui::SetNextWindowPos(pos, loadConfig);
+        ImGui::SetNextWindowSize(size, loadConfig);
 
         // // Main body of the Demo window starts here.
         // flags |= ImGuiWindowFlags_NoTitleBar;
         // flags |= ImGuiWindowFlags_NoMove;
         // flags |= ImGuiWindowFlags_NoResize;
         // flags |= ImGuiWindowFlags_NavFlattened;
-        ImGui::Begin(name.c_str(), &p_open);  
+        ImGui::Begin(name.c_str(), &p_open, flags);  
          for(auto& i : children){
             i->render();
         }

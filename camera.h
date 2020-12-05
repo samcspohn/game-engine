@@ -263,7 +263,7 @@ public:
 	{
 		waitForRenderJob([&]() {
 			lightVolumeModel = _model("res/models/cube/cube.obj");
-			modelManager::models[lightVolumeModel.m]->model->loadModel();
+			modelManager::models_id[lightVolumeModel.m]->model->loadModel();
 			// lightVolumeModel.m->loadModel();
 			lv.indices = lightVolumeModel.mesh().indices;
 			lv.vertices = lightVolumeModel.mesh().vertices;
