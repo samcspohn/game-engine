@@ -244,6 +244,34 @@ public:
 		this->transform = Transforms._new();// new Transform(this);
 		this->transform->init(g.transform, this);
 		g.transform.getParent().adopt(this->transform);
+		for(transform2 t : g.transform->getChildren()){
+			new game_object(*t->gameObject(),transform);
+		}
+		// g.transform.getParent().adopt(this->transform);
+
+		for (auto &i : g.components)
+		{
+			i.first->_copy(this);
+		}
+		for (auto &i : this->components)
+		{
+			i.first->onStart();
+		}
+		// gameLock.unlock();
+	}
+	game_object(game_object &g, transform2 parent) : lock()
+	{
+		// gameLock.lock();
+		destroyed = false;
+		// this->transform = new Transform(*g.transform, this);
+		// g.transform->getParent()->Adopt(this->transform);
+
+		this->transform = Transforms._new();// new Transform(this);
+		this->transform->init(g.transform, this);
+		parent.adopt(this->transform);
+		for(transform2 t : g.transform->getChildren()){
+			new game_object(*t->gameObject(),transform);
+		}
 		// g.transform.getParent().adopt(this->transform);
 
 		for (auto &i : g.components)

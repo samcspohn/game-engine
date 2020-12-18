@@ -148,7 +148,7 @@ public:
 
 	void onDestroy();
 
-	void setMesh(Mesh &_m);
+	void setMesh(Mesh *_m);
 	void setPoint();
 	void setOBB();
 	void update();
@@ -461,12 +461,17 @@ void collider::onDestroy()
 	this->valid = false;
 }
 
-void collider::setMesh(Mesh &_m)
+void collider::setMesh(Mesh *_m)
 {
 	// cd.type = 2;
 	this->type = meshType;
-	this->m.points = &_m.vertices;
-	this->m.tris = &_m.indices;
+	if(_m == 0){
+		this->m.points = &boxPoints;
+		this->m.tris = &boxTris;
+	}else{
+		this->m.points = &_m->vertices;
+		this->m.tris = &_m->indices;
+	}
 }
 void collider::setPoint()
 {
@@ -633,37 +638,6 @@ void assignRigidBody(collider *c, rigidBody *rb)
 {
 	c->rb = rb;
 }
-// void setPosInTree(collider *c, colDat *i)
-// {
-// 	c->posInTree = i;
-// }
-
-// void colDat::update()
-// {
-// 	switch (type)
-// 	{
-// 	case 1: // obb
-// 	{
-// 		glm::vec3 sc = c->transform->getScale() * c->dim;
-// 		glm::mat3 rot = glm::toMat3(c->transform->getRotation());
-
-// 		o.c = c->transform->getPosition();
-// 		o.u = rot;
-// 		o.e = sc;
-// 	}
-// 	break;
-// 	case 2:
-// 		break;
-// 	case 3: // point
-// 	{
-// 		// p.pos2 = p.pos1;
-// 		// p.pos1 = c->transform->getPosition();
-// 	}
-// 	break;
-// 	default:
-// 		break;
-// 	}
-// }
 
 bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 {
@@ -779,7 +753,7 @@ void collider::onEdit(){
 						setOBB();
 						break;
 					case meshType:
-						// setMesh({0});
+						setMesh(0);
 						break;
 					case pointType:
 						setPoint();

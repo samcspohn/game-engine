@@ -36,6 +36,9 @@ namespace assets{
 #define RENDER(name)\
     renderEdit(#name,name);
 
+#define _RENDER(_name, name)\
+    renderEdit(_name,name);
+
 void renderEdit(const char* name, bool& b);
 void renderEdit(const char* name, int& i);
 void renderEdit(const char* name, float& f);

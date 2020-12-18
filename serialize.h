@@ -36,9 +36,6 @@
         ar &boost::serialization::base_object<component>(*this);
 #define SER_BASE_END }
 
-#define REGISTER_COMPONENT(comp) \
-    BOOST_CLASS_EXPORT(comp)     \
-    BOOST_CLASS_EXPORT(componentStorage<comp>)
 
 #define REGISTER_ASSET(asset) \
     BOOST_CLASS_EXPORT(asset) 

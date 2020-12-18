@@ -11,6 +11,7 @@
 // #include "Component.h"
 #include "gpu_vector.h"
 #include "serialize.h"
+#include "editor.h"
 // ~-1 = 0
 
 using namespace std;
@@ -45,7 +46,7 @@ class game_object;
 
 struct transform2
 {
-	int id;
+	int id{-1};
 	void _init();
 	transform2();
 	transform2(int i);
@@ -269,7 +270,7 @@ void initTransform();
 
 int switchAH(int index);
 extern unsigned int transforms_enabled;
-
+void renderEdit(const char* name, transform2& t);
 void saveTransforms(OARCHIVE &oa);
 void loadTransforms(IARCHIVE &ia);
 

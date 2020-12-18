@@ -45,7 +45,8 @@ public:
 	int getThreadID();
 	ull getHash();
 
-	SER_HELPER(){
+	SER_HELPER()
+	{
 		ar &transform;
 	}
 };
@@ -103,7 +104,7 @@ public:
 	float lateupdate_t;
 	string name;
 	mutex lock;
-	virtual string getName() {return "component";}
+	virtual string getName() { return "component"; }
 	bool hasUpdate() { return h_update; }
 	bool hasLateUpdate() { return h_lateUpdate; }
 	virtual void update(){};
@@ -178,7 +179,8 @@ public:
 		ret.CompItr->hash = typeid(t).hash_code();
 		return ret;
 	}
-	string getName(){
+	string getName()
+	{
 		return name;
 	}
 
@@ -247,12 +249,30 @@ public:
 	// }
 };
 
+struct component_meta_base
+{
+};
+template <typename t>
+struct component_meta : public component_meta_base
+{
+};
+
+struct componentMetaBase
+{
+	virtual void addComponent(game_object *g);
+};
+template <typename t>
+struct componentMeta : public componentMetaBase
+{
+};
+
 class Registry
 {
 public:
 	std::map<size_t, componentStorageBase *> components;
 	std::map<size_t, componentStorageBase *> gameEngineComponents;
 	std::map<size_t, componentStorageBase *> gameComponents;
+	std::map<std::string, componentMetaBase *> meta;
 	std::mutex lock;
 
 	friend class boost::serialization::access;
@@ -262,8 +282,9 @@ public:
 	{
 		ar &components &gameEngineComponents &gameComponents;
 	}
-	template<typename t>
-	inline componentStorage<t> * registry(){
+	template <typename t>
+	inline componentStorage<t> *registry()
+	{
 		return static_cast<componentStorage<t> *>(components[typeid(t).hash_code()]);
 	}
 };
@@ -273,6 +294,13 @@ public:
 // extern std::set<componentStorageBase *> gameComponents;
 // extern std::mutex componentLock;
 extern Registry ComponentRegistry;
+
+template <typename t>
+component_meta<t> registerComponent()
+{
+	ComponentRegistry.meta.emplace(pair(string(typeid(t).name()), (componentMetaBase *)(new componentMeta<t>())));
+	return component_meta<t>();
+}
 
 template <typename t>
 componentStorage<t> *GetStorage()
@@ -327,3 +355,19 @@ void destroyAllComponents();
 	{                                            \
 		go->dupComponent(component_type(*this)); \
 	}
+
+#define REGISTER_COMPONENT(comp)                             \
+	BOOST_CLASS_EXPORT(comp)                                 \
+	BOOST_CLASS_EXPORT(componentStorage<comp>)               \
+	template <>                                              \
+	struct componentMeta<comp> : public componentMetaBase \
+	{                                                        \
+		static component_meta<comp> const &c;             \
+		void addComponent(game_object *g)                    \
+		{                                                    \
+			g->addComponent<comp>();                      \
+		}                                                    \
+	};                                                       \
+	component_meta<comp> const &componentMeta<comp>::c = registerComponent<comp>();
+// template<>
+// componentMeta<comp>::g = registerComponent<comp>();

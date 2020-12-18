@@ -27,3 +27,7 @@ void saveProto(OARCHIVE& oa){
 void loadProto(IARCHIVE& ia){
 	ia >> prototypeRegistry;
 }
+
+
+void componentMetaBase::addComponent(game_object* g){}
+

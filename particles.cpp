@@ -206,15 +206,16 @@ gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
 array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
 map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
+map<int, string> emitter_proto_names;
 
-
-void saveEmitters(OARCHIVE& oa){
+void saveEmitters(OARCHIVE &oa)
+{
     oa << emitter_prototypes_ << emitter_prototypes;
 }
-void loadEmitters(IARCHIVE& ia){
+void loadEmitters(IARCHIVE &ia)
+{
     ia >> emitter_prototypes_ >> emitter_prototypes;
 }
-
 
 mutex burstLock;
 void swapBurstBuffer()
@@ -223,7 +224,7 @@ void swapBurstBuffer()
     particle_bursts.clear();
 }
 
-uint emitter_prototype_::getId()
+int emitter_prototype_::getId()
 {
     return emitterPrototype.index;
 }
@@ -265,6 +266,7 @@ emitter_prototype_ createNamedEmitter(string name)
     emitter_prototypes.insert(std::pair<string, typename array_heap<emitter_prototype>::ref>(name, emitter_prototypes_._new()));
     emitter_prototype_ ret;
     ret.emitterPrototype = emitter_prototypes.at(name);
+    emitter_proto_names[ret.emitterPrototype.index] = name;
     return ret;
 }
 emitter_prototype_ getNamedEmitterProto(string name)
@@ -272,6 +274,40 @@ emitter_prototype_ getNamedEmitterProto(string name)
     emitter_prototype_ ret;
     ret.emitterPrototype = emitter_prototypes.at(name);
     return ret;
+}
+void emitter_prototype_::onEdit()
+{
+
+    char input[1024];
+	sprintf(input, name.c_str());
+	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+		name = {input};
+	ImGui::PopID();
+	ImGui::PopItemWidth();
+	ImGui::Button(name.c_str(), {40, 40});
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+	{
+		// Set payload to carry the index of our item (could be anything)
+		ImGui::SetDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP", &this->emitterPrototype.index, sizeof(int));
+		ImGui::EndDragDropSource();
+	}
+
+    // emitterPrototype->edit();
+
+}
+
+void renderEdit(const char *name, emitter_prototype_ &ep){
+    ImGui::InputText(name, (char *)emitter_proto_names.at(ep.getId()).c_str(), emitter_proto_names.at(ep.getId()).size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+            ep = getNamedEmitterProto(emitter_proto_names.at(payload_n));
+		}
+		ImGui::EndDragDropTarget();
+	}
 }
 
 array_heap<emitter> EMITTERS;
@@ -281,9 +317,11 @@ vector<emitterInit> emitterInits;
 vector<emitterInit> emitterInitsdb;
 unordered_map<uint, emitterInit> emitter_inits;
 
-void renderEdit(string name, emitter_prototype_& ep){
-     for(auto& i : emitter_prototypes){
-        if(ep.getId() == i.second.index)
+void renderEdit(string name, emitter_prototype_ &ep)
+{
+    for (auto &i : emitter_prototypes)
+    {
+        if (ep.getId() == i.second.index)
             ImGui::Text(i.first.c_str());
     }
 }
@@ -337,9 +375,11 @@ void particle_emitter::onDestroy()
     emitter_inits[ei.id] = ei;
     lock.unlock();
 }
-void particle_emitter::onEdit(){
-    for(auto& i : emitter_prototypes){
-        if(this->prototype.getId() == i.second.index)
+void particle_emitter::onEdit()
+{
+    for (auto &i : emitter_prototypes)
+    {
+        if (this->prototype.getId() == i.second.index)
             ImGui::Text(i.first.c_str());
     }
 }

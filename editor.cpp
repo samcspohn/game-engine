@@ -32,7 +32,7 @@ void renderEdit(const char* name, int& i){
     ImGui::DragInt(name,&i);
 }
 void renderEdit(const char* name, float& f){
-    ImGui::DragFloat(name,&f,1,0,0,"%.%",ImGuiSliderFlags_NoRoundToFormat);
+    ImGui::DragFloat(name,&f);
 }
 void renderEdit(const char* name, glm::vec2& v){
     ImGui::DragFloat2(name,&v.x);

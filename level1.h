@@ -70,7 +70,7 @@ public:
 		// numCubes.fetch_add(-1);
 
 		// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		explosionSound.play(transform->getPosition(),1,1);
+		explosionSound.play(transform->getPosition(), 1, 1);
 		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// hit = true;
@@ -194,25 +194,28 @@ float ship_vel;
 // };
 class spinner final : public component
 {
-	vec3 axis;
-
 public:
+	vec3 axis;
+	float speed{0.1f};
 	void update()
 	{
-		transform->rotate(axis, 0.1f * Time.deltaTime);
+		transform->rotate(axis, speed * Time.deltaTime);
 	}
 	void onStart()
 	{
 		axis = normalize(randomSphere());
 	}
-	void onEdit() {}
+	void onEdit() {
+		RENDER(axis);
+		RENDER(speed);
+	}
 	//UPDATE(spinner,update);
 	COPY(spinner);
-	SER0();
+	SER1(speed);
 };
 REGISTER_COMPONENT(spinner)
 
-const float _pi = radians(180.f);
+	const float _pi = radians(180.f);
 class _turret final : public component
 {
 	transform2 target;
@@ -230,16 +233,31 @@ public:
 	float gun_speed = radians(30.f);
 	float t_angles[3];
 	float g_angles[3][2];
+	// bool forward;
+	// bool under;
 	void setTarget(transform2 t)
 	{
 		target = t;
 	}
 	float getRateOfFire()
 	{
+		if (barrels == 0)
+		{
+			barrels = guns->gameObject()->getComponent<gun>();
+		}
 		return barrels->rof;
 	}
 	void onStart()
 	{
+		// vec3 up = transform->getParent()->up();
+		// if(under){
+		// 	up = -up;
+		// }
+		// if(forward){
+		// 	transform->lookat(transform->getParent()->forward(),up);
+		// }else{
+		// 	transform->lookat(-transform->getParent()->forward(),up);
+		// }
 		guns = transform->getChildren().front();
 		barrels = guns->gameObject()->getComponent<gun>();
 		sound = transform->gameObject()->getComponent<audiosource>();
@@ -343,10 +361,15 @@ public:
 		RENDER(turret_speed);
 		RENDER(gun_speed);
 		RENDER(muzzelFlash);
+		RENDER(target);
 	}
 	//UPDATE(_turret,update);
 	COPY(_turret);
-	SER2(target, guns);
+	SER_HELPER()
+	{
+		SER_BASE(component);
+		ar &target &gun_speed &muzzelFlash &guns &t_angles &g_angles &turret_angle &guns_angle; // & forward & under;
+	}
 };
 REGISTER_COMPONENT(_turret)
 
@@ -359,25 +382,20 @@ class gunManager final : public component
 	double t_;
 
 public:
-	void update()
+	void fire()
 	{
-		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
+		if (Time.time > t)
 		{
-			// for(auto& i : turrets){
-			if (Time.time > t)
+			for (auto &i : turrets)
 			{
-				for (auto &i : turrets)
+				if (i->reloaded() && i->onTarget())
 				{
-					if (i->reloaded() && i->onTarget())
-					{
-						i->fire();
-						t = Time.time + t_;
-						curr = (curr + 1) % turrets.size();
-						break;
-					}
+					i->fire();
+					t = Time.time + t_;
+					curr = (curr + 1) % turrets.size();
+					break;
 				}
 			}
-			// }
 		}
 	}
 	void onStart()
@@ -444,33 +462,65 @@ public:
 		maxForward = 10000;
 		rotationSpeed = radians(10.f);
 	}
+	void accelerate(float acc)
+	{
+
+		// if(length(vel) > maxForward){
+		// 	vel = normalize(vel) * maxForward;
+		// }
+		accel = glm::clamp(accel + acc * thrust * Time.deltaTime, -maxReverse, maxForward);
+	}
+	void maxAccel()
+	{
+		accel = maxForward;
+	}
+	void stop()
+	{
+		accel = 0;
+	}
+	void pitch(float _pitch)
+	{
+		transform->rotate(glm::vec3(1, 0, 0), _pitch * Time.deltaTime * rotationSpeed);
+	}
+	void yaw(float _yaw)
+	{
+		transform->rotate(glm::vec3(0, 1, 0), _yaw * Time.deltaTime * rotationSpeed);
+	}
+	void roll(float _roll)
+	{
+		transform->rotate(glm::vec3(0, 0, 1), _roll * Time.deltaTime * rotationSpeed);
+	}
 	void update()
 	{
-		transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
-		transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
-		transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
-
 		vel -= vel * 0.4f * Time.deltaTime;
 		vel += transform->forward() * accel * 0.4f * Time.deltaTime;
 		ship_vel = length(vel);
 		ship_accel = accel;
-		// if(length(vel) > maxForward){
-		// 	vel = normalize(vel) * maxForward;
-		// }
-		accel = glm::clamp(accel + (Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F)) * thrust * Time.deltaTime, -maxReverse, maxForward);
-		// cout << " accel: " << accel << endl;
-		transform->getParent()->move(vel * Time.deltaTime, true);
-		if (Input.getKey(GLFW_KEY_T))
-		{
-			accel = maxForward;
-		}
-		if (Input.getKey(GLFW_KEY_G))
-		{
-			accel = 0;
-		}
-		// vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
-		//  + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up()
-		//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
+		// 	transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
+		// 	transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
+		// 	transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
+
+		// 	vel -= vel * 0.4f * Time.deltaTime;
+		// 	vel += transform->forward() * accel * 0.4f * Time.deltaTime;
+		// 	ship_vel = length(vel);
+		// 	ship_accel = accel;
+		// 	// if(length(vel) > maxForward){
+		// 	// 	vel = normalize(vel) * maxForward;
+		// 	// }
+		// 	accel = glm::clamp(accel + (Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F)) * thrust * Time.deltaTime, -maxReverse, maxForward);
+		// 	// cout << " accel: " << accel << endl;
+		// 	transform->getParent()->move(vel * Time.deltaTime, true);
+		// 	if (Input.getKey(GLFW_KEY_T))
+		// 	{
+		// 		accel = maxForward;
+		// 	}
+		// 	if (Input.getKey(GLFW_KEY_G))
+		// 	{
+		// 		accel = 0;
+		// 	}
+		// 	// vec3 inputVel = ((float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * transform->right()
+		// 	//  + (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * transform->up()
+		// 	//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
 	}
 
 	void onCollision(game_object *go, vec3 point, vec3 normal)
@@ -526,6 +576,8 @@ class player_sc : public component
 	float rotY;
 	float fov;
 	_camera *cam;
+	_ship *ship;
+	gunManager *gm;
 
 	gui::window *info;
 	gui::text *fps;
@@ -554,8 +606,17 @@ public:
 
 	void onStart()
 	{
+		list<transform2> vt = transform->getParent()->getParent()->getChildren();
+		transform2 ship_t;
+		for (auto &i : vt)
+		{
+			if (i->name() == "ship")
+				ship_t = i;
+		}
+
+		ship = ship_t->gameObject()->getComponent<_ship>();
 		// rb = transform->gameObject()->getComponent<rigidBody>();
-		guns = transform->gameObject()->getComponents<gun>();
+		guns = ship_t->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
 		guns[0]->ammo = ammo_proto;
 		guns[0]->rof = 3'000 / 60;
@@ -667,6 +728,7 @@ public:
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
 		{
+
 			// 	for(int i = 0; i <= Time.deltaTime * 100; i++){
 			// 		numBoxes++;
 			// 		auto g = new game_object(*physObj);
@@ -674,6 +736,7 @@ public:
 			// 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
 			// 	}
 			// guns[0]->fire();
+			gm->fire();
 		}
 		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
 		{
@@ -685,6 +748,13 @@ public:
 			// }
 			guns[1]->fire();
 		}
+		// 	transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
+		// 	transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
+		// 	transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
+		ship->pitch(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S));
+		ship->roll(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT));
+		ship->yaw(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D));
+		ship->accelerate(Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F));
 	}
 	//UPDATE(player_sc, update);
 	COPY(player_sc);
@@ -693,6 +763,35 @@ public:
 
 int node_clicked = 0;
 
+// if (ImGui::Button(types[this->type].c_str()))
+//             ImGui::OpenPopup("type");
+// if (ImGui::BeginPopup("type"))
+//         {
+//             ImGui::Text("collider type");
+//             ImGui::Separator();
+//             for (int i = 0; i < 4; i++)
+//                 if (ImGui::Selectable(types[(colType)i].c_str())){
+// 					switch ((colType)i)
+// 					{
+// 					case aabbType:
+// 						/* code */
+// 						break;
+// 					case obbType:
+// 						setOBB();
+// 						break;
+// 					case meshType:
+// 						// setMesh({0});
+// 						break;
+// 					case pointType:
+// 						setPoint();
+// 						break;
+// 					default:
+// 						break;
+// 					}
+//                     this->type = (colType)i;
+// 				}
+//             ImGui::EndPopup();
+//         }
 class transformWindow : public gui::gui_base
 {
 public:
@@ -707,10 +806,20 @@ public:
 			flags |= ImGuiTreeNodeFlags_Selected;
 		}
 		bool open;
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 		if (t.name() == "")
 			open = ImGui::TreeNodeEx(("game object " + to_string(t.id)).c_str(), flags);
 		else
 			open = ImGui::TreeNodeEx(t.name().c_str(), flags);
+
+		// char input[1024];
+		// sprintf(input, t.name().c_str());
+		// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+		// 	t.name() = {input};
+		// ImGui::PopID();
+		// ImGui::PopItemWidth();
+		// ImGui::Button(t.name().c_str(), {40, 40});
+
 		if (ImGui::IsItemClicked())
 		{
 			if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
@@ -722,6 +831,36 @@ public:
 			}
 			node_clicked = t.id;
 		}
+		if (ImGui::IsItemClicked(1))
+			ImGui::OpenPopup("game_object_context");
+		if (ImGui::BeginPopup("game_object_context"))
+		{
+			// ImGui::Text("collider type");
+			ImGui::Separator();
+			if (ImGui::Selectable("copy"))
+			{
+				new game_object(*t->gameObject());
+			}
+			if (ImGui::Selectable("delete"))
+			{
+				t->gameObject()->destroy();
+			}
+			if (ImGui::Selectable("new game object"))
+			{
+				new game_object();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::SameLine();
+		ImGui::Button("", {10, 10});
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+		{
+			// Set payload to carry the index of our item (could be anything)
+			ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
+			ImGui::EndDragDropSource();
+		}
+
 		if (open)
 		{
 			for (auto &i : t.getChildren())
@@ -747,25 +886,65 @@ class inspectorWindow : public gui::gui_base
 	{
 
 		transform2 t(node_clicked);
-		ImGui::DragFloat3("position", &Transforms.positions[node_clicked].x);
-		renderEdit("rotation", Transforms.rotations[node_clicked]);
-		ImGui::DragFloat3("scale", &Transforms.scales[node_clicked].x);
-		Transforms.updates[node_clicked].pos = true;
-		Transforms.updates[node_clicked].scl = true;
-		Transforms.updates[node_clicked].rot = true;
+
+		// position
+		glm::vec3 pos = t.getPosition();
+		glm::vec3 offset = pos;
+		if (ImGui::DragFloat3("position", &pos.x))
+		{
+			t.translate(pos - offset);
+			Transforms.updates[node_clicked].pos = true;
+		}
+
+		// rotation
+		glm::vec3 angles = glm::eulerAngles(Transforms.rotations[node_clicked]);
+		offset = angles;
+		angles = glm::degrees(angles);
+		if (ImGui::DragFloat3("rotation", &angles.x))
+		{
+			angles = glm::radians(angles);
+			t.rotate(glm::vec3(1, 0, 0), angles.x - offset.x);
+			t.rotate(glm::vec3(0, 1, 0), angles.y - offset.y);
+			t.rotate(glm::vec3(0, 0, 1), angles.z - offset.z);
+			Transforms.updates[node_clicked].rot = true;
+		}
+
+		// scale
+		glm::vec3 sc = t.getScale();
+		if (ImGui::DragFloat3("scale", &sc.x, 0.1))
+		{
+			t.setScale(sc);
+			Transforms.updates[node_clicked].scl = true;
+		}
 
 		int n{0};
-		for(auto i = t.gameObject()->components.begin();
-		 i != t.gameObject()->components.end();
-		  i++){
+		for (auto i = t.gameObject()->components.begin();
+			 i != t.gameObject()->components.end();
+			 i++)
+		{
 			ImGui::PushID(n);
 			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-			if(ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second->hash]->getName()).c_str())){
+			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second->hash]->getName()).c_str()))
+			{
 				i->first->onEdit();
 				ImGui::TreePop();
 			}
 			ImGui::PopID();
 			n++;
+		}
+
+		if (ImGui::Button("add component"))
+			ImGui::OpenPopup("add_component_context");
+		if (ImGui::BeginPopup("add_component_context"))
+		{
+			for (auto &i : ComponentRegistry.meta)
+			{
+				if (ImGui::Selectable(i.first.c_str()))
+				{
+					i.second->addComponent(t->gameObject());
+				}
+			}
+			ImGui::EndPopup();
 		}
 	}
 };
@@ -800,7 +979,8 @@ class assetWindow : public gui::gui_base
 			it++;
 		}
 
-		for(auto& i : assets::assets){
+		for (auto &i : assets::assets)
+		{
 			ImGui::BeginGroup();
 			ImGui::PushItemWidth(50);
 			ImGui::PushID(i.first + 3);
@@ -821,7 +1001,7 @@ class assetWindow : public gui::gui_base
 };
 
 REGISTER_COMPONENT(player_sc)
-class player_sc2 : public component
+class editor_sc : public component
 {
 	float speed = 3.f;
 	bool cursorReleased = true;
@@ -844,7 +1024,7 @@ public:
 
 		// base = new gui::window("base");
 		// // ImGuiWindowFlags flags = 0;
-		
+
 		// // base->flags |= ImGuiWindowFlags_NoDocking;
 		// // base->flags |= ImGuiWindowFlags_DockNodeHost;
 		// base->flags |= ImGuiWindowFlags_NoNavInputs;
@@ -855,7 +1035,6 @@ public:
 		// // base->flags = flags;
 		// // base->name = "base";
 		// base->pos = {0, 0};
-
 
 		info = new gui::window();
 		info->pos = {20, 20};
@@ -943,7 +1122,7 @@ public:
 				guns[0]->fire();
 			}
 		}
-		if (Input.getKey(GLFW_KEY_V))
+		if (Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKey(GLFW_KEY_S))
 		{
 			save_game("game.lvl");
 		}
@@ -952,10 +1131,10 @@ public:
 	{
 		RENDER(speed);
 	}
-	COPY(player_sc2);
+	COPY(editor_sc);
 	SER3(speed, fov, ammo_proto);
 };
-REGISTER_COMPONENT(player_sc2)
+REGISTER_COMPONENT(editor_sc)
 
 class player_sc3 : public component
 {
@@ -1031,7 +1210,7 @@ public:
 			guns[0]->fire();
 		}
 	}
-	void onEdit(){}
+	void onEdit() {}
 	COPY(player_sc3);
 	SER3(speed, cursorReleased, fov);
 };
@@ -1048,7 +1227,8 @@ public:
 	{
 		transform->setPosition(root2.getPosition() + vec3(cos(Time.time / day_cycle), sin(Time.time / day_cycle), 0) * distance * mat3(rotate(radians(45.f), vec3(0, 0, 1))));
 	}
-	void onEdit(){
+	void onEdit()
+	{
 		RENDER(distance);
 		RENDER(day_cycle);
 	}
@@ -1091,6 +1271,8 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 		turret->transform->rotate(vec3(0, 1, 0), radians(180.f));
 	}
 	auto t = turret->addComponent<_turret>();
+	// t->forward = forward;
+	// t->under = upright;
 	t->setTarget(target);
 	t->t_angles[0] = radians(-135.f);
 	t->t_angles[1] = radians(0.f);
@@ -1106,9 +1288,13 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	t->gun_speed = glm::radians(100.f);
 }
 
-#define REG_ASSET(_name)\
-_name.meta()->name = #_name;\
-assets::registerAsset(_name.meta());
+#define REG_ASSET(_name)         \
+	_name.meta()->name = #_name; \
+	assets::registerAsset(_name.meta());
+
+#define REG_ASSET2(_name) \
+	_name.name = #_name; \
+	assets::registerAsset(&_name); 
 
 int level1(bool load)
 {
@@ -1116,9 +1302,9 @@ int level1(bool load)
 	seedRand(vec3(123456789, 345678901, 567890123));
 	genNoise(512, 512, 4);
 
+	collisionGraph[-1] = {};
 	collisionGraph[0] = {1};
 	collisionGraph[1] = {0, 1};
-
 
 	if (!load)
 	{
@@ -1188,6 +1374,8 @@ int level1(bool load)
 		fa.addKey(0.f, 0.f).addKey(0.4f, 0.02f).addKey(2.0, 1.0);
 
 		emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
+		REG_ASSET2(flameEmitterProto);
+
 		flameEmitterProto->dispersion = 3.14159f;
 		flameEmitterProto->emission_rate = 1.2f;
 		flameEmitterProto->lifetime = 3.f;
@@ -1201,6 +1389,7 @@ int level1(bool load)
 		ca.setColorArray(flameEmitterProto->colorLife);
 
 		emitter_prototype_ _muzzelFlash = createNamedEmitter("muzzelFlash");
+		REG_ASSET(_muzzelFlash);
 		_muzzelFlash->dispersion = 0.5f;
 		_muzzelFlash->emission_rate = 1.f;
 		_muzzelFlash->lifetime = 4.f;
@@ -1349,7 +1538,7 @@ int level1(bool load)
 		playerCam->nearPlane = 0.00001f;
 		player->addComponent<gun>();
 		player->addComponent<gun>();
-		player->addComponent<player_sc2>()->ammo_proto = bomb_proto;
+		player->addComponent<editor_sc>()->ammo_proto = bomb_proto;
 
 		// player->addComponent<Light>()->setColor(glm::vec3(3, 3, 20));
 		// player->getComponent<Light>()->setConstant(1.f);
@@ -1370,60 +1559,71 @@ int level1(bool load)
 		// player->addComponent<player_sc>();
 		// player->transform->translate(vec3(0, 10, -35));
 
-		// game_object* boom = new game_object();
-		// boom->transform->adopt(player->transform);
-		// // auto b = boom->addComponent<_boom>();
+		_model turretm("res/models/ship1/maingun.obj");
+		_model gunsm("res/models/ship1/3guns.obj");
+		_model shipModel = _model("res/models/ship1/ship.obj");
 
-		// auto pointer = new game_object();
-		// pointer->transform->setPosition(player->transform->getPosition());
-		// player->transform->adopt(pointer->transform);
-		// pointer->transform->translate(vec3(0,0,5000));
-		// pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
+		REG_ASSET(turretm);
+		REG_ASSET(gunsm);
+		REG_ASSET(shipModel);
 
-		// game_object* ship = new game_object();
-		// auto r_ = ship->addComponent<_renderer>();
-		// _model shipModel = _model("res/models/ship1/ship.obj");
-		// r_->set(modelShader,shipModel);
-		// ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
-		// auto ship_col = ship->addComponent<collider>();
-		// ship_col->setMesh(shipModel.mesh());
-		// ship_col->dim = vec3(4,2,20);
-		// ship_col->layer = 1;
+		game_object *player_prox = new game_object();
+		player_prox->transform->setPosition({0, 10, -35});
+		game_object *boom = new game_object();
+		boom->transform->adopt(player_prox->transform);
+		// auto b = boom->addComponent<_boom>();
 
-		// vector<vec2> MainGunPos_s = {vec2(1.2,7.0),
-		// vec2(1.7,4.45),
-		// vec2(1.7,-5.2),
-		// vec2(1.2,-8.2),
-		// vec2(-1.2,5.85),
-		// vec2(-1.7,3.05),
-		// vec2(-1.7,-4.25),
-		// vec2(-1.2,-7.1)};
-		// for(auto& i : MainGunPos_s){
-		// 	makeGun(ship->transform,vec3(0,i.x,i.y),pointer->transform,i.y > 0,i.x > 0, bomb_proto);
-		// }
-		// ship->addComponent<gunManager>();
+		auto pointer = new game_object();
+		pointer->transform->setPosition(player_prox->transform->getPosition());
+		player_prox->transform->adopt(pointer->transform);
+		pointer->transform->translate(vec3(0, 0, 5000));
+		pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
 
-		// ship->addComponent<Light>();
-		// ship->getComponent<Light>()->setColor(vec3(100,0,0));
-		// ship->getComponent<Light>()->setConstant(1.f);
-		// ship->getComponent<Light>()->setlinear(0.01f);
-		// ship->getComponent<Light>()->setQuadratic(0.0032f);
-		// ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
-		// ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
+		game_object *ship = new game_object();
+		ship->transform->name() = "ship";
+		auto r_ = ship->addComponent<_renderer>();
+		r_->set(modelShader, shipModel);
+		ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
+		auto ship_col = ship->addComponent<collider>();
+		ship_col->setMesh(&shipModel.mesh());
+		ship_col->dim = vec3(4, 2, 20);
+		ship_col->layer = 1;
 
-		// game_object* engine = new game_object();
-		// engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineTrail"));
-		// engine->addComponent<particle_emitter>()->setPrototype(getEmitterPrototypeByName("engineFlame"));
-		// engine->transform->translate(vec3(0,0,-10));
-		// ship->transform->adopt(engine->transform);
-		// engine = new game_object(*engine);
-		// engine->transform->translate(vec3(-2.2,0,6));
-		// engine = new game_object(*engine);
-		// engine->transform->translate(vec3(2.2 * 2,0,0));
+		vector<vec2> MainGunPos_s = {vec2(1.2, 7.0),
+									 vec2(1.7, 4.45),
+									 vec2(1.7, -5.2),
+									 vec2(1.2, -8.2),
+									 vec2(-1.2, 5.85),
+									 vec2(-1.7, 3.05),
+									 vec2(-1.7, -4.25),
+									 vec2(-1.2, -7.1)};
+		for (auto &i : MainGunPos_s)
+		{
+			makeGun(ship->transform, vec3(0, i.x, i.y), pointer->transform, i.y > 0, i.x > 0, bomb_proto);
+		}
+		ship->addComponent<gunManager>();
 
-		// game_object* ship_container = new game_object();
-		// ship_container->transform->adopt(ship->transform);
-		// ship_container->transform->adopt(boom->transform);
+		ship->addComponent<Light>();
+		ship->getComponent<Light>()->setColor(vec3(100, 0, 0));
+		ship->getComponent<Light>()->setConstant(1.f);
+		ship->getComponent<Light>()->setlinear(0.01f);
+		ship->getComponent<Light>()->setQuadratic(0.0032f);
+		ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
+		ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
+
+		game_object *engine = new game_object();
+		engine->addComponent<particle_emitter>()->setPrototype(getNamedEmitterProto("engineTrail"));
+		engine->addComponent<particle_emitter>()->setPrototype(getNamedEmitterProto("engineFlame"));
+		engine->transform->translate(vec3(0, 0, -10));
+		ship->transform->adopt(engine->transform);
+		engine = new game_object(*engine);
+		engine->transform->translate(vec3(-2.2, 0, 6));
+		engine = new game_object(*engine);
+		engine->transform->translate(vec3(2.2 * 2, 0, 0));
+
+		game_object *ship_container = new game_object();
+		ship_container->transform->adopt(ship->transform);
+		ship_container->transform->adopt(boom->transform);
 		////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////

@@ -63,6 +63,10 @@ class Light : public component
     typename fast_list<pointLight>::iterator pl;
 
 public:
+    Light() = default;
+    Light(const Light& l){
+        pl = 0;
+    }
     void setColor(glm::vec3 col)
     {
         pl->color = col;

@@ -5,7 +5,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "game_object.h"
-
+#include "editor.h"
 #include <fstream>
 using namespace std;
 using namespace glm;
@@ -72,16 +72,29 @@ struct emitter_prototype
                 &maxSpeed &lifetime2 &live &scale &billboard &velAlign
                     &radius &trail &colorLife &sizeLife;
     }
+    void edit(){
+        RENDER(emission_rate);
+        RENDER(lifetime);
+        RENDER(lifetime2);
+        RENDER(rotation_rate);
+        RENDER(dispersion);
+        RENDER(minSpeed);
+        RENDER(maxSpeed);
+        RENDER(scale);
+        RENDER(billboard);
+        RENDER(velAlign);
+        RENDER(radius);
+    }
 };
-class emitter_prototype_
+class emitter_prototype_ : public assets::asset
 {
     typename array_heap<emitter_prototype>::ref emitterPrototype;
-    string name;
+    // string name;
     friend emitter_prototype_ createNamedEmitter(string name);
     friend emitter_prototype_ getNamedEmitterProto(string name);
 
 public:
-    uint getId();
+    int getId();
     emitter_prototype *operator->();
     emitter_prototype &operator*();
     void burst(glm::vec3 pos, glm::vec3 dir, uint count);
@@ -91,6 +104,7 @@ public:
     SER_HELPER(){
         ar & emitterPrototype;
     }
+    void onEdit();
 };
 
 void renderEdit(string name, emitter_prototype_& ep);
@@ -126,7 +140,9 @@ class particle_emitter final : public component
 public:
     typename array_heap<emitter>::ref emitter;
     // typename array_heap<GLint>::ref emitter_last_particle;
-    void onEdit();
+    void onEdit(){
+        RENDER(prototype);
+    }
     COPY(particle_emitter);
     void setPrototype(emitter_prototype_ ep);
     void onStart();

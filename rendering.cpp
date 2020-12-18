@@ -94,7 +94,7 @@ _model::_model(string fileName)
 	}
 	else
 	{
-		_modelMeta* _mm = new _modelMeta(fileName);
+		_modelMeta *_mm = new _modelMeta(fileName);
 		modelManager::models[key] = _mm;
 		modelManager::models_id[_mm->genID()] = _mm;
 		m = _mm->id;
@@ -498,6 +498,8 @@ void _renderer::set(_shader s, _model m)
 	{
 		meta->ids.erase(transformIdRef);
 	}
+	if (s.s == 0 || m.m == 0)
+		return;
 	renderingManager::lock();
 	auto r = renderingManager::shader_model_vector.find(s.s);
 	if (r == renderingManager::shader_model_vector.end())
@@ -582,7 +584,7 @@ void _renderer::onDestroy()
 void renderEdit(const char *name, _model &m)
 {
 	// ImGui::DragInt(name,&i);
-	if(m.m == 0) // uninitialized
+	if (m.m == 0) // uninitialized
 		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
 	else
 		ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
@@ -601,7 +603,7 @@ void renderEdit(const char *name, _model &m)
 void renderEdit(const char *name, _shader &s)
 {
 	// ImGui::DragInt(name,&i);
-	if(s.s == 0) // uninitialized
+	if (s.s == 0) // uninitialized
 		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
 	else
 		ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
@@ -624,8 +626,9 @@ void _renderer::onEdit()
 	RENDER(model);
 	RENDER(shader);
 
-	if(model.m != curr_m.m || shader.s != curr_s.s){
-		this->set(shader,model);
+	if (model.m != curr_m.m || shader.s != curr_s.s)
+	{
+		this->set(shader, model);
 	}
 }
 REGISTER_COMPONENT(_renderer)

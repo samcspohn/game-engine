@@ -277,6 +277,26 @@ void initTransform()
 	transformIds->usage = GL_STREAM_COPY;
 }
 
+void renderEdit(const char* name, transform2& t){
+	if(t.id == -1) // uninitialized
+		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	else if(t.name() == ""){
+		string n = "game object " + to_string(t.id);
+		ImGui::InputText(name, (char*)n.c_str(), n.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	}
+	else 
+		ImGui::InputText(name, (char *)t.name().c_str(), t.name().size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			t.id = payload_n;
+		}
+		ImGui::EndDragDropTarget();
+	}
+}
 void saveTransforms(OARCHIVE &oa)
 {
 	oa << Transforms;
