@@ -205,16 +205,17 @@ gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
 gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
 array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
-map<string, typename array_heap<emitter_prototype>::ref> emitter_prototypes;
+map<string, int> emitter_prototypes;
 map<int, string> emitter_proto_names;
+map<int, emitter_proto_asset *> emitter_proto_assets;
 
 void saveEmitters(OARCHIVE &oa)
 {
-    oa << emitter_prototypes_ << emitter_prototypes;
+    oa << emitter_prototypes_ << emitter_prototypes << emitter_proto_names << emitter_proto_assets;
 }
 void loadEmitters(IARCHIVE &ia)
 {
-    ia >> emitter_prototypes_ >> emitter_prototypes;
+    ia >> emitter_prototypes_ >> emitter_prototypes >> emitter_proto_names >> emitter_proto_assets;
 }
 
 mutex burstLock;
@@ -223,18 +224,17 @@ void swapBurstBuffer()
     gpu_particle_bursts->storage->swap(particle_bursts);
     particle_bursts.clear();
 }
-
 int emitter_prototype_::getId()
 {
-    return emitterPrototype.index;
+    return emitter_proto_assets[emitterPrototype]->ref.index;
 }
 emitter_prototype *emitter_prototype_::operator->()
 {
-    return &emitterPrototype.data();
+    return &emitter_proto_assets[emitterPrototype]->ref.data();
 }
 emitter_prototype &emitter_prototype_::operator*()
 {
-    return emitterPrototype.data();
+    return emitter_proto_assets[emitterPrototype]->ref.data();
 }
 void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, uint count)
 {
@@ -261,12 +261,19 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, ui
     burstLock.unlock();
 }
 
+REGISTER_ASSET(emitter_proto_asset);
 emitter_prototype_ createNamedEmitter(string name)
 {
-    emitter_prototypes.insert(std::pair<string, typename array_heap<emitter_prototype>::ref>(name, emitter_prototypes_._new()));
+    emitter_proto_asset *ep = new emitter_proto_asset();
+    ep->genID();
+    ep->ref = emitter_prototypes_._new();
+    emitter_proto_assets[ep->id] = ep;
+    emitter_prototypes.insert(std::pair<string, int>(name, ep->id));
+    // ret.emitterPrototype = emitter_prototypes.at(name);
+    emitter_proto_names[ep->id] = name;
     emitter_prototype_ ret;
-    ret.emitterPrototype = emitter_prototypes.at(name);
-    emitter_proto_names[ret.emitterPrototype.index] = name;
+    ret.emitterPrototype = ep->id;
+    // ret.genID();
     return ret;
 }
 emitter_prototype_ getNamedEmitterProto(string name)
@@ -275,29 +282,49 @@ emitter_prototype_ getNamedEmitterProto(string name)
     ret.emitterPrototype = emitter_prototypes.at(name);
     return ret;
 }
-void emitter_prototype_::onEdit()
+emitter_proto_asset *emitter_prototype_::meta()
+{
+    return emitter_proto_assets[emitterPrototype];
+}
+void emitter_proto_asset::onEdit()
 {
 
     char input[1024];
-	sprintf(input, name.c_str());
-	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-		name = {input};
-	ImGui::PopID();
-	ImGui::PopItemWidth();
-	ImGui::Button(name.c_str(), {40, 40});
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-	{
-		// Set payload to carry the index of our item (could be anything)
-		ImGui::SetDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP", &this->emitterPrototype.index, sizeof(int));
-		ImGui::EndDragDropSource();
-	}
+    sprintf(input, name.c_str());
+    if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+        name = {input};
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+    ImGui::Button(name.c_str(), {40, 40});
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+    {
+        // Set payload to carry the index of our item (could be anything)
+        ImGui::SetDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP", &this->id, sizeof(int));
+        ImGui::EndDragDropSource();
+    }
 
     // emitterPrototype->edit();
+}
 
+void particle_emitter::onEdit()
+{
+    ImGui::InputText("prototype", (char *)emitter_proto_names.at(prototype.emitterPrototype).c_str(), emitter_proto_names.at(prototype.emitterPrototype).size() + 1, ImGuiInputTextFlags_ReadOnly);
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))
+        {
+            IM_ASSERT(payload->DataSize == sizeof(int));
+            int payload_n = *(const int *)payload->Data;
+            prototype = getNamedEmitterProto(emitter_proto_names.at(payload_n));
+            this->setPrototype(prototype);
+        }
+        ImGui::EndDragDropTarget();
+    }
+    // RENDER(prototype);
 }
 
 void renderEdit(const char *name, emitter_prototype_ &ep){
-    ImGui::InputText(name, (char *)emitter_proto_names.at(ep.getId()).c_str(), emitter_proto_names.at(ep.getId()).size() + 1, ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText(name, (char *)emitter_proto_names.at(ep.emitterPrototype).c_str(), emitter_proto_names.at(ep.emitterPrototype).size() + 1, ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))
@@ -317,16 +344,22 @@ vector<emitterInit> emitterInits;
 vector<emitterInit> emitterInitsdb;
 unordered_map<uint, emitterInit> emitter_inits;
 
-void renderEdit(string name, emitter_prototype_ &ep)
-{
-    for (auto &i : emitter_prototypes)
-    {
-        if (ep.getId() == i.second.index)
-            ImGui::Text(i.first.c_str());
-    }
-}
+// void renderEdit(string name, emitter_prototype_ &ep)
+// {
+//     ImGui::Text(emitter_proto_names.at(ep.emitterPrototype).c_str());
+//     // for (auto &i : emitter_prototypes)
+//     // {
+//     //     if (ep.getId() == i.second.index)
+//     //         ImGui::Text(i.first.c_str());
+//     // }
+// }
 
 // COPY(particle_emitter);
+
+void particle_emitter::protoSetPrototype(emitter_prototype_ ep){
+    prototype = ep;
+}
+
 void particle_emitter::setPrototype(emitter_prototype_ ep)
 {
     prototype = ep;
@@ -375,14 +408,14 @@ void particle_emitter::onDestroy()
     emitter_inits[ei.id] = ei;
     lock.unlock();
 }
-void particle_emitter::onEdit()
-{
-    for (auto &i : emitter_prototypes)
-    {
-        if (this->prototype.getId() == i.second.index)
-            ImGui::Text(i.first.c_str());
-    }
-}
+// void particle_emitter::onEdit()
+// {
+//     for (auto &i : emitter_prototypes)
+//     {
+//         if (this->prototype.getId() == i.second.index)
+//             ImGui::Text(i.first.c_str());
+//     }
+// }
 REGISTER_COMPONENT(particle_emitter)
 
 mutex particle_emitter::lock;
@@ -415,6 +448,9 @@ void initParticles()
     particleLifes->tryRealloc(MAX_PARTICLES);
     particleLifes->bufferData(_0s);
     gpu_emitter_prototypes->storage = &emitter_prototypes_.data;
+    emitter_proto_asset *ep = new emitter_proto_asset();
+    ep->ref = emitter_prototypes_._new();
+    emitter_proto_assets[0] = ep;
 
     // gpu_emitters->tryRealloc(1024 * 1024 * 4);
 }

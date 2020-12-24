@@ -199,7 +199,7 @@ public:
         audioMeta *_a = audioManager::audios_ids[a.a];
         alSourcei(Source, AL_BUFFER, _a->Buffer);
         alSourcef(Source, AL_PITCH, pitch);
-        alSourcef(Source, AL_GAIN, gain);
+        alSourcef(Source, AL_GAIN, gain * 100 / glm::length(pos));
         alSourcefv(Source, AL_POSITION, glm::value_ptr(pos));
         alSourcefv(Source, AL_VELOCITY, ListenerVel);
         alSourcei(Source, AL_LOOPING, _a->loop);

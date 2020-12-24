@@ -70,7 +70,7 @@ public:
 		// numCubes.fetch_add(-1);
 
 		// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		explosionSound.play(transform->getPosition(), 1, 1);
+		explosionSound.play(transform->getPosition(), 0.5, 0.2 );
 		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// hit = true;
@@ -1374,7 +1374,7 @@ int level1(bool load)
 		fa.addKey(0.f, 0.f).addKey(0.4f, 0.02f).addKey(2.0, 1.0);
 
 		emitter_prototype_ flameEmitterProto = createNamedEmitter("flame");
-		REG_ASSET2(flameEmitterProto);
+		REG_ASSET(flameEmitterProto);
 
 		flameEmitterProto->dispersion = 3.14159f;
 		flameEmitterProto->emission_rate = 1.2f;
@@ -1402,6 +1402,7 @@ int level1(bool load)
 		ca2.setColorArray(_muzzelFlash->colorLife);
 
 		emitter_prototype_ expFlame = createNamedEmitter("expflame");
+		REG_ASSET(expFlame);
 		expFlame->dispersion = 3.14159f / 2.f;
 		expFlame->emission_rate = 50.f;
 		expFlame->lifetime = 2.2f;
@@ -1415,6 +1416,7 @@ int level1(bool load)
 		ca2.setColorArray(expFlame->colorLife);
 
 		emitter_prototype_ shockWave = createNamedEmitter("shockWave");
+		REG_ASSET(shockWave)
 		shockWave->dispersion = 3.14159f / 2.f;
 		// shockWave->emission_rate = 50.f;
 		shockWave->lifetime = 0.3f;
@@ -1427,6 +1429,7 @@ int level1(bool load)
 		shockWave->color(vec4(1, 1, 1, 0.6), vec4(1, 1, 1, 0));
 
 		emitter_prototype_ debris = createNamedEmitter("debris");
+		REG_ASSET(debris)
 		debris->dispersion = 3.14159f / 2.f;
 		// debris->emission_rate = 50.f;
 		debris->lifetime = 5.f;
@@ -1454,6 +1457,7 @@ int level1(bool load)
 		// laser.primaryexplosion = getEmitterPrototypeByName("expflame");
 
 		emitter_prototype_ engineTrail = createNamedEmitter("engineTrail");
+		REG_ASSET(engineTrail);
 		*engineTrail = *flameEmitterProto;
 		engineTrail->dispersion = 0.0f;
 		engineTrail->emission_rate = 2.f;
@@ -1466,6 +1470,7 @@ int level1(bool load)
 		engineTrail->trail = 1;
 
 		emitter_prototype_ engineFlame = createNamedEmitter("engineFlame");
+		REG_ASSET(engineFlame);
 		engineFlame->dispersion = 0.5f;
 		engineFlame->emission_rate = 15.f;
 		engineFlame->lifetime = 4.f;
@@ -1488,7 +1493,7 @@ int level1(bool load)
 		bomb_proto->getComponent<collider>()->setPoint();
 		// bomb_proto->addComponent<physicsObject>();
 		// bomb_proto->addComponent<audiosource>()->set(gunSound);
-		bomb_proto->addComponent<particle_emitter>();
+		bomb_proto->addComponent<particle_emitter>()->protoSetPrototype(flameEmitterProto);
 		// bomb.proto = bomb_proto;
 		bomb_proto->addComponent<missile>()->exp = getNamedEmitterProto("expflame"); //bomb.primaryexplosion;//setBullet(bomb);
 																					 // bullets["bomb"] = bomb;

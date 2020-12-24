@@ -10,12 +10,12 @@
 using namespace std;
 using namespace glm;
 
-
-
-void saveEmitters(OARCHIVE& oa);
-void loadEmitters(IARCHIVE& ia);
+void saveEmitters(OARCHIVE &oa);
+void loadEmitters(IARCHIVE &ia);
 
 class component;
+class particle_emitter;
+
 struct colorArray
 {
     struct key
@@ -69,10 +69,11 @@ struct emitter_prototype
     SER_HELPER()
     {
         ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
-                &maxSpeed &lifetime2 &live &scale &billboard &velAlign
-                    &radius &trail &colorLife &sizeLife;
+            &maxSpeed &lifetime2 &live &scale &billboard &velAlign
+                &radius &trail &colorLife &sizeLife;
     }
-    void edit(){
+    void edit()
+    {
         RENDER(emission_rate);
         RENDER(lifetime);
         RENDER(lifetime2);
@@ -86,14 +87,32 @@ struct emitter_prototype
         RENDER(radius);
     }
 };
-class emitter_prototype_ : public assets::asset
+
+class emitter_proto_asset : public assets::asset
 {
-    typename array_heap<emitter_prototype>::ref emitterPrototype;
+public:
+    typename array_heap<emitter_prototype>::ref ref;
+    void onEdit();
+    SER_HELPER()
+    {
+        SER_BASE_ASSET
+        ar &ref;
+    }
+};
+extern map<int, emitter_proto_asset *> emitter_proto_assets;
+
+class emitter_prototype_
+{
+    int emitterPrototype;
+    // typename array_heap<emitter_prototype>::ref emitterPrototype;
     // string name;
     friend emitter_prototype_ createNamedEmitter(string name);
     friend emitter_prototype_ getNamedEmitterProto(string name);
+    friend void renderEdit(const char *name, emitter_prototype_ &ep);
+    friend class particle_emitter;
 
 public:
+    emitter_proto_asset *meta();
     int getId();
     emitter_prototype *operator->();
     emitter_prototype &operator*();
@@ -101,13 +120,13 @@ public:
     void burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, uint count);
     friend emitter_prototype_ createNamedEmitter(string name);
     friend emitter_prototype_ getNamedEmitterProto(string name);
-    SER_HELPER(){
-        ar & emitterPrototype;
+    SER_HELPER()
+    {
+        ar &emitterPrototype;
     }
-    void onEdit();
 };
 
-void renderEdit(string name, emitter_prototype_& ep);
+void renderEdit(string name, emitter_prototype_ &ep);
 emitter_prototype_ createNamedEmitter(string name);
 emitter_prototype_ getNamedEmitterProto(string name);
 
@@ -140,11 +159,10 @@ class particle_emitter final : public component
 public:
     typename array_heap<emitter>::ref emitter;
     // typename array_heap<GLint>::ref emitter_last_particle;
-    void onEdit(){
-        RENDER(prototype);
-    }
+    void onEdit();
     COPY(particle_emitter);
     void setPrototype(emitter_prototype_ ep);
+    void protoSetPrototype(emitter_prototype_ ep);
     void onStart();
     void onDestroy();
     SER1(prototype);
