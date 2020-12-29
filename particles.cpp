@@ -286,24 +286,29 @@ emitter_proto_asset *emitter_prototype_::meta()
 {
     return emitter_proto_assets[emitterPrototype];
 }
-void emitter_proto_asset::onEdit()
+bool emitter_proto_asset::onEdit()
 {
-
+    
     char input[1024];
     sprintf(input, name.c_str());
     if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
         name = {input};
     ImGui::PopID();
     ImGui::PopItemWidth();
-    ImGui::Button(name.c_str(), {40, 40});
+    bool ret = ImGui::Button(name.c_str(), {40, 40});
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
     {
         // Set payload to carry the index of our item (could be anything)
         ImGui::SetDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP", &this->id, sizeof(int));
         ImGui::EndDragDropSource();
     }
+    return ret;
 
     // emitterPrototype->edit();
+}
+
+void emitter_proto_asset::inspect(){
+    this->ref->edit();
 }
 
 void particle_emitter::onEdit()

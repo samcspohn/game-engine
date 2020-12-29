@@ -16,13 +16,19 @@
 
 using namespace std;
 
+class inspectable{
+    public:
+    virtual void inspect(){};
+};
+
+
 namespace assets{
-    class asset{
+    class asset : public inspectable{
         public:
         int id = 0;
         string name;
         int genID();
-        virtual void onEdit();
+        virtual bool onEdit();
         SER_HELPER(){
             ar & id & name;
         }
@@ -32,6 +38,7 @@ namespace assets{
     void save(OARCHIVE& oa);
     void load(IARCHIVE& ia);
 }
+
 
 #define RENDER(name)\
     renderEdit(#name,name);

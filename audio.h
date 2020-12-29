@@ -45,7 +45,7 @@ struct audioMeta : public assets::asset
     {
         alDeleteBuffers(1, &Buffer);
     }
-    void onEdit()
+    bool onEdit()
     {
         char input[1024];
         sprintf(input, name.c_str());
@@ -60,6 +60,7 @@ struct audioMeta : public assets::asset
             ImGui::SetDragDropPayload("AUDIO_DRAG_AND_DROP", &id, sizeof(int));
             ImGui::EndDragDropSource();
         }
+        return false;
     }
     SER_HELPER()
     {

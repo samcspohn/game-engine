@@ -82,8 +82,15 @@ struct emitter_prototype
         RENDER(minSpeed);
         RENDER(maxSpeed);
         RENDER(scale);
-        RENDER(billboard);
-        RENDER(velAlign);
+        // RENDER(billboard);
+        bool b = billboard;
+        if(ImGui::Checkbox("billboard",&b))
+            billboard = b;
+        b = velAlign;
+        if(ImGui::Checkbox("align to velocity",&b))
+            velAlign = b;
+        // RENDER(velAlign);
+
         RENDER(radius);
     }
 };
@@ -92,7 +99,8 @@ class emitter_proto_asset : public assets::asset
 {
 public:
     typename array_heap<emitter_prototype>::ref ref;
-    void onEdit();
+    bool onEdit();
+    void inspect();
     SER_HELPER()
     {
         SER_BASE_ASSET

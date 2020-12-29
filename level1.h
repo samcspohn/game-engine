@@ -761,7 +761,7 @@ public:
 	SER1(speed);
 };
 
-int node_clicked = 0;
+// int node_clicked = 0;
 
 // if (ImGui::Button(types[this->type].c_str()))
 //             ImGui::OpenPopup("type");
@@ -792,6 +792,9 @@ int node_clicked = 0;
 // 				}
 //             ImGui::EndPopup();
 //         }
+
+	inspectable* inspector = 0;
+
 class transformWindow : public gui::gui_base
 {
 public:
@@ -829,7 +832,8 @@ public:
 				selected.clear();
 				selected[t.id] = true;
 			}
-			node_clicked = t.id;
+			inspector = t->gameObject();
+			// node_clicked = t.id;
 		}
 		if (ImGui::IsItemClicked(1))
 			ImGui::OpenPopup("game_object_context");
@@ -879,73 +883,15 @@ public:
 	}
 };
 
+
 class inspectorWindow : public gui::gui_base
 {
-
 	void render()
 	{
+		if(inspector)
+			inspector->inspect();
 
-		transform2 t(node_clicked);
-
-		// position
-		glm::vec3 pos = t.getPosition();
-		glm::vec3 offset = pos;
-		if (ImGui::DragFloat3("position", &pos.x))
-		{
-			t.translate(pos - offset);
-			Transforms.updates[node_clicked].pos = true;
-		}
-
-		// rotation
-		glm::vec3 angles = glm::eulerAngles(Transforms.rotations[node_clicked]);
-		offset = angles;
-		angles = glm::degrees(angles);
-		if (ImGui::DragFloat3("rotation", &angles.x))
-		{
-			angles = glm::radians(angles);
-			t.rotate(glm::vec3(1, 0, 0), angles.x - offset.x);
-			t.rotate(glm::vec3(0, 1, 0), angles.y - offset.y);
-			t.rotate(glm::vec3(0, 0, 1), angles.z - offset.z);
-			Transforms.updates[node_clicked].rot = true;
-		}
-
-		// scale
-		glm::vec3 sc = t.getScale();
-		if (ImGui::DragFloat3("scale", &sc.x, 0.1))
-		{
-			t.setScale(sc);
-			Transforms.updates[node_clicked].scl = true;
-		}
-
-		int n{0};
-		for (auto i = t.gameObject()->components.begin();
-			 i != t.gameObject()->components.end();
-			 i++)
-		{
-			ImGui::PushID(n);
-			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second->hash]->getName()).c_str()))
-			{
-				i->first->onEdit();
-				ImGui::TreePop();
-			}
-			ImGui::PopID();
-			n++;
-		}
-
-		if (ImGui::Button("add component"))
-			ImGui::OpenPopup("add_component_context");
-		if (ImGui::BeginPopup("add_component_context"))
-		{
-			for (auto &i : ComponentRegistry.meta)
-			{
-				if (ImGui::Selectable(i.first.c_str()))
-				{
-					i.second->addComponent(t->gameObject());
-				}
-			}
-			ImGui::EndPopup();
-		}
+		
 	}
 };
 
@@ -984,7 +930,9 @@ class assetWindow : public gui::gui_base
 			ImGui::BeginGroup();
 			ImGui::PushItemWidth(50);
 			ImGui::PushID(i.first + 3);
-			i.second->onEdit();
+			if(i.second->onEdit()){
+				inspector = i.second;
+			}
 			// sprintf(input, i.second->name.c_str());
 			// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
 			// 	i.second->name = {input};
