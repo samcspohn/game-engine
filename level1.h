@@ -925,6 +925,7 @@ class assetWindow : public gui::gui_base
 			it++;
 		}
 
+		int kjj = 3;
 		for (auto &i : assets::assets)
 		{
 			ImGui::BeginGroup();
@@ -942,7 +943,7 @@ class assetWindow : public gui::gui_base
 			float last_button_x2 = ImGui::GetItemRectMax().x;
 			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
 			ImGui::EndGroup();
-			if (i.first + 3 + 1 < buttons_count && next_button_x2 < window_visible_x2)
+			if (kjj++ + 1 < buttons_count && next_button_x2 < window_visible_x2)
 				ImGui::SameLine();
 		}
 	}

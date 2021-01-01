@@ -82,6 +82,7 @@ struct emitter_prototype
         RENDER(minSpeed);
         RENDER(maxSpeed);
         RENDER(scale);
+        ImGui::ColorPicker4("color", (float*)&colorLife[0]);
         // RENDER(billboard);
         bool b = billboard;
         if(ImGui::Checkbox("billboard",&b))
