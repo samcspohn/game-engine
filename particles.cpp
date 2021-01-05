@@ -308,7 +308,11 @@ bool emitter_proto_asset::onEdit()
 }
 
 void emitter_proto_asset::inspect(){
-    this->ref->edit();
+    if(colOverLife.t == 0){
+        colOverLife.namedTexture("colOverLife" + to_string(id));
+        colOverLife.t->gen(100,1);
+    }
+    this->ref->edit(colOverLife);
 }
 
 void particle_emitter::onEdit()

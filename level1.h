@@ -904,33 +904,13 @@ class assetWindow : public gui::gui_base
 		ImGuiStyle &style = ImGui::GetStyle();
 		int buttons_count = 20;
 		float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-		auto it = prototypeRegistry.begin();
-		char input[1024];
-		for (int n = 0; n < prototypeRegistry.size(); n++)
-		{
-			ImGui::BeginGroup();
-			ImGui::PushItemWidth(50);
-			ImGui::PushID(n);
-			sprintf(input, (*it)->name.c_str());
-			if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-				(*it)->name = {input};
-			ImGui::PopID();
-			ImGui::PopItemWidth();
-			ImGui::Button((*it)->name.c_str(), button_sz);
-			float last_button_x2 = ImGui::GetItemRectMax().x;
-			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
-			ImGui::EndGroup();
-			if (n + 1 < buttons_count && next_button_x2 < window_visible_x2)
-				ImGui::SameLine();
-			it++;
-		}
 
-		int kjj = 3;
+		int kjj = 0;
 		for (auto &i : assets::assets)
 		{
 			ImGui::BeginGroup();
 			ImGui::PushItemWidth(50);
-			ImGui::PushID(i.first + 3);
+			ImGui::PushID(i.second->id);
 			if(i.second->onEdit()){
 				inspector = i.second;
 			}
@@ -943,7 +923,7 @@ class assetWindow : public gui::gui_base
 			float last_button_x2 = ImGui::GetItemRectMax().x;
 			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
 			ImGui::EndGroup();
-			if (kjj++ + 1 < buttons_count && next_button_x2 < window_visible_x2)
+			if (kjj++ + 1 < assets::assets.size() && next_button_x2 < window_visible_x2)
 				ImGui::SameLine();
 		}
 	}
@@ -1287,8 +1267,8 @@ int level1(bool load)
 		REG_ASSET(nanoSuitModel);
 		_model terrainModel("res/models/terrain/terrain.obj");
 		REG_ASSET(terrainModel);
-		_model tree("res/models/Spruce_obj/Spruce.obj");
-		REG_ASSET(tree);
+		_model treeModel("res/models/Spruce_obj/Spruce.obj");
+		REG_ASSET(treeModel);
 
 		// while (!cubeModel.meta()->model->ready())
 		// 	this_thread::yield();
@@ -1588,7 +1568,7 @@ int level1(bool load)
 		game_object_proto *tree_go = new game_object_proto();
 		tree_go->name = "tree";
 		_renderer *tree_rend = tree_go->addComponent<_renderer>();
-		tree_rend->set(modelShader, tree);
+		tree_rend->set(modelShader, treeModel);
 		registerProto(tree_go);
 
 		game_object_proto *ground = new game_object_proto();

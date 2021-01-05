@@ -120,6 +120,19 @@ void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float* 
     glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
+void TextureMeta::write(float* data, GLenum format, GLenum type){
+    glBindTexture( GL_TEXTURE_2D, id );
+    glTexImage2D( GL_TEXTURE_2D, 0, (format == GL_RED ?  GL_R32F : format), dims.x, dims.y, 0, format, type, data );
+    glGenerateMipmap( GL_TEXTURE_2D );
+    
+    // Parameters
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture( GL_TEXTURE_2D, 0 );
+}
+
 
 // GLint TextureFromFile( const char *path, string directory )
 // {

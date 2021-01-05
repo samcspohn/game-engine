@@ -72,7 +72,7 @@ struct emitter_prototype
             &maxSpeed &lifetime2 &live &scale &billboard &velAlign
                 &radius &trail &colorLife &sizeLife;
     }
-    void edit()
+    void edit(_texture& t)
     {
         RENDER(emission_rate);
         RENDER(lifetime);
@@ -83,6 +83,15 @@ struct emitter_prototype
         RENDER(maxSpeed);
         RENDER(scale);
         ImGui::ColorPicker4("color", (float*)&colorLife[0]);
+        t.t->write(&colorLife[0][0],GL_RGBA,GL_FLOAT);
+        int frame_padding = -1;                             // -1 == uses default padding (style.FramePadding)
+        ImVec2 size = ImVec2(200.0f, 20.0f);                     // Size of the image we want to make visible
+        ImVec2 uv0 = ImVec2(0.0f, 0.0f);                        // UV coordinates for lower-left
+        ImVec2 uv1 = ImVec2(1.f,1.f);// UV coordinates for (32,32) in our texture
+        ImVec4 bg_col = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);         // Black background
+        ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);       // No tint
+        if(ImGui::ImageButton((void*)t.t->id, size, uv0, uv1, frame_padding, bg_col, tint_col))
+            ;
         // RENDER(billboard);
         bool b = billboard;
         if(ImGui::Checkbox("billboard",&b))
@@ -102,6 +111,7 @@ public:
     typename array_heap<emitter_prototype>::ref ref;
     bool onEdit();
     void inspect();
+    _texture colOverLife;
     SER_HELPER()
     {
         SER_BASE_ASSET

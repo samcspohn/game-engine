@@ -23,10 +23,11 @@ struct TextureMeta
     TextureMeta( string path, string type);
     void load(string path);
     void gen(int width, int height, GLenum format = GL_RGBA, GLenum = GL_UNSIGNED_BYTE,  float* data = 0);
+    void write(float* data, GLenum format = GL_RGBA, GLenum = GL_UNSIGNED_BYTE);
 };
 
 struct _texture{
-    TextureMeta* t;
+    TextureMeta* t = 0;
     void namedTexture(string name);
     void load(string path);
     void setType(string type);

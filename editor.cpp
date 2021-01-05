@@ -6,7 +6,7 @@
 namespace assets{
 
     int assetIdGenerator{1};
-    bool asset::onEdit(){}
+    bool asset::onEdit(){return false;}
     int asset::genID(){
         if(this->id == 0)
             this->id = assetIdGenerator++;

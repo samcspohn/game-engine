@@ -13,17 +13,30 @@ using namespace std;
 
 class _renderer;
 class game_object_proto;
-#define protoListRef typename std::list<game_object_proto*>::iterator
-#define protoList std::list<game_object_proto*>
+#define protoListRef typename std::list<game_object_proto *>::iterator
+#define protoList std::list<game_object_proto *>
 
-void registerProto(game_object_proto* p);
+void registerProto(game_object_proto *p);
 void deleteProtoRef(protoListRef r);
 
-class game_object_proto{
+class game_object_proto : public assets::asset
+{
 public:
-	string name;
-	game_object_proto(){
+	// string name;
+	game_object_proto()
+	{
 		// ref = registerProto(this);
+	}
+	bool onEdit()
+	{
+		char input[1024];
+		sprintf(input, name.c_str());
+		if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+			name = {input};
+		ImGui::PopID();
+		ImGui::PopItemWidth();
+		ImGui::Button(name.c_str(), {40, 40});
+		return false;
 	}
 	map<component *, ull> components;
 	protoListRef ref;
@@ -34,9 +47,9 @@ public:
 	template <class t>
 	t *addComponent()
 	{
-		component* ret = new t();
-		this->components.insert(std::pair<component *, ull>(ret,typeid(t).hash_code()));
-		return (t*)ret;
+		component *ret = new t();
+		this->components.insert(std::pair<component *, ull>(ret, typeid(t).hash_code()));
+		return (t *)ret;
 	}
 
 	template <typename t>
@@ -50,23 +63,26 @@ public:
 			}
 		return 0;
 	}
-	~game_object_proto(){
-		for(auto& i : components)
+	~game_object_proto()
+	{
+		for (auto &i : components)
 			delete i.first;
 		deleteProtoRef(ref);
 	}
-	SER_HELPER(){
-		ar & name & components;
+	SER_HELPER()
+	{
+		SER_BASE_ASSET
+		ar &name &components;
 	}
 };
 
-void saveProto(OARCHIVE& oa);
-void loadProto(IARCHIVE& ia);
+void saveProto(OARCHIVE &oa);
+void loadProto(IARCHIVE &ia);
 
 class game_object;
 
-extern tbb::concurrent_unordered_set<game_object*> toDestroy;
-extern std::list<game_object_proto*> prototypeRegistry;
+extern tbb::concurrent_unordered_set<game_object *> toDestroy;
+extern std::list<game_object_proto *> prototypeRegistry;
 class insectorWindow;
 class game_object : public inspectable
 {
@@ -80,14 +96,15 @@ class game_object : public inspectable
 	//friend component;
 	_renderer *renderer = 0;
 	friend _renderer;
-	friend void rebuildGameObject(componentStorageBase*, int);
-	friend void save_game(const char*);
-	friend void load_game(const char*);
+	friend void rebuildGameObject(componentStorageBase *, int);
+	friend void save_game(const char *);
+	friend void load_game(const char *);
 	friend void loadTransforms(IARCHIVE &ia);
 	friend class inspectorWindow;
+
 public:
-	
-	void inspect(){
+	void inspect()
+	{
 		transform2 t = this->transform;
 
 		// position
@@ -167,8 +184,9 @@ public:
 		return 0;
 	}
 	template <typename t>
-	vector<t*> getComponents(){
-		vector<t*> ret;
+	vector<t *> getComponents()
+	{
+		vector<t *> ret;
 		ull hash = typeid(t).hash_code();
 		for (auto &i : components)
 			if (i.second->hash == hash)
@@ -178,18 +196,19 @@ public:
 		return ret;
 	}
 
-	void collide(game_object *go,glm::vec3 point, glm::vec3 normal)
+	void collide(game_object *go, glm::vec3 point, glm::vec3 normal)
 	{
 		// lock.lock();
 		colLock.lock();
 		colliding = true;
-		if(destroyed){
+		if (destroyed)
+		{
 			colLock.unlock();
 			return;
 		}
 		for (auto &i : components)
 		{
-			i.first->onCollision(go,point,normal);
+			i.first->onCollision(go, point, normal);
 		}
 		colliding = false;
 		colLock.unlock();
@@ -234,7 +253,7 @@ public:
 	template <class t>
 	t *dupComponent(const t &c)
 	{
-				// gameLock.lock();
+		// gameLock.lock();
 		compInfo ci = addComponentToRegistry(c);
 		t *ret = (t *)ci.compPtr;
 		// ci.CompItr->goComponents = &this->components;
@@ -285,7 +304,7 @@ public:
 		// gameLock.lock();
 		destroyed = false;
 		this->transform = t;
-		t->setGameObject( this );
+		t->setGameObject(this);
 		// gameLock.unlock();
 	}
 	game_object() : lock()
@@ -305,11 +324,12 @@ public:
 		// this->transform = new Transform(*g.transform, this);
 		// g.transform->getParent()->Adopt(this->transform);
 
-		this->transform = Transforms._new();// new Transform(this);
+		this->transform = Transforms._new(); // new Transform(this);
 		this->transform->init(g.transform, this);
 		g.transform.getParent().adopt(this->transform);
-		for(transform2 t : g.transform->getChildren()){
-			new game_object(*t->gameObject(),transform);
+		for (transform2 t : g.transform->getChildren())
+		{
+			new game_object(*t->gameObject(), transform);
 		}
 		// g.transform.getParent().adopt(this->transform);
 
@@ -330,11 +350,12 @@ public:
 		// this->transform = new Transform(*g.transform, this);
 		// g.transform->getParent()->Adopt(this->transform);
 
-		this->transform = Transforms._new();// new Transform(this);
+		this->transform = Transforms._new(); // new Transform(this);
 		this->transform->init(g.transform, this);
 		parent.adopt(this->transform);
-		for(transform2 t : g.transform->getChildren()){
-			new game_object(*t->gameObject(),transform);
+		for (transform2 t : g.transform->getChildren())
+		{
+			new game_object(*t->gameObject(), transform);
 		}
 		// g.transform.getParent().adopt(this->transform);
 
@@ -352,7 +373,7 @@ public:
 	{
 		destroyed = false;
 		gameLock.lock();
-		this->transform = Transforms._new();// new Transform(this);
+		this->transform = Transforms._new(); // new Transform(this);
 		this->transform->init(this);
 		gameLock.unlock();
 		for (auto &i : g.components)
@@ -367,7 +388,8 @@ public:
 	void _destroy()
 	{
 		lock.lock();
-		if(this->colliding){
+		if (this->colliding)
+		{
 			this->destroyed = true;
 			lock.unlock();
 			return;
@@ -380,7 +402,8 @@ public:
 		{
 			i.first->onDestroy();
 		}
-		while(components.size() > 0){
+		while (components.size() > 0)
+		{
 			components.begin()->second->erase();
 			components.erase(components.begin());
 		}
