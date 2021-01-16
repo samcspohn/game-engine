@@ -33,4 +33,5 @@ void loadProto(IARCHIVE& ia){
 
 
 void componentMetaBase::addComponent(game_object* g){}
+void componentMetaBase::addComponentProto(game_object_proto* g){}
 

@@ -1282,6 +1282,7 @@ int level1(bool load)
 			// .addKey(vec4(1,0.6f,0.5f,0.9f),0.09)
 			.addKey(vec4(0.65, 0.65, 0.65, 0.3f), 0.09)
 			.addKey(vec4(0.65, 0.65, 0.65, 0.0f), 8.f / 9.f);
+		addColorArray(ca);
 
 		colorArray ca3;
 		ca3.addKey(vec4(1), 0.1)
@@ -1290,7 +1291,7 @@ int level1(bool load)
 			.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.25)
 			.addKey(vec4(0.75, 0.65, 0.54, 0.6f), 0.30)
 			.addKey(vec4(0.75, 0.65, 0.54, 0.0f), 1.f);
-
+addColorArray(ca3);
 		colorArray ca2;
 		ca2.addKey(vec4(1), 0.05)
 			.addKey(vec4(1, 1, 0.9f, 1), 0.09)
@@ -1298,7 +1299,7 @@ int level1(bool load)
 			.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.17)
 			.addKey(vec4(0.5, 0.5f, 0.5f, 0.6f), 0.21)
 			.addKey(vec4(0.5, 0.5f, 0.5f, 0.0f), 1);
-
+addColorArray(ca2);
 		floatArray fa;
 		fa.addKey(0.f, 0.f).addKey(0.4f, 0.02f).addKey(2.0, 1.0);
 
@@ -1309,13 +1310,14 @@ int level1(bool load)
 		flameEmitterProto->emission_rate = 1.2f;
 		flameEmitterProto->lifetime = 3.f;
 		flameEmitterProto->lifetime2 = 3.f;
-		flameEmitterProto->size(1.f);
+		flameEmitterProto.size(1.f);
 		// flameEmitterProto->color(vec4(1, 1, 0.1f, 1.f));
 		flameEmitterProto->maxSpeed = 1.f;
 		flameEmitterProto->scale = vec3(1.f);
 		flameEmitterProto->billboard = 1;
 		flameEmitterProto->trail = 1;
-		ca.setColorArray(flameEmitterProto->colorLife);
+		flameEmitterProto.color(ca);
+		// ca.setColorArray(flameEmitterProto->colorLife);
 
 		emitter_prototype_ _muzzelFlash = createNamedEmitter("muzzelFlash");
 		REG_ASSET(_muzzelFlash);
@@ -1325,10 +1327,11 @@ int level1(bool load)
 		_muzzelFlash->lifetime2 = 2.f;
 		// _muzzelFlash->color(vec4(1, 1, 0.2f, 0.8f));
 		_muzzelFlash->maxSpeed = (10.f);
-		_muzzelFlash->size(0.5f, 1.f);
+		_muzzelFlash.size(0.5f, 1.f);
 		_muzzelFlash->scale = vec3(7.f);
 		_muzzelFlash->trail = 0;
-		ca2.setColorArray(_muzzelFlash->colorLife);
+		_muzzelFlash.color(ca2);
+		// ca2.setColorArray(_muzzelFlash->colorLife);
 
 		emitter_prototype_ expFlame = createNamedEmitter("expflame");
 		REG_ASSET(expFlame);
@@ -1338,11 +1341,12 @@ int level1(bool load)
 		expFlame->lifetime2 = 1.5f;
 		expFlame->maxSpeed = 30.f;
 		expFlame->scale = vec3(30.f);
-		expFlame->size(0.5f, 1.6f);
+		expFlame.size(0.5f, 1.6f);
 		// fa.setFloatArray(expFlame->sizeLife);
 		expFlame->trail = 0;
 		_expFlame = expFlame;
-		ca2.setColorArray(expFlame->colorLife);
+		_expFlame.color(ca2);
+		// ca2.setColorArray(expFlame->colorLife);
 
 		emitter_prototype_ shockWave = createNamedEmitter("shockWave");
 		REG_ASSET(shockWave)
@@ -1353,9 +1357,9 @@ int level1(bool load)
 		shockWave->maxSpeed = 300.f;
 		shockWave->minSpeed = 250.f;
 		shockWave->scale = vec3(40.f);
-		shockWave->size(0.5f, 1.f);
+		shockWave.size(0.5f, 1.f);
 		shockWave->trail = 0;
-		shockWave->color(vec4(1, 1, 1, 0.6), vec4(1, 1, 1, 0));
+		shockWave.color(vec4(1, 1, 1, 0.6), vec4(1, 1, 1, 0));
 
 		emitter_prototype_ debris = createNamedEmitter("debris");
 		REG_ASSET(debris)
@@ -1367,10 +1371,11 @@ int level1(bool load)
 		debris->minSpeed = 10.f;
 		debris->radius = 10.f;
 		debris->scale = vec3(5, 60, 0) * 2.f;
-		debris->size(0.5f, 1.f);
+		debris.size(0.5f, 1.f);
 		debris->velAlign = 1;
+		debris.color(ca3);
 		// debris->color(vec4(0.82,0.7,0.54,0.6),vec4(0.82,0.7,0.54,0));
-		ca3.setColorArray(debris->colorLife);
+		// ca3.setColorArray(debris->colorLife);
 
 		// bullet laser;
 		// laser.primarybullet = createNamedEmitter("laserbeam");
@@ -1392,8 +1397,8 @@ int level1(bool load)
 		engineTrail->emission_rate = 2.f;
 		engineTrail->lifetime = 7.f;
 		engineTrail->lifetime2 = 7.f;
-		engineTrail->color(vec4(0.6f, 0.7f, 1.f, 0.6f), vec4(0.05f, 0.1f, 1.f, 0.0f));
-		engineTrail->size(1.f);
+		engineTrail.color(vec4(0.6f, 0.7f, 1.f, 0.6f), vec4(0.05f, 0.1f, 1.f, 0.0f));
+		engineTrail.size(1.f);
 		engineTrail->maxSpeed = (0.f);
 		engineTrail->scale = vec3(1);
 		engineTrail->trail = 1;
@@ -1404,9 +1409,9 @@ int level1(bool load)
 		engineFlame->emission_rate = 15.f;
 		engineFlame->lifetime = 4.f;
 		engineFlame->lifetime2 = 3.f;
-		engineFlame->color(vec4(0.2f, 0.5f, 0.9f, 0.2f), vec4(0.05f, 0.1f, 0.9f, 0.2f));
+		engineFlame.color(vec4(0.2f, 0.5f, 0.9f, 0.2f), vec4(0.05f, 0.1f, 0.9f, 0.2f));
 		engineFlame->maxSpeed = (-3.f);
-		engineFlame->size(1.f, 0.f);
+		engineFlame.size(1.f, 0.f);
 		engineFlame->scale = vec3(2.f);
 		engineFlame->trail = 0;
 
@@ -1671,7 +1676,7 @@ int level1(bool load)
 		ep2->emission_rate = 5.0f;
 		ep2->lifetime = 7.f;
 		ep2->maxSpeed = 1;
-		ep2->color(vec4(1, .4, 0, 0.5), vec4(1, .4, 0, 0.0));
+		ep2.color(vec4(1, .4, 0, 0.5), vec4(1, .4, 0, 0.0));
 		auto pe = nanosuitMan->addComponent<particle_emitter>();
 		pe->setPrototype(ep2);
 

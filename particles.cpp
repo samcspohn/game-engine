@@ -45,81 +45,198 @@ struct particle
 };
 
 // vec4 color;
-void emitter_prototype::color(vec4 c)
+void emitter_prototype_::color(vec4 c)
+{
+    emitter_proto_assets[this->emitterPrototype]->gradient.keys.clear();
+    emitter_proto_assets[this->emitterPrototype]->gradient.keys.emplace(0.f,colorArray::key(colorArray::idGenerator++,c));
+    emitter_proto_assets[this->emitterPrototype]->gradient.setColorArray(emitter_proto_assets[this->emitterPrototype]->ref->colorLife);
+    // for (int i = 0; i < 100; ++i)
+    // {
+    //     emitter_proto_assets[this->emitterPrototype]->ref->colorLife[i] = c;
+    // }
+}
+void emitter_prototype_::color(colorArray& c)
+{
+    emitter_proto_assets[this->emitterPrototype]->gradient.keys.clear();
+    for(auto& i : c.keys){
+        emitter_proto_assets[this->emitterPrototype]->gradient.addKey(i.second.value,i.first);
+    }
+    // emitter_proto_assets[this->emitterPrototype]->gradient = c;
+    emitter_proto_assets[this->emitterPrototype]->gradient.setColorArray(emitter_proto_assets[this->emitterPrototype]->ref->colorLife);
+    // for (int i = 0; i < 100; ++i)
+    // {
+    //     emitter_proto_assets[this->emitterPrototype]->ref->colorLife[i] = c;
+    // }
+}
+void emitter_prototype_::color(vec4 c1, vec4 c2)
+{
+    emitter_proto_assets[this->emitterPrototype]->gradient.keys.clear();
+    emitter_proto_assets[this->emitterPrototype]->gradient.addKey(c1,0.f);
+    emitter_proto_assets[this->emitterPrototype]->gradient.addKey(c2,1.f);
+    // emitter_proto_assets[this->emitterPrototype]->gradient.keys.emplace(0.f,colorArray::key(colorArray::idGenerator++,c1));
+    // emitter_proto_assets[this->emitterPrototype]->gradient.keys.emplace(1.f,colorArray::key(colorArray::idGenerator++,c2));
+    emitter_proto_assets[this->emitterPrototype]->gradient.setColorArray(emitter_proto_assets[this->emitterPrototype]->ref->colorLife);
+    // vec4 step = (c2 - c1) / 100.f;
+    // for (int i = 0; i < 100; ++i)
+    // {
+    //     emitter_proto_assets[this->emitterPrototype]->ref->colorLife[i] = c1 + step * (float)i;
+    // }
+}
+void emitter_prototype_::size(float c)
 {
     for (int i = 0; i < 100; ++i)
     {
-        colorLife[i] = c;
+        emitter_proto_assets[this->emitterPrototype]->ref->sizeLife[i] = c;
     }
 }
-void emitter_prototype::color(vec4 c1, vec4 c2)
-{
-    vec4 step = (c2 - c1) / 100.f;
-    for (int i = 0; i < 100; ++i)
-    {
-        colorLife[i] = c1 + step * (float)i;
-    }
-}
-void emitter_prototype::size(float c)
-{
-    for (int i = 0; i < 100; ++i)
-    {
-        sizeLife[i] = c;
-    }
-}
-void emitter_prototype::size(float c1, float c2)
+void emitter_prototype_::size(float c1, float c2)
 {
     float step = (c2 - c1) / 100.f;
     for (int i = 0; i < 100; ++i)
     {
-        sizeLife[i] = c1 + step * (float)i;
+        emitter_proto_assets[this->emitterPrototype]->ref->sizeLife[i] = c1 + step * (float)i;
     }
 }
 
+_texture gradientEdit;
+deque<colorArray> colorGradients;
+void addColorArray(colorArray &a)
+{
+    colorGradients.emplace_back(a);
+}
+
+bool colorArrayEdit(colorArray &a, bool *p_open)
+{
+    static int gradientKeyId = -1;
+    float width = ImGui::GetWindowSize().x - 20;
+    ImVec2 size = ImVec2(width, 20.0f);              // Size of the image we want to make visible
+    ImVec2 uv0 = ImVec2(0.0f, 0.0f);                  // UV coordinates for lower-left
+    ImVec2 uv1 = ImVec2(1.f, 1.f);                    // UV coordinates for (32,32) in our texture
+    ImVec4 bg_col = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);   // Black background
+    ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // No tint
+
+    ImGuiIO &io = ImGui::GetIO();
+    ImGuiStyle &style = ImGui::GetStyle();
+    float radius_outer = 20.0f;
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    ImVec2 center = ImVec2(pos.x + radius_outer, pos.y + radius_outer);
+    float line_height = ImGui::GetTextLineHeight();
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
+    bool changed = false;
+
+    if (a.t.t == 0)
+    {
+        a.t.namedTexture("gradient" + to_string(rand()));
+        a.t.t->gen(100, 1);
+        vec4 colors[100];
+        a.setColorArray(colors);
+        a.t.t->write(&colors[0][0], GL_RGBA, GL_FLOAT);
+    }
+
+    draw_list->AddImage((void *)a.t.t->id, pos, {pos.x + size.x, pos.y + size.y}, uv0, uv1, ImGui::GetColorU32(tint_col));
+
+    static int color_picker_open = 0;
+    int i = 0;
+    for (auto key : a.keys)
+    {
+
+        // add carat
+        float p_value = key.first * width;
+        ImGui::SetCursorScreenPos({pos.x + p_value - 5, pos.y});
+        bool clicked = ImGui::InvisibleButton(("pointer" + to_string(key.second.id)).c_str(), {10, 10});
+        if(clicked){
+            color_picker_open = i;
+        }
+        bool value_changed = false;
+        bool is_active = ImGui::IsItemActive();
+        bool is_hovered = ImGui::IsItemActive();
+        if(ImGui::IsMouseReleased)
+            gradientKeyId = -1;
+        // bool is_double_clicked = ImGui::isIte
+        if (is_active && io.MouseDelta.x != 0.0f && (gradientKeyId == -1 || key.second.id == gradientKeyId))
+        {
+            // float step = (v_max - v_min) / 200.0f;
+            p_value += io.MouseDelta.x;
+            if (p_value < 0)
+                p_value = 0;
+            if (p_value > width - 1)
+                p_value = width - 1;
+            value_changed = true;
+            gradientKeyId = key.second.id;
+            
+            
+        }
+        i++;
+        if(value_changed){
+            a.keys.erase(key.first);
+            // a.addKey(key.second.value,p_value / 200.f);
+            if(a.keys.find(p_value) == a.keys.end())
+                a.keys.emplace(p_value / width, key.second);
+            else{
+                a.keys.emplace(p_value / width + 0.01f, key.second);
+            }
+
+            vec4 colors[100];
+            a.setColorArray(colors);
+            a.t.t->write(&colors[0][0], GL_RGBA, GL_FLOAT);
+            changed = true;
+        }
+        draw_list->AddTriangleFilled({pos.x + p_value - 5, pos.y}, {pos.x + p_value, pos.y + 10}, {pos.x + p_value + 5, pos.y}, ImGui::GetColorU32(tint_col));
+        draw_list->AddTriangleFilled({pos.x + p_value - 4, pos.y}, {pos.x + p_value, pos.y + 8}, {pos.x + p_value + 4, pos.y}, ImGui::GetColorU32(*(ImVec4*)&key.second.value));
+        draw_list->AddTriangle({pos.x + p_value - 5, pos.y}, {pos.x + p_value, pos.y + 10}, {pos.x + p_value + 5, pos.y}, ImGui::GetColorU32(bg_col), 2.f);
+    }
+    ImGui::SetCursorScreenPos({pos.x,pos.y + 20 + style.ItemInnerSpacing.y});
+    // if(clicked && ImGui::IsMouseClicked(2))
+        //     color_picker_open = true;
+        // if(color_picker_open){
+        auto key = a.keys.begin();
+        std::advance(key,color_picker_open);
+            if(ImGui::ColorPicker4("color_", (float *)&key->second.value)){
+                 vec4 colors[100];
+            a.setColorArray(colors);
+            a.t.t->write(&colors[0][0], GL_RGBA, GL_FLOAT);
+            changed = true;
+                // a.keys.find(key.first)->second.value = key-second.value;
+            }
+        // }
+        return changed;
+}
+
+int colorArray::idGenerator = 0;
 colorArray &colorArray::addKey(vec4 color, float position)
 {
-    key k;
-    k.color = color;
-    k.pos = position;
-    keys.push_back(k);
+    keys.emplace(position, key(idGenerator++, color));
     return *this;
 }
 void colorArray::setColorArray(vec4 *colors)
 {
     if (keys.size() == 0)
         return;
-    key k = keys.front();
-    if (keys.size() == 1)
+
+    auto k1 = keys.begin();
+    auto k2 = k1;
+    ++k2;
+
+    int end = k1->first * 100;
+    for (int i = 0; i < end; ++i)
     {
-        for (int i = 0; i < 100; ++i)
-        {
-            colors[i] = k.color;
-        }
+        colors[i] = k1->second.value;
     }
-    else
+    while (k2 != keys.end())
     {
-        int k1 = 0;
-        int k2 = 1;
-        for (int i = 0; i < keys[k1].pos * 100; ++i)
+        int start = k1->first * 100;
+        int end = k2->first * 100;
+        vec4 step = (k2->second.value - k1->second.value) / (float)(end - start);
+        int j = 0;
+        for (int i = start; i < end; i++, j++)
         {
-            colors[i] = keys[k1].color;
+            colors[i] = k1->second.value + step * (float)(j);
         }
-        while (k2 < keys.size())
-        {
-            vec4 step = (keys[k2].color - keys[k1].color) / ((keys[k2].pos - keys[k1].pos) * 100);
-            int start = keys[k1].pos * 100;
-            int stop = keys[k2].pos * 100;
-            int j = 0;
-            for (int i = start; i < stop; i++, j++)
-            {
-                colors[i] = keys[k1].color + step * (float)j;
-            }
-            k1 = k2++;
-        }
-        for (int i = keys[k1].pos * 100; i < 100; ++i)
-        {
-            colors[i] = keys[k1].color;
-        }
+        k1 = k2++;
+    }
+    for (int i = k1->first * 100; i < 100; ++i)
+    {
+        colors[i] = k1->second.value;
     }
 }
 
@@ -211,11 +328,11 @@ map<int, emitter_proto_asset *> emitter_proto_assets;
 
 void saveEmitters(OARCHIVE &oa)
 {
-    oa << emitter_prototypes_ << emitter_prototypes << emitter_proto_names << emitter_proto_assets;
+    oa << emitter_prototypes_ << emitter_prototypes << emitter_proto_names << emitter_proto_assets << colorGradients;
 }
 void loadEmitters(IARCHIVE &ia)
 {
-    ia >> emitter_prototypes_ >> emitter_prototypes >> emitter_proto_names >> emitter_proto_assets;
+    ia >> emitter_prototypes_ >> emitter_prototypes >> emitter_proto_names >> emitter_proto_assets >> colorGradients;
 }
 
 mutex burstLock;
@@ -288,7 +405,7 @@ emitter_proto_asset *emitter_prototype_::meta()
 }
 bool emitter_proto_asset::onEdit()
 {
-    
+
     char input[1024];
     sprintf(input, name.c_str());
     if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
@@ -307,12 +424,14 @@ bool emitter_proto_asset::onEdit()
     // emitterPrototype->edit();
 }
 
-void emitter_proto_asset::inspect(){
-    if(colOverLife.t == 0){
-        colOverLife.namedTexture("colOverLife" + to_string(id));
-        colOverLife.t->gen(100,1);
+void emitter_proto_asset::inspect()
+{
+    if (gradient.t.t == 0)
+    {
+        gradient.t.namedTexture("colOverLife" + to_string(id));
+        gradient.t.t->gen(100, 1);
     }
-    this->ref->edit(colOverLife);
+    this->ref->edit(gradient);
 }
 
 void particle_emitter::onEdit()
@@ -332,18 +451,19 @@ void particle_emitter::onEdit()
     // RENDER(prototype);
 }
 
-void renderEdit(const char *name, emitter_prototype_ &ep){
+void renderEdit(const char *name, emitter_prototype_ &ep)
+{
     ImGui::InputText(name, (char *)emitter_proto_names.at(ep.emitterPrototype).c_str(), emitter_proto_names.at(ep.emitterPrototype).size() + 1, ImGuiInputTextFlags_ReadOnly);
-	if (ImGui::BeginDragDropTarget())
-	{
-		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))
-		{
-			IM_ASSERT(payload->DataSize == sizeof(int));
-			int payload_n = *(const int *)payload->Data;
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))
+        {
+            IM_ASSERT(payload->DataSize == sizeof(int));
+            int payload_n = *(const int *)payload->Data;
             ep = getNamedEmitterProto(emitter_proto_names.at(payload_n));
-		}
-		ImGui::EndDragDropTarget();
-	}
+        }
+        ImGui::EndDragDropTarget();
+    }
 }
 
 array_heap<emitter> EMITTERS;
@@ -365,7 +485,8 @@ unordered_map<uint, emitterInit> emitter_inits;
 
 // COPY(particle_emitter);
 
-void particle_emitter::protoSetPrototype(emitter_prototype_ ep){
+void particle_emitter::protoSetPrototype(emitter_prototype_ ep)
+{
     prototype = ep;
 }
 

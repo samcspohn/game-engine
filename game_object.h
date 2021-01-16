@@ -35,8 +35,40 @@ public:
 			name = {input};
 		ImGui::PopID();
 		ImGui::PopItemWidth();
-		ImGui::Button(name.c_str(), {40, 40});
-		return false;
+		return ImGui::Button(name.c_str(), {40, 40});
+		// return false;
+	}
+
+	void inspect(){
+		int n{0};
+		for (auto i = components.begin();
+			 i != components.end();
+			 i++)
+		{
+			ImGui::PushID(n);
+			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second]->getName()).c_str()))
+			{
+				i->first->onEdit();
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+			n++;
+		}
+
+		if (ImGui::Button("add component"))
+			ImGui::OpenPopup("add_component_context");
+		if (ImGui::BeginPopup("add_component_context"))
+		{
+			for (auto &i : ComponentRegistry.meta)
+			{
+				if (ImGui::Selectable(i.first.c_str()))
+				{
+					i.second->addComponentProto(this);
+				}
+			}
+			ImGui::EndPopup();
+		}
 	}
 	map<component *, ull> components;
 	protoListRef ref;

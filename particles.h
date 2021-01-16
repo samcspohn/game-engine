@@ -18,15 +18,33 @@ class particle_emitter;
 
 struct colorArray
 {
-    struct key
-    {
-        vec4 color;
-        float pos;
+    struct key{
+        int id;
+        vec4 value;
+        SER_HELPER(){
+            ar & id & value;
+        }
+        key(int _id, vec4 _value) : id(_id), value(_value) {
+
+        }
+        key() = default;
     };
-    vector<key> keys;
+    static int idGenerator;
+    _texture t;
+    map<float,key> keys;
     colorArray &addKey(vec4 color, float position);
     void setColorArray(vec4 *colors);
+    SER_HELPER(){
+        ar & keys;
+    }
 };
+
+extern deque<colorArray> colorGradients;
+extern int gradient_index;
+void addColorArray(colorArray& c);
+extern _texture gradientEdit;
+bool colorArrayEdit(colorArray &a, bool *p_open);
+
 struct floatArray
 {
     struct key
@@ -46,10 +64,6 @@ struct emitter_prototype
     float dispersion;
 
     // vec4 color;
-    void color(vec4 c);
-    void color(vec4 c1, vec4 c2);
-    void size(float c);
-    void size(float c1, float c2);
 
     float minSpeed;
     float maxSpeed;
@@ -72,7 +86,7 @@ struct emitter_prototype
             &maxSpeed &lifetime2 &live &scale &billboard &velAlign
                 &radius &trail &colorLife &sizeLife;
     }
-    void edit(_texture& t)
+    void edit(colorArray& ca)
     {
         RENDER(emission_rate);
         RENDER(lifetime);
@@ -82,22 +96,48 @@ struct emitter_prototype
         RENDER(minSpeed);
         RENDER(maxSpeed);
         RENDER(scale);
-        ImGui::ColorPicker4("color", (float*)&colorLife[0]);
-        t.t->write(&colorLife[0][0],GL_RGBA,GL_FLOAT);
-        int frame_padding = -1;                             // -1 == uses default padding (style.FramePadding)
-        ImVec2 size = ImVec2(200.0f, 20.0f);                     // Size of the image we want to make visible
-        ImVec2 uv0 = ImVec2(0.0f, 0.0f);                        // UV coordinates for lower-left
-        ImVec2 uv1 = ImVec2(1.f,1.f);// UV coordinates for (32,32) in our texture
-        ImVec4 bg_col = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);         // Black background
-        ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);       // No tint
-        if(ImGui::ImageButton((void*)t.t->id, size, uv0, uv1, frame_padding, bg_col, tint_col))
-            ;
+        ImGui::ColorPicker4("color", (float *)&colorLife[0]);
+        ca.t.t->write(&colorLife[0][0], GL_RGBA, GL_FLOAT);
+        int frame_padding = -1;                           // -1 == uses default padding (style.FramePadding)
+        ImVec2 size = ImVec2(200.0f, 20.0f);              // Size of the image we want to make visible
+        ImVec2 uv0 = ImVec2(0.0f, 0.0f);                  // UV coordinates for lower-left
+        ImVec2 uv1 = ImVec2(1.f, 1.f);                    // UV coordinates for (32,32) in our texture
+        ImVec4 bg_col = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);   // Black background
+        ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // No tint
+        static bool col_p_open = false;
+        if (ImGui::ImageButton((void *)ca.t.t->id, size, uv0, uv1, frame_padding, bg_col, tint_col))
+        {
+            col_p_open = true;
+        }
+        // ImGui::SetNextWindowSize({200, 200});
+        // ImGui::SetNextWindowPos({ImGui::GetMainViewport()->GetCenter()});
+        if (col_p_open)
+        {
+
+            ImGui::Begin("color over life", &col_p_open);
+
+            if(colorArrayEdit(ca,&col_p_open)){
+                ca.setColorArray(colorLife);
+            }
+
+            ImGui::Text("color over life");
+            // draw_list->AddText(ImVec2(pos.x, pos.y + 20 + style.ItemInnerSpacing.y), ImGui::GetColorU32(ImGuiCol_Text), "color over life");
+
+            // ImGui::SetCursorScreenPos({pos.x, pos.y + 20 + ImGui::GetFontSize() + style.ItemInnerSpacing.y * 2});
+            if (ImGui::Button("close"))
+            {
+                col_p_open = false;
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::End();
+        }
+
         // RENDER(billboard);
         bool b = billboard;
-        if(ImGui::Checkbox("billboard",&b))
+        if (ImGui::Checkbox("billboard", &b))
             billboard = b;
         b = velAlign;
-        if(ImGui::Checkbox("align to velocity",&b))
+        if (ImGui::Checkbox("align to velocity", &b))
             velAlign = b;
         // RENDER(velAlign);
 
@@ -109,13 +149,13 @@ class emitter_proto_asset : public assets::asset
 {
 public:
     typename array_heap<emitter_prototype>::ref ref;
+    colorArray gradient;
     bool onEdit();
     void inspect();
-    _texture colOverLife;
     SER_HELPER()
     {
         SER_BASE_ASSET
-        ar &ref;
+        ar &ref &gradient;
     }
 };
 extern map<int, emitter_proto_asset *> emitter_proto_assets;
@@ -131,6 +171,12 @@ class emitter_prototype_
     friend class particle_emitter;
 
 public:
+    void color(vec4 c);
+    void color(colorArray& c);
+    void color(vec4 c1, vec4 c2);
+    void size(float c);
+    void size(float c1, float c2);
+
     emitter_proto_asset *meta();
     int getId();
     emitter_prototype *operator->();

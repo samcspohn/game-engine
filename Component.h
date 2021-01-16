@@ -22,7 +22,7 @@
 #include "Transform.h"
 #include "fstream"
 #define ull unsigned long long
-// class game_object;
+class game_object_proto;
 
 // bool compareTransform(Transform *t1, Transform *t2);
 // class Transform2;
@@ -260,6 +260,7 @@ struct component_meta : public component_meta_base
 struct componentMetaBase
 {
 	virtual void addComponent(game_object *g);
+	virtual void addComponentProto(game_object_proto *g);
 };
 template <typename t>
 struct componentMeta : public componentMetaBase
@@ -356,18 +357,22 @@ void destroyAllComponents();
 		go->dupComponent(component_type(*this)); \
 	}
 
-#define REGISTER_COMPONENT(comp)                             \
-	BOOST_CLASS_EXPORT(comp)                                 \
-	BOOST_CLASS_EXPORT(componentStorage<comp>)               \
-	template <>                                              \
+#define REGISTER_COMPONENT(comp)                          \
+	BOOST_CLASS_EXPORT(comp)                              \
+	BOOST_CLASS_EXPORT(componentStorage<comp>)            \
+	template <>                                           \
 	struct componentMeta<comp> : public componentMetaBase \
-	{                                                        \
+	{                                                     \
 		static component_meta<comp> const &c;             \
-		void addComponent(game_object *g)                    \
-		{                                                    \
+		void addComponent(game_object *g)                 \
+		{                                                 \
 			g->addComponent<comp>();                      \
-		}                                                    \
-	};                                                       \
+		}                                                 \
+		void addComponentProto(game_object_proto *g)      \
+		{                                                 \
+			g->addComponent<comp>();                      \
+		}                                                 \
+	};                                                    \
 	component_meta<comp> const &componentMeta<comp>::c = registerComponent<comp>();
 // template<>
 // componentMeta<comp>::g = registerComponent<comp>();
