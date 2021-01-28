@@ -61,10 +61,12 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 		if (action == GLFW_PRESS)
 		{
 			Input.Mouse.mouseButtons[button] = true;
+			ImGui::GetIO().MouseDown[button] = true;
 		}
 		else if (action == GLFW_RELEASE)
 		{
 			Input.Mouse.mouseButtons[button] = false;
+			ImGui::GetIO().MouseDown[button] = false;
 		}
 	}
 }

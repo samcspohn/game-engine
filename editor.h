@@ -27,8 +27,9 @@ namespace assets{
         public:
         int id = 0;
         string name;
+        virtual string type() = 0;
         int genID();
-        virtual bool onEdit();
+        virtual bool onEdit() = 0;
         SER_HELPER(){
             ar & id & name;
         }

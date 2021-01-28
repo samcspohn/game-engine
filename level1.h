@@ -43,9 +43,11 @@ public:
 	// bullet b;
 	audio explosionSound;
 	emitter_prototype_ exp;
+	float explosion_size;
 	void onEdit()
 	{
 		RENDER(exp);
+		RENDER(explosion_size);
 	}
 	missile() {}
 
@@ -64,20 +66,20 @@ public:
 
 		if (length(normal) == 0)
 			normal = randomSphere();
-		exp.burst(point, normal, transform->getScale() * 2.f, 5);
+		exp.burst(point, normal, transform->getScale() * explosion_size, 5);
 		transform->gameObject()->destroy();
 		// }
 		// numCubes.fetch_add(-1);
 
 		// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		explosionSound.play(transform->getPosition(), 0.5, 0.2 );
+		explosionSound.play(transform->getPosition(), 0.5, 0.05);
 		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// hit = true;
 		// }
 	}
 	COPY(missile);
-	SER3(vel, exp, explosionSound);
+	SER4(vel, exp, explosionSound, explosion_size);
 };
 REGISTER_COMPONENT(missile)
 
@@ -205,7 +207,8 @@ public:
 	{
 		axis = normalize(randomSphere());
 	}
-	void onEdit() {
+	void onEdit()
+	{
 		RENDER(axis);
 		RENDER(speed);
 	}
@@ -215,7 +218,7 @@ public:
 };
 REGISTER_COMPONENT(spinner)
 
-	const float _pi = radians(180.f);
+const float _pi = radians(180.f);
 class _turret final : public component
 {
 	transform2 target;
@@ -793,7 +796,7 @@ public:
 //             ImGui::EndPopup();
 //         }
 
-	inspectable* inspector = 0;
+inspectable *inspector = 0;
 
 class transformWindow : public gui::gui_base
 {
@@ -883,15 +886,12 @@ public:
 	}
 };
 
-
 class inspectorWindow : public gui::gui_base
 {
 	void render()
 	{
-		if(inspector)
+		if (inspector)
 			inspector->inspect();
-
-		
 	}
 };
 
@@ -911,9 +911,25 @@ class assetWindow : public gui::gui_base
 			ImGui::BeginGroup();
 			ImGui::PushItemWidth(50);
 			ImGui::PushID(i.second->id);
-			if(i.second->onEdit()){
+
+			char input[1024];
+			sprintf(input, i.second->name.c_str());
+			if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+				i.second->name = {input};
+			bool ret = ImGui::Button(i.second->name.c_str(), {40, 40});
+			// i.second->onEdit();
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+			{
+				// Set payload to carry the index of our item (could be anything)
+				ImGui::SetDragDropPayload(i.second->type().c_str(), &i.second->id, sizeof(int));
+				ImGui::EndDragDropSource();
+			}
+			if (ret)
+			{
 				inspector = i.second;
 			}
+			ImGui::PopID();
+			ImGui::PopItemWidth();
 			// sprintf(input, i.second->name.c_str());
 			// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
 			// 	i.second->name = {input};
@@ -1007,7 +1023,7 @@ public:
 	void update()
 	{
 		int numMissiles = COMPONENT_LIST(missile)->size();
-		cout << "\rmissiles: " + FormatWithCommas(numMissiles) + "       ";
+		// cout << "\rmissiles: " + FormatWithCommas(numMissiles) + "       ";
 		fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 		missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
 		particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
@@ -1222,8 +1238,8 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	assets::registerAsset(_name.meta());
 
 #define REG_ASSET2(_name) \
-	_name.name = #_name; \
-	assets::registerAsset(&_name); 
+	_name.name = #_name;  \
+	assets::registerAsset(&_name);
 
 int level1(bool load)
 {
@@ -1291,7 +1307,7 @@ int level1(bool load)
 			.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.25)
 			.addKey(vec4(0.75, 0.65, 0.54, 0.6f), 0.30)
 			.addKey(vec4(0.75, 0.65, 0.54, 0.0f), 1.f);
-addColorArray(ca3);
+		addColorArray(ca3);
 		colorArray ca2;
 		ca2.addKey(vec4(1), 0.05)
 			.addKey(vec4(1, 1, 0.9f, 1), 0.09)
@@ -1299,7 +1315,7 @@ addColorArray(ca3);
 			.addKey(vec4(1, 0.5f, 0.5f, 0.9f), 0.17)
 			.addKey(vec4(0.5, 0.5f, 0.5f, 0.6f), 0.21)
 			.addKey(vec4(0.5, 0.5f, 0.5f, 0.0f), 1);
-addColorArray(ca2);
+		addColorArray(ca2);
 		floatArray fa;
 		fa.addKey(0.f, 0.f).addKey(0.4f, 0.02f).addKey(2.0, 1.0);
 

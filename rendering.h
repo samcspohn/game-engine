@@ -55,6 +55,7 @@ struct _modelMeta : public assets::asset
 	_modelMeta(string file);
 	~_modelMeta();
 	bool onEdit();
+	string type();
 	string file;
 	Model *model = 0;
 	glm::vec3 bounds;
@@ -107,6 +108,7 @@ struct _shaderMeta : public assets::asset
 	_shaderMeta(string vertex, string tess, string geom, string fragment);
 	~_shaderMeta();
 	bool onEdit();
+	string type();
 	Shader *shader = 0;
 	friend struct _shader;
 	SER_HELPER()

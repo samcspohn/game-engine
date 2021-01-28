@@ -29,16 +29,18 @@ public:
 	}
 	bool onEdit()
 	{
-		char input[1024];
-		sprintf(input, name.c_str());
-		if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-			name = {input};
-		ImGui::PopID();
-		ImGui::PopItemWidth();
-		return ImGui::Button(name.c_str(), {40, 40});
+		// char input[1024];
+		// sprintf(input, name.c_str());
+		// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+		// 	name = {input};
+		// ImGui::PopID();
+		// ImGui::PopItemWidth();
+		// return ImGui::Button(name.c_str(), {40, 40});
 		// return false;
 	}
-
+	string type(){
+		return "GAME_OBJECT_TYPE";
+	}
 	void inspect(){
 		int n{0};
 		for (auto i = components.begin();

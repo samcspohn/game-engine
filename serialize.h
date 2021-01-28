@@ -53,6 +53,9 @@ BOOST_SERIALIZATION_ASSUME_ABSTRACT(base)
     template <class Archive>                                                  \
     inline void serialize(Archive &ar, const unsigned int /* file_version */) 
 
+// #define SER() SER_HELPER()
+
+
 #define SER0() \
     _SER_BASE   \
     ar;        \

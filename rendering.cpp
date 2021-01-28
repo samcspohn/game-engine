@@ -34,13 +34,13 @@ _modelMeta::~_modelMeta()
 }
 bool _modelMeta::onEdit()
 {
-	char input[1024];
-	sprintf(input, name.c_str());
-	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-		name = {input};
-	ImGui::PopID();
-	ImGui::PopItemWidth();
-	ImGui::Button(name.c_str(), {40, 40});
+	// char input[1024];
+	// sprintf(input, name.c_str());
+	// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+	// 	name = {input};
+	// ImGui::PopID();
+	// ImGui::PopItemWidth();
+	// ImGui::Button(name.c_str(), {40, 40});
 	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 	{
 		// Set payload to carry the index of our item (could be anything)
@@ -48,6 +48,9 @@ bool _modelMeta::onEdit()
 		ImGui::EndDragDropSource();
 	}
 	return false;
+}
+string _modelMeta::type(){
+	return "MODEL_DRAG_AND_DROP";
 }
 REGISTER_ASSET(_modelMeta);
 
@@ -241,23 +244,25 @@ _shaderMeta *_shader::meta() const
 }
 bool _shaderMeta::onEdit()
 {
-	bool ret = false;
-	char input[1024];
-	sprintf(input, name.c_str());
-	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-		name = {input};
-	ImGui::PopID();
-	ImGui::PopItemWidth();
-	ret = ImGui::Button(name.c_str(), {40, 40});
+	// bool ret = false;
+	// char input[1024];
+	// sprintf(input, name.c_str());
+	// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+	// 	name = {input};
+	// ImGui::PopID();
+	// ImGui::PopItemWidth();
+	// ret = ImGui::Button(name.c_str(), {40, 40});
 	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 	{
 		// Set payload to carry the index of our item (could be anything)
 		ImGui::SetDragDropPayload("SHADER_DRAG_AND_DROP", &id, sizeof(int));
 		ImGui::EndDragDropSource();
 	}
-	return ret;
+	// return ret;
 }
-
+string _shaderMeta::type(){
+	return "SHADER_DRAG_AND_DROP";
+}
 int renderingId = 0;
 void _modelMeta::getBounds()
 {

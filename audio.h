@@ -28,6 +28,9 @@ struct audioMeta : public assets::asset
     string file;
     friend class audio;
     friend audioMeta *audioManager::_new(string);
+    string type(){
+        return "AUDIO_DRAG_AND_DROP";
+    }
     audioMeta() = default;
     void load(const string &_file)
     {
@@ -47,13 +50,13 @@ struct audioMeta : public assets::asset
     }
     bool onEdit()
     {
-        char input[1024];
-        sprintf(input, name.c_str());
-        if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-            name = {input};
-        ImGui::PopID();
-        ImGui::PopItemWidth();
-        ImGui::Button(name.c_str(), {40, 40});
+        // char input[1024];
+        // sprintf(input, name.c_str());
+        // if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+        //     name = {input};
+        // ImGui::PopID();
+        // ImGui::PopItemWidth();
+        // ImGui::Button(name.c_str(), {40, 40});
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
         {
             // Set payload to carry the index of our item (could be anything)
@@ -337,5 +340,5 @@ REGISTER_COMPONENT(audiosource)
 void audio::play(vec3 pos, float pitch, float gain)
 {
     auto s = audioSourceManager::getSource();
-    s->play(pos, *this, pitch, gain);
+    s->play(pos - mainCamPos, *this, pitch, gain);
 }
