@@ -10,12 +10,13 @@ struct particle
 
     smquat rotation; // 2ints
     smvec3 velocity; // 2ints
-    vec3 position2;
+    // vec3 position2;
     int next;
     
-    smvec3 velocity2; // 2ints
+    // smvec3 velocity2; // 2ints
     float p1;    
     float l;
+    int p2;
 };
 
 // float getLife1(inout particle p){

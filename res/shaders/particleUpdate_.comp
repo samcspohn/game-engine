@@ -41,13 +41,13 @@ void update(uint index, float dt){
     emitter_prototype proto = prototypes[p.emitter_prototype];
     p.position += get(p.velocity) * dt;
     p.position -= floatingOrigin;
-    if(p.next < -1){
-        if(emitters[-p.next - 2].last == id)
-            p.position2 = transforms[emitters[-p.next - 2].transform].position;
-    }else{
-        p.position2 += get(p.velocity2) * dt;
-        p.position2 -= floatingOrigin;
-    }
+    // if(p.next < -1){
+    //     if(emitters[-p.next - 2].last == id)
+    //         p.position2 = transforms[emitters[-p.next - 2].transform].position;
+    // }else{
+    //     p.position2 += get(p.velocity2) * dt;
+    //     p.position2 -= floatingOrigin;
+    // }
 
     p.life -= dt / p.l;
     // particleLifes[id] = p.life;

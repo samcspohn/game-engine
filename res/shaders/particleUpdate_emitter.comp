@@ -39,8 +39,8 @@ void initEmitters(uint id){
     emitter e = emitters[ei.id];
     if(e.frame > 0 && e.last != -1){
         particles[e.last].next = -1;
-        particles[e.last].position2 = transforms[e.transform].position;
-        set(particles[e.last].velocity2,vec3(0));
+        // particles[e.last].position2 = transforms[e.transform].position;
+        // set(particles[e.last].velocity2,vec3(0));
     }
     e.emitter_prototype = ei.emitterProtoID;
     e.transform = ei.transformID;
@@ -73,8 +73,8 @@ void makeParticle(inout particle p, inout emitter_prototype ep, inout rng genera
     }
 
     p.position += vel * dt * particle_count;
-    p.position2 = p.position;
-    p.velocity2 = p.velocity;
+    // p.position2 = p.position;
+    // p.velocity2 = p.velocity;
     p.life -= dt * particle_count++ / p.l;
 }
 
@@ -116,8 +116,8 @@ void emit(uint thread_id){
             if(ep.trail == 1){
                 if(e.frame > 0 && e.last != -1){
                     particles[e.last].next = int(x);
-                    particles[e.last].position2 = p.position;
-                    particles[e.last].velocity2 = p.velocity;
+                    // particles[e.last].position2 = p.position;
+                    // particles[e.last].velocity2 = p.velocity;
                     // particles[e.last].life2 = p.life;
                 }
                 p.next = -int(thread_id) - 2;

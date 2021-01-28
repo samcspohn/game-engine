@@ -35,13 +35,13 @@ struct particle
 
     smquat rotation; // 2ints
     smvec3 velocity; // 2ints
-
-    vec3 position2;
+    // vec3 position2;
     int next;
-
-    smvec3 velocity2; // 2ints
-    float p1;
+    
+    // smvec3 velocity2; // 2ints
+    float p1;    
     float l;
+    int p2;
 };
 
 // vec4 color;
@@ -896,6 +896,8 @@ struct d{\
         atomics->bindData(5);
         histo->bindData(7);
         gpu_emitter_prototypes->bindData(8);
+        gpu_emitters->bindData(9);
+        GPU_TRANSFORMS->bindData(10);
 
         gt.start();
         particleSortProgram.use();
@@ -917,57 +919,7 @@ struct d{\
         gt.start();
         p_sort->sort(numParticles, _input, _output);
         appendStat("particle list sort", gt.stop());
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        // _input->bindData(1);   // input
-        // _output->bindData(2); // output
-
-        // particleSortProgram2.use();
-
-        // // particleSortProgram2.setInt("stage", -1);
-        // // particleSortProgram2.setUint("count", numParticles);
-        // // glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
-        // // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        // gt2.start();
-        // particleSortProgram2.setInt("stage",0);
-        // uint subSortGroups = ceil(numParticles / 8) / 256 + 1;
-        // particleSortProgram2.setUint("count", subSortGroups * 256);
-        // particleSortProgram2.setUint("nkeys", numParticles);
-        // glDispatchCompute(subSortGroups, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        // appendStat("sort particle list stage 0", gt2.stop());
-
-        // gt2.start();
-        // particleSortProgram2.setInt("stage",1);
-        // particleSortProgram2.setUint("count", 256);
-        // glDispatchCompute(256 / 256, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        // particleSortProgram2.setInt("stage",2);
-        // particleSortProgram2.setUint("count", 1);
-        // glDispatchCompute(1, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        // particleSortProgram2.setInt("stage",3);
-        // particleSortProgram2.setUint("count", 65536);
-        // glDispatchCompute(65536 / 256, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        // appendStat("sort particle list stage 1,2,3", gt2.stop());
-
-        // gt2.start();
-        // particleSortProgram2.setInt("stage",4);
-        // particleSortProgram2.setUint("count", numParticles);
-        // glDispatchCompute(numParticles / 256 + 1, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        // appendStat("sort particle list stage 4", gt2.stop());
-
-        // // atomics->retrieveData();
-        // // numParticles = atomics->storage->at(0);
-
-        // double t = t1.stop();
-        // appendStat("sort particle list", t);
-        // time.add(t);
+       
     }
 
     void drawParticles(mat4 view, mat4 rot, mat4 proj)
@@ -981,19 +933,12 @@ struct d{\
         // GLuint matPView = glGetUniformLocation(particleShader.s->shader->Program, "view");
         particleShader->setMat4("vRot", rot);
         particleShader->setMat4("projection", proj);
-        // GLuint matvRot = glGetUniformLocation(particleShader.s->shader->Program, "vRot");
-        // GLuint matProjection = glGetUniformLocation(particleShader.s->shader->Program, "projection");
-        // GLuint cam = glGetUniformLocation(particleShader.s->shader->Program, "cameraPos");
-        // glUniform3f(cam, mainCamPos.x, mainCamPos.y, mainCamPos.z);
         particleShader->setVec3("cameraPos", mainCamPos);
         particleShader->setFloat("aspectRatio", (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
-        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "aspectRatio"), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+
         particleShader->setFloat("FC", 2.0 / log2(farplane + 1));
         particleShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
         particleShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
-        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "FC"), 2.0 / log2(farplane + 1));
-        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenHeight"), (float)SCREEN_HEIGHT);
-        // glUniform1f(glGetUniformLocation(particleShader.s->shader->Program, "screenWidth"), (float)SCREEN_WIDTH);
         particleShader->setMat3("camInv", camInv);
 
         // glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(view));
@@ -1005,6 +950,7 @@ struct d{\
         gpu_emitters->bindData(4);
         particles->bindData(2);
         _input->bindData(6);
+        
         // _output->bindData(6);
 
         glBindVertexArray(VAO);

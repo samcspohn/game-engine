@@ -23,6 +23,11 @@ layout(std430,binding = 5) buffer a{uint atomics[];};
 
 layout(std430,binding = 7) buffer d_h{uint histo[];};
 layout(std430,binding = 8) buffer ep{emitter_prototype prototypes[];};
+
+
+layout(std430,binding = 9) buffer e{emitter emitters[];};//
+layout(std430,binding = 10) buffer t{_transform transforms[];};//
+
 // layout(std430,binding = 10) buffer ko{uint keys_out[];};
 
 
@@ -53,10 +58,21 @@ void main () {
             //     break;
             case -1:
                 {
-                    particle p = particles[livingParticles[gid]];
+                    uint id = livingParticles[gid];
+                    particle p = particles[id];
                     emitter_prototype proto = prototypes[p.emitter_prototype];
                     vec3 position = p.position;
-                    vec3 position2 = p.position2; 
+                    vec3 position2 = position;
+                    if(p.next == -1){
+                        position2 = position;
+                    }
+                    else if(p.next < -1){
+                        if(emitters[-p.next - 2].last == id){
+                            position2 = transforms[emitters[-p.next - 2].transform].position;
+                        }
+                    }else{
+                        position2 = particles[p.next].position;
+                    }
                     vec3 p1 = camInv * (position - camp);
                     vec3 p2 = camInv * (position2 - camp);
                     vec3 p3 = (p1 + p2) / 2;
