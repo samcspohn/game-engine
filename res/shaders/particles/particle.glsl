@@ -2,6 +2,7 @@
 struct particle
 {
     vec3 position;
+    int p1;
     // uint emitter;
 
     vec2 scale;
@@ -14,9 +15,9 @@ struct particle
     int next;
     
     // smvec3 velocity2; // 2ints
-    float p1;    
+    float p2;    
     float l;
-    int p2;
+    int p3;
 };
 
 // float getLife1(inout particle p){
@@ -121,4 +122,31 @@ smvec3 getPos(d item){
     sv.xy = item.xy;
     sv.z = uintBitsToFloat(~item.z ^ (1 << 31));
     return sv;
+}
+
+void makeParticle(inout particle p, inout emitter_prototype ep, inout rng generator, inout float particle_count, vec3 tpos, vec4 trot, vec3 tscale, uint epId, float dt, uint eId){
+
+    p.position = tpos + normalize(randVec3(generator)) * tscale * ep.radius;
+    // p.rotation  = transforms[e.transform].rotation;
+    p.scale = tscale.xy * ep.scale;
+    p.life = 1.f;
+    p.l = max(ep.lifetime2 + gen(generator) * abs(ep.lifetime - ep.lifetime2),0.0001f);
+    // p.emitter = eId;
+    p.emitter_prototype = epId;
+    vec3 random = rotate(vec3(1,0,0),gen(generator) * ep.dispersion,vec3(0,0,ep.minSpeed + gen(generator) * (ep.maxSpeed - ep.minSpeed)));
+    random = rotate(vec3(0,0,1),gen(generator) * 2 * M_PI,random);
+    vec3 vel = vec3(rotate(identity(), trot) * vec4(random * tscale,1));
+    set(p.velocity,vel);
+    
+    if(ep.velAlign == 1){
+        vec3 dir = cross(vel,randVec3(generator));
+        set(p.rotation,lookAt(dir,vel));
+    }else{
+        set(p.rotation,normalize(randVec4(generator)));
+    }
+
+    p.position += vel * dt * particle_count;
+    // p.position2 = p.position;
+    // p.velocity2 = p.velocity;
+    p.life -= dt * particle_count++ / p.l;
 }

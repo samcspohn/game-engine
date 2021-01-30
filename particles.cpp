@@ -27,6 +27,7 @@ struct smvec3
 struct particle
 {
     vec3 position;
+    int p1;
     // uint emitter;
 
     vec2 scale;
@@ -39,9 +40,9 @@ struct particle
     int next;
     
     // smvec3 velocity2; // 2ints
-    float p1;    
+    float p2;    
     float l;
-    int p2;
+    int p3;
 };
 
 // vec4 color;
@@ -636,6 +637,13 @@ int getParticleCount()
     pcMutex.unlock();
     return ret;
 }
+int getActualParticles(){
+    int ret;
+    pcMutex.lock();
+    ret = actualParticles;
+    pcMutex.unlock();
+    return ret;
+}
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
 
@@ -752,6 +760,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glUniform1ui(glGetUniformLocation(particleProgram.Program, "stage"), 7);
     glDispatchCompute(actualParticles / 256 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    // atomicCounters->retrieveData();
 }
 
 struct d

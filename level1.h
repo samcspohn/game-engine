@@ -960,6 +960,7 @@ class editor_sc : public component
 	gui::text *fps;
 	gui::text *missileCounter;
 	gui::text *particleCounter;
+	gui::text *aparticleCounter;
 	vector<gun *> guns;
 
 public:
@@ -1011,6 +1012,8 @@ public:
 		info->adopt(missileCounter);
 		particleCounter = new gui::text();
 		info->adopt(particleCounter);
+		aparticleCounter = new gui::text();
+		info->adopt(aparticleCounter);
 
 		guns = transform->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
@@ -1027,6 +1030,7 @@ public:
 		fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
 		missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
 		particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
+		aparticleCounter->contents = "aparticles: " + FormatWithCommas(getActualParticles());
 		// base->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)

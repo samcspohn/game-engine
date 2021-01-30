@@ -254,3 +254,4 @@ namespace particle_renderer
 void prepParticles();
 void swapBurstBuffer();
 int getParticleCount();
+int getActualParticles();
