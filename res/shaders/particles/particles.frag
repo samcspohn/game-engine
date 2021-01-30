@@ -1,6 +1,6 @@
 #version 430 core
 #extension GL_ARB_conservative_depth : enable
-#include "util.glsl"
+#include "../util.glsl"
 #include "particle.glsl"
 
 

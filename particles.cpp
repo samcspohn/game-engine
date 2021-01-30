@@ -343,6 +343,8 @@ enum particleCounters
     liveParticles = 0,
     destroyCounter = 1
 };
+
+// simulation
 gpu_vector_proxy<particle> *particles = new gpu_vector_proxy<particle>();
 gpu_vector_proxy<_emission> *emitted = new gpu_vector_proxy<_emission>();
 gpu_vector_proxy<GLuint> *burstParticles = new gpu_vector_proxy<GLuint>();
@@ -358,6 +360,17 @@ gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_p
 map<string, int> emitter_prototypes;
 map<int, string> emitter_proto_names;
 map<int, emitter_proto_asset *> emitter_proto_assets;
+
+
+// renderering
+array_heap<emitter> EMITTERS;
+gpu_vector_proxy<emitter> *gpu_emitters = new gpu_vector_proxy<emitter>();
+gpu_vector_proxy<emitterInit> *gpu_emitter_inits = new gpu_vector_proxy<emitterInit>();
+vector<emitterInit> emitterInits;
+vector<emitterInit> emitterInitsdb;
+unordered_map<uint, emitterInit> emitter_inits;
+
+
 
 void saveEmitters(OARCHIVE &oa)
 {
@@ -504,24 +517,7 @@ void renderEdit(const char *name, emitter_prototype_ &ep)
     }
 }
 
-array_heap<emitter> EMITTERS;
-gpu_vector_proxy<emitter> *gpu_emitters = new gpu_vector_proxy<emitter>();
-gpu_vector_proxy<emitterInit> *gpu_emitter_inits = new gpu_vector_proxy<emitterInit>();
-vector<emitterInit> emitterInits;
-vector<emitterInit> emitterInitsdb;
-unordered_map<uint, emitterInit> emitter_inits;
 
-// void renderEdit(string name, emitter_prototype_ &ep)
-// {
-//     ImGui::Text(emitter_proto_names.at(ep.emitterPrototype).c_str());
-//     // for (auto &i : emitter_prototypes)
-//     // {
-//     //     if (ep.getId() == i.second.index)
-//     //         ImGui::Text(i.first.c_str());
-//     // }
-// }
-
-// COPY(particle_emitter);
 
 void particle_emitter::protoSetPrototype(emitter_prototype_ ep)
 {
@@ -623,12 +619,12 @@ void initParticles()
     // gpu_emitters->tryRealloc(1024 * 1024 * 4);
 }
 
-Shader particleSortProgram("res/shaders/particle_sort_1.comp");
+Shader particleSortProgram("res/shaders/particles/particle_sort_1.comp");
 // Shader particleSortProgram2("res/shaders/particle_sort2.comp");
-Shader particleSortProgram2("res/shaders/particle_sort_2.comp");
-Shader particleProgram("res/shaders/particleUpdate_.comp");
-Shader particleProgram2("res/shaders/particleUpdate_burst.comp");
-Shader particleProgram3("res/shaders/particleUpdate_emitter.comp");
+Shader particleSortProgram2("res/shaders/particles/particle_sort_2.comp");
+Shader particleProgram("res/shaders/particles/particleUpdate_.comp");
+Shader particleProgram2("res/shaders/particles/particleUpdate_burst.comp");
+Shader particleProgram3("res/shaders/particles/particleUpdate_emitter.comp");
 int particleCount;
 int actualParticles;
 mutex pcMutex;
@@ -770,26 +766,11 @@ struct d
     uint p2;
 };
 
-#define COUNTER_THREADS 4096
-#define BUCKETS 65536
-#define buffer_depth 1
 
-#define N_GROUPS 256
-#define RADIX 12
-#define BUCK (1 << RADIX)
-#define BITS 32
-#define BLOCK_SUM_SIZE 256
-// sqrt(N_GROUPS * BUCK)
-gpu_vector_proxy<uint> *keys_in = new gpu_vector_proxy<uint>();
-gpu_vector_proxy<uint> *keys_out = new gpu_vector_proxy<uint>();
 gpu_vector<uint> *atomics = new gpu_vector<uint>();
-vector<int> counters_(BUCKETS);
-vector<int> offsets_(BUCKETS);
-
 gpu_vector_proxy<d> *_input = new gpu_vector_proxy<d>();
 gpu_vector_proxy<d> *_output = new gpu_vector_proxy<d>();
-gpu_vector<GLuint> *block_sums = new gpu_vector<GLuint>();
-gpu_vector<GLuint> *histo = new gpu_vector<GLuint>();
+
 
 namespace particle_renderer
 {
@@ -798,7 +779,7 @@ namespace particle_renderer
     glm::vec3 camP;
 
     _shader particleShader;
-    vector<uint> zeros;
+
 
     vector<d> res;
     ofstream output;
@@ -814,30 +795,17 @@ namespace particle_renderer
     {
         time = rolling_buffer(1000);
         output = ofstream("particle_perf.txt", ios_base::app);
-        if (zeros.size() == 0)
-        {
-            zeros = vector<uint>(BUCKETS);
-        }
         atomics->ownStorage();
         atomics->storage->push_back(0);
-        particleShader = _shader("res/shaders/particles.vert", "res/shaders/particles.geom", "res/shaders/particles.frag");
+        particleShader = _shader("res/shaders/particles/particles.vert", "res/shaders/particles/particles.geom", "res/shaders/particles/particles.frag");
 
         if (VAO == 0)
         {
             glGenVertexArrays(1, &VAO);
         }
 
-        keys_in->tryRealloc(MAX_PARTICLES);
-        keys_out->tryRealloc(MAX_PARTICLES);
         _input->tryRealloc(MAX_PARTICLES);
-        // _output->ownStorage();
         _output->tryRealloc(MAX_PARTICLES);
-        block_sums->ownStorage();
-        block_sums->storage->resize(BLOCK_SUM_SIZE);
-        histo->ownStorage();
-        histo->storage->resize(65536);
-        block_sums->bufferData();
-        histo->bufferData();
 
         p_sort = new sorter<d>("d",
                                "struct smquat{\
@@ -873,38 +841,26 @@ struct d{\
         particleSortProgram.setFloat("x_size", screen.x);
         particleSortProgram.setFloat("y_size", screen.y);
 
-        // particleSortProgram2.use();
-        // particleSortProgram2.setMat3("camInv",camInv);
-        // particleSortProgram2.setVec3("camPos", camPos);
-        // particleSortProgram2.setVec3("camp",camP);
-        // particleSortProgram2.setVec3("cameraForward",MainCamForward);
-        // particleSortProgram2.setVec3("cameraUp",mainCamUp);
-        // particleSortProgram2.setFloat("x_size",screen.x);
-        // particleSortProgram2.setFloat("y_size",screen.y);
-
         gpuTimer gt;
         t1.start();
         atomics->storage->at(0) = 0;
         atomics->bufferData();
-        histo->bufferData();
+        // histo->bufferData();
 
         livingParticles->bindData(0);
         _input->bindData(1);
         _output->bindData(2);
-        block_sums->bindData(3);
+        // block_sums->bindData(3);
         particles->bindData(4);
         atomics->bindData(5);
-        histo->bindData(7);
+        // histo->bindData(7);
         gpu_emitter_prototypes->bindData(8);
         gpu_emitters->bindData(9);
         GPU_TRANSFORMS->bindData(10);
 
         gt.start();
         particleSortProgram.use();
-        // particleSortProgram.setInt("stage",-2);
-        // particleSortProgram.setUint("count", 65536);
-        // glDispatchCompute(65536 / 256, 1, 1); // count
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
 
         particleSortProgram.setInt("stage", -1);
         particleSortProgram.setUint("count", actualParticles);
@@ -914,7 +870,7 @@ struct d{\
         atomics->retrieveData();
         numParticles = atomics->storage->at(0);
         appendStat("particle list create", gt.stop());
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
 
         gt.start();
         p_sort->sort(numParticles, _input, _output);
@@ -940,10 +896,6 @@ struct d{\
         particleShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
         particleShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
         particleShader->setMat3("camInv", camInv);
-
-        // glUniformMatrix4fv(matPView, 1, GL_FALSE, glm::value_ptr(view));
-        // glUniformMatrix4fv(matvRot, 1, GL_FALSE, glm::value_ptr(rot));
-        // glUniformMatrix4fv(matProjection, 1, GL_FALSE, glm::value_ptr(proj));
 
         GPU_TRANSFORMS->bindData(0);
         gpu_emitter_prototypes->bindData(3);

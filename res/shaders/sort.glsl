@@ -46,6 +46,7 @@ barrier();
     for(uint i = start; i < end; ++i){
         // uint k = key(_output[globalOffset + i]);
         uint k = key(_input[globalOffset + i]) & 0x00FF;
+        // uint k = key(_output[g_id]) >> 16;
         k >>= 5;
         _keys[i] = k;
         ids[i] = globalOffset + i;

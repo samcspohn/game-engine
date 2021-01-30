@@ -72,7 +72,7 @@ public:
 		// numCubes.fetch_add(-1);
 
 		// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		explosionSound.play(transform->getPosition(), 0.5, 0.05);
+		// explosionSound.play(transform->getPosition(), 0.5, 0.05);
 		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// hit = true;

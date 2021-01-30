@@ -1,6 +1,6 @@
 #version 430
-#include "transform.glsl"
-#include "util.glsl"
+#include "../transform.glsl"
+#include "../util.glsl"
 #include "particle.glsl"
 
 

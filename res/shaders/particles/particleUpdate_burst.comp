@@ -2,9 +2,9 @@
 
 #extension GL_ARB_compute_shader : enable
 // #extension GL_ARB_shader_storage_buffer_object : enable
-#include "util.glsl"
+#include "../util.glsl"
 #include "particle.glsl"
-#include "transform.glsl"
+#include "../transform.glsl"
 
 
 layout(std430,binding = 0) buffer t{_transform transforms[];};
