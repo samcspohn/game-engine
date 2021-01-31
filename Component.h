@@ -22,7 +22,7 @@
 #include "Transform.h"
 #include "fstream"
 #define ull unsigned long long
-class game_object_proto;
+class game_object_proto_;
 
 // bool compareTransform(Transform *t1, Transform *t2);
 // class Transform2;
@@ -115,6 +115,7 @@ public:
 	virtual unsigned int active() { return 0; };
 	virtual void sort(){};
 	virtual compInfo getInfo(int i) { return compInfo(); };
+	virtual component* floatingComponent() {return 0; };
 	// virtual string ser(){};
 
 	friend class boost::serialization::access;
@@ -136,6 +137,10 @@ class componentStorage : public componentStorageBase
 {
 public:
 	deque_heap<t> data;
+
+	component* floatingComponent(){
+		return new t();
+	}
 
 	componentStorage()
 	{
@@ -297,7 +302,7 @@ struct component_meta : public component_meta_base
 struct componentMetaBase
 {
 	virtual void addComponent(game_object *g);
-	virtual void addComponentProto(game_object_proto *g);
+	virtual void addComponentProto(game_object_proto_ *g);
 };
 template <typename t>
 struct componentMeta : public componentMetaBase
@@ -324,6 +329,10 @@ public:
 	inline componentStorage<t> *registry()
 	{
 		return static_cast<componentStorage<t> *>(components[typeid(t).hash_code()]);
+	}
+
+	componentStorageBase* getByType(ull type){
+		return components[type];
 	}
 };
 
@@ -405,7 +414,7 @@ void destroyAllComponents();
 		{                                                 \
 			g->addComponent<comp>();                      \
 		}                                                 \
-		void addComponentProto(game_object_proto *g)      \
+		void addComponentProto(game_object_proto_ *g)      \
 		{                                                 \
 			g->addComponent<comp>();                      \
 		}                                                 \

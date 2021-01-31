@@ -90,7 +90,7 @@ class terrain : public component
 public:
     COPY(terrain);
     void onEdit();
-    game_object_proto *scatter_obj;
+    game_object_prototype scatter_obj;
     vector<transform2> scatter;
     vector<glm::vec3> scatterPos;
     _renderer *r = 0;
@@ -198,7 +198,7 @@ terrain *getTerrain(float x, float z)
         {
             for (glm::vec3 p : scatterPos)
             {
-                game_object *s = new game_object(*scatter_obj);
+                game_object *s = new game_object(scatter_obj);
                 s->transform->setPosition(p + root2.getPosition());
                 s->transform->rotate(vec3(1, 0, 0), radians(-90.f));
                 scatter.push_back(s->transform);

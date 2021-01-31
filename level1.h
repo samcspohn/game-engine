@@ -89,7 +89,7 @@ class gun final : public component
 	vector<vec3> barrels = {vec3(0, -12, 10)};
 
 public:
-	game_object_proto *ammo;
+	game_object_prototype ammo;
 	float rof;
 	float speed;
 	float dispersion;
@@ -124,7 +124,7 @@ public:
 			{
 				for (auto &j : barrels)
 				{
-					game_object *go = new game_object(*ammo);
+					game_object *go = new game_object(ammo);
 					go->transform->setScale(vec3(size));
 					go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j, 1)));
 					// go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
@@ -593,7 +593,7 @@ class player_sc : public component
 	gui::window *reticule;
 	gui::image *crosshair;
 	_texture crosshairtex;
-	game_object_proto *ammo_proto;
+	game_object_prototype ammo_proto;
 
 public:
 	terrain *t;
@@ -850,6 +850,8 @@ public:
 			}
 			if (ImGui::Selectable("delete"))
 			{
+				if(inspector == t->gameObject())
+					inspector = 0;
 				t->gameObject()->destroy();
 			}
 			if (ImGui::Selectable("new game object"))
@@ -964,7 +966,7 @@ class editor_sc : public component
 	vector<gun *> guns;
 
 public:
-	game_object_proto *ammo_proto;
+	game_object_prototype ammo_proto;
 	void onStart()
 	{
 
@@ -1094,7 +1096,7 @@ public:
 	gui::window *info;
 	gui::text *fps;
 	vector<gun *> guns;
-	game_object_proto *ammo_proto;
+	game_object_prototype ammo_proto;
 
 	void onStart()
 	{
@@ -1184,7 +1186,7 @@ public:
 };
 REGISTER_COMPONENT(sun_sc)
 
-void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright, game_object_proto *ammo_proto)
+void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool upright, game_object_prototype ammo_proto)
 {
 	// _shader wireFrame("res/shaders/wireframe.vert","res/shaders/wireframe.geom","res/shaders/wireframe.frag");
 	_shader modelShader("res/shaders/model.vert", "res/shaders/model.frag");
@@ -1439,7 +1441,7 @@ int level1(bool load)
 		// bomb.primarybullet = getNamedEmitterProto("flame");
 		// bomb.primaryexplosion = getNamedEmitterProto("expflame");
 
-		game_object_proto *bomb_proto = new game_object_proto();
+		game_object_proto_ *bomb_proto = new game_object_proto_();
 		bomb_proto->name = "bomb";
 		bomb_proto->addComponent<_renderer>()->set_proto(modelShader, cubeModel);
 		bomb_proto->addComponent<collider>()->setLayer(0);
@@ -1497,7 +1499,7 @@ int level1(bool load)
 		playerCam->nearPlane = 0.00001f;
 		player->addComponent<gun>();
 		player->addComponent<gun>();
-		player->addComponent<editor_sc>()->ammo_proto = bomb_proto;
+		player->addComponent<editor_sc>()->ammo_proto = game_object_prototype(bomb_proto);
 
 		// player->addComponent<Light>()->setColor(glm::vec3(3, 3, 20));
 		// player->getComponent<Light>()->setConstant(1.f);
@@ -1590,13 +1592,13 @@ int level1(bool load)
 
 		// ship->transform->setScale(vec3(10));
 
-		game_object_proto *tree_go = new game_object_proto();
+		game_object_proto_ *tree_go = new game_object_proto_();
 		tree_go->name = "tree";
 		_renderer *tree_rend = tree_go->addComponent<_renderer>();
 		tree_rend->set(modelShader, treeModel);
 		registerProto(tree_go);
 
-		game_object_proto *ground = new game_object_proto();
+		game_object_proto_ *ground = new game_object_proto_();
 		ground->name = "ground";
 		// ground->transform->scale(vec3(20));
 		auto r = ground->addComponent<_renderer>();
@@ -1624,12 +1626,12 @@ int level1(bool load)
 		// makeBillboard(tree, tree_bill_tex, tree_billboard);
 		// tree_billboard->setCullSizes(0.0f, 0.05f);
 		// tree_go->transform->rotate(vec3(1,0,0),radians(-90.f));
-
+		auto grnd = game_object_prototype(ground);
 		for (int i = -terrainsDim; i < terrainsDim + 1; i++)
 		{
 			for (int j = -terrainsDim; j < terrainsDim + 1; j++)
 			{
-				game_object *g = new game_object(*ground);
+				game_object *g = new game_object( grnd);
 				g->transform.name() = "terrain:" + to_string(i) + "," + to_string(j);
 				terrain *t = g->getComponent<terrain>();
 				// t->scatter_obj = tree_go;
@@ -1653,8 +1655,8 @@ int level1(bool load)
 		config >> n;
 		config >> numshooters;
 		srand(100);
-
-		game_object *CUBE = new game_object(*bomb_proto);
+		game_object_prototype bmb(bomb_proto);
+		game_object *CUBE = new game_object(bmb);
 		// CUBE->getComponent<physicsObject>()->init(vec3(100));
 
 		////////////////////////////////////////////////

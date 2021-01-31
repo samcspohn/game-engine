@@ -1,26 +1,26 @@
 #include "game_object.h"
 
 tbb::concurrent_unordered_set<game_object*> toDestroy;
-std::list<game_object_proto*> prototypeRegistry;
+std::unordered_map<int, game_object_proto_*> prototypeRegistry;
 
 void newGameObject(transform2 t){
 	new game_object(t);
 }
-REGISTER_ASSET(game_object_proto);
+REGISTER_ASSET(game_object_proto_);
 
 void rebuildGameObject(componentStorageBase* base, int i){
     base->get(i)->transform->gameObject()->components.insert(std::make_pair(base->get(i), base->getInfo(i).CompItr));
 }
 
-void registerProto(game_object_proto* p){
-	prototypeRegistry.push_back(p);
-	p->ref = prototypeRegistry.end();
+void registerProto(game_object_proto_* p){
 	p->genID();
+	prototypeRegistry.emplace(pair<int,game_object_proto_*>(p->id,p));
+	// p->ref = prototypeRegistry.end();
 	assets::registerAsset(p);
-    --p->ref;
+    // --p->ref;
 }
-void deleteProtoRef(protoListRef r){
-	prototypeRegistry.erase(r);
+void deleteProtoRef(int id){
+	prototypeRegistry.erase(id);
 }
 
 
@@ -33,5 +33,10 @@ void loadProto(IARCHIVE& ia){
 
 
 void componentMetaBase::addComponent(game_object* g){}
-void componentMetaBase::addComponentProto(game_object_proto* g){}
+void componentMetaBase::addComponentProto(game_object_proto_* g){}
 
+
+game_object_prototype::game_object_prototype(){}
+game_object_prototype::game_object_prototype(game_object_proto_* p){
+	this->id = p->id;
+}

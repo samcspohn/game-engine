@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <unordered_set>
+#include <unordered_map>
 #include <list>
 // #include "plf_list.h"
 #include "fast_list.h"
@@ -12,31 +13,30 @@
 using namespace std;
 
 class _renderer;
-class game_object_proto;
-#define protoListRef typename std::list<game_object_proto *>::iterator
-#define protoList std::list<game_object_proto *>
+class game_object_proto_;
+// #define protoListRef typename std::list<game_object_proto_ *>::iterator
+// #define protoList std::list<game_object_proto_ *>
 
-void registerProto(game_object_proto *p);
-void deleteProtoRef(protoListRef r);
+class game_object;
 
-class game_object_proto : public assets::asset
+extern tbb::concurrent_unordered_set<game_object *> toDestroy;
+
+
+
+void registerProto(game_object_proto_ *p);
+void deleteProtoRef(int id);
+
+class game_object_proto_ : public assets::asset
 {
 public:
 	// string name;
-	game_object_proto()
+	game_object_proto_()
 	{
 		// ref = registerProto(this);
 	}
 	bool onEdit()
 	{
-		// char input[1024];
-		// sprintf(input, name.c_str());
-		// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-		// 	name = {input};
-		// ImGui::PopID();
-		// ImGui::PopItemWidth();
-		// return ImGui::Button(name.c_str(), {40, 40});
-		// return false;
+
 	}
 	string type(){
 		return "GAME_OBJECT_TYPE";
@@ -73,7 +73,7 @@ public:
 		}
 	}
 	map<component *, ull> components;
-	protoListRef ref;
+	// protoListRef ref;
 
 	// game_object_proto(const game_object_proto& other){
 	// 	for()
@@ -97,27 +97,77 @@ public:
 			}
 		return 0;
 	}
-	~game_object_proto()
+	~game_object_proto_()
 	{
 		for (auto &i : components)
 			delete i.first;
-		deleteProtoRef(ref);
+		deleteProtoRef(id);
 	}
 	SER_HELPER()
 	{
+		// ar;
 		SER_BASE_ASSET
 		ar &name &components;
 	}
+
+
+	// SER_OUT()
+	// {
+	// 	ar << boost::serialization::base_object<assets::asset>(*this);
+	// 	vector<string> archives;
+	// 	for(auto &c : components)
+	// 	{
+	// 		stringstream ss;
+	// 		OARCHIVE _ar(ss);
+	// 		_ar << c.second << c.first;
+	// 		archives.push_back(ss.str());
+	// 	}
+	// 	ar << archives;
+	// }
+	// SER_IN()
+	// {
+	// 	ar >>boost::serialization::base_object<assets::asset>(*this);
+	// 	vector<string> archives;
+	// 	ar >> archives;
+	// 	for(auto& s : archives)
+	// 	{
+	// 		ull type;
+	// 		component* c;
+	// 		stringstream ss{s};
+	// 		IARCHIVE _ar(ss);
+	// 		_ar >> type;
+	// 		try
+	// 		{
+	// 			_ar >> c;
+	// 		}
+	// 		catch (exception e)
+	// 		{
+	// 			c = ComponentRegistry.getByType(type)->floatingComponent();				
+	// 			cout << e.what() << endl;
+	// 		}
+	// 		components.emplace(pair<component*, ull>(c,type));
+	// 	}
+	// }
 };
+
+
+extern unordered_map<int,game_object_proto_*> prototypeRegistry;
+
+
+struct game_object_prototype{
+	int id;
+	game_object_prototype();
+	game_object_prototype(game_object_proto_* p);
+	SER_HELPER(){
+		ar &id;
+	}
+};
+
 
 void saveProto(OARCHIVE &oa);
 void loadProto(IARCHIVE &ia);
 
-class game_object;
 
-extern tbb::concurrent_unordered_set<game_object *> toDestroy;
-extern std::list<game_object_proto *> prototypeRegistry;
-class insectorWindow;
 class game_object : public inspectable
 {
 	mutex lock;
@@ -403,14 +453,15 @@ public:
 		}
 		// gameLock.unlock();
 	}
-	game_object(const game_object_proto &g) : lock()
+	game_object(const game_object_prototype &g) : lock()
 	{
+		game_object_proto_& _g = *prototypeRegistry.at(g.id);
 		destroyed = false;
 		gameLock.lock();
 		this->transform = Transforms._new(); // new Transform(this);
 		this->transform->init(this);
 		gameLock.unlock();
-		for (auto &i : g.components)
+		for (auto &i : _g.components)
 		{
 			i.first->_copy(this);
 		}

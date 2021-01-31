@@ -17,6 +17,7 @@
 #include <boost/serialization/deque.hpp>
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/map.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/priority_queue.hpp>
 #include <boost/serialization/queue.hpp>
@@ -26,6 +27,10 @@
 
 #define IARCHIVE boost::archive::text_iarchive
 #define OARCHIVE boost::archive::text_oarchive
+
+// #define IARCHIVE boost::archive::binary_iarchive
+// #define OARCHIVE boost::archive::binary_oarchive
+
 
 #define _SER_BASE                                                              \
     friend class boost::serialization::access;                                \
@@ -53,6 +58,16 @@ BOOST_SERIALIZATION_ASSUME_ABSTRACT(base)
     template <class Archive>                                                  \
     inline void serialize(Archive &ar, const unsigned int /* file_version */) 
 
+
+#define SER_OUT()                                                            \
+    friend class boost::serialization::access;                                \
+                                                                              \
+    inline void serialize(OARCHIVE &ar, const unsigned int /* file_version */) 
+
+#define SER_IN()                                                            \
+    friend class boost::serialization::access;                                \
+                                                                              \
+    inline void serialize(IARCHIVE &ar, const unsigned int /* file_version */) 
 // #define SER() SER_HELPER()
 
 
