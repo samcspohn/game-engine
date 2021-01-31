@@ -44,10 +44,13 @@ public:
 	audio explosionSound;
 	emitter_prototype_ exp;
 	float explosion_size;
+	bool playSound = false;
 	void onEdit()
 	{
 		RENDER(exp);
 		RENDER(explosion_size);
+		RENDER(explosionSound);
+		RENDER(playSound);
 	}
 	missile() {}
 
@@ -72,14 +75,20 @@ public:
 		// numCubes.fetch_add(-1);
 
 		// b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-		// explosionSound.play(transform->getPosition(), 0.5, 0.05);
+		if (playSound)
+			explosionSound.play(transform->getPosition(), 0.5, 0.05);
 		// getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
 		// getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
 		// hit = true;
 		// }
 	}
 	COPY(missile);
-	SER4(vel, exp, explosionSound, explosion_size);
+	// SER5(vel, exp, explosionSound, explosion_size, playSound);
+	SER_HELPER()
+	{
+		SER_BASE(component);
+		ar &vel &exp &explosionSound &explosion_size &playSound;
+	}
 };
 REGISTER_COMPONENT(missile)
 
@@ -214,7 +223,7 @@ public:
 	}
 	//UPDATE(spinner,update);
 	COPY(spinner);
-	SER2(speed,axis);
+	SER2(speed, axis);
 };
 REGISTER_COMPONENT(spinner)
 
@@ -850,7 +859,7 @@ public:
 			}
 			if (ImGui::Selectable("delete"))
 			{
-				if(inspector == t->gameObject())
+				if (inspector == t->gameObject())
 					inspector = 0;
 				t->gameObject()->destroy();
 			}
@@ -1631,7 +1640,7 @@ int level1(bool load)
 		{
 			for (int j = -terrainsDim; j < terrainsDim + 1; j++)
 			{
-				game_object *g = new game_object( grnd);
+				game_object *g = new game_object(grnd);
 				g->transform.name() = "terrain:" + to_string(i) + "," + to_string(j);
 				terrain *t = g->getComponent<terrain>();
 				// t->scatter_obj = tree_go;

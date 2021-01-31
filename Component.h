@@ -45,9 +45,10 @@ public:
 	int getThreadID();
 	ull getHash();
 
-	SER_HELPER() { 
+	SER_HELPER()
+	{
 		ar;
-		// ar &transform; 
+		// ar &transform;
 	}
 };
 REGISTER_BASE(component)
@@ -115,7 +116,6 @@ public:
 	virtual unsigned int active() { return 0; };
 	virtual void sort(){};
 	virtual compInfo getInfo(int i) { return compInfo(); };
-	virtual component* floatingComponent() {return 0; };
 	// virtual string ser(){};
 
 	friend class boost::serialization::access;
@@ -137,10 +137,6 @@ class componentStorage : public componentStorageBase
 {
 public:
 	deque_heap<t> data;
-
-	component* floatingComponent(){
-		return new t();
-	}
 
 	componentStorage()
 	{
@@ -303,6 +299,7 @@ struct componentMetaBase
 {
 	virtual void addComponent(game_object *g);
 	virtual void addComponentProto(game_object_proto_ *g);
+	virtual void floatingComponent(component *) = 0;
 };
 template <typename t>
 struct componentMeta : public componentMetaBase
@@ -316,6 +313,7 @@ public:
 	std::map<size_t, componentStorageBase *> gameEngineComponents;
 	std::map<size_t, componentStorageBase *> gameComponents;
 	std::map<std::string, componentMetaBase *> meta;
+	std::map<size_t, componentMetaBase *> meta_types;
 	std::mutex lock;
 
 	friend class boost::serialization::access;
@@ -331,8 +329,9 @@ public:
 		return static_cast<componentStorage<t> *>(components[typeid(t).hash_code()]);
 	}
 
-	componentStorageBase* getByType(ull type){
-		return components[type];
+	componentMetaBase *getByType(ull type)
+	{
+		return meta_types[type];
 	}
 };
 
@@ -345,7 +344,8 @@ extern Registry ComponentRegistry;
 template <typename t>
 component_meta<t> registerComponent()
 {
-	ComponentRegistry.meta.emplace(pair(string(typeid(t).name()), (componentMetaBase *)(new componentMeta<t>())));
+	ComponentRegistry.meta_types.emplace(pair(typeid(t).hash_code(), (componentMetaBase *)(new componentMeta<t>())));
+	ComponentRegistry.meta.emplace(pair(string(typeid(t).name()), ComponentRegistry.meta_types.at(typeid(t).hash_code())));
 	return component_meta<t>();
 }
 
@@ -414,9 +414,13 @@ void destroyAllComponents();
 		{                                                 \
 			g->addComponent<comp>();                      \
 		}                                                 \
-		void addComponentProto(game_object_proto_ *g)      \
+		void addComponentProto(game_object_proto_ *g)     \
 		{                                                 \
 			g->addComponent<comp>();                      \
+		}                                                 \
+		void floatingComponent(component *c)              \
+		{                                                 \
+			new (c) comp();                               \
 		}                                                 \
 	};                                                    \
 	component_meta<comp> const &componentMeta<comp>::c = registerComponent<comp>();

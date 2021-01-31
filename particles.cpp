@@ -503,7 +503,10 @@ void particle_emitter::onEdit()
 
 void renderEdit(const char *name, emitter_prototype_ &ep)
 {
-    ImGui::InputText(name, (char *)emitter_proto_names.at(ep.emitterPrototype).c_str(), emitter_proto_names.at(ep.emitterPrototype).size() + 1, ImGuiInputTextFlags_ReadOnly);
+    if(ep.emitterPrototype != 0)
+        ImGui::InputText(name, (char *)emitter_proto_names.at(ep.emitterPrototype).c_str(), emitter_proto_names.at(ep.emitterPrototype).size() + 1, ImGuiInputTextFlags_ReadOnly);
+    else
+        ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))

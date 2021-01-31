@@ -173,6 +173,24 @@ struct audio
     }
 };
 
+void renderEdit(const char* name, audio& a){
+    // ImGui::DragInt(name,&i);
+	if (a.a == -1) // uninitialized
+		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	else
+		ImGui::InputText(name, (char *)a.meta()->name.c_str(), a.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			a.a = payload_n;
+		}
+		ImGui::EndDragDropTarget();
+	}
+}
+
 class audioSource
 {
 public:

@@ -19,6 +19,9 @@ using namespace std;
 class inspectable{
     public:
     virtual void inspect(){};
+    SER_HELPER(){
+        ar;
+    }
 };
 
 
@@ -31,6 +34,7 @@ namespace assets{
         int genID();
         virtual bool onEdit() = 0;
         SER_HELPER(){
+            SER_BASE(inspectable)
             ar & id & name;
         }
     };

@@ -48,9 +48,9 @@ void save_game(const char * filename){
 		modelManager::save(oa);
 		saveEmitters(oa);
 		lightingManager::save(oa);
+		oa << prototypeRegistry;
 		assets::save(oa);
 		// saveProto(oa);
-		oa << prototypeRegistry;
 		saveTransforms(oa);
     	oa << ComponentRegistry;
 	}
@@ -70,9 +70,9 @@ void load_game(const char * filename)
 	modelManager::load(ia);
 	loadEmitters(ia);
 	lightingManager::load(ia);
+	ia >> prototypeRegistry;
 	assets::load(ia);
 	// loadProto(ip);
-	ia >> prototypeRegistry;
 
 	loadTransforms(ia);
 

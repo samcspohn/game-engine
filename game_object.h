@@ -103,51 +103,54 @@ public:
 			delete i.first;
 		deleteProtoRef(id);
 	}
-	SER_HELPER()
-	{
-		// ar;
-		SER_BASE_ASSET
-		ar &name &components;
+	friend class boost::serialization::access;
+
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */) {
+		ar &boost::serialization::base_object<assets::asset>(*this) &components;
 	}
 
 
-	// SER_OUT()
-	// {
-	// 	ar << boost::serialization::base_object<assets::asset>(*this);
-	// 	vector<string> archives;
-	// 	for(auto &c : components)
-	// 	{
-	// 		stringstream ss;
-	// 		OARCHIVE _ar(ss);
-	// 		_ar << c.second << c.first;
-	// 		archives.push_back(ss.str());
-	// 	}
-	// 	ar << archives;
-	// }
-	// SER_IN()
-	// {
-	// 	ar >>boost::serialization::base_object<assets::asset>(*this);
-	// 	vector<string> archives;
-	// 	ar >> archives;
-	// 	for(auto& s : archives)
-	// 	{
-	// 		ull type;
-	// 		component* c;
-	// 		stringstream ss{s};
-	// 		IARCHIVE _ar(ss);
-	// 		_ar >> type;
-	// 		try
-	// 		{
-	// 			_ar >> c;
-	// 		}
-	// 		catch (exception e)
-	// 		{
-	// 			c = ComponentRegistry.getByType(type)->floatingComponent();				
-	// 			cout << e.what() << endl;
-	// 		}
-	// 		components.emplace(pair<component*, ull>(c,type));
-	// 	}
-	// }
+	void serialize(OARCHIVE &ar, const unsigned int )
+	{
+		ar << boost::serialization::base_object<assets::asset>(*this);
+		// ar << name;
+		vector<string> archives;
+		for(auto &c : components)
+		{
+			stringstream ss;
+			OARCHIVE _ar(ss);
+			_ar << c.second;
+			_ar << c.first;
+			archives.push_back(ss.str());
+		}
+		ar << archives;
+	}
+	void serialize(IARCHIVE &ar, const unsigned int )
+	{
+		ar >> boost::serialization::base_object<assets::asset>(*this);
+		// ar >> name;
+		vector<string> archives;
+		ar >> archives;
+		for(auto& s : archives)
+		{
+			ull type;
+			component* c;
+			stringstream ss{s};
+			IARCHIVE _ar(ss);
+			_ar >> type;
+			try
+			{
+				_ar >> c;
+			}
+			catch (exception e)
+			{
+				ComponentRegistry.getByType(type)->floatingComponent(c);				
+				cout << e.what() << endl;
+			}
+			components.emplace(pair<component*, ull>(c,type));
+		}
+	}
 };
 
 

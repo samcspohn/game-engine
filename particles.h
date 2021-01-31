@@ -163,7 +163,7 @@ extern map<int, emitter_proto_asset *> emitter_proto_assets;
 
 class emitter_prototype_
 {
-    int emitterPrototype;
+    int emitterPrototype = 0;
     // typename array_heap<emitter_prototype>::ref emitterPrototype;
     // string name;
     friend emitter_prototype_ createNamedEmitter(string name);
