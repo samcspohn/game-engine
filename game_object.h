@@ -21,8 +21,6 @@ class game_object;
 
 extern tbb::concurrent_unordered_set<game_object *> toDestroy;
 
-
-
 void registerProto(game_object_proto_ *p);
 void deleteProtoRef(int id);
 
@@ -36,12 +34,13 @@ public:
 	}
 	bool onEdit()
 	{
-
 	}
-	string type(){
+	string type()
+	{
 		return "GAME_OBJECT_TYPE";
 	}
-	void inspect(){
+	void inspect()
+	{
 		int n{0};
 		for (auto i = components.begin();
 			 i != components.end();
@@ -106,17 +105,17 @@ public:
 	friend class boost::serialization::access;
 
 	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */) {
-		ar &boost::serialization::base_object<assets::asset>(*this) &components;
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar &boost::serialization::base_object<assets::asset>(*this) & components;
 	}
 
-
-	void serialize(OARCHIVE &ar, const unsigned int )
+	void serialize(OARCHIVE &ar, const unsigned int)
 	{
 		ar << boost::serialization::base_object<assets::asset>(*this);
 		// ar << name;
 		vector<string> archives;
-		for(auto &c : components)
+		for (auto &c : components)
 		{
 			stringstream ss;
 			OARCHIVE _ar(ss);
@@ -126,16 +125,16 @@ public:
 		}
 		ar << archives;
 	}
-	void serialize(IARCHIVE &ar, const unsigned int )
+	void serialize(IARCHIVE &ar, const unsigned int)
 	{
 		ar >> boost::serialization::base_object<assets::asset>(*this);
 		// ar >> name;
 		vector<string> archives;
 		ar >> archives;
-		for(auto& s : archives)
+		for (auto &s : archives)
 		{
 			ull type;
-			component* c;
+			component *c;
 			stringstream ss{s};
 			IARCHIVE _ar(ss);
 			_ar >> type;
@@ -145,31 +144,29 @@ public:
 			}
 			catch (exception e)
 			{
-				ComponentRegistry.getByType(type)->floatingComponent(c);				
+				// ComponentRegistry.getByType(type)->floatingComponent(c);
 				cout << e.what() << endl;
 			}
-			components.emplace(pair<component*, ull>(c,type));
+			components.emplace(pair<component *, ull>(c, type));
 		}
 	}
 };
 
+extern unordered_map<int, game_object_proto_ *> prototypeRegistry;
 
-extern unordered_map<int,game_object_proto_*> prototypeRegistry;
-
-
-struct game_object_prototype{
+struct game_object_prototype
+{
 	int id;
 	game_object_prototype();
-	game_object_prototype(game_object_proto_* p);
-	SER_HELPER(){
+	game_object_prototype(game_object_proto_ *p);
+	SER_HELPER()
+	{
 		ar &id;
 	}
 };
 
-
 void saveProto(OARCHIVE &oa);
 void loadProto(IARCHIVE &ia);
-
 
 class game_object : public inspectable
 {
@@ -458,7 +455,7 @@ public:
 	}
 	game_object(const game_object_prototype &g) : lock()
 	{
-		game_object_proto_& _g = *prototypeRegistry.at(g.id);
+		game_object_proto_ &_g = *prototypeRegistry.at(g.id);
 		destroyed = false;
 		gameLock.lock();
 		this->transform = Transforms._new(); // new Transform(this);
