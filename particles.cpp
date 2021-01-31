@@ -44,6 +44,55 @@ struct particle
     float l;
     int p3;
 };
+struct _emission
+{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    int emitterID;
+    vec3 scale;
+    int last;
+};
+struct _burst
+{
+    vec3 position;
+    uint emitter_prototype;
+    vec3 direction;
+    uint count;
+    vec3 scale;
+    int p1;
+};
+enum particleCounters
+{
+    liveParticles = 0,
+    destroyCounter = 1
+};
+
+// simulation
+gpu_vector_proxy<particle> *particles = new gpu_vector_proxy<particle>();
+gpu_vector_proxy<_emission> *emitted = new gpu_vector_proxy<_emission>();
+gpu_vector_proxy<GLuint> *burstParticles = new gpu_vector_proxy<GLuint>();
+gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
+vector<_burst> particle_bursts;
+gpu_vector_proxy<GLuint> *dead = new gpu_vector_proxy<GLuint>();
+gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
+gpu_vector<GLuint> *atomicCounters = new gpu_vector<GLuint>();
+gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
+gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
+array_heap<emitter_prototype> emitter_prototypes_;
+gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
+map<string, int> emitter_prototypes;
+map<int, string> emitter_proto_names;
+map<int, emitter_proto_asset *> emitter_proto_assets;
+
+
+// renderering
+array_heap<emitter> EMITTERS;
+gpu_vector_proxy<emitter> *gpu_emitters = new gpu_vector_proxy<emitter>();
+gpu_vector_proxy<emitterInit> *gpu_emitter_inits = new gpu_vector_proxy<emitterInit>();
+vector<emitterInit> emitterInits;
+vector<emitterInit> emitterInitsdb;
+unordered_map<uint, emitterInit> emitter_inits;
 
 // vec4 color;
 void emitter_prototype_::color(vec4 c)
@@ -321,57 +370,6 @@ void floatArray::setFloatArray(float *floats)
     }
 }
 
-struct _emission
-{
-    vec3 position;
-    uint emitter_prototype;
-    vec3 direction;
-    int emitterID;
-    vec3 scale;
-    int last;
-};
-struct _burst
-{
-    vec3 position;
-    uint emitter_prototype;
-    vec3 direction;
-    uint count;
-    vec3 scale;
-    int p1;
-};
-enum particleCounters
-{
-    liveParticles = 0,
-    destroyCounter = 1
-};
-
-// simulation
-gpu_vector_proxy<particle> *particles = new gpu_vector_proxy<particle>();
-gpu_vector_proxy<_emission> *emitted = new gpu_vector_proxy<_emission>();
-gpu_vector_proxy<GLuint> *burstParticles = new gpu_vector_proxy<GLuint>();
-gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
-vector<_burst> particle_bursts;
-gpu_vector_proxy<GLuint> *dead = new gpu_vector_proxy<GLuint>();
-gpu_vector_proxy<GLuint> *particlesToDestroy = new gpu_vector_proxy<GLuint>();
-gpu_vector<GLuint> *atomicCounters = new gpu_vector<GLuint>();
-gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
-gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
-array_heap<emitter_prototype> emitter_prototypes_;
-gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
-map<string, int> emitter_prototypes;
-map<int, string> emitter_proto_names;
-map<int, emitter_proto_asset *> emitter_proto_assets;
-
-
-// renderering
-array_heap<emitter> EMITTERS;
-gpu_vector_proxy<emitter> *gpu_emitters = new gpu_vector_proxy<emitter>();
-gpu_vector_proxy<emitterInit> *gpu_emitter_inits = new gpu_vector_proxy<emitterInit>();
-vector<emitterInit> emitterInits;
-vector<emitterInit> emitterInitsdb;
-unordered_map<uint, emitterInit> emitter_inits;
-
-
 
 void saveEmitters(OARCHIVE &oa)
 {
@@ -518,8 +516,6 @@ void renderEdit(const char *name, emitter_prototype_ &ep)
     }
 }
 
-
-
 void particle_emitter::protoSetPrototype(emitter_prototype_ ep)
 {
     prototype = ep;
@@ -664,7 +660,6 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     livingParticles->bindData(10);
 
     float t = Time.time;
-    int32 max_particles = MAX_PARTICLES;
     particleProgram.use();
 
     glUniform1fv(glGetUniformLocation(particleProgram.Program, "time"), 1, &t);
