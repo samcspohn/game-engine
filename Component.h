@@ -45,9 +45,9 @@ public:
 	int getThreadID();
 	ull getHash();
 
-	SER_HELPER()
-	{
-		ar &transform;
+	SER_HELPER() { 
+		ar;
+		// ar &transform; 
 	}
 };
 REGISTER_BASE(component)
@@ -238,9 +238,46 @@ public:
 	friend class boost::serialization::access;
 
 	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */)
+	void serialize(Archive &ar, const unsigned int /* file_version */) {}
+	void serialize(OARCHIVE &ar, const unsigned int)
 	{
-		ar &boost::serialization::base_object<componentStorageBase>(*this) & data;
+		string s;
+		vector<int> transforms;
+		for (auto &i : data.data)
+		{
+			transforms.push_back(i.transform.id);
+		}
+		{
+			stringstream ss;
+			OARCHIVE _ar(ss);
+			_ar << data;
+			s = ss.str();
+		}
+		ar << boost::serialization::base_object<componentStorageBase>(*this) << transforms << s;
+	}
+	void serialize(IARCHIVE &ar, const unsigned int)
+	{
+		string s;
+		vector<int> transforms;
+		ar >> boost::serialization::base_object<componentStorageBase>(*this) >> transforms >> s;
+		{
+			stringstream ss{s};
+			try
+			{
+				IARCHIVE _ar(ss);
+				_ar >> data;
+			}
+			catch (exception e)
+			{
+				data.data.resize(transforms.size());
+				cout << e.what() << endl;
+			}
+			// s = ss.str();
+		}
+		for (int i = 0; i < transforms.size(); ++i)
+		{
+			data.data[i].transform.id = transforms[i];
+		}
 	}
 	// string ser(){
 	// 	stringstream ss;

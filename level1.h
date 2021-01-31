@@ -214,7 +214,7 @@ public:
 	}
 	//UPDATE(spinner,update);
 	COPY(spinner);
-	SER1(speed);
+	SER2(speed,axis);
 };
 REGISTER_COMPONENT(spinner)
 

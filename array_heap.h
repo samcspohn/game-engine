@@ -16,14 +16,15 @@ class array_heap
 	mutex m;
 	SER_HELPER()
 	{
-		ar & extent & avail & data & valid;
+		ar &extent &avail &data &valid;
 	}
 
 public:
 	struct ref
 	{
-		SER_HELPER(){
-			ar & a & index;
+		SER_HELPER()
+		{
+			ar &a &index;
 		}
 
 		int index;
@@ -45,7 +46,7 @@ public:
 			return a->data.at(index);
 		}
 	};
-	
+
 	t &operator[](unsigned int i)
 	{
 		//		if (i >= extent)
@@ -128,7 +129,7 @@ class deque_heap
 public:
 	SER_HELPER()
 	{
-		ar & extent & active & avail & data & valid;
+		ar &extent &active &avail &valid &data;
 	}
 	int active = 0;
 	struct ref
@@ -159,15 +160,16 @@ public:
 			a->_delete(*this);
 		}
 	};
-	ref getRef(int i){
-		return ref{i,this};
+	ref getRef(int i)
+	{
+		return ref{i, this};
 	}
 
 	t &operator[](unsigned int i)
 	{
 		return data[i];
 	}
-	template<typename ...types>
+	template <typename... types>
 	ref _new(types... args)
 	{
 		ref ret;

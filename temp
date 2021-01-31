@@ -1,0 +1,46 @@
+
+	template <class Archive>
+	void serialize(Archive &ar, const unsigned int /* file_version */)
+	{
+		ar &boost::serialization::base_object<componentStorageBase>(*this);
+	}
+	void save(OARCHIVE &ar){
+		stringstream ss;
+		{
+			OARCHIVE oa(ss);
+			oa << data;
+		}
+
+		ar << *this << ss.str();
+	}
+	void load(IARCHIVE &ar){
+		string s;
+		ar >> *this >> s;
+
+		stringstream ss(s);
+		{
+			IARCHIVE ia(ss);
+			ia >> data;
+		}
+	}
+
+
+
+
+
+
+
+
+
+void Registry::save(OARCHIVE& oa){
+	oa << components << gameEngineComponents << gameComponents;
+	for(auto& i : components){
+		i.second->save(oa);
+	}
+}
+void Registry::load(IARCHIVE& ia){
+	ia >> components >> gameEngineComponents >> gameComponents;
+	for(auto& i : components){
+		i.second->load(ia);
+	}
+}
