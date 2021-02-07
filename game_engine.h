@@ -34,67 +34,6 @@
 using namespace glm;
 using namespace std;
 
-
-void save_game(const char * filename){
-
-    // make an archive
-    std::ofstream ofs(filename);
-	// std::ofstream oproto("proto.lvl");
-	{
-    	OARCHIVE oa(ofs);
-		// OARCHIVE op(oproto);
-		audioManager::save(oa);
-		shaderManager::save(oa);
-		modelManager::save(oa);
-		saveEmitters(oa);
-		lightingManager::save(oa);
-		oa << prototypeRegistry;
-		assets::save(oa);
-		// saveProto(oa);
-		saveTransforms(oa);
-    	oa << ComponentRegistry;
-	}
-	ofs.close();
-}
-void rebuildGameObject(componentStorageBase* base, int i);
-
-void load_game(const char * filename)
-{
-    // open the archive
-    std::ifstream ifs(filename);
-	// std::ifstream ifsp("proto.lvl");
-    IARCHIVE ia(ifs);
-	// IARCHIVE ip(ifsp);
-	audioManager::load(ia);
-	shaderManager::load(ia);
-	modelManager::load(ia);
-	loadEmitters(ia);
-	lightingManager::load(ia);
-	ia >> prototypeRegistry;
-	assets::load(ia);
-	// loadProto(ip);
-
-	loadTransforms(ia);
-
-    // restore the schedule from the archive
-    ia >> ComponentRegistry;
-
-	for(auto &i : ComponentRegistry.components){
-		for(int j = 0; j < i.second->size(); j++){
-			if(i.second->getv(j)){
-				rebuildGameObject(i.second,j);
-			}
-		}
-	}
-	for(auto &i : ComponentRegistry.components){
-		for(int j = 0; j < i.second->size(); j++){
-			if(i.second->getv(j)){
-				i.second->get(j)->onStart();
-			}
-		}
-	}
-}
-
 enum update_type
 {
 	update,
@@ -110,7 +49,7 @@ struct updateJob
 };
 
 atomic<int> numCubes(0);
-game_object *rootGameObject;
+
 glm::mat4 proj;
 tbb::tbb_thread *renderThread;
 // bool recieveMouse = true;
@@ -149,9 +88,91 @@ void doLoopIteration(map<size_t, componentStorageBase *> &ssb, bool doCleanUp = 
 	}
 }
 
-void setRootGameObject(transform2 r){
+void setRootGameObject(transform2 r)
+{
 	rootGameObject = new game_object(root2);
 }
+
+class editor_sc : public component
+{
+	float speed = 3.f;
+	bool cursorReleased = true;
+	float fov = 80;
+	// vector<gun *> guns;
+
+public:
+	game_object_prototype ammo_proto;
+	void onStart()
+	{
+		// guns = transform->gameObject()->getComponents<gun>();
+		// // bomb = bullets["bomb"];
+		// guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
+		// guns[0]->rof = 3'000 / 60;
+		// guns[0]->dispersion = 0.3f;
+		// guns[0]->speed = 200;
+		// guns[0]->setBarrels({vec3(-2.0, 0.9, 1)});
+	}
+	void update()
+	{
+		// int numMissiles = COMPONENT_LIST(missile)->size();
+		// // cout << "\rmissiles: " + FormatWithCommas(numMissiles) + "       ";
+		// fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+		// missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
+		// particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
+		// aparticleCounter->contents = "aparticles: " + FormatWithCommas(getActualParticles());
+		// base->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cursorReleased = false;
+		}
+		else if (Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursorReleased = true;
+		}
+
+		if (!cursorReleased || Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
+		{
+			transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+			transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+			transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+			// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+			transform->rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
+			transform->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
+			transform->lookat(transform->forward(), vec3(0, 1, 0));
+
+			fov -= Input.Mouse.getScroll() * 5;
+			fov = glm::clamp(fov, 5.f, 80.f);
+			transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
+
+			if (Input.getKeyDown(GLFW_KEY_R))
+			{
+				speed *= 2;
+			}
+			if (Input.getKeyDown(GLFW_KEY_F))
+			{
+				speed /= 2;
+			}
+			// if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
+			// {
+			// 	guns[0]->fire();
+			// }
+		}
+		// if (Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKey(GLFW_KEY_S))
+		// {
+		// 	save_game("game.lvl");
+		// }
+	}
+	void onEdit()
+	{
+		RENDER(speed);
+	}
+	COPY(editor_sc);
+	SER3(speed, fov, ammo_proto);
+};
+REGISTER_COMPONENT(editor_sc)
 
 void init()
 {
@@ -189,6 +210,20 @@ void init()
 	// boxTris.clear();
 	// ia >> boxPoints;
 	// ia >> boxTris;
+	load_game("");
+
+	auto default_cube = new game_object();
+	default_cube->addComponent<_renderer>()->set(_shader("res/shaders/model.vert", "res/shaders/model.frag"),_model("res/models/cube/cube.obj"));
+
+
+	game_object *player = new game_object();
+	player->transform.name() = "editor";
+	auto playerCam = player->addComponent<_camera>();
+	playerCam->fov = 80;
+	playerCam->farPlane = 1e32f;
+	playerCam->nearPlane = 0.00001f;
+	player->addComponent<editor_sc>();//->ammo_proto = game_object_prototype(bomb_proto);
+	
 
 }
 
@@ -206,6 +241,12 @@ void run()
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
+		for(auto& i : mainThreadWork){
+			(*i)();
+			delete i;
+		}
+		mainThreadWork.clear();
+
 		gameLoopTotal.start();
 		gameLoopMain.start();
 		// scripting
@@ -240,6 +281,7 @@ void run()
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
 
+
 		auto cameras = COMPONENT_LIST(_camera);
 		auto colliders = COMPONENT_LIST(collider);
 
@@ -268,7 +310,6 @@ void run()
 		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
-		
 
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
@@ -427,7 +468,7 @@ void run()
 
 		renderWork.push(rj);
 		renderLock.unlock();
-		
+
 		tot = gameLoopTotal.stop();
 		appendStat("game loop total", tot);
 		this_thread::sleep_for((30.f - tot / 3.f) * 1000 * 1us);

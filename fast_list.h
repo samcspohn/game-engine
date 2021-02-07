@@ -78,6 +78,7 @@ public:
 		}
 	};
 	vector<_itr *> iterators;
+
 	struct iterator
 	{
 	public:

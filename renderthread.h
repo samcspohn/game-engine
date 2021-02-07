@@ -163,6 +163,175 @@ int frameCounter = 0;
 // 			type, severity, message);
 // }
 
+
+game_object* rootGameObject;
+deque<function<void()>*> mainThreadWork;
+
+
+void save_game(const char *filename)
+{
+	// make an archive
+	std::ofstream ofs(filename);
+	std::ofstream assets("assets.lvl");
+	// std::ofstream oproto("proto.lvl");
+	{
+		OARCHIVE oa(assets);
+		// OARCHIVE op(oproto);
+		audioManager::save(oa);
+		shaderManager::save(oa);
+		modelManager::save(oa);
+		saveEmitters(oa);
+		oa << prototypeRegistry;
+		assets::save(oa);
+	}
+	{
+		OARCHIVE oa(ofs);
+		lightingManager::save(oa);
+		saveTransforms(oa);
+		oa << ComponentRegistry;
+	}
+	assets.close();
+	ofs.close();
+
+}
+void rebuildGameObject(componentStorageBase *base, int i);
+
+void load_game(const char *filename)
+{
+	for(auto& child : rootGameObject->transform->getChildren()){
+		child->gameObject()->destroy();
+	}
+	// for(auto& g : toDestroy){
+	// 	g->_destroy();
+	// }
+	tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
+	toDestroy.clear();
+	ComponentRegistry.clear();
+
+	// open the archive
+	std::ifstream ifs(filename);
+	std::ifstream assets("assets.lvl");
+	// std::ifstream ifsp("proto.lvl");
+	if(assets::assets.size() == 0)
+	{
+		IARCHIVE ia(assets);
+		// IARCHIVE ip(ifsp);
+		audioManager::load(ia);
+		shaderManager::load(ia);
+		modelManager::load(ia);
+		loadEmitters(ia);
+		ia >> prototypeRegistry;
+		assets::load(ia);
+	}
+	if(string(filename) != "")
+	{
+		IARCHIVE ia(ifs);
+		lightingManager::load(ia);
+		loadTransforms(ia);
+		ia >> ComponentRegistry;
+	}
+	for (auto &i : ComponentRegistry.components)
+	{
+		for (int j = 0; j < i.second->size(); j++)
+		{
+			if (i.second->getv(j))
+			{
+				rebuildGameObject(i.second, j);
+			}
+		}
+	}
+	for (auto &i : ComponentRegistry.components)
+	{
+		for (int j = 0; j < i.second->size(); j++)
+		{
+			if (i.second->getv(j))
+			{
+				i.second->get(j)->onStart();
+			}
+		}
+	}
+}
+
+
+inspectable *inspector = 0;
+unordered_map<int, bool> selected;
+// int offset;
+ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+void renderTransform(transform2 t)
+{
+	ImGuiTreeNodeFlags flags = base_flags;
+	if (selected[t.id])
+	{
+		flags |= ImGuiTreeNodeFlags_Selected;
+	}
+	bool open;
+	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+	if (t.name() == "")
+		open = ImGui::TreeNodeEx(("game object " + to_string(t.id)).c_str(), flags);
+	else
+		open = ImGui::TreeNodeEx(t.name().c_str(), flags);
+
+	// char input[1024];
+	// sprintf(input, t.name().c_str());
+	// if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+	// 	t.name() = {input};
+	// ImGui::PopID();
+	// ImGui::PopItemWidth();
+	// ImGui::Button(t.name().c_str(), {40, 40});
+
+	if (ImGui::IsItemClicked())
+	{
+		if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
+			selected[t.id] = true;
+		else
+		{
+			selected.clear();
+			selected[t.id] = true;
+		}
+		inspector = t->gameObject();
+		// node_clicked = t.id;
+	}
+	if (ImGui::IsItemClicked(1))
+		ImGui::OpenPopup("game_object_context");
+	if (ImGui::BeginPopup("game_object_context"))
+	{
+		// ImGui::Text("collider type");
+		ImGui::Separator();
+		if (ImGui::Selectable("copy"))
+		{
+			new game_object(*t->gameObject());
+		}
+		if (ImGui::Selectable("delete"))
+		{
+			if (inspector == t->gameObject())
+				inspector = 0;
+			t->gameObject()->destroy();
+		}
+		if (ImGui::Selectable("new game object"))
+		{
+			new game_object();
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::SameLine();
+	ImGui::Button("", {10, 10});
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+	{
+		// Set payload to carry the index of our item (could be anything)
+		ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
+		ImGui::EndDragDropSource();
+	}
+
+	if (open)
+	{
+		for (auto &i : t.getChildren())
+			renderTransform(i);
+		ImGui::TreePop();
+	}
+}
+
+string working_file = "";
 void dockspace()
 {
 	static bool open = true;
@@ -174,21 +343,21 @@ void dockspace()
 	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 	// because it would be confusing to have two docking targets within each others.
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	if (opt_fullscreen)
-	{
-		ImGuiViewport *viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->GetWorkPos());
-		ImGui::SetNextWindowSize(viewport->GetWorkSize());
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	}
-	else
-	{
-		dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-	}
+	// if (opt_fullscreen)
+	// {
+	ImGuiViewport *viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetWorkPos());
+	ImGui::SetNextWindowSize(viewport->GetWorkSize());
+	ImGui::SetNextWindowViewport(viewport->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	// }
+	// else
+	// {
+	// 	dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+	// }
 
 	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
 	// and handle the pass-thru hole, so we ask Begin() to not render a background.
@@ -225,36 +394,38 @@ void dockspace()
 	{
 		if (ImGui::BeginMenu("Options"))
 		{
-			// Disabling fullscreen would allow the window to be moved to the front of other windows,
-			// which we can't undo at the moment without finer window depth/z control.
-			ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen);
-			ImGui::MenuItem("Padding", NULL, &opt_padding);
-			ImGui::Separator();
 
-			if (ImGui::MenuItem("Flag: NoSplit", "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))
+			if (ImGui::MenuItem("load", NULL))
 			{
-				dockspace_flags ^= ImGuiDockNodeFlags_NoSplit;
+				char file[1024];
+				FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
+				fgets(file, 1024, f);
+				working_file = file;
+				string fi(file);
+				fi = fi.substr(0,fi.size() - 1);
+				mainThreadWork.push_back(new function<void()>([=](){
+					load_game(fi.c_str());
+				}));
+				cout << "loaded: " << file << endl;
 			}
-			if (ImGui::MenuItem("Flag: NoResize", "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))
+			if (ImGui::MenuItem("save", NULL))
 			{
-				dockspace_flags ^= ImGuiDockNodeFlags_NoResize;
-			}
-			if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))
-			{
-				dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode;
-			}
-			if (ImGui::MenuItem("Flag: AutoHideTabBar", "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))
-			{
-				dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar;
-			}
-			if (ImGui::MenuItem("Flag: PassthruCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) != 0, opt_fullscreen))
-			{
-				dockspace_flags ^= ImGuiDockNodeFlags_PassthruCentralNode;
-			}
-			ImGui::Separator();
+				char file[1024];
+				FILE *f = popen("zenity --file-selection --save  --file-filter=*.lvl", "r");
+				fgets(file, 1024, f);
+				string fi(file);
+				fi = fi.substr(0,fi.size() - 1);
+				mainThreadWork.push_back(new function<void()>([=](){
+					save_game(fi.c_str());
+				}));
 
-			if (ImGui::MenuItem("Close", NULL, false, p_open != NULL))
-				*p_open = false;
+				working_file = file;
+				cout << "saved: " << file << endl;
+			}
+			// ImGui::Separator();
+
+			// if (ImGui::MenuItem("Close", NULL, false, p_open != NULL))
+			// 	*p_open = false;
 			ImGui::EndMenu();
 		}
 		// HelpMarker(
@@ -278,8 +449,65 @@ void dockspace()
 
 		ImGui::EndMenuBar();
 	}
-
 	ImGui::End();
+
+	if (ImGui::Begin("Assets"))
+	{
+
+		ImGuiStyle &style = ImGui::GetStyle();
+		int buttons_count = 20;
+		float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+
+		int kjj = 0;
+		for (auto &i : assets::assets)
+		{
+			ImGui::BeginGroup();
+			ImGui::PushItemWidth(50);
+			ImGui::PushID(i.second->id);
+
+			char input[1024];
+			sprintf(input, i.second->name.c_str());
+			if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+				i.second->name = {input};
+			bool ret = ImGui::Button(i.second->name.c_str(), {40, 40});
+			// i.second->onEdit();
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+			{
+				// Set payload to carry the index of our item (could be anything)
+				ImGui::SetDragDropPayload(i.second->type().c_str(), &i.second->id, sizeof(int));
+				ImGui::EndDragDropSource();
+			}
+			if (ret)
+			{
+				inspector = i.second;
+			}
+			ImGui::PopID();
+			ImGui::PopItemWidth();
+
+			float last_button_x2 = ImGui::GetItemRectMax().x;
+			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
+			ImGui::EndGroup();
+			if (kjj++ + 1 < assets::assets.size() && next_button_x2 < window_visible_x2)
+				ImGui::SameLine();
+		}
+		ImGui::End();
+	}
+	if (ImGui::Begin("Inspector"))
+	{
+		if (inspector)
+			inspector->inspect();
+		ImGui::End();
+	}
+	if (ImGui::Begin("Hierarchy"))
+	{
+		renderTransform(root2);
+		ImGui::End();
+	}
+	if(ImGui::Begin("info")){
+		ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
+		ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
+		ImGui::End();
+	}
 }
 tbb::concurrent_queue<glm::vec3> floating_origin;
 atomic<bool> transformsBuffered;

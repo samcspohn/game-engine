@@ -494,7 +494,7 @@ public:
 		}
 		while (transform->getChildren().size() > 0)
 		{
-			transform->getChildren().front()->gameObject()->destroy();
+			transform->getChildren().front()->gameObject()->_destroy();
 		}
 		transform->_destroy();
 		lock.unlock();

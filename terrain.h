@@ -108,6 +108,7 @@ public:
     float makeHeight(float x, float z);
     glm::vec3 makeVert(float x, float z);
     void onStart();
+    void onDestroy();
     void update();
     void genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ);
     void generate();
@@ -186,6 +187,15 @@ terrain *getTerrain(float x, float z)
     {
         r = transform->gameObject()->getComponent<_renderer>();
         genHeightMap(width - 1, depth - 1, this->offsetX, this->offsetZ);
+    }
+    void terrain::onDestroy(){
+        _model model = r->getModel();
+        waitForRenderJob([&](){
+            delete model.meta();
+            modelManager::models_id.erase(model.m);
+            delete renderingManager::shader_model_vector[r->getShader().s][model.m];
+            renderingManager::shader_model_vector[r->getShader().s].erase(model.m);
+        });
     }
     void terrain::update()
     {

@@ -131,6 +131,20 @@ public:
         }
     }
     COPY(Light);
-    SER1(pl);
+    SER_HELPER(){
+        // SER_BASE(component)
+        // ar & pl.itr->it;
+    }
+    SER_OUT(){
+        ar << boost::serialization::base_object<component>(*this);
+        ar << pl.itr->it;
+    }
+    SER_IN(){
+        unsigned int id;
+        ar >> boost::serialization::base_object<component>(*this);;
+        ar >> id;
+        pl = lightingManager::pointLights.iterators[id];
+    }
+    // SER1(pl);
 };
 REGISTER_COMPONENT(Light)

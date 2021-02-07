@@ -189,8 +189,10 @@ public:
 		}
 		else
 		{
-			ret.index = data.size();
-			data.emplace_back();
+			ret.index = valid.size();
+			if(valid.size() == data.size()){
+				data.emplace_back();
+			}
 			// ret.d = &data.back();
 			valid.emplace_back(true);
 			++extent;
@@ -211,6 +213,7 @@ public:
 		--active;
 		m.unlock();
 		data[r.index].~t();
+		memset(&data[r.index],0,sizeof(t));
 		//(*data)[r.index] = t();
 		// if (r.index == extent - 1) {
 		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {
@@ -235,9 +238,16 @@ public:
 	{
 		return extent;
 	}
+
+	void clear(){
+		extent = 0;
+		avail.clear();
+		valid.clear();
+		data.clear();
+	}
+
 	deque<t> data;
 	std::deque<bool> valid;
-
 private:
 	deque<uint> avail;
 	uint extent = 0;

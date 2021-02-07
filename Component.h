@@ -116,6 +116,7 @@ public:
 	virtual unsigned int active() { return 0; };
 	virtual void sort(){};
 	virtual compInfo getInfo(int i) { return compInfo(); };
+	virtual void clear(){}
 	// virtual string ser(){};
 
 	friend class boost::serialization::access;
@@ -235,6 +236,9 @@ public:
 		}
 		lateupdate_t = update_timer.stop();
 	}
+	void clear(){
+		data.clear();
+	}
 
 	friend class boost::serialization::access;
 
@@ -316,6 +320,12 @@ public:
 	std::map<size_t, componentMetaBase *> meta_types;
 	std::mutex lock;
 
+	void clear(){
+		for(auto& i : components){
+			i.second->clear();
+		}
+	}
+
 	friend class boost::serialization::access;
 
 	template <class Archive>
@@ -341,13 +351,6 @@ public:
 // extern std::mutex componentLock;
 extern Registry ComponentRegistry;
 
-template <typename t>
-component_meta<t> registerComponent()
-{
-	ComponentRegistry.meta_types.emplace(pair(typeid(t).hash_code(), (componentMetaBase *)(new componentMeta<t>())));
-	ComponentRegistry.meta.emplace(pair(string(typeid(t).name()), ComponentRegistry.meta_types.at(typeid(t).hash_code())));
-	return component_meta<t>();
-}
 
 template <typename t>
 componentStorage<t> *GetStorage()
@@ -374,6 +377,14 @@ componentStorage<t> *GetStorage()
 	return static_cast<componentStorage<t> *>(ComponentRegistry.components[hash]);
 }
 
+template <typename t>
+component_meta<t> registerComponent()
+{
+	ComponentRegistry.meta_types.emplace(pair(typeid(t).hash_code(), (componentMetaBase *)(new componentMeta<t>())));
+	ComponentRegistry.meta.emplace(pair(string(typeid(t).name()), ComponentRegistry.meta_types.at(typeid(t).hash_code())));
+	GetStorage<t>();
+	return component_meta<t>();
+}
 template <typename t>
 inline compInfo addComponentToRegistry(const t &c)
 {

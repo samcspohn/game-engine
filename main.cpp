@@ -28,8 +28,8 @@ int main(int argc, char **argv)
 
 	cout << sizeof(tbb::spin_mutex) << " : " << sizeof(tbb::mutex) << endl;
 
-	bool load = false;
-	cin >> load;
+	bool load = true;
+	// cin >> load;
 	::init();
 	level1(load);
 	run();

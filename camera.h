@@ -210,6 +210,8 @@ void makeBillboard(_model m, _texture t, _renderer *r)
 	r->meta->isBillboard = 1;
 }
 
+lightVolume lv;
+
 class _camera : public component
 {
 public:
@@ -230,7 +232,6 @@ public:
 	_shader _shaderLightingPass;
 	_shader _quadShader;
 	_model lightVolumeModel;
-	lightVolume lv;
 
 	glm::mat4 view;
 	glm::mat4 rot;
@@ -262,12 +263,14 @@ public:
 	void onStart()
 	{
 		waitForRenderJob([&]() {
-			lightVolumeModel = _model("res/models/cube/cube.obj");
-			modelManager::models_id[lightVolumeModel.m]->model->loadModel();
-			// lightVolumeModel.m->loadModel();
-			lv.indices = lightVolumeModel.mesh().indices;
-			lv.vertices = lightVolumeModel.mesh().vertices;
-			lv.setupMesh();
+			if(lv.vertices.size() == 0){
+				lightVolumeModel = _model("res/models/cube/cube.obj");
+				modelManager::models_id[lightVolumeModel.m]->model->loadModel();
+				// lightVolumeModel.m->loadModel();
+				lv.indices = lightVolumeModel.mesh().indices;
+				lv.vertices = lightVolumeModel.mesh().vertices;
+				lv.setupMesh();
+			}
 
 			gBuffer.scr_width = SCREEN_WIDTH;
 			gBuffer.scr_height = SCREEN_HEIGHT;
@@ -280,6 +283,11 @@ public:
 		});
 		_shaderLightingPass = _shader("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
 		_quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
+	}
+	void onDestroy(){
+		waitForRenderJob([&](){
+			gBuffer.destroy();
+		});
 	}
 	void prepRender(Shader &matProgram)
 	{
