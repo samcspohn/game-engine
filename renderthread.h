@@ -255,8 +255,10 @@ void load_game(const char *filename)
 
 inspectable *inspector = 0;
 unordered_map<int, bool> selected;
+int clicked = -1;
+bool mouse_hold = false;
 // int offset;
-ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow;// | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 void renderTransform(transform2 t)
 {
 	ImGuiTreeNodeFlags flags = base_flags;
@@ -278,19 +280,33 @@ void renderTransform(transform2 t)
 	// ImGui::PopID();
 	// ImGui::PopItemWidth();
 	// ImGui::Button(t.name().c_str(), {40, 40});
-
-	if (ImGui::IsItemClicked())
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 	{
-		if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
+		// Set payload to carry the index of our item (could be anything)
+		ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::IsItemHovered() && Input.Mouse.getButton(0))
+	{
+		// cout << "pressed mouse on " << t.id << endl;
+		clicked = t.id;
+		// mouse_hold = true;
+	}
+	if(ImGui::IsItemHovered() && !Input.Mouse.getButton(0) && t.id == clicked) // mouse up
+	{	if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
 			selected[t.id] = true;
 		else
 		{
 			selected.clear();
 			selected[t.id] = true;
 		}
+		clicked = -1;
 		inspector = t->gameObject();
-		// node_clicked = t.id;
-	}
+	}	// node_clicked = t.id;
+
+	// mouse_hold = Input.Mouse.getButton(0);
+
 	if (ImGui::IsItemClicked(1))
 		ImGui::OpenPopup("game_object_context");
 	if (ImGui::BeginPopup("game_object_context"))
@@ -314,14 +330,9 @@ void renderTransform(transform2 t)
 		ImGui::EndPopup();
 	}
 
-	ImGui::SameLine();
-	ImGui::Button("", {10, 10});
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-	{
-		// Set payload to carry the index of our item (could be anything)
-		ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
-		ImGui::EndDragDropSource();
-	}
+	// ImGui::SameLine();
+	// ImGui::Button("", {10, 10});
+
 
 	if (open)
 	{
@@ -392,10 +403,10 @@ void dockspace()
 
 	if (ImGui::BeginMenuBar())
 	{
-		if (ImGui::BeginMenu("Options"))
+		if (ImGui::BeginMenu("File"))
 		{
 
-			if (ImGui::MenuItem("load", NULL))
+			if (ImGui::MenuItem("Open", NULL))
 			{
 				char file[1024];
 				FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
@@ -453,12 +464,13 @@ void dockspace()
 
 	if (ImGui::Begin("Assets"))
 	{
-
+		assets::asset* as;
 		ImGuiStyle &style = ImGui::GetStyle();
 		int buttons_count = 20;
 		float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
 		int kjj = 0;
+		bool open_asset = false;
 		for (auto &i : assets::assets)
 		{
 			ImGui::BeginGroup();
@@ -469,18 +481,26 @@ void dockspace()
 			sprintf(input, i.second->name.c_str());
 			if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
 				i.second->name = {input};
-			bool ret = ImGui::Button(i.second->name.c_str(), {40, 40});
-			// i.second->onEdit();
+			// ImVec2 sz{50,50};
+			// ImGui::Image(0,sz);
+			if(ImGui::Button(i.second->name.c_str(), {50, 50})){
+			// if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)){
+				inspector = i.second;
+			}
+			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)){
+				// cout << "right clicked button" << endl;
+				as = i.second;
+				open_asset = true;
+			}
+			
 			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 			{
 				// Set payload to carry the index of our item (could be anything)
 				ImGui::SetDragDropPayload(i.second->type().c_str(), &i.second->id, sizeof(int));
 				ImGui::EndDragDropSource();
 			}
-			if (ret)
-			{
-				inspector = i.second;
-			}
+
+			
 			ImGui::PopID();
 			ImGui::PopItemWidth();
 
@@ -490,6 +510,51 @@ void dockspace()
 			if (kjj++ + 1 < assets::assets.size() && next_button_x2 < window_visible_x2)
 				ImGui::SameLine();
 		}
+		if(open_asset)
+			ImGui::OpenPopup("asset_context");
+		if (ImGui::BeginPopup("asset_context"))
+		{
+			// ImGui::Text("collider type");
+			ImGui::Separator();
+			if (ImGui::Selectable("copy"))
+			{
+				// new game_object(*t->gameObject());
+			}
+			if (ImGui::Selectable("delete"))
+			{
+				// if (inspector == t->gameObject())
+				// 	inspector = 0;
+				// t->gameObject()->destroy();
+			}
+			ImGui::EndPopup();
+		}
+		else if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1)){
+			ImGui::OpenPopup("new_asset_context");
+		}
+		if (ImGui::BeginPopup("new_asset_context"))
+		{
+			// ImGui::Text("collider type");
+			ImGui::Separator();
+			if (ImGui::Selectable("new model"))
+			{
+				// new game_object();
+			}
+			if (ImGui::Selectable("new emitter"))
+			{
+				// new game_object();
+			}
+			if (ImGui::Selectable("new shader"))
+			{
+				// new game_object();
+			}
+			if (ImGui::Selectable("new prototype"))
+			{
+				// new game_object();
+			}
+			ImGui::EndPopup();
+		}
+
+
 		ImGui::End();
 	}
 	if (ImGui::Begin("Inspector"))
@@ -501,6 +566,9 @@ void dockspace()
 	if (ImGui::Begin("Hierarchy"))
 	{
 		renderTransform(root2);
+		if(!Input.Mouse.getButton(0)){
+			clicked = -1;
+	}
 		ImGui::End();
 	}
 	if(ImGui::Begin("info")){
@@ -833,40 +901,6 @@ void renderThreadFunc()
 				ImGui::NewFrame();
 
 				ImGui::PushFont(font_default);
-
-				// static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-
-				// ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-				// if (true)
-				// {
-				// 	ImGuiViewport* viewport = ImGui::GetMainViewport();
-				// 	ImGui::SetNextWindowPos(viewport->GetWorkPos());
-				// 	ImGui::SetNextWindowSize(viewport->GetWorkSize());
-				// 	ImGui::SetNextWindowViewport(viewport->ID);
-				// 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-				// 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				// 	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-				// 	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-				// }
-				// else
-				// {
-				// 	dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-				// }
-
-				// // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-				// // and handle the pass-thru hole, so we ask Begin() to not render a background.
-				// if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-				// 	window_flags |= ImGuiWindowFlags_NoBackground;
-
-				// // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-				// // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-				// // all active windows docked into it will lose their parent and become undocked.
-				// // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-				// // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-				// if (!false)
-				// 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-				// ImGui::Begin("DockSpace Demo", 0, window_flags);
-				// ImGui::End();
 
 				dockspace();
 

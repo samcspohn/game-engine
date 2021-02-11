@@ -4,32 +4,6 @@
 // #include "physics2.h"
 #include "physics.h"
 #include <tbb/tbb_thread.h>
-// #include "tbb/task_scheduler_init.h"
-// #include <GL/glew.h>
-// #include <GLFW/glfw3.h>
-// #include <glm/glm.hpp>
-// #include <glm/gtc/matrix_transform.hpp>
-// #include <glm/gtc/type_ptr.hpp>
-// #include <glm/gtx/quaternion.hpp>
-// #include <glm/gtx/rotate_vector.hpp>
-// #include <iostream>
-// #include <assimp/postprocess.h>
-// #include <chrono>
-// #include "Model.h"
-// #include "Shader.h"
-// #include <thread>
-
-// #include "gpu_vector.h"
-// #include "Input.h"
-// #include <atomic>
-// #include "game_object.h"
-// #include "rendering.h"
-// #include "game_engine_components.h"
-// #include "physics.h"
-// #include "particles.h"
-// #include "physics_.h"
-// #include "audio.h"
-// #include "gui.h"
 
 using namespace glm;
 using namespace std;
@@ -198,18 +172,6 @@ void init()
 	rotationsToBuffer = vector<vector<glm::quat>>(concurrency::numThreads);
 	scalesToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 
-	// _model cubeModel("res/models/cube/cube.obj");
-	// while (!cubeModel.meta()->model->ready())
-	// 		this_thread::yield();
-	// boxPoints = cubeModel.meta()->model->meshes[0].vertices;
-	// boxTris = cubeModel.meta()->model->meshes[0].indices;
-
-	// ifstream f("CUUBEE");
-	// boost::archive::text_iarchive ia(f);
-	// boxPoints.clear();
-	// boxTris.clear();
-	// ia >> boxPoints;
-	// ia >> boxTris;
 	load_game("");
 
 	auto default_cube = new game_object();
@@ -237,6 +199,7 @@ void run()
 
 	timer gameLoopTotal;
 	timer gameLoopMain;
+	timer frameCap;
 	float tot = gameLoopTotal.stop();
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
@@ -311,6 +274,8 @@ void run()
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
 
+		this_thread::sleep_for((1000.f / 30.f - frameCap.stop()) * 1ms);
+		frameCap.start();
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
 
@@ -436,8 +401,6 @@ void run()
 					}
 				}
 			}
-			// ,
-			// update_ap
 		);
 		appendStat("copy buffers", stopWatch.stop());
 
@@ -471,7 +434,7 @@ void run()
 
 		tot = gameLoopTotal.stop();
 		appendStat("game loop total", tot);
-		this_thread::sleep_for((30.f - tot / 3.f) * 1000 * 1us);
+		
 	}
 
 	// log("end of program");

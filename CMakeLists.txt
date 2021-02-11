@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CXX "clang++")
+set(CXX "g++")
 # set the project name
 project(game_engine)
 
@@ -42,7 +42,7 @@ target_link_libraries(game boost_serialization)
 
 target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}
-                           ${CMAKE_SOURCE_DIR}/bullet/src
+                        #    ${CMAKE_SOURCE_DIR}/bullet/src
                            ${CMAKE_SOURCE_DIR}/imgui
                            )
 
@@ -59,6 +59,7 @@ add_custom_command(
             ${CMAKE_CURRENT_BINARY_DIR}/config.txt)
 
 # specify the C++ standard
+add_definitions(-DGLM_FORCE_SWIZZLE)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 option(BUILD_DEBUG "build un-optimized with debugger info" ON)

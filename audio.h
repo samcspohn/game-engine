@@ -165,7 +165,7 @@ struct audio
             a = m->id;
         }
     }
-    void play(vec3 pos, float pitch, float gain);
+    void play(glm::vec3 pos, float pitch, float gain);
     int a = -1;
     SER_HELPER()
     {
@@ -355,7 +355,7 @@ public:
 // BOOST_CLASS_EXPORT(componentStorage<audiosource>)
 REGISTER_COMPONENT(audiosource)
 
-void audio::play(vec3 pos, float pitch, float gain)
+void audio::play(glm::vec3 pos, float pitch, float gain)
 {
     auto s = audioSourceManager::getSource();
     s->play(pos - mainCamPos, *this, pitch, gain);

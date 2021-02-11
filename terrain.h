@@ -1,8 +1,12 @@
+#define GLM_FORCE_SWIZZLE
+#include <glm/glm.hpp>
+
 #include "Model.h"
 #include "rendering.h"
 #include "concurrency.h"
 #include <map>
-#include <glm/glm.hpp>
+#include "Component.h"
+#include "camera.h"
 
 using namespace glm;
 
