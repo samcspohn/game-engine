@@ -408,6 +408,7 @@ void dockspace()
 
 			if (ImGui::MenuItem("Open", NULL))
 			{
+				inspector = 0;
 				char file[1024];
 				FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
 				fgets(file, 1024, f);

@@ -95,7 +95,7 @@ REGISTER_COMPONENT(missile)
 class gun final : public component
 {
 	float lastFire;
-	vector<vec3> barrels = {vec3(0, -12, 10)};
+	vector<vec3> barrels = {vec3(0, 0, 0)};
 
 public:
 	game_object_prototype ammo;
@@ -466,6 +466,7 @@ public:
 	float maxReverse;
 	float maxForward;
 	float rotationSpeed;
+	bool fire = false;
 	void onStart()
 	{
 		accel = 0;
@@ -508,6 +509,9 @@ public:
 		vel += transform->forward() * accel * 0.4f * Time.deltaTime;
 		ship_vel = length(vel);
 		ship_accel = accel;
+		if(fire){
+			transform->gameObject()->getComponent<gunManager>()->fire();
+		}
 		// 	transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
 		// 	transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
 		// 	transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
@@ -546,6 +550,7 @@ public:
 		RENDER(maxReverse);
 		RENDER(maxForward);
 		RENDER(rotationSpeed);
+		RENDER(fire);
 	}
 	//UPDATE(_ship,update);
 	COPY(_ship);
