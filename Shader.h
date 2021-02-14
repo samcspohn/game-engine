@@ -181,7 +181,7 @@ public:
 	string tessEvalFile;
 	string fragmentFile;
 	string computeFile;
-	vector<pair<string,GLenum>> _shaders;
+	map<GLenum,string> _shaders;
 	GLenum primitiveType = GL_TRIANGLES;
 	bool shadowMap;
 
@@ -265,7 +265,7 @@ public:
 	{
 
 		this->computeFile = computePath;
-		_shaders.push_back(pair<string,GLenum>(computeFile, GL_COMPUTE_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_COMPUTE_SHADER,computeFile));
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
 		enqueRenderJob([&]() { _Shader(); });
 		// enqueRenderJob([&]() { _Shader(computeFile); });
@@ -274,9 +274,9 @@ public:
 	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
 	{
 		this->vertexFile = vertexPath;
-		_shaders.push_back(pair<string,GLenum>(vertexPath, GL_VERTEX_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER, vertexPath));
 		this->fragmentFile = fragmentPath;
-		_shaders.push_back(pair<string,GLenum>(fragmentPath, GL_FRAGMENT_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
 		//_Shader(vertexFile, fragmentFile, this->shadowMap);
 		enqueRenderJob([&]() { _Shader(); });
@@ -285,11 +285,11 @@ public:
 	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
 		this->vertexFile = vertexPath;
-		_shaders.push_back(pair<string,GLenum>(vertexPath, GL_VERTEX_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER,vertexPath));
 		this->geometryFile = geometryPath;
-		_shaders.push_back(pair<string,GLenum>(geometryPath, GL_GEOMETRY_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_GEOMETRY_SHADER,geometryPath));
 		this->fragmentFile = fragmentPath;
-		_shaders.push_back(pair<string,GLenum>(fragmentPath, GL_FRAGMENT_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
 		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
 */
@@ -299,15 +299,15 @@ public:
 	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
 		this->vertexFile = vertexPath;
-		_shaders.push_back(pair<string,GLenum>(vertexPath, GL_VERTEX_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER,vertexPath));
 		this->tessCtrlFile = tessControlPath;
-		_shaders.push_back(pair<string,GLenum>(tessControlPath, GL_TESS_CONTROL_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_TESS_CONTROL_SHADER, tessControlPath));
 		this->tessEvalFile = tessEvalPath;
-		_shaders.push_back(pair<string,GLenum>(tessEvalPath, GL_TESS_EVALUATION_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_TESS_EVALUATION_SHADER, tessEvalPath));
 		this->geometryFile = geometryPath;
-		_shaders.push_back(pair<string,GLenum>(geometryPath, GL_GEOMETRY_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_GEOMETRY_SHADER,geometryPath));
 		this->fragmentFile = fragmentPath;
-		_shaders.push_back(pair<string,GLenum>(fragmentPath, GL_FRAGMENT_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
 		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
 */
@@ -317,15 +317,14 @@ public:
 	}
 	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
 	{
-		this->vertexFile = vertexPath;
-		_shaders.push_back(pair<string,GLenum>(vertexPath, GL_VERTEX_SHADER));
-		// this->geometryFile = geometryPath;
+this->vertexFile = vertexPath;
+		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER,vertexPath));
 		this->tessCtrlFile = tessControlPath;
-		_shaders.push_back(pair<string,GLenum>(tessControlPath, GL_TESS_CONTROL_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_TESS_CONTROL_SHADER, tessControlPath));
 		this->tessEvalFile = tessEvalPath;
-		_shaders.push_back(pair<string,GLenum>(tessEvalPath, GL_TESS_EVALUATION_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_TESS_EVALUATION_SHADER, tessEvalPath));
 		this->fragmentFile = fragmentPath;
-		_shaders.push_back(pair<string,GLenum>(fragmentPath, GL_FRAGMENT_SHADER));
+		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
 				// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
 		// shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
@@ -410,7 +409,7 @@ public:
 	void _Shader(){
 		vector<GLuint> shaders;
 		for(auto& i : _shaders){
-				shaders.push_back(loadFile(i.first,i.second));		
+				shaders.push_back(loadFile(i.second,i.first));		
 		}
 		compileShader(shaders);
 	}

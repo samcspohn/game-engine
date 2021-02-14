@@ -433,6 +433,7 @@ emitter_prototype_ createNamedEmitter(string name)
     emitter_prototypes.insert(std::pair<string, int>(name, ep->id));
     // ret.emitterPrototype = emitter_prototypes.at(name);
     emitter_proto_names[ep->id] = name;
+    ep->name = name;
     emitter_prototype_ ret;
     ret.emitterPrototype = ep->id;
     // ret.genID();
@@ -467,6 +468,13 @@ bool emitter_proto_asset::onEdit()
     // return ret;
 
     // emitterPrototype->edit();
+}
+void emitter_proto_asset::copy(){
+    emitter_prototype_ cp = createNamedEmitter(this->name + " copy");
+    // cp.meta()->name = cp.meta()->name;
+	assets::registerAsset(cp.meta());
+    cp.meta()->gradient = this->gradient;
+    *(cp.meta()->ref) = *(this->ref);
 }
 
 string emitter_proto_asset::type(){

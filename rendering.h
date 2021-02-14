@@ -61,6 +61,7 @@ struct _modelMeta : public assets::asset
 	glm::vec3 bounds;
 	float radius;
 	void getBounds();
+	// void inspect();
 	bool unique = false;
 	friend class _model;
 	SER_HELPER()
@@ -108,6 +109,7 @@ struct _shaderMeta : public assets::asset
 	_shaderMeta(string vertex, string tess, string geom, string fragment);
 	~_shaderMeta();
 	bool onEdit();
+	void inspect();
 	string type();
 	Shader *shader = 0;
 	friend struct _shader;

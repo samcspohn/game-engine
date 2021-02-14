@@ -172,19 +172,19 @@ void init()
 	rotationsToBuffer = vector<vector<glm::quat>>(concurrency::numThreads);
 	scalesToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 
-	load_game("");
+	// load_game("");
 
-	auto default_cube = new game_object();
-	default_cube->addComponent<_renderer>()->set(_shader("res/shaders/model.vert", "res/shaders/model.frag"),_model("res/models/cube/cube.obj"));
+	// auto default_cube = new game_object();
+	// default_cube->addComponent<_renderer>()->set(_shader("res/shaders/model.vert", "res/shaders/model.frag"),_model("res/models/cube/cube.obj"));
 
 
-	game_object *player = new game_object();
-	player->transform.name() = "editor";
-	auto playerCam = player->addComponent<_camera>();
-	playerCam->fov = 80;
-	playerCam->farPlane = 1e32f;
-	playerCam->nearPlane = 0.00001f;
-	player->addComponent<editor_sc>();//->ammo_proto = game_object_prototype(bomb_proto);
+	// game_object *player = new game_object();
+	// player->transform.name() = "editor";
+	// auto playerCam = player->addComponent<_camera>();
+	// playerCam->fov = 80;
+	// playerCam->farPlane = 1e32f;
+	// playerCam->nearPlane = 0.00001f;
+	// player->addComponent<editor_sc>();//->ammo_proto = game_object_prototype(bomb_proto);
 	
 
 }

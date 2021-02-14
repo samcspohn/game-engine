@@ -3,6 +3,9 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include <string>
+#include <vector>
+#include <iostream>
 namespace assets{
 
     int assetIdGenerator{1};
@@ -12,6 +15,9 @@ namespace assets{
         if(this->id == 0)
             this->id = assetIdGenerator++;
         return id;
+    }
+    void asset::copy(){
+
     }
     map<int, asset*> assets;
     void registerAsset(asset* ass){
@@ -44,6 +50,14 @@ REGISTER_BASE(assets::asset)
 
 void renderEdit(const char* name, bool& b){
     ImGui::Checkbox(name,&b);
+}
+void renderEdit(const char* name, std::string& s){
+    vector<char> t(s.length() + 1);
+    cout << "s: " << s.size() << ": " << s.length() << endl;
+    sprintf(t.data(),s.c_str());
+    if(ImGui::InputText(name,t.data(), t.size())){
+        s = string{t.data()};
+    }
 }
 void renderEdit(const char* name, int& i){
     ImGui::DragInt(name,&i);

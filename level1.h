@@ -950,7 +950,7 @@ int level1(bool load)
 	collisionGraph[0] = {1};
 	collisionGraph[1] = {0, 1};
 
-	if (false)
+	if (true)
 	{
 		gunSound = audio("res/audio/explosion1.wav");
 		gunSound.meta()->name = "gunSound";

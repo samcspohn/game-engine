@@ -32,6 +32,7 @@ namespace assets{
         string name;
         virtual string type() = 0;
         int genID();
+        virtual void copy();
         virtual bool onEdit() = 0;
         SER_HELPER(){
             SER_BASE(inspectable)
@@ -51,6 +52,7 @@ namespace assets{
 #define _RENDER(_name, name)\
     renderEdit(_name,name);
 
+void renderEdit(const char* name, string& s);
 void renderEdit(const char* name, bool& b);
 void renderEdit(const char* name, int& i);
 void renderEdit(const char* name, float& f);

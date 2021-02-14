@@ -39,7 +39,7 @@ public:
 		}
 		t &operator*()
 		{
-			return (*a->data)[index];
+			return a->data[index];
 		}
 		t &data()
 		{
@@ -149,7 +149,7 @@ public:
 		}
 		t &operator*()
 		{
-			return (a->data)[index];
+			return a->data[index];
 		}
 		t &data()
 		{

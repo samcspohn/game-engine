@@ -151,6 +151,7 @@ public:
     typename array_heap<emitter_prototype>::ref ref;
     colorArray gradient;
     bool onEdit();
+    void copy();
     string type();
     void inspect();
     SER_HELPER()

@@ -260,6 +260,14 @@ bool _shaderMeta::onEdit()
 	}
 	// return ret;
 }
+void _shaderMeta::inspect(){
+	for(auto& i : this->shader->_shaders){
+		// renderEdit("type",(int&)i.first);
+		
+		renderEdit(to_string(i.first).c_str(), i.second);
+		// RENDER(i.second)
+	}
+}
 string _shaderMeta::type(){
 	return "SHADER_DRAG_AND_DROP";
 }

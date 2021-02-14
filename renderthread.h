@@ -465,7 +465,7 @@ void dockspace()
 
 	if (ImGui::Begin("Assets"))
 	{
-		assets::asset* as;
+		static assets::asset* as;
 		ImGuiStyle &style = ImGui::GetStyle();
 		int buttons_count = 20;
 		float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
@@ -519,6 +519,7 @@ void dockspace()
 			ImGui::Separator();
 			if (ImGui::Selectable("copy"))
 			{
+				as->copy();
 				// new game_object(*t->gameObject());
 			}
 			if (ImGui::Selectable("delete"))
