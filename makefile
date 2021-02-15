@@ -28,3 +28,7 @@ getDebDeps:
 	apt install libxi-dev -y
 	apt install libxxf86vm-dev -y
 	apt install libboost-all-dev -y
+	apt install g++ -y
+	apt install libglew-dev -y
+	apt install libtbb-dev -y
+	apt install libxxf86dga-dev -y

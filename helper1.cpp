@@ -262,5 +262,6 @@ float gpuTimer::stop()
 	// get query results
 	glGetQueryObjectui64v(queryID[0], GL_QUERY_RESULT, &startTime);
 	glGetQueryObjectui64v(queryID[1], GL_QUERY_RESULT, &stopTime);
+	glDeleteQueries(2,queryID);
 	return (float)(stopTime - startTime) / 1000000.0;
 }

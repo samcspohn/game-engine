@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CXX "g++")
+# set(CXX "g++")
 # set the project name
 project(game_engine)
 
