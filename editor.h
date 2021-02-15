@@ -52,6 +52,7 @@ namespace assets{
 #define _RENDER(_name, name)\
     renderEdit(_name,name);
 
+
 void renderEdit(const char* name, string& s);
 void renderEdit(const char* name, bool& b);
 void renderEdit(const char* name, int& i);
@@ -60,4 +61,37 @@ void renderEdit(const char* name, glm::vec2& v);
 void renderEdit(const char* name, glm::vec3& v);
 void renderEdit(const char* name, glm::vec4& v);
 void renderEdit(const char* name, glm::quat& q);
+
+template <typename t>
+void renderEdit(const char *name, vector<t> &v)
+{
+    bool open = ImGui::TreeNode(name);
+    ImGui::SameLine();
+    bool add = ImGui::Button("+");
+    if (add)
+    {
+        v.emplace_back();
+    }
+    int remove = -1;
+    if (add || open)
+    {
+        for (int i{0}; i < v.size(); ++i)
+        {
+            ImGui::PushID(i);
+            renderEdit(to_string(i).c_str(), v[i]);
+            ImGui::SameLine();
+            if (ImGui::Button("-"))
+            {
+                remove = i;
+            }
+            ImGui::PopID();
+        }
+        if(remove != -1){
+            v.erase(v.begin() + remove);
+        }
+        ImGui::TreePop();
+    }
+}
+
+
 // void renderEdit(const char* name, bool& b);

@@ -152,14 +152,15 @@ public:
 		RENDER(rof)
 		RENDER(speed)
 		RENDER(dispersion)
-		if (ImGui::TreeNode("barrels"))
-		{
-			for (int i{0}; i < barrels.size(); ++i)
-			{
-				renderEdit(to_string(i).c_str(), barrels[i]);
-			}
-			ImGui::TreePop();
-		}
+		RENDER(barrels)
+		// if (ImGui::TreeNode("barrels"))
+		// {
+		// 	for (int i{0}; i < barrels.size(); ++i)
+		// 	{
+		// 		renderEdit(to_string(i).c_str(), barrels[i]);
+		// 	}
+		// 	ImGui::TreePop();
+		// }
 	}
 	COPY(gun);
 	SER4(rof, speed, dispersion, ammo);
