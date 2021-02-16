@@ -26,6 +26,9 @@ struct audioMeta : public assets::asset
     ALsizei freq;
     ALboolean loop;
     string file;
+    void inspect(){
+        renderEdit("path",file);
+    }
     friend class audio;
     friend audioMeta *audioManager::_new(string);
     string type(){

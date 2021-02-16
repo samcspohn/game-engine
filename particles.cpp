@@ -191,7 +191,7 @@ bool colorArrayEdit(colorArray &a, bool *p_open)
 
     draw_list->AddImage((void *)a.t.t->id, pos, {pos.x + size.x, pos.y + size.y}, uv0, uv1, ImGui::GetColorU32(tint_col));
 
-    gradientEditorDatas[&a].color_picker_open = 0;
+    // gradientEditorDatas[&a].color_picker_open = 0;
     int i = 0;
     for (auto key : a.keys)
     {

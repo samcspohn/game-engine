@@ -231,10 +231,10 @@ void appendStat(string name, float dtime)
 
 gpuTimer::gpuTimer()
 {
-	startTime = -1;
-	stopTime = -1;
-	queryID[0] = -1;
-	queryID[1] = -1;
+	// startTime = -1;
+	// stopTime = -1;
+	// queryID[0] = -1;
+	// queryID[1] = -1;
 }
 void gpuTimer::start()
 {

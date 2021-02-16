@@ -61,7 +61,7 @@ struct _modelMeta : public assets::asset
 	glm::vec3 bounds;
 	float radius;
 	void getBounds();
-	// void inspect();
+	void inspect();
 	bool unique = false;
 	friend class _model;
 	SER_HELPER()

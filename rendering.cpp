@@ -293,6 +293,9 @@ void _modelMeta::getBounds()
 		enqueRenderJob([&]() { getBounds(); });
 	}
 }
+void _modelMeta::inspect(){
+	renderEdit("path",this->model->modelPath);
+}
 renderingMeta::renderingMeta(_shader _s, _model _m)
 {
 	s = _s;

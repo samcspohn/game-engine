@@ -257,7 +257,7 @@ void run()
 				Transforms.updates[i].pos = true;
 			});
 			_parallel_for(*colliders, [&](int i) {
-				if (colliders->data.valid[i] && colliders->data.data[i].type == 3)
+				if (colliders->data.valid[i] && colliders->data.data[i].type == colType::pointType)
 				{
 					colliders->data.data[i].p.pos1 -= fo;
 				}
