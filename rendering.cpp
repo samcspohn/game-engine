@@ -11,6 +11,8 @@ gpu_vector<__renderer> *__RENDERERS_in;
 
 gpu_vector<GLuint> *__renderer_offsets;
 gpu_vector<__renderMeta> *__rendererMetas;
+
+
 class _renderer;
 
 // model data
@@ -261,11 +263,27 @@ bool _shaderMeta::onEdit()
 	// return ret;
 }
 void _shaderMeta::inspect(){
+	static const map<GLenum, string> types{{GL_FRAGMENT_SHADER,".frag"},{GL_VERTEX_SHADER,".vert"},{GL_GEOMETRY_SHADER,".geom"},{GL_TESS_EVALUATION_SHADER,".tese"},{GL_TESS_CONTROL_SHADER,".tesc"}};
+	static const map<GLenum, string> types2{{GL_FRAGMENT_SHADER,"fragment"},{GL_VERTEX_SHADER,"vertex"},{GL_GEOMETRY_SHADER,"geometry"},{GL_TESS_EVALUATION_SHADER,"tesselation evaluation"},{GL_TESS_CONTROL_SHADER,"tesselation control"}};
 	for(auto& i : this->shader->_shaders){
 		// renderEdit("type",(int&)i.first);
 		
-		renderEdit(to_string(i.first).c_str(), i.second);
-		// RENDER(i.second)
+		renderEdit(types2.at(i.first).c_str(), i.second);
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(("FILE_DRAG_AND_DROP" + types.at(i.first)).c_str()))
+			{
+				// IM_ASSERT(payload->DataSize == sizeof(string*));
+				string payload_n = string((const char *)payload->Data);
+				cout << "file payload:" << payload_n << endl;
+				i.second = payload_n;
+			}
+			ImGui::EndDragDropTarget();
+		}
+	}
+	if(ImGui::Button("reload")){
+		this->shader->_Shader();
+		// do something
 	}
 }
 string _shaderMeta::type(){
@@ -295,6 +313,22 @@ void _modelMeta::getBounds()
 }
 void _modelMeta::inspect(){
 	renderEdit("path",this->model->modelPath);
+	if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("FILE_DRAG_AND_DROP.obj"))
+        {
+            // IM_ASSERT(payload->DataSize == sizeof(string*));
+            string payload_n = string((const char *)payload->Data);
+            cout << "file payload:" << payload_n << endl;
+            this->model->modelPath = payload_n;
+			file = payload_n;
+        }
+        ImGui::EndDragDropTarget();
+    }
+    if (ImGui::Button("reload"))
+    {
+        // do something
+    }
 }
 renderingMeta::renderingMeta(_shader _s, _model _m)
 {

@@ -407,6 +407,10 @@ this->vertexFile = vertexPath;
 			glDeleteShader(s);
 	}
 	void _Shader(){
+		if(this->Program != 0){
+			glDeleteProgram(this->Program);
+			this->Program = 0;
+		}
 		vector<GLuint> shaders;
 		for(auto& i : _shaders){
 				shaders.push_back(loadFile(i.second,i.first));		

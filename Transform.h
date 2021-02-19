@@ -196,6 +196,9 @@ struct _Transforms
 
 	// 	return t;
 	// }
+	int getCount(){
+		return meta.size() - avail.size();
+	}
 	void clear(){
 		positions.clear();
 		rotations.clear();

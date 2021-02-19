@@ -213,6 +213,7 @@ void run()
 		gameLoopTotal.start();
 		gameLoopMain.start();
 		// scripting
+		transformLock.lock();
 		doLoopIteration(ComponentRegistry.gameComponents);
 		for (auto &i : collisionGraph)
 			collisionLayers[i.first].clear();
@@ -241,6 +242,7 @@ void run()
 		stopWatch.start();
 		tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
 		toDestroy.clear();
+		transformLock.unlock();
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
 

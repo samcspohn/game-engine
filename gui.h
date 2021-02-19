@@ -12,10 +12,10 @@ namespace gui{
 
 class gui_base{
 public:
-    virtual inline void render(){}
+    virtual void render();
 };
 
-std::list<gui_base*> gui_windows;
+extern std::list<gui_base*> gui_windows;
 
 class window : public gui_base{
 public:
@@ -27,56 +27,25 @@ public:
     bool p_open = true;
     typename std::list<gui_base*>::iterator itr;
     enum ImGuiCond_ loadConfig = ImGuiCond_Once;
-    window(){
-        gui_windows.push_back(this);
-        itr = --gui_windows.end();
-    }
-    window(const char* n) : name(n){
-        gui_windows.push_back(this);
-        itr = --gui_windows.end();
-    }
-    void adopt(gui_base* g){
-        children.push_back(g);
-    }
-    inline void render(){
-        ImGui::SetNextWindowPos(pos, loadConfig);
-        ImGui::SetNextWindowSize(size, loadConfig);
-
-        // // Main body of the Demo window starts here.
-        // flags |= ImGuiWindowFlags_NoTitleBar;
-        // flags |= ImGuiWindowFlags_NoMove;
-        // flags |= ImGuiWindowFlags_NoResize;
-        // flags |= ImGuiWindowFlags_NavFlattened;
-        ImGui::Begin(name.c_str(), &p_open, flags);  
-         for(auto& i : children){
-            i->render();
-        }
-        ImGui::End();
-    }
-    ~window(){
-        gui_windows.erase(itr);
-    }
+    window();
+    window(const char* n);
+    void adopt(gui_base* g);
+    void render();
+    ~window();
 };
 
 
 class text : public gui_base{
 public:
     std::string contents;
-    inline  void render(){
-        ImGui::Text(contents.c_str());
-    }
+    void render();
 };
 
 class image : public gui_base{
 public:
     ImVec2 pos;
     _texture img;
-    inline  void render(){
-        ImVec2 currPos = ImGui::GetCursorPos();
-        ImGui::SetCursorPos(pos);
-        ImGui::Image(ImTextureID(img.t->id), ImVec2(img.t->dims.x, img.t->dims.y), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,0));
-        ImGui::SetCursorPos(currPos);
-    }
+    void render();
 };
 
 class button : public gui_base{
@@ -84,10 +53,7 @@ public:
     std::string label;
     ImVec2 size{-FLT_MIN, 0.0f};
     std::function<void()> callBack;
-    inline void render(){
-        if(ImGui::Button(label.c_str(), size))
-            callBack();
-    }
+    void render();
 };
 
 
@@ -97,13 +63,7 @@ public:
     // ImVec2 size;
     vector<gui_base*> children;
     bool selected{false};
-    inline void render(){
-        if(ImGui::TreeNode(label.c_str())){
-            for(auto& i : children)
-                i->render();
-                ImGui::TreePop();
-        }
-    }
+    void render();
 };
 
 
