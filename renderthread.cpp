@@ -227,7 +227,7 @@ void load_game(const char *filename)
 
 inspectable *inspector = 0;
 ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-transform2 selcted_transform = -1;
+transform2 selected_transform = -1;
 void renderTransform(transform2 t)
 {
 	static unordered_map<int, bool> selected;
@@ -260,7 +260,7 @@ void renderTransform(transform2 t)
 			selected.clear();
 			selected[t.id] = true;
 		}
-		selcted_transform.id = t.id;
+		selected_transform.id = t.id;
 		inspector = t->gameObject();
 	}
 
@@ -637,7 +637,8 @@ void dockspace()
 		transformLock.unlock();
 		ImGui::End();
 	}
-	if(selcted_transform.id != -1){
+	if(selected_transform.id != -1){
+
 
 		ImGuizmo::SetOrthographic(false);
 		ImGuizmo::SetDrawlist();
@@ -646,13 +647,27 @@ void dockspace()
 		ImGuizmo::SetRect(0.0f,0.0f, ww,wy);
 		mat4 view = COMPONENT_LIST(_camera)->get(0)->rot * COMPONENT_LIST(_camera)->get(0)->view;
 		mat4 proj = COMPONENT_LIST(_camera)->get(0)->proj;
-		mat4 trans = selcted_transform.getModel();
+		mat4 trans = selected_transform.getModel();
+		static auto guizmo_mode = ImGuizmo::LOCAL;
+		static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
+		if(!ImGui::IsMouseDown(1)){
+			if(ImGui::IsKeyPressed(GLFW_KEY_T))
+				guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
+			if(ImGui::IsKeyPressed(GLFW_KEY_R))
+				guizmo_transform = ImGuizmo::OPERATION::ROTATE;
+			if(ImGui::IsKeyPressed(GLFW_KEY_S))
+				guizmo_transform = ImGuizmo::OPERATION::SCALE;
+			if(ImGui::IsKeyPressed(GLFW_KEY_W))
+				guizmo_mode = ImGuizmo::WORLD;
+			if(ImGui::IsKeyPressed(GLFW_KEY_L))
+				guizmo_mode = ImGuizmo::LOCAL;
+		}
 
-		ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(trans));
+
+		ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans));
 
 		if (ImGuizmo::IsUsing())
 		{
-
 			vec3 pos;
 			vec3 scale;
 			quat rot;
@@ -660,7 +675,9 @@ void dockspace()
 			vec4 pers;
 			glm::decompose(trans, scale, rot, pos, skew, pers);
 
-			selcted_transform.setPosition(pos);
+			selected_transform.setPosition(pos);
+			selected_transform.setRotation(rot);
+			selected_transform.setScale(scale);
 		}
 	}
 
