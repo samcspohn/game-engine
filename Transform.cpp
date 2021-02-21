@@ -124,10 +124,30 @@ glm::quat transform2::getRotation()
 {
 	return Transforms.rotations[id];
 }
+
+
+void setRotationChild(transform2 tc, glm::quat& rot, glm::vec3& pos){
+	#define rotat Transforms.rotations[tc.id]
+	#define posi Transforms.positions[tc.id]
+	posi = pos + rot * (posi - pos);
+	rotat = rot * rotat;
+	for(transform2 t : tc->getChildren()){
+		setRotationChild(t,rot, pos);
+	}
+	#undef posi
+	#undef rotat
+}
+
 void transform2::setRotation(glm::quat r)
 {
 	Transforms.updates[id].rot = true;
+	glm::quat rot = r * glm::inverse(Transforms.rotations[id]);
 	Transforms.rotations[id] = r;
+
+	for(transform2 t : this->getChildren()){
+		setRotationChild(t,rot, Transforms.positions[id]);
+	}
+
 }
 list<transform2> &transform2::getChildren()
 {
@@ -451,6 +471,7 @@ glm::quat Transform::getRotation()
 {
 	return _T->rotation;
 }
+
 void Transform::setRotation(glm::quat r)
 {
 	_T->rotation = r;

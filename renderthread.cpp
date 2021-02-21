@@ -1,6 +1,7 @@
 #include "renderthread.h"
 #include <algorithm>
 #include <imgui/guizmo/ImGuizmo.h>
+// #include <imgui/guizmo/ImGradient.h>
 // #include "physics.h"
 namespace fs = std::filesystem;
 
@@ -673,13 +674,17 @@ void dockspace()
 			quat rot;
 			vec3 skew;
 			vec4 pers;
+			// ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(trans),pos,)
 			glm::decompose(trans, scale, rot, pos, skew, pers);
 
 			selected_transform.setPosition(pos);
 			selected_transform.setRotation(rot);
 			selected_transform.setScale(scale);
 		}
+	
 	}
+	
+	
 
 	if (ImGui::Begin("info"))
 	{
