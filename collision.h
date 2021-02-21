@@ -112,7 +112,7 @@ bool IntersectRayAABB3(const ray &r, AABB2 a);
 // bool IntersectRayAABB4(AABB2 b, Ray r);
 
 // int TestAABBOBB(AABB2& a, OBB& b);
-
+bool _intersectRayTriangle(glm::vec3& p, glm::vec3& d, glm::vec3& p0, glm::vec3& p1, glm::vec3& p2, glm::vec3& q);
 float ScalarTriple(glm::vec3 &a, glm::vec3 &b, glm::vec3 &c);
 float testPlane(glm::vec3 p, glm::vec4 plane);
 int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, glm::vec3 c,

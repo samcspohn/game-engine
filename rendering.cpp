@@ -700,7 +700,8 @@ void _renderer::onEdit()
 }
 REGISTER_COMPONENT(_renderer)
 
-bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float& dist, glm::mat4& model)
+
+bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float &dist, glm::mat4 &model)
 {
 
 	float closest = numeric_limits<float>().max();
@@ -709,17 +710,19 @@ bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float& 
 	for (int i = 0; i < m->indices.size(); i += 3)
 	{
 		glm::vec3 p1 = model * glm::vec4(m->vertices[m->indices[i]], 1);
-		glm::vec3 p2 = model * glm::vec4(m->vertices[m->indices[i + 1]],1);
-		glm::vec3 p3 = model * glm::vec4(m->vertices[m->indices[i + 2]],1);
+		glm::vec3 p2 = model * glm::vec4(m->vertices[m->indices[i + 1]], 1);
+		glm::vec3 p3 = model * glm::vec4(m->vertices[m->indices[i + 2]], 1);
 		// if (IntersectSegmentTriangle(p, p + d * closest, p1, p2, p3, q.x,q.y,q.z, t))
-		glm::vec2 bp;
-		float t;
+		// glm::vec2 bp;
+		// float t;
 		// if(glm::intersectRayTriangle(p,d,p1,p2,p3, bp, t))
-		if(glm::intersectLineTriangle(p,d,p1,p2,p3, q))
+		// if (glm::intersectLineTriangle(p, d, p1, p2, p3, q))
+		if(_intersectRayTriangle(p,d,p1,p2,p3,q))
 		{
 			dist = glm::length(p - q);
 			// float dist = t;
-			if(dist < closest){
+			if (dist < closest)
+			{
 				r = q;
 				closest = dist;
 			}
@@ -731,7 +734,7 @@ bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float& 
 	return ret;
 }
 
-bool intersectRayModel(glm::vec3 &p, glm::vec3 &d, Model *M, glm::vec3 &q, float& dist, glm::mat4 &model, glm::mat4 &rot)
+bool intersectRayModel(glm::vec3 &p, glm::vec3 &d, Model *M, glm::vec3 &q, float &dist, glm::mat4 &model, glm::mat4 &rot)
 {
 	// glm::mat4 invModel = glm::inverse(model);
 	// p = invModel * glm::vec4(p, 1);
@@ -741,10 +744,12 @@ bool intersectRayModel(glm::vec3 &p, glm::vec3 &d, Model *M, glm::vec3 &q, float
 	glm::vec3 r{closest};
 	for (Mesh &m : M->meshes)
 	{
-		if (intersectRayMesh(p, d, &m, q, dist, model)){
-			
+		if (intersectRayMesh(p, d, &m, q, dist, model))
+		{
+
 			dist = glm::length(p - q);
-			if(dist < closest){
+			if (dist < closest)
+			{
 				r = q;
 				closest = dist;
 			}
@@ -764,11 +769,13 @@ transform2 renderRaycast(glm::vec3 p, glm::vec3 dir)
 	cout << "p: " + to_string(p) + " dir: " + to_string(dir) + '\n';
 	ray _ray(p, dir);
 
-	// parralelfor(renderers->size(), {
 	float closest = numeric_limits<float>().max();
 	transform2 ret;
-	for (uint32_t i = 0; i < renderers->size(); ++i)
+	mutex lock;
+	parralelfor(renderers->size(), 
+	// for (uint32_t i = 0; i < renderers->size(); ++i)
 	{
+	
 		glm::vec3 q;
 		_renderer *_rend;
 		if (renderers->getv(i) && (_rend = renderers->get(i))->getModel().meta())
@@ -795,9 +802,13 @@ transform2 renderRaycast(glm::vec3 p, glm::vec3 dir)
 					cout << name + ": hit -- " + to_string(t) + "\n";
 					// float dist = t;
 					float dist = glm::length(p - q);
-					if(dist < closest){
-						closest = dist;
-						ret = _rend->transform;
+					{
+						scoped_lock l(lock);
+						if (dist < closest)
+						{
+							closest = dist;
+							ret = _rend->transform;
+						}
 					}
 				}
 				else
@@ -806,7 +817,7 @@ transform2 renderRaycast(glm::vec3 p, glm::vec3 dir)
 				}
 			}
 		}
-	}
+	})
+	// }
 	return ret;
-	// })
 }

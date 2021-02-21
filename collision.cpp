@@ -3,6 +3,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/intersect.hpp>
+
 // namespace physics
 // {
 
@@ -443,6 +445,17 @@ float testPlane(glm::vec3 p, glm::vec4 plane)
 {
     return plane.x * p.x + plane.y * p.y + plane.z * p.z + plane.w;
 }
+
+bool _intersectRayTriangle(glm::vec3& p, glm::vec3& d, glm::vec3& p0, glm::vec3& p1, glm::vec3& p2, glm::vec3& q){
+	glm::vec2 bp;
+	float t;
+	if(glm::intersectRayTriangle(p,d,p0,p1,p2, bp, t) && t > 0.f){
+		q = p + d * t;
+		return true;
+	}
+	return false;
+}
+
 int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, glm::vec3 c,
                           float &u, float &v, float &w)
 {

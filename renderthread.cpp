@@ -228,11 +228,11 @@ void load_game(const char *filename)
 inspectable *inspector = 0;
 ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 transform2 selected_transform = -1;
+static unordered_map<int, bool> selected_transforms;
 void renderTransform(transform2 t)
 {
-	static unordered_map<int, bool> selected;
 	ImGuiTreeNodeFlags flags = base_flags;
-	if (selected[t.id])
+	if (selected_transforms[t.id])
 	{
 		flags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -254,11 +254,11 @@ void renderTransform(transform2 t)
 	if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered()) // mouseUp(clicked, t.id)) // mouse up
 	{
 		if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
-			selected[t.id] = true;
+			selected_transforms[t.id] = true;
 		else
 		{
-			selected.clear();
-			selected[t.id] = true;
+			selected_transforms.clear();
+			selected_transforms[t.id] = true;
 		}
 		selected_transform.id = t.id;
 		inspector = t->gameObject();
@@ -709,6 +709,8 @@ void dockspace()
 			if(r.id != -1){
 				inspector = r->gameObject();
 				selected_transform = r;
+				selected_transforms.clear();
+				selected_transforms[r.id] = true;
 			}
 		}));
 	}
