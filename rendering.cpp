@@ -1,5 +1,8 @@
 #include "rendering.h"
 #include "editor.h"
+#include "collision.h"
+#define GLM_GTX_intersect
+#include <glm/gtx/intersect.hpp>
 // #include "imgui.h"
 using namespace std;
 
@@ -11,7 +14,6 @@ gpu_vector<__renderer> *__RENDERERS_in;
 
 gpu_vector<GLuint> *__renderer_offsets;
 gpu_vector<__renderMeta> *__rendererMetas;
-
 
 class _renderer;
 
@@ -51,7 +53,8 @@ bool _modelMeta::onEdit()
 	}
 	return false;
 }
-string _modelMeta::type(){
+string _modelMeta::type()
+{
 	return "MODEL_DRAG_AND_DROP";
 }
 REGISTER_ASSET(_modelMeta);
@@ -262,12 +265,14 @@ bool _shaderMeta::onEdit()
 	}
 	// return ret;
 }
-void _shaderMeta::inspect(){
-	static const map<GLenum, string> types{{GL_FRAGMENT_SHADER,".frag"},{GL_VERTEX_SHADER,".vert"},{GL_GEOMETRY_SHADER,".geom"},{GL_TESS_EVALUATION_SHADER,".tese"},{GL_TESS_CONTROL_SHADER,".tesc"}};
-	static const map<GLenum, string> types2{{GL_FRAGMENT_SHADER,"fragment"},{GL_VERTEX_SHADER,"vertex"},{GL_GEOMETRY_SHADER,"geometry"},{GL_TESS_EVALUATION_SHADER,"tesselation evaluation"},{GL_TESS_CONTROL_SHADER,"tesselation control"}};
-	for(auto& i : this->shader->_shaders){
+void _shaderMeta::inspect()
+{
+	static const map<GLenum, string> types{{GL_FRAGMENT_SHADER, ".frag"}, {GL_VERTEX_SHADER, ".vert"}, {GL_GEOMETRY_SHADER, ".geom"}, {GL_TESS_EVALUATION_SHADER, ".tese"}, {GL_TESS_CONTROL_SHADER, ".tesc"}};
+	static const map<GLenum, string> types2{{GL_FRAGMENT_SHADER, "fragment"}, {GL_VERTEX_SHADER, "vertex"}, {GL_GEOMETRY_SHADER, "geometry"}, {GL_TESS_EVALUATION_SHADER, "tesselation evaluation"}, {GL_TESS_CONTROL_SHADER, "tesselation control"}};
+	for (auto &i : this->shader->_shaders)
+	{
 		// renderEdit("type",(int&)i.first);
-		
+
 		renderEdit(types2.at(i.first).c_str(), i.second);
 		if (ImGui::BeginDragDropTarget())
 		{
@@ -281,17 +286,20 @@ void _shaderMeta::inspect(){
 			ImGui::EndDragDropTarget();
 		}
 	}
-	if(ImGui::Button("reload")){
+	if (ImGui::Button("reload"))
+	{
 		this->shader->_Shader();
 		// do something
 	}
 }
-string _shaderMeta::type(){
+string _shaderMeta::type()
+{
 	return "SHADER_DRAG_AND_DROP";
 }
 int renderingId = 0;
 void _modelMeta::getBounds()
 {
+	radius = 0;
 	if (this->model->ready())
 	{
 		bounds = glm::vec3(0);
@@ -302,35 +310,39 @@ void _modelMeta::getBounds()
 				bounds = glm::vec3(glm::max(abs(bounds.x), abs(j.x)),
 								   glm::max(abs(bounds.y), abs(j.y)),
 								   glm::max(abs(bounds.z), abs(j.z)));
+				float r = length(j);
+				if (r > radius)
+					radius = r;
 			}
 		}
-		radius = length(bounds);
+		// radius = length(bounds);
 	}
 	else
 	{
 		enqueRenderJob([&]() { getBounds(); });
 	}
 }
-void _modelMeta::inspect(){
-	renderEdit("path",this->model->modelPath);
+void _modelMeta::inspect()
+{
+	renderEdit("path", this->model->modelPath);
 	if (ImGui::BeginDragDropTarget())
-    {
-        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("FILE_DRAG_AND_DROP.obj"))
-        {
-            // IM_ASSERT(payload->DataSize == sizeof(string*));
-            string payload_n = string((const char *)payload->Data);
-            cout << "file payload:" << payload_n << endl;
-            this->model->modelPath = payload_n;
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("FILE_DRAG_AND_DROP.obj"))
+		{
+			// IM_ASSERT(payload->DataSize == sizeof(string*));
+			string payload_n = string((const char *)payload->Data);
+			cout << "file payload:" << payload_n << endl;
+			this->model->modelPath = payload_n;
 			file = payload_n;
-        }
-        ImGui::EndDragDropTarget();
-    }
-    if (ImGui::Button("reload"))
-    {
+		}
+		ImGui::EndDragDropTarget();
+	}
+	if (ImGui::Button("reload"))
+	{
 		this->model->meshes.clear();
 		this->model->loadModel();
-        // do something
-    }
+		// do something
+	}
 }
 renderingMeta::renderingMeta(_shader _s, _model _m)
 {
@@ -687,3 +699,114 @@ void _renderer::onEdit()
 	}
 }
 REGISTER_COMPONENT(_renderer)
+
+bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float& dist, glm::mat4& model)
+{
+
+	float closest = numeric_limits<float>().max();
+	glm::vec3 r{closest};
+	bool ret = false;
+	for (int i = 0; i < m->indices.size(); i += 3)
+	{
+		glm::vec3 p1 = model * glm::vec4(m->vertices[m->indices[i]], 1);
+		glm::vec3 p2 = model * glm::vec4(m->vertices[m->indices[i + 1]],1);
+		glm::vec3 p3 = model * glm::vec4(m->vertices[m->indices[i + 2]],1);
+		// if (IntersectSegmentTriangle(p, p + d * closest, p1, p2, p3, q.x,q.y,q.z, t))
+		glm::vec2 bp;
+		float t;
+		// if(glm::intersectRayTriangle(p,d,p1,p2,p3, bp, t))
+		if(glm::intersectLineTriangle(p,d,p1,p2,p3, q))
+		{
+			dist = glm::length(p - q);
+			// float dist = t;
+			if(dist < closest){
+				r = q;
+				closest = dist;
+			}
+			ret = true;
+		}
+	}
+	dist = closest;
+	q = r;
+	return ret;
+}
+
+bool intersectRayModel(glm::vec3 &p, glm::vec3 &d, Model *M, glm::vec3 &q, float& dist, glm::mat4 &model, glm::mat4 &rot)
+{
+	// glm::mat4 invModel = glm::inverse(model);
+	// p = invModel * glm::vec4(p, 1);
+	// d = glm::inverse(rot) * glm::vec4(d, 1);
+	bool ret = false;
+	float closest = numeric_limits<float>().max();
+	glm::vec3 r{closest};
+	for (Mesh &m : M->meshes)
+	{
+		if (intersectRayMesh(p, d, &m, q, dist, model)){
+			
+			dist = glm::length(p - q);
+			if(dist < closest){
+				r = q;
+				closest = dist;
+			}
+			ret = true;
+		}
+	}
+	dist = closest;
+	q = r;
+	return ret;
+}
+
+#include "terrain.h"
+transform2 renderRaycast(glm::vec3 p, glm::vec3 dir)
+{
+	dir = normalize(dir);
+	auto renderers = COMPONENT_LIST(_renderer);
+	cout << "p: " + to_string(p) + " dir: " + to_string(dir) + '\n';
+	ray _ray(p, dir);
+
+	// parralelfor(renderers->size(), {
+	float closest = numeric_limits<float>().max();
+	transform2 ret;
+	for (uint32_t i = 0; i < renderers->size(); ++i)
+	{
+		glm::vec3 q;
+		_renderer *_rend;
+		if (renderers->getv(i) && (_rend = renderers->get(i))->getModel().meta())
+		{
+			if (_rend->transform->gameObject()->getComponent<terrain>() != 0)
+				continue;
+			// _renderer *_rend = renderers->get(i);
+			float rad = _rend->getModel().meta()->radius;
+			float sc = glm::length(_rend->transform->getScale());
+			rad *= sc;
+			// if (glm::intere(p,dir,sphere(_rend->transform->getPosition(),rad),t,q))
+			float t;
+			if (glm::intersectRaySphere(p, dir, _rend->transform->getPosition(), rad * rad, t))
+			{
+				string name = renderers->get(i)->transform->name();
+				if (name == "")
+				{
+					name = "game object " + to_string(_rend->transform.id);
+				}
+				glm::mat4 model = _rend->transform->getModel();
+				glm::mat4 rot = glm::toMat4(_rend->transform->getRotation());
+				if (intersectRayModel(p, dir, _rend->getModel().meta()->model, q, t, model, rot))
+				{
+					cout << name + ": hit -- " + to_string(t) + "\n";
+					// float dist = t;
+					float dist = glm::length(p - q);
+					if(dist < closest){
+						closest = dist;
+						ret = _rend->transform;
+					}
+				}
+				else
+				{
+					cout << name + ": miss\n";
+				}
+			}
+		}
+	}
+	return ret;
+	// })
+}

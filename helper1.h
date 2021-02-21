@@ -189,3 +189,5 @@ void _parallel_for(t &T, u U)
 	}
 
 #endif // !HELPER
+
+string to_string(glm::vec3 v);

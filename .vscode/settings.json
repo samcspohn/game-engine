@@ -98,6 +98,7 @@
         "ctgmath": "cpp",
         "filesystem": "cpp",
         "stack": "cpp",
-        "version": "cpp"
+        "version": "cpp",
+        "collisioncpp": "cpp"
     }
 }

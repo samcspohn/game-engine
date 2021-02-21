@@ -220,8 +220,8 @@ void run()
 		// scripting
 		transformLock.lock();
 		doLoopIteration(ComponentRegistry.gameComponents);
-		for (auto &i : collisionGraph)
-			collisionLayers[i.first].clear();
+		for (auto &i : physics_manager::collisionGraph)
+			physics_manager::collisionLayers[i.first].clear();
 		// doLoopIteration(gameEngineComponents, false);
 
 		/////////////////////////////////////////////////

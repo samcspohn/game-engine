@@ -705,7 +705,11 @@ void dockspace()
 		vec3 d = c->screenPosToRay({mp.x, mp.y});
 
 		mainThreadWork.push_back(new function<void()>([=]() {
-			guiRayCast(p, d);
+			transform2 r = renderRaycast(p, d);
+			if(r.id != -1){
+				inspector = r->gameObject();
+				selected_transform = r;
+			}
 		}));
 	}
 	ImGui::End();

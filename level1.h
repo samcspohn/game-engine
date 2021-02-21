@@ -947,9 +947,9 @@ int level1(bool load)
 	seedRand(vec3(123456789, 345678901, 567890123));
 	genNoise(512, 512, 4);
 
-	collisionGraph[-1] = {};
-	collisionGraph[0] = {1};
-	collisionGraph[1] = {0, 1};
+	physics_manager::collisionGraph[-1] = {};
+	physics_manager::collisionGraph[0] = {1};
+	physics_manager::collisionGraph[1] = {0, 1};
 
 	if (true)
 	{
@@ -1188,7 +1188,7 @@ int level1(bool load)
 		game_object *player = new game_object();
 		player->transform.name() = "player";
 		auto playerCam = player->addComponent<_camera>();
-		playerCam->fov = 80;
+		playerCam->fov = radians(80.f);
 		playerCam->farPlane = 1e32f;
 		playerCam->nearPlane = 0.00001f;
 		player->addComponent<gun>();

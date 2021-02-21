@@ -16,7 +16,7 @@ include_directories(${CMAKE_SOURCE_DIR}/imgui)
 # add_library(game libBulletCollision.a)
 # add_library(game libLinearMath.a)
 
-add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW)
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW GLM_GTX_intersect)
 file(GLOB SOURCES "*.cpp"  "imgui/*.cpp" "imgui/guizmo/*.cpp")
  
 add_executable(game ${SOURCES})

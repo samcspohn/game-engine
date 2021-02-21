@@ -265,3 +265,8 @@ float gpuTimer::stop()
 	glDeleteQueries(2,queryID);
 	return (float)(stopTime - startTime) / 1000000.0;
 }
+
+string to_string(glm::vec3 v)
+{
+	return to_string(v.x) + "," + to_string(v.y) + "," + to_string(v.z);
+}

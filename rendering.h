@@ -237,3 +237,4 @@ public:
 
 void renderEdit(const char *name, _model &m);
 void renderEdit(const char *name, _shader &s);
+transform2 renderRaycast(glm::vec3 p, glm::vec3 dir);
