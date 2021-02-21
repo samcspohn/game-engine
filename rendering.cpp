@@ -327,6 +327,8 @@ void _modelMeta::inspect(){
     }
     if (ImGui::Button("reload"))
     {
+		this->model->meshes.clear();
+		this->model->loadModel();
         // do something
     }
 }

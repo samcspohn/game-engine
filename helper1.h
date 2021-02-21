@@ -155,16 +155,17 @@ public:
 	float stop();
 };
 
-
-template<typename t, typename u>
-void _parallel_for(t& T, u U){
+template <typename t, typename u>
+void _parallel_for(t &T, u U)
+{
 	int size = T.size();
-	int grain = size/concurrency::numThreads /concurrency::numThreads;
-	grain = glm::max(grain,1);
+	int grain = size / concurrency::numThreads / concurrency::numThreads;
+	grain = glm::max(grain, 1);
 	tbb::parallel_for(
-		tbb::blocked_range<unsigned int>(0,size,grain),
-		[&](const tbb::blocked_range<unsigned int>& r) {
-			for (unsigned int i=r.begin();i<r.end();++i){
+		tbb::blocked_range<unsigned int>(0, size, grain),
+		[&](const tbb::blocked_range<unsigned int> &r) {
+			for (unsigned int i = r.begin(); i < r.end(); ++i)
+			{
 				U(i);
 			}
 		}
@@ -173,5 +174,18 @@ void _parallel_for(t& T, u U){
 	);
 }
 
+#define parralelfor(size, func)                                               \
+	{                                                                         \
+		int grain = size / concurrency::numThreads / concurrency::numThreads; \
+		grain = glm::max(grain, 1);                                           \
+		tbb::parallel_for(                                                    \
+			tbb::blocked_range<unsigned int>(0, size, grain),                 \
+			[&](const tbb::blocked_range<unsigned int> &r) {                  \
+				for (unsigned int i = r.begin(); i < r.end(); ++i)            \
+				{                                                             \
+					func                                                      \
+				}                                                             \
+			});                                                               \
+	}
 
 #endif // !HELPER

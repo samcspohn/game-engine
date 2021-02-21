@@ -195,302 +195,315 @@ lightVolume lv;
 // class _camera : public component
 // {
 // public:
-	// _camera::_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
-	_camera::_camera(){};
+// _camera::_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
+_camera::_camera(){};
 
+void _camera::onEdit()
+{
+	RENDER(fov);
+	RENDER(nearPlane);
+	RENDER(farPlane);
+}
+glm::vec3 _camera::screenPosToRay(glm::vec2 mp)
+{
 
-	void _camera::onEdit(){
-		RENDER(fov);
-		RENDER(nearPlane);
-		RENDER(farPlane);
-		
-	}
+	float mouseX = mp.x / (SCREEN_WIDTH * 0.5f) - 1.0f;
+	float mouseY = mp.y / (SCREEN_HEIGHT * 0.5f) - 1.0f;
 
-	glm::vec2 _camera::getScreen()
-	{
-		return glm::vec2(glm::tan(glm::radians(fov) / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(glm::radians(fov) / 2));
-	}
+	glm::mat4 invVP = glm::inverse(this->getProjection() * this->getRotationMatrix());
+	glm::vec4 screenPos = glm::vec4(mouseX, -mouseY, 1.0f, 1.0f);
+	glm::vec4 worldPos = invVP * screenPos;
 
-	int _camera::order()
-	{
-		return 1 - 2;
-	}
+	return glm::normalize(glm::vec3(worldPos));
+}
+glm::vec2 _camera::getScreen()
+{
+	return glm::vec2(glm::tan(fov / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(fov / 2));
+}
 
-	void _camera::onStart()
-	{
-		waitForRenderJob([&]() {
-			if(lv.vertices.size() == 0){
-				lightVolumeModel = _model("res/models/cube/cube.obj");
-				modelManager::models_id[lightVolumeModel.m]->model->loadModel();
-				// lightVolumeModel.m->loadModel();
-				lv.indices = lightVolumeModel.mesh().indices;
-				lv.vertices = lightVolumeModel.mesh().vertices;
-				lv.setupMesh();
-			}
+int _camera::order()
+{
+	return 1 - 2;
+}
 
-			gBuffer.scr_width = SCREEN_WIDTH;
-			gBuffer.scr_height = SCREEN_HEIGHT;
-			gBuffer.init();
-			gBuffer.addColorAttachment("gAlbedoSpec", renderTextureType::UNSIGNED_BYTE, 0);
-			gBuffer.addColorAttachment("gPosition", renderTextureType::FLOAT, 1);
-			gBuffer.addColorAttachment("gNormal", renderTextureType::FLOAT, 2);
-			gBuffer.addDepthBuffer();
-			gBuffer.finalize();
-		});
-		_shaderLightingPass = _shader("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
-		_quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
-	}
-	void _camera::onDestroy(){
-		waitForRenderJob([&](){
-			gBuffer.destroy();
-		});
-	}
-	void _camera::prepRender(Shader &matProgram)
-	{
-
-		_rendererOffsets = *(__renderer_offsets->storage);
-
-		GPU_MATRIXES->tryRealloc(__RENDERERS_in->size());
-		GPU_TRANSFORMS->bindData(0);
-		GPU_MATRIXES->bindData(3);
-		__RENDERERS_in->bindData(1);
-		__renderer_offsets->bindData(5);
-		__renderer_offsets->bufferData();
-		__rendererMetas->bindData(8);
-		__rendererMetas->bufferData();
-
-		mainCamPos = transform->getPosition();
-		MainCamForward = transform->forward();
-		mainCamUp = transform->up();
-
-		matProgram.use();
-		matProgram.setMat4("view", view);
-		matProgram.setMat4("vRot", rot);
-		matProgram.setMat4("projection", proj);
-		matProgram.setVec3("floatingOrigin", pos);
-		matProgram.setInt("stage", 1);
-		matProgram.setMat3("camInv", camInv);
-		matProgram.setVec3("cullPos", cullpos);
-		matProgram.setVec3("camUp", transform->up());
-		matProgram.setVec2("screen", screen);
-		matProgram.setUint("num", __RENDERERS_in->size());
-
-		glDispatchCompute(__RENDERERS_in->size() / 64 + 1, 1, 1);
-		glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-		__renderer_offsets->retrieveData();
-	}
-	void _camera::render()
-	{
-			// _shader wireFrame("res/shaders/terrainShader/terrain.vert",
-			// 		  "res/shaders/terrainShader/terrain.tesc",
-			// 		  "res/shaders/terrainShader/terrain.tese",
-			// 		  "res/shaders/terrainShader/terrain.geom",
-			// 		  "res/shaders/terrainShader/terrain.frag");
-
-		// vector<GLuint>& _rendererOffsets = *(__renderer_offsets->storage);
-		gpuTimer t;
-		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-		glCullFace(GL_BACK);
-		t.start();
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		gBuffer.use();
-		gBuffer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
-		glDepthMask(GL_TRUE);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-
-		int counter = 0;
-		GPU_MATRIXES->bindData(3);
-		for (auto &i : batchManager::batches.front())
+void _camera::onStart()
+{
+	waitForRenderJob([&]() {
+		if (lv.vertices.size() == 0)
 		{
-			Shader *currShader = i.first.meta()->shader;
-			currShader->use();
-			currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
-			currShader->setVec3("viewPos", pos);
-			currShader->setVec3("viewDir", dir);
-			currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
-			currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
-			glm::mat4 vp = proj * rot;
-			currShader->setMat4("vp", vp);
+			lightVolumeModel = _model("res/models/cube/cube.obj");
+			modelManager::models_id[lightVolumeModel.m]->model->loadModel();
+			// lightVolumeModel.m->loadModel();
+			lv.indices = lightVolumeModel.mesh().indices;
+			lv.vertices = lightVolumeModel.mesh().vertices;
+			lv.setupMesh();
+		}
 
-			// if (currShader == wireFrame.s->shader)
-			// {
-			// 	_texture t = getNamedTexture("noise");
-			// 	currShader->setTexture(0,"noise",t.t->id);
-			// 	for (auto &j : i.second)
-			// 	{
-			// 		for (auto &k : j.second)
-			// 		{
-			// 			int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
-			// 			if (count > 0)
-			// 			{
-			// 				currShader->setUint("matrixOffset", _rendererOffsets[counter]);
-			// 				glBindVertexArray(k.second->VAO);
-			// 				glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
+		gBuffer.scr_width = SCREEN_WIDTH;
+		gBuffer.scr_height = SCREEN_HEIGHT;
+		gBuffer.init();
+		gBuffer.addColorAttachment("gAlbedoSpec", renderTextureType::UNSIGNED_BYTE, 0);
+		gBuffer.addColorAttachment("gPosition", renderTextureType::FLOAT, 1);
+		gBuffer.addColorAttachment("gNormal", renderTextureType::FLOAT, 2);
+		gBuffer.addDepthBuffer();
+		gBuffer.finalize();
+	});
+	_shaderLightingPass = _shader("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
+	_quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
+}
+void _camera::onDestroy()
+{
+	waitForRenderJob([&]() {
+		gBuffer.destroy();
+	});
+}
+void _camera::prepRender(Shader &matProgram)
+{
 
-			// 				glBindBuffer(GL_ARRAY_BUFFER, 0);
-			// 				glBindVertexArray(0);
-			// 			}
-			// 			++counter;
-			// 		}
-			// 	}
-			// 	glActiveTexture( GL_TEXTURE0 );
-			// 	glBindTexture( GL_TEXTURE_2D, 0 );
-				
-			// }
-			// else
-			// {
-				for (auto &j : i.second)
+	_rendererOffsets = *(__renderer_offsets->storage);
+
+	GPU_MATRIXES->tryRealloc(__RENDERERS_in->size());
+	GPU_TRANSFORMS->bindData(0);
+	GPU_MATRIXES->bindData(3);
+	__RENDERERS_in->bindData(1);
+	__renderer_offsets->bindData(5);
+	__renderer_offsets->bufferData();
+	__rendererMetas->bindData(8);
+	__rendererMetas->bufferData();
+
+	mainCamPos = transform->getPosition();
+	MainCamForward = transform->forward();
+	mainCamUp = transform->up();
+
+	matProgram.use();
+	matProgram.setMat4("view", view);
+	matProgram.setMat4("vRot", rot);
+	matProgram.setMat4("projection", proj);
+	matProgram.setVec3("floatingOrigin", pos);
+	matProgram.setInt("stage", 1);
+	matProgram.setMat3("camInv", camInv);
+	matProgram.setVec3("cullPos", cullpos);
+	matProgram.setVec3("camUp", transform->up());
+	matProgram.setVec2("screen", screen);
+	matProgram.setUint("num", __RENDERERS_in->size());
+
+	glDispatchCompute(__RENDERERS_in->size() / 64 + 1, 1, 1);
+	glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+	__renderer_offsets->retrieveData();
+}
+void _camera::render()
+{
+	// _shader wireFrame("res/shaders/terrainShader/terrain.vert",
+	// 		  "res/shaders/terrainShader/terrain.tesc",
+	// 		  "res/shaders/terrainShader/terrain.tese",
+	// 		  "res/shaders/terrainShader/terrain.geom",
+	// 		  "res/shaders/terrainShader/terrain.frag");
+
+	// vector<GLuint>& _rendererOffsets = *(__renderer_offsets->storage);
+	gpuTimer t;
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	glCullFace(GL_BACK);
+	t.start();
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	gBuffer.use();
+	gBuffer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	int counter = 0;
+	GPU_MATRIXES->bindData(3);
+	for (auto &i : batchManager::batches.front())
+	{
+		Shader *currShader = i.first.meta()->shader;
+		currShader->use();
+		currShader->setFloat("FC", 2.0 / log2(farPlane + 1));
+		currShader->setVec3("viewPos", pos);
+		currShader->setVec3("viewDir", dir);
+		currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
+		currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
+		glm::mat4 vp = proj * rot;
+		currShader->setMat4("vp", vp);
+
+		// if (currShader == wireFrame.s->shader)
+		// {
+		// 	_texture t = getNamedTexture("noise");
+		// 	currShader->setTexture(0,"noise",t.t->id);
+		// 	for (auto &j : i.second)
+		// 	{
+		// 		for (auto &k : j.second)
+		// 		{
+		// 			int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
+		// 			if (count > 0)
+		// 			{
+		// 				currShader->setUint("matrixOffset", _rendererOffsets[counter]);
+		// 				glBindVertexArray(k.second->VAO);
+		// 				glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
+
+		// 				glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// 				glBindVertexArray(0);
+		// 			}
+		// 			++counter;
+		// 		}
+		// 	}
+		// 	glActiveTexture( GL_TEXTURE0 );
+		// 	glBindTexture( GL_TEXTURE_2D, 0 );
+
+		// }
+		// else
+		// {
+		for (auto &j : i.second)
+		{
+			texArray ta = j.first;
+			currShader->bindTextures(ta);
+			for (auto &k : j.second)
+			{
+				int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
+				if (count > 0)
 				{
-					texArray ta = j.first;
-					currShader->bindTextures(ta);
-					for (auto &k : j.second)
-					{
-						int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
-						if (count > 0)
-						{
-							currShader->setUint("matrixOffset", _rendererOffsets[counter]);
-							glBindVertexArray(k.second->VAO);
-							glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
+					currShader->setUint("matrixOffset", _rendererOffsets[counter]);
+					glBindVertexArray(k.second->VAO);
+					glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
 
-							glBindBuffer(GL_ARRAY_BUFFER, 0);
-							glBindVertexArray(0);
-						}
-						++counter;
-					}
-					ta.unbind();
+					glBindBuffer(GL_ARRAY_BUFFER, 0);
+					glBindVertexArray(0);
 				}
-			// }
+				++counter;
+			}
+			ta.unbind();
 		}
-		batchManager::batches.pop();
-		appendStat("render cam", t.stop());
-
-		t.start();
-		// gt_.start();
-		// // 2. lighting pass
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		Shader &quadShader = *_quadShader.meta()->shader;
-		quadShader.use();
-		quadShader.setInt("gAlbedoSpec", 0);
-		quadShader.setInt("gPosition", 1);
-		quadShader.setInt("gNormal", 2);
-		quadShader.setVec3("viewPos", pos);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
-		renderQuad();
-
-		gBuffer.blitDepth(0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-		// glEnable(GL_DEPTH_CLAMP);
-		glDisable(GL_DEPTH_TEST);
-		// glDisable(GL_CULL_FACE);
-		// glDepthFunc(GL_LEQUAL);
-		glCullFace(GL_FRONT);
-		glDepthMask(GL_FALSE);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		glBlendEquation(GL_FUNC_ADD);
-
-		Shader &shaderLightingPass = *_shaderLightingPass.meta()->shader;
-		shaderLightingPass.use();
-		shaderLightingPass.setInt("gAlbedoSpec", 0);
-		shaderLightingPass.setInt("gPosition", 1);
-		shaderLightingPass.setInt("gNormal", 2);
-		shaderLightingPass.setInt("gDepth", 3);
-
-		lightingManager::gpu_pointLights->bindData(1);
-		GPU_TRANSFORMS->bindData(2);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
-		shaderLightingPass.setVec2("WindowSize", glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
-
-		shaderLightingPass.setMat4("view", view);
-		shaderLightingPass.setMat4("proj", proj);
-		shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
-		shaderLightingPass.setVec3("viewPos", pos);
-		shaderLightingPass.setVec3("floatingOrigin", pos);
-		lv.Draw(lightingManager::pointLights.size());
-
-		// Always good practice to set everything back to defaults once configured.
-		for (GLuint i = 0; i < 4; i++)
-		{
-			glActiveTexture(GL_TEXTURE0 + i);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-		// appendStat("render lighting", gt_.stop());
-		appendStat("render lighting cpu", t.stop());
-
-		glDepthMask(GL_TRUE);
-
-		// render particle
-		t.start();
-		// gt_.start();
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_CULL_FACE);
-		glDepthMask(GL_FALSE);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		particle_renderer::drawParticles(view, rot, proj);
-		// appendStat("render particles", gt_.stop());
-		appendStat("render particles", t.stop());
-
-		glDepthMask(GL_TRUE);
+		// }
 	}
+	batchManager::batches.pop();
+	appendStat("render cam", t.stop());
 
-	glm::mat4 _camera::getRotationMatrix()
+	t.start();
+	// gt_.start();
+	// // 2. lighting pass
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	Shader &quadShader = *_quadShader.meta()->shader;
+	quadShader.use();
+	quadShader.setInt("gAlbedoSpec", 0);
+	quadShader.setInt("gPosition", 1);
+	quadShader.setInt("gNormal", 2);
+	quadShader.setVec3("viewPos", pos);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
+	renderQuad();
+
+	gBuffer.blitDepth(0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	// glEnable(GL_DEPTH_CLAMP);
+	glDisable(GL_DEPTH_TEST);
+	// glDisable(GL_CULL_FACE);
+	// glDepthFunc(GL_LEQUAL);
+	glCullFace(GL_FRONT);
+	glDepthMask(GL_FALSE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glBlendEquation(GL_FUNC_ADD);
+
+	Shader &shaderLightingPass = *_shaderLightingPass.meta()->shader;
+	shaderLightingPass.use();
+	shaderLightingPass.setInt("gAlbedoSpec", 0);
+	shaderLightingPass.setInt("gPosition", 1);
+	shaderLightingPass.setInt("gNormal", 2);
+	shaderLightingPass.setInt("gDepth", 3);
+
+	lightingManager::gpu_pointLights->bindData(1);
+	GPU_TRANSFORMS->bindData(2);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
+	shaderLightingPass.setVec2("WindowSize", glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
+
+	shaderLightingPass.setMat4("view", view);
+	shaderLightingPass.setMat4("proj", proj);
+	shaderLightingPass.setFloat("FC", 2.0 / log2(farPlane + 1));
+	shaderLightingPass.setVec3("viewPos", pos);
+	shaderLightingPass.setVec3("floatingOrigin", pos);
+	lv.Draw(lightingManager::pointLights.size());
+
+	// Always good practice to set everything back to defaults once configured.
+	for (GLuint i = 0; i < 4; i++)
 	{
-		return glm::lookAt(glm::vec3(0, 0, 0), transform->forward(), transform->up());
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	glm::mat4 _camera::GetViewMatrix()
-	{
-		return glm::translate(-transform->getPosition());
-	}
-	glm::mat4 _camera::getProjection()
-	{
-		return glm::perspective(glm::radians(this->fov), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.0001f, farPlane);
-	}
-	// _frustum _camera::getFrustum()
-	// {
-	// 	glm::mat4 m = getProjection() * getRotationMatrix() * GetViewMatrix();
-	// 	f.left = plane(m[0][3] + m[0][0],
-	// 				   m[1][3] + m[1][0],
-	// 				   m[2][3] + m[2][0],
-	// 				   m[3][3] + m[3][0]);
-	// 	f.right = plane(m[0][3] - m[0][0],
-	// 					m[1][3] - m[1][0],
-	// 					m[2][3] - m[2][0],
-	// 					m[3][3] - m[3][0]);
-	// 	f.top = plane(m[0][3] - m[0][1],
-	// 				  m[1][3] - m[1][1],
-	// 				  m[2][3] - m[2][1],
-	// 				  m[3][3] - m[3][1]);
-	// 	f.bottom = plane(m[0][3] + m[0][1],
-	// 					 m[1][3] + m[1][1],
-	// 					 m[2][3] + m[2][1],
-	// 					 m[3][3] + m[3][1]);
-	// 	return f;
-	// }
-	// COPY(_camera);
-	// SER3(fov,nearPlane,farPlane);
+	// appendStat("render lighting", gt_.stop());
+	appendStat("render lighting cpu", t.stop());
+
+	glDepthMask(GL_TRUE);
+
+	// render particle
+	t.start();
+	// gt_.start();
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	particle_renderer::drawParticles(view, rot, proj);
+	// appendStat("render particles", gt_.stop());
+	appendStat("render particles", t.stop());
+
+	glDepthMask(GL_TRUE);
+}
+
+glm::mat4 _camera::getRotationMatrix()
+{
+	return glm::lookAt(glm::vec3(0.f), transform->forward(), transform->up());
+	// return glm::toMat4(glm::quatLookAtLH(transform->forward(), transform->up()));
+}
+glm::mat4 _camera::GetViewMatrix()
+{
+	return glm::translate(-transform->getPosition());
+}
+glm::mat4 _camera::getProjection()
+{
+	return glm::perspective(this->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.0001f, farPlane);
+}
+// _frustum _camera::getFrustum()
+// {
+// 	glm::mat4 m = getProjection() * getRotationMatrix() * GetViewMatrix();
+// 	f.left = plane(m[0][3] + m[0][0],
+// 				   m[1][3] + m[1][0],
+// 				   m[2][3] + m[2][0],
+// 				   m[3][3] + m[3][0]);
+// 	f.right = plane(m[0][3] - m[0][0],
+// 					m[1][3] - m[1][0],
+// 					m[2][3] - m[2][0],
+// 					m[3][3] - m[3][0]);
+// 	f.top = plane(m[0][3] - m[0][1],
+// 				  m[1][3] - m[1][1],
+// 				  m[2][3] - m[2][1],
+// 				  m[3][3] - m[3][1]);
+// 	f.bottom = plane(m[0][3] + m[0][1],
+// 					 m[1][3] + m[1][1],
+// 					 m[2][3] + m[2][1],
+// 					 m[3][3] + m[3][1]);
+// 	return f;
+// }
+// COPY(_camera);
+// SER3(fov,nearPlane,farPlane);
 // private:
 // };
 REGISTER_COMPONENT(_camera)

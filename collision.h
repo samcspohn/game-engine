@@ -30,7 +30,7 @@ struct AABB
     AABB(){};
     bool fits(const AABB &a)
     {
-        return (this->c.x - this->r.x < a.c.x - a.r.x && this->c.x + this->r.x > a.c.x + a.r.x) && (this->c.y - this->r.y < a.c.y - a.r.y && this->c.y + this->r.y > a.c.y + a.r.y) && (this->c.z - this->r.z < a.c.z - a.r.z && this->c.z + this->r.z > a.c.z + a.r.z);
+        return (this->c.x - this->r.x<a.c.x - a.r.x &&this->c.x + this->r.x> a.c.x + a.r.x) && (this->c.y - this->r.y<a.c.y - a.r.y &&this->c.y + this->r.y> a.c.y + a.r.y) && (this->c.z - this->r.z<a.c.z - a.r.z &&this->c.z + this->r.z> a.c.z + a.r.z);
     }
 };
 
@@ -82,13 +82,23 @@ struct OBB
     }
 };
 
-struct mesh
+struct MESH
 {
-    vector<glm::vec3> *points;
-    vector<uint> *tris;
+    vector<glm::vec3> points;
+    vector<uint> tris;
+    int32_t references;
     SER_HELPER()
     {
         ar &points &tris;
+    }
+};
+
+struct mesh
+{
+    MESH *m;
+    SER_HELPER()
+    {
+        ar &m;
     }
 };
 
@@ -267,8 +277,11 @@ int TestOBBOBB(OBB &a, OBB &b)
 
 // Intersect ray R(t) = p + t*d against AABB a. When intersecting,
 // return intersection distance tmin and point q of intersection
-int IntersectRayAABB(glm::vec3 p, glm::vec3 d, AABB2 a, float &tmin, glm::vec3 &q)
+bool IntersectRayAABB(glm::vec3 p, glm::vec3 d, AABB2 a, float &tmin, glm::vec3 &q)
 {
+    tmin = 0;
+    q = vec3();
+    d = normalize(d);
     tmin = 0.0f;          // set to -FLT_MAX to get first hit on line
     float tmax = FLT_MAX; // set to max distance ray can travel (for segment)
 
@@ -279,7 +292,7 @@ int IntersectRayAABB(glm::vec3 p, glm::vec3 d, AABB2 a, float &tmin, glm::vec3 &
         {
             // Ray is parallel to slab. No hit if origin not within slab
             if (p[i] < a.min[i] || p[i] > a.max[i])
-                return 0;
+                return false;
         }
         else
         {
@@ -297,13 +310,108 @@ int IntersectRayAABB(glm::vec3 p, glm::vec3 d, AABB2 a, float &tmin, glm::vec3 &
                 tmax = t2;
             // Exit with no collision as soon as slab intersection becomes empty
             if (tmin > tmax)
-                return 0;
+                return false;
         }
     }
     // Ray intersects all 3 slabs. Return point (q) and intersection t value (tmin)
     q = p + d * tmin;
-    return 1;
+    return tmin > 0.0f;
 }
+
+struct Ray
+{
+    Ray(const vec3 &orig, const vec3 &dir) : orig(orig), dir(dir)
+    {
+        invdir = 1.f / dir;
+        sign[0] = (invdir.x < 0);
+        sign[1] = (invdir.y < 0);
+        sign[2] = (invdir.z < 0);
+    }
+    vec3 orig, dir; // ray orig and dir
+    vec3 invdir;
+    int sign[3];
+};
+
+bool IntersectRayAABB2(const Ray &r, AABB2 a)
+{
+    vec3 bounds[2] = {a.min, a.max};
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+    tmin = (bounds[r.sign[0]].x - r.orig.x) * r.invdir.x;
+    tmax = (bounds[1 - r.sign[0]].x - r.orig.x) * r.invdir.x;
+    tymin = (bounds[r.sign[1]].y - r.orig.y) * r.invdir.y;
+    tymax = (bounds[1 - r.sign[1]].y - r.orig.y) * r.invdir.y;
+
+    if ((tmin > tymax) || (tymin > tmax))
+        return false;
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+
+    tzmin = (bounds[r.sign[2]].z - r.orig.z) * r.invdir.z;
+    tzmax = (bounds[1 - r.sign[2]].z - r.orig.z) * r.invdir.z;
+
+    if ((tmin > tzmax) || (tzmin > tmax))
+        return false;
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+
+    return true;
+}
+
+bool IntersectRayAABB3(const Ray &r, AABB2 a)
+{
+    float t = 0;
+    // r.dir is unit direction vector of ray
+    const vec3 &dirfrac = r.invdir;
+    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+    // r.org is origin of ray
+    float t1 = (a.min.x - r.orig.x) * dirfrac.x;
+    float t2 = (a.max.x - r.orig.x) * dirfrac.x;
+    float t3 = (a.min.y - r.orig.y) * dirfrac.y;
+    float t4 = (a.max.y - r.orig.y) * dirfrac.y;
+    float t5 = (a.min.z - r.orig.z) * dirfrac.z;
+    float t6 = (a.max.z - r.orig.z) * dirfrac.z;
+
+    float tmin = glm::max(glm::max(glm::min(t1, t2), glm::min(t3, t4)), glm::min(t5, t6));
+    float tmax = glm::min(glm::min(glm::max(t1, t2), glm::max(t3, t4)), glm::max(t5, t6));
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (tmax < 0)
+    {
+        t = tmax;
+        return false;
+    }
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmin > tmax)
+    {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+    return true;
+}
+
+// bool IntersectRayAABB4(AABB2 b, Ray r) {
+//     double tx1 = (b.min.x - r.x0.x)*r.n_inv.x;
+//     double tx2 = (b.max.x - r.x0.x)*r.n_inv.x;
+
+//     double tmin = min(tx1, tx2);
+//     double tmax = max(tx1, tx2);
+
+//     double ty1 = (b.min.y - r.x0.y)*r.n_inv.y;
+//     double ty2 = (b.max.y - r.x0.y)*r.n_inv.y;
+
+//     tmin = max(tmin, min(ty1, ty2));
+//     tmax = min(tmax, max(ty1, ty2));
+
+//     return tmax >= tmin;
+// }
 
 // int TestAABBOBB(AABB2& a, OBB& b){
 //      float ra, rb;
@@ -558,16 +666,16 @@ bool testMeshMesh(mesh &m1, // longer tris
 {
     vector<glm::vec3> tri1(3);
     vector<glm::vec3> tri2(3);
-    for (int i = 0; i < m1.tris->size(); i += 3)
+    for (int i = 0; i < m1.m->tris.size(); i += 3)
     {
-        tri1[0] = trans1 * vec4((*m1.points)[(*m1.tris)[i]], 1);
-        tri1[1] = trans1 * vec4((*m1.points)[(*m1.tris)[i + 1]], 1);
-        tri1[2] = trans1 * vec4((*m1.points)[(*m1.tris)[i + 2]], 1);
-        for (int j = 0; j < m2.tris->size(); j += 3)
+        tri1[0] = trans1 * vec4((m1.m->points)[(m1.m->tris)[i]], 1);
+        tri1[1] = trans1 * vec4((m1.m->points)[(m1.m->tris)[i + 1]], 1);
+        tri1[2] = trans1 * vec4((m1.m->points)[(m1.m->tris)[i + 2]], 1);
+        for (int j = 0; j < m2.m->tris.size(); j += 3)
         {
-            tri2[0] = trans2 * vec4((*m2.points)[(*m2.tris)[j]], 1);
-            tri2[1] = trans2 * vec4((*m2.points)[(*m2.tris)[j + 1]], 1);
-            tri2[2] = trans2 * vec4((*m2.points)[(*m2.tris)[j + 2]], 1);
+            tri2[0] = trans2 * vec4((m2.m->points)[(m2.m->tris)[j]], 1);
+            tri2[1] = trans2 * vec4((m2.m->points)[(m2.m->tris)[j + 1]], 1);
+            tri2[2] = trans2 * vec4((m2.m->points)[(m2.m->tris)[j + 2]], 1);
             if (IntersectTriangleTriangle(tri1, tri2, result))
             {
                 return true;
@@ -601,11 +709,12 @@ vector<uint> boxTris{
     4, 0, 3,
     4, 3, 7};
 
+MESH BOX_MESH{boxPoints, boxTris};
+
 bool testOBBMesh(OBB &o, const mat4 o_trans, mesh &m, const mat4 m_trans, glm::vec3 &result)
 {
     mesh o_m;
-    o_m.points = &boxPoints;
-    o_m.tris = &boxTris;
+    o_m.m = &BOX_MESH;
     return testMeshMesh(m, m_trans, o_m, o_trans, result);
 }
 
@@ -620,14 +729,14 @@ bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat 
     vector<glm::vec3> tri1(3);
     vector<glm::vec3> tri2(3);
     float t;
-    for (int i = 0; i < m.tris->size(); i += 3)
+    for (int i = 0; i < m.m->tris.size(); i += 3)
     {
         // tri1[0] = trans1 * vec4((*m1.points)[ (*m1.tris)[i]     ],1);
         // tri1[1] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 1] ],1);
         // tri1[2] = trans1 * vec4((*m1.points)[ (*m1.tris)[i + 2] ],1);
-        tri1[0] = (*m.points)[(*m.tris)[i]];
-        tri1[1] = (*m.points)[(*m.tris)[i + 1]];
-        tri1[2] = (*m.points)[(*m.tris)[i + 2]];
+        tri1[0] = (m.m->points)[(m.m->tris)[i]];
+        tri1[1] = (m.m->points)[(m.m->tris)[i + 1]];
+        tri1[2] = (m.m->points)[(m.m->tris)[i + 2]];
         if (IntersectSegmentTriangle(pos2, pos1, tri1[0], tri1[1], tri1[2], p1.x, p1.y, p1.z, t))
         {
             // result = mPos;
@@ -643,8 +752,7 @@ bool testPointOBB(point &p, OBB &o, glm::vec3 &result)
     glm::vec3 pos = glm::inverse(o.u) * (p.pos1 - o.c);
 
     mesh o_m;
-    o_m.points = &boxPoints;
-    o_m.tris = &boxTris;
+    o_m.m = &BOX_MESH;
     return testPointMesh(p, o_m, o.c, o.e, o.u, result);
     // if(abs(pos.x) < o.e.x &&
     //  abs(pos.y) < o.e.y &&

@@ -1,5 +1,7 @@
 #include "renderthread.h"
 #include <algorithm>
+#include <imgui/guizmo/ImGuizmo.h>
+// #include "physics.h"
 namespace fs = std::filesystem;
 
 using namespace std;
@@ -225,7 +227,7 @@ void load_game(const char *filename)
 
 inspectable *inspector = 0;
 ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-
+transform2 selcted_transform = -1;
 void renderTransform(transform2 t)
 {
 	static unordered_map<int, bool> selected;
@@ -234,7 +236,7 @@ void renderTransform(transform2 t)
 	{
 		flags |= ImGuiTreeNodeFlags_Selected;
 	}
-	if(t.getChildren().size() == 0)
+	if (t.getChildren().size() == 0)
 		flags |= ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Leaf;
 	bool open;
 	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
@@ -248,8 +250,8 @@ void renderTransform(transform2 t)
 		ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
 		ImGui::EndDragDropSource();
 	}
-	
-	if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())// mouseUp(clicked, t.id)) // mouse up
+
+	if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered()) // mouseUp(clicked, t.id)) // mouse up
 	{
 		if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
 			selected[t.id] = true;
@@ -258,6 +260,7 @@ void renderTransform(transform2 t)
 			selected.clear();
 			selected[t.id] = true;
 		}
+		selcted_transform.id = t.id;
 		inspector = t->gameObject();
 	}
 
@@ -284,7 +287,6 @@ void renderTransform(transform2 t)
 		ImGui::EndPopup();
 	}
 
-
 	if (open)
 	{
 		for (auto &i : t.getChildren())
@@ -298,7 +300,8 @@ hash<string> hasher;
 // string file_dragged;
 // string *file_dragged_ptr;
 
-void renderFile(string file){
+void renderFile(string file)
+{
 	static unordered_map<size_t, bool> file_slected;
 	string p = file;
 	size_t hash = hasher(file);
@@ -312,11 +315,11 @@ void renderFile(string file){
 	{
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 		{
-			ImGui::SetDragDropPayload(("FILE_DRAG_AND_DROP" + p.substr(p.find_first_of('.'))).c_str(), file.substr(2).c_str(), sizeof(char) * file.size() -1);
+			ImGui::SetDragDropPayload(("FILE_DRAG_AND_DROP" + p.substr(p.find_first_of('.'))).c_str(), file.substr(2).c_str(), sizeof(char) * file.size() - 1);
 			ImGui::EndDragDropSource();
 		}
 
-		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())// mouseUp(clicked, t.id)) // mouse up
+		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered()) // mouseUp(clicked, t.id)) // mouse up
 		{
 			if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
 				file_slected[hash] = true;
@@ -332,10 +335,8 @@ void renderFile(string file){
 
 void nav_f(string dir)
 {
-
 	if (ImGui::TreeNode(dir.substr(dir.find_last_of('/') + 1).c_str()))
 	{
-
 		vector<string> dirs;
 		vector<string> files;
 		for (const auto &entry : fs::directory_iterator(dir))
@@ -363,6 +364,7 @@ void nav_f(string dir)
 		ImGui::TreePop();
 	}
 }
+
 mutex transformLock;
 void dockspace()
 {
@@ -482,10 +484,11 @@ void dockspace()
 
 		ImGui::EndMenuBar();
 	}
-	ImGui::End();
 
+	bool editor_hov = false;
 	if (ImGui::Begin("Assets"))
 	{
+		editor_hov |= ImGui::IsWindowHovered();
 		static assets::asset *as;
 		ImGuiStyle &style = ImGui::GetStyle();
 		int buttons_count = 20;
@@ -584,6 +587,7 @@ void dockspace()
 
 	if (ImGui::Begin("Files"))
 	{
+		editor_hov |= ImGui::IsWindowHovered();
 		std::string path = ".";
 		// if (ImGui::TreeNode(dir.substr(dir.find_last_of('/')).c_str()))
 		// {
@@ -620,24 +624,75 @@ void dockspace()
 	}
 	if (ImGui::Begin("Inspector"))
 	{
+		editor_hov |= ImGui::IsWindowHovered();
 		if (inspector)
 			inspector->inspect();
 		ImGui::End();
 	}
 	if (ImGui::Begin("Hierarchy"))
 	{
+		editor_hov |= ImGui::IsWindowHovered();
 		transformLock.lock();
 		renderTransform(root2);
 		transformLock.unlock();
 		ImGui::End();
 	}
+	if(selcted_transform.id != -1){
+
+		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::SetDrawlist();
+		float ww = ImGui::GetWindowWidth();
+		float wy = ImGui::GetWindowHeight();
+		ImGuizmo::SetRect(0.0f,0.0f, ww,wy);
+		mat4 view = COMPONENT_LIST(_camera)->get(0)->rot * COMPONENT_LIST(_camera)->get(0)->view;
+		mat4 proj = COMPONENT_LIST(_camera)->get(0)->proj;
+		mat4 trans = selcted_transform.getModel();
+
+		ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(trans));
+
+		if (ImGuizmo::IsUsing())
+		{
+
+			vec3 pos;
+			vec3 scale;
+			quat rot;
+			vec3 skew;
+			vec4 pers;
+			glm::decompose(trans, scale, rot, pos, skew, pers);
+
+			selcted_transform.setPosition(pos);
+		}
+	}
+
 	if (ImGui::Begin("info"))
 	{
+		editor_hov |= ImGui::IsWindowHovered();
 		ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
 		ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
 		ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
 		ImGui::End();
 	}
+
+	if (ImGui::IsMouseClicked(0) && !editor_hov)
+	{
+		ImVec2 mp = ImGui::GetMousePos();
+		ImVec2 sz = ImGui::GetWindowViewport()->Size;
+		cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
+		vec2 sz_2 = {sz.x, sz.y};
+		sz_2 /= 2.f;
+
+		_camera *c = COMPONENT_LIST(_camera)->get(0);
+		mat3 per = c->getProjection();
+
+		vec3 p = c->transform->getPosition();
+		vec3 d = c->screenPosToRay({mp.x, mp.y});
+
+		mainThreadWork.push_back(new function<void()>([=]() {
+			guiRayCast(p, d);
+		}));
+	}
+	ImGui::End();
+
 }
 tbb::concurrent_queue<glm::vec3> floating_origin;
 atomic<bool> transformsBuffered;
@@ -961,6 +1016,7 @@ void renderThreadFunc()
 				ImGui_ImplOpenGL3_NewFrame();
 				ImGui_ImplGlfw_NewFrame();
 				ImGui::NewFrame();
+				ImGuizmo::BeginFrame();
 
 				ImGui::PushFont(font_default);
 

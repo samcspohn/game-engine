@@ -8,22 +8,24 @@ project(game_engine)
 # add the executable
 
 include_directories(${CMAKE_SOURCE_DIR}/imgui)
-add_subdirectory(imgui)
+# add_subdirectory(imgui)
 
 # add_subdirectory(bullet)
 # add_library(game libBulletSoftBody.a)
 # add_library(game libBulletDynamics.a)
 # add_library(game libBulletCollision.a)
 # add_library(game libLinearMath.a)
-file(GLOB SOURCES "*.cpp")
+
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW)
+file(GLOB SOURCES "*.cpp"  "imgui/*.cpp" "imgui/guizmo/*.cpp")
  
 add_executable(game ${SOURCES})
 
-target_link_libraries(game imgui)
-target_link_libraries(game imgui_glfw)
-target_link_libraries(game imgui_opengl3)
-target_link_libraries(game imgui_draw)
-target_link_libraries(game imgui_widgets)
+# target_link_libraries(game imgui)
+# target_link_libraries(game imgui_glfw)
+# target_link_libraries(game imgui_opengl3)
+# target_link_libraries(game imgui_draw)
+# target_link_libraries(game imgui_widgets)
 target_link_libraries(game GL)
 target_link_libraries(game GLU)
 target_link_libraries(game GLEW)

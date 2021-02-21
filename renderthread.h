@@ -94,3 +94,5 @@ extern tbb::concurrent_queue<glm::vec3> floating_origin;
 extern atomic<bool> transformsBuffered;
 void renderThreadFunc();
 extern mutex transformLock;
+
+bool guiRayCast(vec3 p, vec3 d);

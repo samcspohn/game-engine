@@ -427,8 +427,11 @@ struct octree
 	}
 };
 
-map<int, octree> collisionLayers;
-map<int, set<int>> collisionGraph;
+namespace physics_manager{
+	map<int, octree> collisionLayers;
+	map<int, set<int>> collisionGraph;
+	tbb::concurrent_unordered_map<Mesh*,MESH> meshes;
+}
 // octree* Octree = new octree();
 
 int colid = 0;
@@ -458,19 +461,25 @@ void collider::onDestroy()
 {
 	// if (posInTree)
 	// 	posInTree->valid = false;
+	if(this->type == colType::meshType){
+		this->m.m->references++;
+	}
 	this->valid = false;
 }
-
+using namespace physics_manager;
 void collider::setMesh(Mesh *_m)
 {
 	// cd.type = 2;
 	this->type = meshType;
 	if(_m == 0){
-		this->m.points = &boxPoints;
-		this->m.tris = &boxTris;
+		this->m.m = &BOX_MESH;
 	}else{
-		this->m.points = &_m->vertices;
-		this->m.tris = &_m->indices;
+		if(meshes.find(_m) == meshes.end()){
+			meshes[_m].points = _m->vertices;
+			meshes[_m].tris = _m->indices;
+		}
+		this->m.m = &meshes.at(_m);
+		this->m.m->references++;
 	}
 }
 void collider::setPoint()
@@ -693,7 +702,7 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		case meshType:
 			mesh *m1;
 			mesh *m2;
-			if (a->m.tris->size() <= b->m.tris->size())
+			if (a->m.m->tris.size() <= b->m.m->tris.size())
 			{
 				m1 = &a->m;
 				m2 = &b->m;
@@ -766,4 +775,27 @@ void collider::onEdit(){
             ImGui::EndPopup();
         }
 	RENDER(dim);
+}
+
+string to_string(vec3 v){
+	return to_string(v.x) + "," + to_string(v.y) + "," + to_string(v.z);
+}
+bool raycast(vec3 p, vec3 dir){
+
+    auto colliders = COMPONENT_LIST(collider);
+	cout << "p: " + to_string(p) + " dir: " + to_string(dir) + '\n';
+	Ray ray(p,dir);
+	parralelfor(colliders->size(),{
+		float min;
+		vec3 q;
+		if(colliders->getv(i) && IntersectRayAABB3(ray,colliders->get(i)->a)){
+			// cout << string(to_string(glm::length(colliders->get(i)->a.min - colliders->get(i)->a.max)) + '\n');
+			string name = colliders->get(i)->transform->name();
+			if(name == ""){
+				name = "game object " + to_string(colliders->get(i)->transform.id);
+			}
+			cout << name + '\n';// + " inters: " + to_string(IntersectRayAABB(p,dir,colliders->get(i)->a,min,q)) + "tmin: " + to_string(min) + '\n';
+		}
+	})
+
 }

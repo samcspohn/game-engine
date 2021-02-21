@@ -151,9 +151,9 @@ public:
 		return data.size();
 	}
 
-	component *get(int i)
+	t *get(int i)
 	{
-		return (component *)&(data.data[i]);
+		return (t *)&(data.data[i]);
 	}
 	bool getv(int i)
 	{

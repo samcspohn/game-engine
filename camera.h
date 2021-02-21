@@ -89,6 +89,7 @@ public:
 	glm::mat4 getRotationMatrix();
 	glm::mat4 GetViewMatrix();
 	glm::mat4 getProjection();
+	glm::vec3 screenPosToRay(glm::vec2 mp);
 	// _frustum getFrustum();
 	COPY(_camera);
 	SER3(fov,nearPlane,farPlane);

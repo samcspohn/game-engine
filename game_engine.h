@@ -71,7 +71,7 @@ class editor_sc : public component
 {
 	float speed = 3.f;
 	bool cursorReleased = true;
-	float fov = 80;
+	float fov = radians(80.f);
 	// vector<gun *> guns;
 
 public:
@@ -113,12 +113,12 @@ public:
 			transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
 			transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
 			// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
-			transform->rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
-			transform->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * fov / 80 * -0.4f);
+			transform->rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * fov / radians(80.f) * -0.4f);
+			transform->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * fov / radians(80.f) * -0.4f);
 			transform->lookat(transform->forward(), vec3(0, 1, 0));
 
-			fov -= Input.Mouse.getScroll() * 5;
-			fov = glm::clamp(fov, 5.f, 80.f);
+			fov -= Input.Mouse.getScroll() * radians(5.f);
+			fov = glm::clamp(fov, radians(5.f), radians(80.f));
 			transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
 
 			if (Input.getKeyDown(GLFW_KEY_R))
@@ -147,6 +147,11 @@ public:
 	SER3(speed, fov, ammo_proto);
 };
 REGISTER_COMPONENT(editor_sc)
+
+
+bool guiRayCast(vec3 p, vec3 d){
+	return raycast(p,d);
+}
 
 void init()
 {
