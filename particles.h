@@ -247,9 +247,9 @@ namespace particle_renderer
 
     void end();
 
-    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec2 screen);
+    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen);
 
-    void drawParticles(mat4 view, mat4 rot, mat4 proj);
+    void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos);
 }; // namespace particle_renderer
 
 void prepParticles();

@@ -20,9 +20,6 @@ extern mutex gameLock;
 extern glm::vec3 vec3forward;
 extern glm::vec3 vec3up;
 extern glm::vec3 vec3right;
-extern glm::vec3 mainCamPos;
-extern glm::vec3 mainCamUp;
-extern glm::vec3 MainCamForward;
 
 struct _transform
 {

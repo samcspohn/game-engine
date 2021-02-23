@@ -271,10 +271,6 @@ void _camera::prepRender(Shader &matProgram)
 	__rendererMetas->bindData(8);
 	__rendererMetas->bufferData();
 
-	mainCamPos = transform->getPosition();
-	MainCamForward = transform->forward();
-	mainCamUp = transform->up();
-
 	matProgram.use();
 	matProgram.setMat4("view", view);
 	matProgram.setMat4("vRot", rot);
@@ -461,7 +457,7 @@ void _camera::render()
 	glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	particle_renderer::drawParticles(view, rot, proj);
+	particle_renderer::drawParticles(view, rot, proj, pos);
 	// appendStat("render particles", gt_.stop());
 	appendStat("render particles", t.stop());
 

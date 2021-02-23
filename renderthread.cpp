@@ -638,6 +638,7 @@ void dockspace()
 		transformLock.unlock();
 		ImGui::End();
 	}
+	bool using_gizmo = false;
 	if(selected_transform.id != -1){
 
 
@@ -647,7 +648,9 @@ void dockspace()
 		float wy = ImGui::GetWindowHeight();
 		ImGuizmo::SetRect(0.0f,0.0f, ww,wy);
 		mat4 view = COMPONENT_LIST(_camera)->get(0)->rot * COMPONENT_LIST(_camera)->get(0)->view;
+		// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
 		mat4 proj = COMPONENT_LIST(_camera)->get(0)->proj;
+		// mat4 proj = glm::perspective(COMPONENT_LIST(_camera)->get(0)->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.01f, 1e6f);
 		mat4 trans = selected_transform.getModel();
 		static auto guizmo_mode = ImGuizmo::LOCAL;
 		static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
@@ -680,6 +683,7 @@ void dockspace()
 			selected_transform.setPosition(pos);
 			selected_transform.setRotation(rot);
 			selected_transform.setScale(scale);
+			using_gizmo = true;
 		}
 	
 	}
@@ -695,7 +699,7 @@ void dockspace()
 		ImGui::End();
 	}
 
-	if (ImGui::IsMouseClicked(0) && !editor_hov)
+	if (ImGui::IsMouseClicked(0) && !editor_hov && !using_gizmo)
 	{
 		ImVec2 mp = ImGui::GetMousePos();
 		ImVec2 sz = ImGui::GetWindowViewport()->Size;
@@ -1033,7 +1037,7 @@ void renderThreadFunc()
 					t.start();
 					if (!c.lockFrustum)
 						particle_renderer::setCamCull(c.camInv, c.cullpos);
-					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, mainCamPos, c.screen);
+					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, c.pos,c.dir,c.up, c.screen);
 					appendStat("particles sort", t.stop());
 
 					c.render();

@@ -675,9 +675,9 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
     glUniform1fv(glGetUniformLocation(particleProgram.Program, "time"), 1, &t);
     glUniform1fv(glGetUniformLocation(particleProgram.Program, "deltaTime"), 1, &Time.deltaTime);
-    glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-    glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
-    glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+    // glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+    // glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
+    // glUniform3f(glGetUniformLocation(particleProgram.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
     glUniform1i(glGetUniformLocation(particleProgram.Program, "max_particles"), MAX_PARTICLES);
     GLuint fo = glGetUniformLocation(particleProgram.Program, "floatingOrigin");
     glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
@@ -686,9 +686,9 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
     glUniform1fv(glGetUniformLocation(particleProgram2.Program, "time"), 1, &t);
     glUniform1fv(glGetUniformLocation(particleProgram2.Program, "deltaTime"), 1, &Time.deltaTime);
-    glUniform3f(glGetUniformLocation(particleProgram2.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-    glUniform3f(glGetUniformLocation(particleProgram2.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
-    glUniform3f(glGetUniformLocation(particleProgram2.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+    // glUniform3f(glGetUniformLocation(particleProgram2.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+    // glUniform3f(glGetUniformLocation(particleProgram2.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
+    // glUniform3f(glGetUniformLocation(particleProgram2.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
     glUniform1i(glGetUniformLocation(particleProgram2.Program, "max_particles"), MAX_PARTICLES);
     fo = glGetUniformLocation(particleProgram2.Program, "floatingOrigin");
     glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
@@ -697,9 +697,9 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 
     glUniform1fv(glGetUniformLocation(particleProgram3.Program, "time"), 1, &t);
     glUniform1fv(glGetUniformLocation(particleProgram3.Program, "deltaTime"), 1, &Time.deltaTime);
-    glUniform3f(glGetUniformLocation(particleProgram3.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
-    glUniform3f(glGetUniformLocation(particleProgram3.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
-    glUniform3f(glGetUniformLocation(particleProgram3.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
+    // glUniform3f(glGetUniformLocation(particleProgram3.Program, "cameraPosition"), mainCamPos.x, mainCamPos.y, mainCamPos.z);
+    // glUniform3f(glGetUniformLocation(particleProgram3.Program, "cameraUp"), mainCamUp.x, mainCamUp.y, mainCamUp.z);
+    // glUniform3f(glGetUniformLocation(particleProgram3.Program, "cameraForward"), MainCamForward.x, MainCamForward.y, MainCamForward.z);
     glUniform1i(glGetUniformLocation(particleProgram3.Program, "max_particles"), MAX_PARTICLES);
     fo = glGetUniformLocation(particleProgram3.Program, "floatingOrigin");
     glUniform3f(fo, floatingOrigin.x, floatingOrigin.y, floatingOrigin.z);
@@ -843,16 +843,16 @@ struct d{\
         output.close();
     }
 
-    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec2 screen)
+    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen)
     {
         timer t1;
         particleSortProgram.use();
 
         particleSortProgram.setMat3("camInv", camInv);
         particleSortProgram.setVec3("camPos", camPos);
-        particleSortProgram.setVec3("camp", camP);
-        particleSortProgram.setVec3("cameraForward", MainCamForward);
-        particleSortProgram.setVec3("cameraUp", mainCamUp);
+        particleSortProgram.setVec3("camp", camPos);
+        particleSortProgram.setVec3("cameraForward", camForw);
+        particleSortProgram.setVec3("cameraUp", camup);
         particleSortProgram.setFloat("x_size", screen.x);
         particleSortProgram.setFloat("y_size", screen.y);
 
@@ -893,7 +893,7 @@ struct d{\
        
     }
 
-    void drawParticles(mat4 view, mat4 rot, mat4 proj)
+    void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos)
     {
 
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
@@ -904,7 +904,7 @@ struct d{\
         // GLuint matPView = glGetUniformLocation(particleShader.s->shader->Program, "view");
         particleShader->setMat4("vRot", rot);
         particleShader->setMat4("projection", proj);
-        particleShader->setVec3("cameraPos", mainCamPos);
+        particleShader->setVec3("cameraPos", camPos);
         particleShader->setFloat("aspectRatio", (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
 
         particleShader->setFloat("FC", 2.0 / log2(farplane + 1));

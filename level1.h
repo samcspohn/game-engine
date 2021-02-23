@@ -1303,10 +1303,10 @@ int level1(bool load)
 		registerProto(ground);
 
 		// terrainWidth = 1024;
-		terrainWidth = 64;
+		terrainWidth = 128;
 		// terrainWidth = 32;
 		// int terrainsDim = 0;
-		int terrainsDim = 8;
+		int terrainsDim = 2;
 		// int terrainsDim = 16;
 
 		// tree_rend->setCullSizes(0.04f, INFINITY);

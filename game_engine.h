@@ -194,6 +194,30 @@ void init()
 
 }
 
+void physicsUpdate(float dt){
+	timer stopWatch;
+	static float time = 0;
+	time += dt;
+	if(time > 1.f /  30.f){
+
+		componentStorage<collider> *cb = COMPONENT_LIST(collider);
+		stopWatch.start();
+		cb->update();
+		appendStat(cb->name + "--update", stopWatch.stop());
+		stopWatch.start();
+		_parallel_for(cb->data, [&](int i) {
+			if (cb->data.valid[i])
+			{
+				cb->data.data[i].midUpdate();
+			}
+		});
+		appendStat(cb->name + "--mid_update", stopWatch.stop());
+		stopWatch.start();
+		cb->lateUpdate();
+		appendStat(cb->name + "--late_update", stopWatch.stop());
+		time -= (1.f / 30.f);
+	}
+}
 void run()
 {
 	timer stopWatch;
@@ -205,6 +229,7 @@ void run()
 	timer gameLoopTotal;
 	timer gameLoopMain;
 	timer frameCap;
+	int32 entities = 0;
 	float tot = gameLoopTotal.stop();
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
@@ -225,21 +250,22 @@ void run()
 		// doLoopIteration(gameEngineComponents, false);
 
 		/////////////////////////////////////////////////
-		componentStorage<collider> *cb = COMPONENT_LIST(collider);
-		stopWatch.start();
-		cb->update();
-		appendStat(cb->name + "--update", stopWatch.stop());
-		stopWatch.start();
-		_parallel_for(cb->data, [&](int i) {
-			if (cb->data.valid[i])
-			{
-				cb->data.data[i].midUpdate();
-			}
-		});
-		appendStat(cb->name + "--mid_update", stopWatch.stop());
-		stopWatch.start();
-		cb->lateUpdate();
-		appendStat(cb->name + "--late_update", stopWatch.stop());
+		physicsUpdate(Time.unscaledDeltaTime);
+		// componentStorage<collider> *cb = COMPONENT_LIST(collider);
+		// stopWatch.start();
+		// cb->update();
+		// appendStat(cb->name + "--update", stopWatch.stop());
+		// stopWatch.start();
+		// _parallel_for(cb->data, [&](int i) {
+		// 	if (cb->data.valid[i])
+		// 	{
+		// 		cb->data.data[i].midUpdate();
+		// 	}
+		// });
+		// appendStat(cb->name + "--mid_update", stopWatch.stop());
+		// stopWatch.start();
+		// cb->lateUpdate();
+		// appendStat(cb->name + "--late_update", stopWatch.stop());
 		//////////////////////////////////////////////////
 
 		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
@@ -247,6 +273,7 @@ void run()
 		stopWatch.start();
 		tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
 		toDestroy.clear();
+		entities = Transforms.getCount();
 		transformLock.unlock();
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
@@ -281,8 +308,8 @@ void run()
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
 
-		this_thread::sleep_for((1000.f / 30.f - frameCap.stop()) * 1ms);
-		frameCap.start();
+		// this_thread::sleep_for((1000.f / 30.f - frameCap.stop()) * 1ms);
+		// frameCap.start();
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
 
@@ -294,6 +321,7 @@ void run()
 			c.screen = c.getScreen();
 			c.pos = c.transform->getPosition();
 			c.dir = c.transform->forward();
+			c.up = c.transform->up();
 			if (!c.lockFrustum)
 			{
 				c.camInv = glm::mat3(c.rot);
@@ -471,4 +499,5 @@ void run()
 		cout << i->first << " -- avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << endl;
 	}
 	cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
+	cout << "entities : " << entities << endl;
 }

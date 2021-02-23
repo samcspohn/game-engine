@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "camera.h"
 using namespace std;
 
 class audioMeta;
@@ -327,5 +328,5 @@ REGISTER_COMPONENT(audiosource)
 void audio::play(glm::vec3 pos, float pitch, float gain)
 {
     auto s = audioSourceManager::getSource();
-    s->play(pos - mainCamPos, *this, pitch, gain);
+    s->play(pos - COMPONENT_LIST(_camera)->get(0)->pos, *this, pitch, gain);
 }

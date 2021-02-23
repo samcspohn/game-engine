@@ -9,9 +9,6 @@ mutex gameLock;
 glm::vec3 vec3forward(0, 0, 1);
 glm::vec3 vec3up(0, 1, 0);
 glm::vec3 vec3right(1, 0, 0);
-glm::vec3 mainCamPos;
-glm::vec3 mainCamUp;
-glm::vec3 MainCamForward;
 
 atomic<int> GPU_TRANSFORMS_UPDATES_itr;
 deque_heap<_transform> TRANSFORMS;
@@ -137,7 +134,7 @@ void setRotationChild(transform2 tc, glm::quat& rot, glm::vec3& pos){
 	for(transform2 t : tc->getChildren()){
 		setRotationChild(t,rot, pos);
 	}
-	
+
 	#undef posi
 	#undef rotat
 }
