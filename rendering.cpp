@@ -92,6 +92,16 @@ namespace modelManager
 _model::_model(){
 	// this->makeUnique();
 };
+
+set<int> toDestroy_models;
+_model::~_model(){
+}
+
+void _model::destroy(){
+	if(this->meta() && this->meta()->unique){
+		toDestroy_models.emplace(this->m);
+	}
+}
 _model::_model(string fileName)
 {
 	std::hash<string> x;
@@ -110,13 +120,13 @@ _model::_model(string fileName)
 	}
 }
 
-vector<Mesh> &_model::meshes()
+vector<Mesh*> &_model::meshes()
 {
 	return modelManager::models_id[m]->model->meshes;
 }
 Mesh &_model::mesh()
 {
-	return modelManager::models_id[m]->model->meshes[0];
+	return *modelManager::models_id[m]->model->meshes[0];
 }
 void _model::makeUnique()
 {
@@ -305,7 +315,7 @@ void _modelMeta::getBounds()
 		bounds = glm::vec3(0);
 		for (auto &i : this->model->meshes)
 		{
-			for (auto &j : i.vertices)
+			for (auto &j : i->vertices)
 			{
 				bounds = glm::vec3(glm::max(abs(bounds.x), abs(j.x)),
 								   glm::max(abs(bounds.y), abs(j.y)),
@@ -482,14 +492,28 @@ namespace batchManager
 		// 		j.second.elements.clear();
 		// 	}
 		// }
+		for(auto &m : toDestroy_models){
+			delete modelManager::models_id.at(m);
+            modelManager::models_id.at(m) = 0;
+		}
+		toDestroy_models.clear();
+		for (auto i : renderingManager::shader_model_vector)
+		{
+			for (auto j : i.second)
+			{
+				if(j.second->m.meta() == 0){
+					delete renderingManager::shader_model_vector[i.first][j.first];
+					renderingManager::shader_model_vector[i.first].erase(j.first);
+				}
+			}
+		}
 		for (auto &i : renderingManager::shader_model_vector)
 		{
 			for (auto &j : i.second)
 			{
-				// int shader = j.second->s.s->shader->Program;
 				for (auto &k : j.second->m.meshes())
 				{
-					batchManager::batches.back()[j.second->s][k.textures][j.second] = &k;
+					batchManager::batches.back()[j.second->s][k->textures][j.second] = k;
 					// batchElement b;
 					// b.m = &k;
 					// b.r = j.second;
@@ -742,9 +766,9 @@ bool intersectRayModel(glm::vec3 &p, glm::vec3 &d, Model *M, glm::vec3 &q, float
 	bool ret = false;
 	float closest = numeric_limits<float>().max();
 	glm::vec3 r{closest};
-	for (Mesh &m : M->meshes)
+	for (Mesh *m : M->meshes)
 	{
-		if (intersectRayMesh(p, d, &m, q, dist, model))
+		if (intersectRayMesh(p, d, m, q, dist, model))
 		{
 
 			dist = glm::length(p - q);

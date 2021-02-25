@@ -423,9 +423,17 @@ public:
 		}
 		t_ = (1.f / turrets[0]->getRateOfFire()) / turrets.size();
 	}
+	void reset(){
+		turrets.clear();
+		onStart();
+	}
 
 public:
-	void onEdit() {}
+	void onEdit() {
+		if(ImGui::Button("reset")){
+			reset();
+		}
+	}
 	//UPDATE(gunManager,update);
 	COPY(gunManager);
 	SER0();
@@ -684,7 +692,7 @@ public:
 		crosshair->img = crosshairtex;
 		reticule->adopt(crosshair);
 		cam = transform->gameObject()->getComponent<_camera>();
-		fov = cam->fov;
+		fov = cam->c->fov;
 	}
 	void update()
 	{
@@ -696,7 +704,7 @@ public:
 		// transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
 		fov -= Input.Mouse.getScroll() * 5;
 		fov = glm::clamp(fov, 5.f, 80.f);
-		transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
+		transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
 
 		if (framecount++ > 1)
 		{
@@ -706,7 +714,7 @@ public:
 			particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
 			shipVelocity->contents = "speed: " + to_string(ship_vel);
 			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
-			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject()->getComponent<_camera>()->lockFrustum);
+			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject()->getComponent<_camera>()->c->lockFrustum);
 			reticule->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
 			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240, SCREEN_HEIGHT / 2 - 200);
 			// colCounter->contents = "collisions: " + to_string(colCount);
@@ -830,7 +838,7 @@ public:
 
 		fov -= Input.Mouse.getScroll() * 5;
 		fov = glm::clamp(fov, 5.f, 80.f);
-		transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
+		transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
 
 		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
 		{
@@ -1185,15 +1193,15 @@ int level1(bool load)
 		// 	g->getComponent<physicsObject>()->init(vec3(0));
 		// }
 
-		game_object *player = new game_object();
-		player->transform.name() = "player";
-		auto playerCam = player->addComponent<_camera>();
-		playerCam->fov = radians(80.f);
-		playerCam->farPlane = 1e32f;
-		playerCam->nearPlane = 0.00001f;
-		player->addComponent<gun>();
-		player->addComponent<gun>();
-		player->addComponent<editor_sc>()->ammo_proto = game_object_prototype(bomb_proto);
+		// game_object *player = new game_object();
+		// player->transform.name() = "player";
+		// auto playerCam = player->addComponent<_camera>();
+		// playerCam->c->fov = radians(80.f);
+		// playerCam->c->farPlane = 1e32f;
+		// playerCam->c->nearPlane = 0.00001f;
+		// player->addComponent<gun>();
+		// player->addComponent<gun>();
+		// player->addComponent<editor_sc>()->ammo_proto = game_object_prototype(bomb_proto);
 
 		// player->addComponent<Light>()->setColor(glm::vec3(3, 3, 20));
 		// player->getComponent<Light>()->setConstant(1.f);

@@ -22,6 +22,7 @@
 #include "helper1.h"
 #include <string>
 #include "serialize.h"
+#include <memory>
 
 using namespace std;
 
@@ -37,9 +38,10 @@ public:
     Model(string path);
     Model(const Model& M);
     Model();
+    ~Model();
     
 	int numVerts=0;
-    vector<Mesh> meshes;
+    vector<Mesh*> meshes;
     void loadModel();
     SER_HELPER(){
         ar & modelPath;
@@ -52,7 +54,7 @@ private:
     // Processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode( aiNode* node, const aiScene* scene );
     
-    Mesh processMesh( aiMesh *mesh, const aiScene *scene );
+    Mesh *processMesh( aiMesh *mesh, const aiScene *scene );
     
     // Checks all material textures of a given type and loads the textures if they're not loaded yet.
     // The required info is returned as a Texture struct.

@@ -84,7 +84,9 @@ class _model
 public:
 	_model();
 	_model(string fileName);
-	vector<Mesh> &meshes();
+	~_model();
+	void destroy();
+	vector<Mesh*> &meshes();
 	Mesh &mesh();
 	void makeUnique();
 	void makeProcedural();

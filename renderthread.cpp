@@ -17,6 +17,42 @@ atomic<bool> renderDone(false);
 atomic<bool> renderThreadReady(false);
 bool recieveMouse = true;
 
+editor* m_editor;
+
+void editor::translate(glm::vec3 v){
+	this->position += this->rotation * v;
+}
+void editor::rotate(glm::vec3 axis, float radians){
+	this->rotation = glm::rotate(this->rotation, radians, axis);
+}
+
+void editor::update(){
+
+	if( Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2)){
+
+		translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+		translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+		translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+		// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+		rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c.fov / radians(80.f) * -0.4f);
+		rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * c.fov / radians(80.f) * -0.4f);
+		
+		rotation = quatLookAtLH(rotation * vec3(0,0,1), vec3(0, 1, 0));
+
+		c.fov -= Input.Mouse.getScroll() * radians(5.f);
+		c.fov = glm::clamp(c.fov, radians(5.f), radians(80.f));
+
+		if (Input.getKeyDown(GLFW_KEY_R))
+		{
+			speed *= 2;
+		}
+		if (Input.getKeyDown(GLFW_KEY_F))
+ 		{
+			speed /= 2;
+		}
+	}
+	c.update(position,rotation);
+}
 /////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -433,16 +469,20 @@ void dockspace()
 			if (ImGui::MenuItem("Open", NULL))
 			{
 				inspector = 0;
-				char file[1024];
+				char file[1024] = {};
 				FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
 				fgets(file, 1024, f);
 				working_file = file;
 				string fi(file);
 				fi = fi.substr(0, fi.size() - 1);
-				mainThreadWork.push_back(new function<void()>([=]() {
-					load_game(fi.c_str());
-				}));
-				cout << "loaded: " << file << endl;
+				if(fi == "")
+					cout << "cancelled load" << endl;
+				else{
+					mainThreadWork.push_back(new function<void()>([=]() {
+						load_game(fi.c_str());
+					}));
+					cout << "loaded: " << file << endl;
+				}
 			}
 			if (ImGui::MenuItem("save", NULL))
 			{
@@ -451,12 +491,16 @@ void dockspace()
 				fgets(file, 1024, f);
 				string fi(file);
 				fi = fi.substr(0, fi.size() - 1);
-				mainThreadWork.push_back(new function<void()>([=]() {
-					save_game(fi.c_str());
-				}));
+				if(fi == "")
+					cout << "cancelled save" << endl;
+				else{
+					mainThreadWork.push_back(new function<void()>([=]() {
+						save_game(fi.c_str());
+					}));
 
-				working_file = file;
-				cout << "saved: " << file << endl;
+					working_file = file;
+					cout << "saved: " << file << endl;
+				}
 			}
 			// ImGui::Separator();
 
@@ -464,25 +508,6 @@ void dockspace()
 			// 	*p_open = false;
 			ImGui::EndMenu();
 		}
-		// HelpMarker(
-		// 	"When docking is enabled, you can ALWAYS dock MOST window into another! Try it now!"
-		// 	"\n\n"
-		// 	" > if io.ConfigDockingWithShift==false (default):"
-		// 	"\n"
-		// 	"   drag windows from title bar to dock"
-		// 	"\n"
-		// 	" > if io.ConfigDockingWithShift==true:"
-		// 	"\n"
-		// 	"   drag windows from anywhere and hold Shift to dock"
-		// 	"\n\n"
-		// 	"This demo app has nothing to do with it!"
-		// 	"\n\n"
-		// 	"This demo app only demonstrate the use of ImGui::DockSpace() which allows you to manually create a docking node _within_ another window. This is useful so you can decorate your main application window (e.g. with a menu bar)."
-		// 	"\n\n"
-		// 	"ImGui::DockSpace() comes with one hard constraint: it needs to be submitted _before_ any window which may be docked into it. Therefore, if you use a dock spot as the central point of your application, you'll probably want it to be part of the very first window you are submitting to imgui every frame."
-		// 	"\n\n"
-		// 	"(NB: because of this constraint, the implicit \"Debug\" window can not be docked into an explicit DockSpace() node, because that window is submitted as part of the NewFrame() call. An easy workaround is that you can create your own implicit \"Debug##2\" window after calling DockSpace() and leave it in the window stack for anyone to use.)");
-
 		ImGui::EndMenuBar();
 	}
 
@@ -639,34 +664,34 @@ void dockspace()
 		ImGui::End();
 	}
 	bool using_gizmo = false;
-	if(selected_transform.id != -1){
-
+	if (selected_transform.id != -1)
+	{
 
 		ImGuizmo::SetOrthographic(false);
 		ImGuizmo::SetDrawlist();
 		float ww = ImGui::GetWindowWidth();
 		float wy = ImGui::GetWindowHeight();
-		ImGuizmo::SetRect(0.0f,0.0f, ww,wy);
-		mat4 view = COMPONENT_LIST(_camera)->get(0)->rot * COMPONENT_LIST(_camera)->get(0)->view;
+		ImGuizmo::SetRect(0.0f, 0.0f, ww, wy);
+		mat4 view = m_editor->c.rot * m_editor->c.view;
 		// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
-		mat4 proj = COMPONENT_LIST(_camera)->get(0)->proj;
+		mat4 proj = m_editor->c.proj;
 		// mat4 proj = glm::perspective(COMPONENT_LIST(_camera)->get(0)->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.01f, 1e6f);
 		mat4 trans = selected_transform.getModel();
 		static auto guizmo_mode = ImGuizmo::LOCAL;
 		static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
-		if(!ImGui::IsMouseDown(1)){
-			if(ImGui::IsKeyPressed(GLFW_KEY_T))
+		if (!ImGui::IsMouseDown(1))
+		{
+			if (ImGui::IsKeyPressed(GLFW_KEY_T))
 				guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
-			if(ImGui::IsKeyPressed(GLFW_KEY_R))
+			if (ImGui::IsKeyPressed(GLFW_KEY_R))
 				guizmo_transform = ImGuizmo::OPERATION::ROTATE;
-			if(ImGui::IsKeyPressed(GLFW_KEY_S))
+			if (ImGui::IsKeyPressed(GLFW_KEY_S))
 				guizmo_transform = ImGuizmo::OPERATION::SCALE;
-			if(ImGui::IsKeyPressed(GLFW_KEY_W))
+			if (ImGui::IsKeyPressed(GLFW_KEY_W))
 				guizmo_mode = ImGuizmo::WORLD;
-			if(ImGui::IsKeyPressed(GLFW_KEY_L))
+			if (ImGui::IsKeyPressed(GLFW_KEY_L))
 				guizmo_mode = ImGuizmo::LOCAL;
 		}
-
 
 		ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans));
 
@@ -685,10 +710,7 @@ void dockspace()
 			selected_transform.setScale(scale);
 			using_gizmo = true;
 		}
-	
 	}
-	
-	
 
 	if (ImGui::Begin("info"))
 	{
@@ -707,15 +729,16 @@ void dockspace()
 		vec2 sz_2 = {sz.x, sz.y};
 		sz_2 /= 2.f;
 
-		_camera *c = COMPONENT_LIST(_camera)->get(0);
-		mat3 per = c->getProjection();
+		camera& c = m_editor->c;
+		mat3 per = c.getProjection();
 
-		vec3 p = c->transform->getPosition();
-		vec3 d = c->screenPosToRay({mp.x, mp.y});
+		vec3 p = m_editor->position;
+		vec3 d = c.screenPosToRay({mp.x, mp.y});
 
 		mainThreadWork.push_back(new function<void()>([=]() {
 			transform2 r = renderRaycast(p, d);
-			if(r.id != -1){
+			if (r.id != -1)
+			{
 				inspector = r->gameObject();
 				selected_transform = r;
 				selected_transforms.clear();
@@ -724,7 +747,88 @@ void dockspace()
 		}));
 	}
 	ImGui::End();
+}
 
+void printData()
+{
+
+	GLint glIntv;
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &glIntv);
+	cout << "max storage buffer bindings: " << glIntv << endl;
+
+	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &glIntv);
+	cout << "max compute buffers: " << glIntv << endl;
+
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &glIntv);
+	cout << "max buffer size: " << glIntv << endl;
+
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &glIntv);
+	cout << "max compute work group count x: " << glIntv << endl;
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &glIntv);
+	cout << "max compute work group count y: " << glIntv << endl;
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &glIntv);
+	cout << "max compute work group count z: " << glIntv << endl;
+
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &glIntv);
+	cout << "max compute work group size x: " << glIntv << endl;
+
+	GLint maxAtt = 0;
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAtt);
+	cout << "max color attachements: " << maxAtt << endl;
+}
+void enabelDebug()
+{
+
+	// During init, enable debug output
+	// glEnable(GL_DEBUG_OUTPUT);
+	// glDebugMessageCallback(MessageCallback, 0);
+}
+
+void bindWindowCallbacks(GLFWwindow *window)
+{
+	glfwSetWindowSizeCallback(window, window_size_callback);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetKeyCallback(window, KeyCallback);
+	glfwSetCursorPosCallback(window, MouseCallback);
+	glfwSetScrollCallback(window, ScrollCallback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	glfwSetWindowCloseCallback(window, window_close_callback);
+}
+
+void initiliazeStuff(){
+// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
+	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
+	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
+
+	__RENDERERS_in = new gpu_vector<__renderer>();
+	__RENDERERS_in->ownStorage();
+
+	__renderer_offsets = new gpu_vector<GLuint>();
+	__renderer_offsets->ownStorage();
+	__rendererMetas = new gpu_vector<__renderMeta>();
+	__rendererMetas->ownStorage();
+	initTransform();
+	vector<glm::vec3> ughh(10);
+	vector<glm::quat> ughh2(10);
+	gpu_position_updates->bufferData(ughh);
+	gpu_rotation_updates->bufferData(ughh2);
+	gpu_scale_updates->bufferData(ughh);
+
+	initParticles();
+	particle_renderer::init();
+	lighting::init();
+
+	renderTexture colors;
+	colors.scr_width = SCREEN_WIDTH;
+	colors.scr_height = SCREEN_HEIGHT;
+	colors.init();
+
+	renderDone.store(true);
+	renderThreadReady.store(true);
+
+	// _atomics = new gpu_vector<uint>();
+	_block_sums = new gpu_vector<GLuint>();
+	_histo = new gpu_vector<GLuint>();
 }
 tbb::concurrent_queue<glm::vec3> floating_origin;
 atomic<bool> transformsBuffered;
@@ -755,9 +859,7 @@ void renderThreadFunc()
 		throw EXIT_FAILURE;
 	}
 
-	/////////////////////////////////////////////////////////////
 	///////////////////////// GUI ////////////////////////////////
-	/////////////////////////////////////////////////////////////
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -779,117 +881,30 @@ void renderThreadFunc()
 	IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
 
 	/////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////
 
 	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 	if (hideMouse)
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	glfwSetWindowSizeCallback(window, window_size_callback);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetKeyCallback(window, KeyCallback);
-	glfwSetCursorPosCallback(window, MouseCallback);
-	glfwSetScrollCallback(window, ScrollCallback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	glfwSetWindowCloseCallback(window, window_close_callback);
-
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+	bindWindowCallbacks(window);
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0);
-	//glewExperimental = GL_TRUE;
-
 	if (glewInit() != GLEW_OK)
 	{
 		cout << "failed to initialize GLEW" << endl;
-
 		throw EXIT_FAILURE;
 	}
-
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	printData();
 
-	// glEnable(GLEW_ARB_compute_shader);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_COMPONENT32);
-	glEnable(GL_DEPTH_CLAMP);
-
-	glEnable(GL_CULL_FACE);
-
-	Shader matProgram("res/shaders/transform.comp");
-
-	GLint glIntv;
-	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &glIntv);
-	cout << "max storage buffer bindings: " << glIntv << endl;
-
-	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &glIntv);
-	cout << "max compute buffers: " << glIntv << endl;
-
-	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &glIntv);
-	cout << "max buffer size: " << glIntv << endl;
-
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &glIntv);
-	cout << "max compute work group count x: " << glIntv << endl;
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &glIntv);
-	cout << "max compute work group count y: " << glIntv << endl;
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &glIntv);
-	cout << "max compute work group count z: " << glIntv << endl;
-
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &glIntv);
-	cout << "max compute work group size x: " << glIntv << endl;
-
-	GLint maxAtt = 0;
-	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAtt);
-	cout << "max color attachements: " << maxAtt << endl;
-
-	// // During init, enable debug output
-	// glEnable(GL_DEBUG_OUTPUT);
-	// glDebugMessageCallback(MessageCallback, 0);
-
-	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
-	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
-	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
-
-	__RENDERERS_in = new gpu_vector<__renderer>();
-	__RENDERERS_in->ownStorage();
-	// __RENDERERS_keys_in = new gpu_vector<GLuint>();
-	// __RENDERERS_keys_in->ownStorage();
-	// __RENDERERS_out = new gpu_vector_proxy<__renderer>();
-	// __RENDERERS_keys_out = new gpu_vector_proxy<GLuint>();
-
-	__renderer_offsets = new gpu_vector<GLuint>();
-	__renderer_offsets->ownStorage();
-	__rendererMetas = new gpu_vector<__renderMeta>();
-	__rendererMetas->ownStorage();
-	initTransform();
-	vector<glm::vec3> ughh(10);
-	vector<glm::quat> ughh2(10);
-	gpu_position_updates->bufferData(ughh);
-	gpu_rotation_updates->bufferData(ughh2);
-	gpu_scale_updates->bufferData(ughh);
-
-	initParticles();
-	particle_renderer::init();
-	lighting::init();
+	initiliazeStuff();
 	timer stopWatch;
 
-	renderTexture colors;
-	colors.scr_width = SCREEN_WIDTH;
-	colors.scr_height = SCREEN_HEIGHT;
-	colors.init();
-
-	renderDone.store(true);
-	renderThreadReady.store(true);
-
-	// _atomics = new gpu_vector<uint>();
-	_block_sums = new gpu_vector<GLuint>();
-	_histo = new gpu_vector<GLuint>();
-
+	Shader matProgram("res/shaders/transform.comp");
 	sorter<__renderer> renderer_sorter("renderer", "struct renderer {\
 	uint transform;\
 	uint id;\
-};",
-									   "transform");
+};","transform");
+
 
 	while (true)
 	{
@@ -928,15 +943,7 @@ void renderThreadFunc()
 
 				gt_.start();
 				cpuTimer.start();
-				// buffer and allocate data
-				// if (Transforms.density() > 0.5)
-				// {
-				// 	GPU_TRANSFORMS->bufferData(TRANSFORMS_TO_BUFFER);
-				// }
-				// else
-				// {
 				matProgram.use();
-
 				GPU_TRANSFORMS->grow(Transforms.size());
 				transformIds->bindData(6);
 				GPU_TRANSFORMS->bindData(0);
@@ -948,11 +955,7 @@ void renderThreadFunc()
 				for (int i = 0; i < concurrency::numThreads; i++)
 				{
 					transformIds->bufferData(transformIdThreadcache[i][0]);
-					// transformIds->bindData(6);
-
 					gpu_position_updates->bufferData(positionsToBuffer[i]);
-					// gpu_position_updates->bindData(8);
-
 					matProgram.setUint("num", transformIdThreadcache[i][0].size());
 					glDispatchCompute(transformIdThreadcache[i][0].size() / 64 + 1, 1, 1);
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
@@ -962,10 +965,7 @@ void renderThreadFunc()
 				for (int i = 0; i < concurrency::numThreads; i++)
 				{
 					transformIds->bufferData(transformIdThreadcache[i][1]);
-					// transformIds->bindData(6);
 					gpu_rotation_updates->bufferData(rotationsToBuffer[i]);
-					// gpu_rotation_updates->bindData(9);
-
 					matProgram.setUint("num", transformIdThreadcache[i][1].size());
 					glDispatchCompute(transformIdThreadcache[i][1].size() / 64 + 1, 1, 1);
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
@@ -975,31 +975,11 @@ void renderThreadFunc()
 				for (int i = 0; i < concurrency::numThreads; i++)
 				{
 					transformIds->bufferData(transformIdThreadcache[i][2]);
-					// transformIds->bindData(6);
 					gpu_scale_updates->bufferData(scalesToBuffer[i]);
-					// gpu_scale_updates->bindData(10);
-
 					matProgram.setUint("num", transformIdThreadcache[i][2].size());
 					glDispatchCompute(transformIdThreadcache[i][2].size() / 64 + 1, 1, 1);
 					glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 				}
-
-				// transformIds->bufferData(transformIdsToBuffer);
-				// GPU_TRANSFORMS_UPDATES->bufferData(transformsToBuffer);
-
-				// matProgram.use();
-				// // bind buffers
-				// GPU_TRANSFORMS->bindData(0);
-				// GPU_TRANSFORMS_UPDATES->bindData(7);
-
-				// matProgram.setInt("stage", -1);
-				// matProgram.setUint("num", transformsToBuffer.size());
-				// glDispatchCompute(transformsToBuffer.size() / 64 + 1, 1, 1);
-				// glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
-				// }
-
-				// //sort renderers
-				// gt_.start();
 				__RENDERERS_in->bufferData();
 				// __RENDERERS_out->tryRealloc(__RENDERERS_in->size());
 				// renderer_sorter.sort(__RENDERERS_in->size(),__RENDERERS_in,__RENDERERS_out);
@@ -1012,10 +992,6 @@ void renderThreadFunc()
 				// cpuTimer.start();
 				uint emitterInitCount = emitterInits.size();
 				prepParticles();
-
-				// _camera::initPrepRender(matProgram);
-				// appendStat("render init cpu", cpuTimer.stop());
-
 				lightingManager::gpu_pointLights->bufferData();
 
 				gt_.start();
@@ -1026,21 +1002,12 @@ void renderThreadFunc()
 
 				for (_camera &c : cameras->data.data)
 				{
-					gt_.start();
-					cpuTimer.start();
-					c.prepRender(matProgram);
-					appendStat("matrix compute cpu", cpuTimer.stop());
-					appendStat("matrix compute", gt_.stop());
-
-					// sort particles
-					timer t;
-					t.start();
-					if (!c.lockFrustum)
-						particle_renderer::setCamCull(c.camInv, c.cullpos);
-					particle_renderer::sortParticles(c.proj * c.rot * c.view, c.rot * c.view, c.pos,c.dir,c.up, c.screen);
-					appendStat("particles sort", t.stop());
-
-					c.render();
+					c.c->prepRender(matProgram);
+					c.c->render();
+				}
+				if(m_editor){
+					m_editor->c.prepRender(matProgram);
+					m_editor->c.render();
 				}
 
 				///////////////////////// GUI ////////////////////////////////

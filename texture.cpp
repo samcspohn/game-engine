@@ -11,128 +11,145 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <map>
+#include "helper1.h"
 
 using namespace std;
 
 namespace textureManager
 {
-    map<string,TextureMeta*> textures;
-    
+    map<string, TextureMeta *> textures;
+
 } // namespace textureManager
 
-void _texture::load(string path){
+void _texture::load(string path)
+{
     auto tm = textureManager::textures.find(path);
-    if(tm != textureManager::textures.end()){
+    if (tm != textureManager::textures.end())
+    {
         this->t = tm->second;
     }
-    else{
-        textureManager::textures.insert(std::pair<string,TextureMeta*>(path, new TextureMeta()));
+    else
+    {
+        textureManager::textures.insert(std::pair<string, TextureMeta *>(path, new TextureMeta()));
         textureManager::textures.at(path)->load(path);
         this->t = textureManager::textures.at(path);
     }
 }
 
-void _texture::namedTexture(string name){
-    if(textureManager::textures.find(name) == textureManager::textures.end())
-        textureManager::textures.insert(std::pair<string,TextureMeta*>(name, new TextureMeta()));
+void _texture::namedTexture(string name)
+{
+    if (textureManager::textures.find(name) == textureManager::textures.end())
+        textureManager::textures.insert(std::pair<string, TextureMeta *>(name, new TextureMeta()));
     this->t = textureManager::textures.at(name);
-
 }
 
-void _texture::load(string path, string type){
+void _texture::load(string path, string type)
+{
     auto tm = textureManager::textures.find(path);
-    if(tm != textureManager::textures.end()){
+    if (tm != textureManager::textures.end())
+    {
         this->t = tm->second;
     }
-    else{
-        textureManager::textures.insert(std::pair<string,TextureMeta*>(path, new TextureMeta(path,type)));
+    else
+    {
+        textureManager::textures.insert(std::pair<string, TextureMeta *>(path, new TextureMeta(path, type)));
         this->t = textureManager::textures.at(path);
     }
 }
 
-void _texture::setType(string type){
+void _texture::setType(string type)
+{
     this->t->type = type;
 }
 
-_texture getNamedTexture(string name){
+_texture getNamedTexture(string name)
+{
     _texture t;
     t.namedTexture(name);
     return t;
 }
 
-TextureMeta::TextureMeta(){}
-TextureMeta::TextureMeta( string path, string type){
+TextureMeta::TextureMeta() {}
+TextureMeta::TextureMeta(string path, string type)
+{
     //Generate texture ID and load texture data
-    glGenTextures( 1, &id );
-    
-    unsigned char *image = SOIL_load_image( path.c_str( ), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA );
-    
-    // Assign texture to ID
-    glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image );
-    glGenerateMipmap( GL_TEXTURE_2D );
-    
-    // Parameters
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture( GL_TEXTURE_2D, 0 );
-    SOIL_free_image_data( image );
+
+    unsigned char *image = SOIL_load_image(path.c_str(), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA);
+
+    enqueRenderJob([=]() {
+        glGenTextures(1, &id);
+        // Assign texture to ID
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        // Parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        SOIL_free_image_data(image);
+    });
 
     this->type = type;
     this->path = path;
 }
-void TextureMeta::load(string path){
-    glGenTextures( 1, &id );
-    
-    unsigned char *image = SOIL_load_image( path.c_str( ), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA );
-    
+void TextureMeta::load(string path)
+{
+
+    unsigned char *image = SOIL_load_image(path.c_str(), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA);
+
+enqueRenderJob([=]() {
+    glGenTextures(1, &id);
     // Assign texture to ID
-    glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image );
-    glGenerateMipmap( GL_TEXTURE_2D );
-    
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     // Parameters
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture( GL_TEXTURE_2D, 0 );
-    SOIL_free_image_data( image );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    SOIL_free_image_data(image);
+
+});
 }
 
-void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float* data = 0){
+void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float *data = 0)
+{
     // Assign texture to ID
-    glGenTextures( 1, &id );
-    
+
     dims.x = width;
     dims.y = height;
-    glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, (format == GL_RED ?  GL_R32F : format), dims.x, dims.y, 0, format, type, data );
-    glGenerateMipmap( GL_TEXTURE_2D );
-    
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, (format == GL_RED ? GL_R32F : format), dims.x, dims.y, 0, format, type, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     // Parameters
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void TextureMeta::write(float* data, GLenum format, GLenum type){
-    glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, (format == GL_RED ?  GL_R32F : format), dims.x, dims.y, 0, format, type, data );
-    glGenerateMipmap( GL_TEXTURE_2D );
-    
-    // Parameters
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture( GL_TEXTURE_2D, 0 );
-}
+void TextureMeta::write(float *data, GLenum format, GLenum type)
+{
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, (format == GL_RED ? GL_R32F : format), dims.x, dims.y, 0, format, type, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
+    // Parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
 // GLint TextureFromFile( const char *path, string directory )
 // {
@@ -141,16 +158,16 @@ void TextureMeta::write(float* data, GLenum format, GLenum type){
 //     filename = directory + '/' + filename;
 //     GLuint textureID;
 //     glGenTextures( 1, &textureID );
-    
+
 //     int width, height;
-    
+
 //     unsigned char *image = SOIL_load_image( filename.c_str( ), &width, &height, 0, SOIL_LOAD_RGBA );
-    
+
 //     // Assign texture to ID
 //     glBindTexture( GL_TEXTURE_2D, textureID );
 //     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image );
 //     glGenerateMipmap( GL_TEXTURE_2D );
-    
+
 //     // Parameters
 //     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 //     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
@@ -158,6 +175,6 @@ void TextureMeta::write(float* data, GLenum format, GLenum type){
 //     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 //     glBindTexture( GL_TEXTURE_2D, 0 );
 //     SOIL_free_image_data( image );
-    
+
 //     return textureID;
 // }

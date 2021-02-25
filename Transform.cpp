@@ -361,7 +361,7 @@ void loadTransforms(IARCHIVE &ia)
 	// Transforms.scales[0] = _t.scale;
 	// Transforms.meta[0].parent = transform2(_t.parent);
 	////////////////////////////////////
-	for (int i = 1; i < Transforms.size(); i++)
+	for (int i = 0; i < Transforms.size(); i++)
 	{
 		// f.read((char *)&_t, sizeof(_transform));
 		transform2 t(i);

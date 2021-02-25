@@ -119,7 +119,7 @@ public:
 
 			fov -= Input.Mouse.getScroll() * radians(5.f);
 			fov = glm::clamp(fov, radians(5.f), radians(80.f));
-			transform->gameObject()->getComponent<_camera>()->fov = fov; //Input.Mouse.getScroll();
+			transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
 
 			if (Input.getKeyDown(GLFW_KEY_R))
 			{
@@ -148,9 +148,9 @@ public:
 };
 REGISTER_COMPONENT(editor_sc)
 
-
-bool guiRayCast(vec3 p, vec3 d){
-	return raycast(p,d);
+bool guiRayCast(vec3 p, vec3 d)
+{
+	return raycast(p, d);
 }
 
 void init()
@@ -177,11 +177,15 @@ void init()
 	rotationsToBuffer = vector<vector<glm::quat>>(concurrency::numThreads);
 	scalesToBuffer = vector<vector<glm::vec3>>(concurrency::numThreads);
 
+	m_editor = new editor();
+	m_editor->c.fov = radians(80.f);
+	m_editor->c.farPlane = 1e32f;
+	m_editor->c.nearPlane = 0.00001f;
+
 	// load_game("");
 
 	// auto default_cube = new game_object();
 	// default_cube->addComponent<_renderer>()->set(_shader("res/shaders/model.vert", "res/shaders/model.frag"),_model("res/models/cube/cube.obj"));
-
 
 	// game_object *player = new game_object();
 	// player->transform.name() = "editor";
@@ -190,15 +194,15 @@ void init()
 	// playerCam->farPlane = 1e32f;
 	// playerCam->nearPlane = 0.00001f;
 	// player->addComponent<editor_sc>();//->ammo_proto = game_object_prototype(bomb_proto);
-	
-
 }
 
-void physicsUpdate(float dt){
+void physicsUpdate(float dt)
+{
 	timer stopWatch;
 	static float time = 0;
 	time += dt;
-	if(time > 1.f /  30.f){
+	if (time > 1.f / 30.f)
+	{
 
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
 		stopWatch.start();
@@ -234,7 +238,8 @@ void run()
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
-		for(auto& i : mainThreadWork){
+		for (auto &i : mainThreadWork)
+		{
 			(*i)();
 			delete i;
 		}
@@ -244,31 +249,19 @@ void run()
 		gameLoopMain.start();
 		// scripting
 		transformLock.lock();
-		doLoopIteration(ComponentRegistry.gameComponents);
-		for (auto &i : physics_manager::collisionGraph)
-			physics_manager::collisionLayers[i.first].clear();
-		// doLoopIteration(gameEngineComponents, false);
+		if (false)
+		{
 
-		/////////////////////////////////////////////////
-		physicsUpdate(Time.unscaledDeltaTime);
-		// componentStorage<collider> *cb = COMPONENT_LIST(collider);
-		// stopWatch.start();
-		// cb->update();
-		// appendStat(cb->name + "--update", stopWatch.stop());
-		// stopWatch.start();
-		// _parallel_for(cb->data, [&](int i) {
-		// 	if (cb->data.valid[i])
-		// 	{
-		// 		cb->data.data[i].midUpdate();
-		// 	}
-		// });
-		// appendStat(cb->name + "--mid_update", stopWatch.stop());
-		// stopWatch.start();
-		// cb->lateUpdate();
-		// appendStat(cb->name + "--late_update", stopWatch.stop());
-		//////////////////////////////////////////////////
+			doLoopIteration(ComponentRegistry.gameComponents);
+			for (auto &i : physics_manager::collisionGraph)
+				physics_manager::collisionLayers[i.first].clear();
+			// doLoopIteration(gameEngineComponents, false);
 
-		audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
+			/////////////////////////////////////////////////
+			physicsUpdate(Time.unscaledDeltaTime);
+		}
+		if (COMPONENT_LIST(_camera)->size())
+			audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
 
 		stopWatch.start();
 		tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
@@ -278,24 +271,30 @@ void run()
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
 
-
 		auto cameras = COMPONENT_LIST(_camera);
 		auto colliders = COMPONENT_LIST(collider);
 
-		glm::vec3 fo = cameras->get(0)->transform.getPosition();
-		if (glm::length2(fo) > 1e80)
+		if (COMPONENT_LIST(_camera)->size())
 		{
-			floating_origin.push(fo);
-			_parallel_for(Transforms, [&](int i) {
-				Transforms.positions[i] -= fo;
-				Transforms.updates[i].pos = true;
-			});
-			_parallel_for(*colliders, [&](int i) {
-				if (colliders->data.valid[i] && colliders->data.data[i].type == colType::pointType)
-				{
-					colliders->data.data[i].p.pos1 -= fo;
-				}
-			});
+			glm::vec3 fo = cameras->get(0)->transform.getPosition();
+			if (glm::length2(fo) > 1e80)
+			{
+				floating_origin.push(fo);
+				_parallel_for(Transforms, [&](int i) {
+					Transforms.positions[i] -= fo;
+					Transforms.updates[i].pos = true;
+				});
+				_parallel_for(*colliders, [&](int i) {
+					if (colliders->data.valid[i] && colliders->data.data[i].type == colType::pointType)
+					{
+						colliders->data.data[i].p.pos1 -= fo;
+					}
+				});
+			}
+			else
+			{
+				floating_origin.push(vec3(0));
+			}
 		}
 		else
 		{
@@ -303,7 +302,7 @@ void run()
 		}
 
 		waitForRenderJob([]() { updateTiming(); });
-
+		waitForRenderJob([](){ batchManager::updateBatches(); });
 		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
@@ -315,26 +314,16 @@ void run()
 
 		for (_camera &c : cameras->data.data)
 		{
-			c.view = c.GetViewMatrix();
-			c.rot = c.getRotationMatrix();
-			c.proj = c.getProjection();
-			c.screen = c.getScreen();
-			c.pos = c.transform->getPosition();
-			c.dir = c.transform->forward();
-			c.up = c.transform->up();
-			if (!c.lockFrustum)
-			{
-				c.camInv = glm::mat3(c.rot);
-				c.cullpos = c.pos;
-			}
+			c.c->update(c.transform->getPosition(), c.transform.getRotation());
 		}
+		m_editor->update();
+
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();
 		int __renderersSize = 0;
 		// int __rendererOffsetsSize = 0;
 		__renderer_offsets->storage->clear();
 		__rendererMetas->storage->clear();
-		batchManager::updateBatches();
 		__renderMeta rm;
 		// rm.min = 0;
 		// rm.max = 1e32f;
@@ -435,8 +424,7 @@ void run()
 						}
 					}
 				}
-			}
-		);
+			});
 		appendStat("copy buffers", stopWatch.stop());
 
 		////////////////////////////////////// set up emitter init buffer //////////////////////////////////////
@@ -456,7 +444,7 @@ void run()
 		////////////////////////////////////// cull objects //////////////////////////////////////
 		if (Input.getKeyDown(GLFW_KEY_B))
 		{
-			cameras->data.data.front().lockFrustum = !cameras->data.data.front().lockFrustum;
+			cameras->data.data.front().c->lockFrustum = !cameras->data.data.front().c->lockFrustum;
 		}
 
 		renderJob *rj = new renderJob();
@@ -469,8 +457,8 @@ void run()
 
 		tot = gameLoopTotal.stop();
 		appendStat("game loop total", tot);
-		
 	}
+	delete m_editor;
 
 	// log("end of program");
 	waitForRenderJob([&]() {});

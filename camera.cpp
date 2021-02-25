@@ -80,7 +80,7 @@ void makeBillboard(_model m, _texture t, _renderer *r)
 		glm::vec3 vert(-INFINITY);
 		for (auto &i : m.meshes())
 		{
-			for (auto v : i.vertices)
+			for (auto v : i->vertices)
 			{
 				// v = v * glm::mat3(glm::rotate(glm::radians(-90.f), vec3(1,0,0)));
 				if (vert.x < v.x)
@@ -99,7 +99,7 @@ void makeBillboard(_model m, _texture t, _renderer *r)
 		glm::vec3 vert(INFINITY);
 		for (auto &i : m.meshes())
 		{
-			for (auto v : i.vertices)
+			for (auto v : i->vertices)
 			{
 				// v = v * glm::mat3(glm::rotate(glm::radians(-90.f), vec3(1,0,0)));
 				if (vert.x > v.x)
@@ -116,7 +116,7 @@ void makeBillboard(_model m, _texture t, _renderer *r)
 	}();
 	bill.makeProcedural();
 	waitForRenderJob([&]() {
-		bill.meshes().push_back(Mesh());
+		bill.meshes().push_back(new Mesh());
 		bill.mesh().vertices = {glm::vec3(min.x, max.y, 0.0f), glm::vec3(min.x, min.y, 0.0f), glm::vec3(max.x, max.y, 0.0f), glm::vec3(max.x, min.y, 0.0f)};
 
 		// for(auto& i : bill.mesh().vertices){
@@ -170,13 +170,13 @@ void makeBillboard(_model m, _texture t, _renderer *r)
 		for (auto &mes : m.meshes())
 		{
 
-			billBoardGenerator.ref().bindTextures(mes.textures);
-			glBindVertexArray(mes.VAO);
-			glDrawElements(GL_TRIANGLES, mes.indices.size(), GL_UNSIGNED_INT, 0);
+			billBoardGenerator.ref().bindTextures(mes->textures);
+			glBindVertexArray(mes->VAO);
+			glDrawElements(GL_TRIANGLES, mes->indices.size(), GL_UNSIGNED_INT, 0);
 
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
-			mes.textures.unbind();
+			mes->textures.unbind();
 		}
 
 		t.t->id = gBuffer.getTexture("gAlbedoSpec");
@@ -196,39 +196,10 @@ lightVolume lv;
 // {
 // public:
 // _camera::_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
-_camera::_camera(){};
-
-void _camera::onEdit()
+camera::camera()
 {
-	RENDER(fov);
-	RENDER(nearPlane);
-	RENDER(farPlane);
-}
-glm::vec3 _camera::screenPosToRay(glm::vec2 mp)
-{
-
-	float mouseX = mp.x / (SCREEN_WIDTH * 0.5f) - 1.0f;
-	float mouseY = mp.y / (SCREEN_HEIGHT * 0.5f) - 1.0f;
-
-	glm::mat4 invVP = glm::inverse(this->getProjection() * this->getRotationMatrix());
-	glm::vec4 screenPos = glm::vec4(mouseX, -mouseY, 1.0f, 1.0f);
-	glm::vec4 worldPos = invVP * screenPos;
-
-	return glm::normalize(glm::vec3(worldPos));
-}
-glm::vec2 _camera::getScreen()
-{
-	return glm::vec2(glm::tan(fov / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(fov / 2));
-}
-
-int _camera::order()
-{
-	return 1 - 2;
-}
-
-void _camera::onStart()
-{
-	waitForRenderJob([&]() {
+	inited = false;
+	enqueRenderJob([&]() {
 		if (lv.vertices.size() == 0)
 		{
 			lightVolumeModel = _model("res/models/cube/cube.obj");
@@ -247,18 +218,74 @@ void _camera::onStart()
 		gBuffer.addColorAttachment("gNormal", renderTextureType::FLOAT, 2);
 		gBuffer.addDepthBuffer();
 		gBuffer.finalize();
+		inited = true;
 	});
 	_shaderLightingPass = _shader("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
 	_quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
-}
-void _camera::onDestroy()
+};
+
+camera::~camera()
 {
 	waitForRenderJob([&]() {
 		gBuffer.destroy();
 	});
 }
-void _camera::prepRender(Shader &matProgram)
+void _camera::onEdit()
 {
+	RENDER(c->fov);
+	RENDER(c->nearPlane);
+	RENDER(c->farPlane);
+}
+glm::vec3 camera::screenPosToRay(glm::vec2 mp)
+{
+
+	float mouseX = mp.x / (SCREEN_WIDTH * 0.5f) - 1.0f;
+	float mouseY = mp.y / (SCREEN_HEIGHT * 0.5f) - 1.0f;
+
+	glm::mat4 invVP = glm::inverse(this->getProjection() * this->getRotationMatrix());
+	glm::vec4 screenPos = glm::vec4(mouseX, -mouseY, 1.0f, 1.0f);
+	glm::vec4 worldPos = invVP * screenPos;
+
+	return glm::normalize(glm::vec3(worldPos));
+}
+glm::vec2 camera::getScreen()
+{
+	return glm::vec2(glm::tan(fov / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(fov / 2));
+}
+
+// int _camera::order()
+// {
+// 	return 1 - 2;
+// }
+
+void _camera::onStart()
+{
+	c = new camera();
+}
+void _camera::onDestroy()
+{
+	delete c;
+}
+void camera::update(glm::vec3 position, glm::quat rotation){
+		this->pos = position;
+		this->dir = rotation * vec3(0,0,1);
+		this->up = rotation * vec3(0,1,0);
+		this->view = this->GetViewMatrix();
+		this->rot = this->getRotationMatrix();
+		this->proj = this->getProjection();
+		this->screen = this->getScreen();
+		if (!this->lockFrustum)
+		{
+			this->camInv = glm::mat3(this->rot);
+			this->cullpos = this->pos;
+		}
+}
+void camera::prepRender(Shader &matProgram)
+{
+	gpuTimer gt_;
+	timer cpuTimer;
+	gt_.start();
+	cpuTimer.start();
 
 	_rendererOffsets = *(__renderer_offsets->storage);
 
@@ -279,15 +306,26 @@ void _camera::prepRender(Shader &matProgram)
 	matProgram.setInt("stage", 1);
 	matProgram.setMat3("camInv", camInv);
 	matProgram.setVec3("cullPos", cullpos);
-	matProgram.setVec3("camUp", transform->up());
+	matProgram.setVec3("camUp", up);
 	matProgram.setVec2("screen", screen);
 	matProgram.setUint("num", __RENDERERS_in->size());
 
 	glDispatchCompute(__RENDERERS_in->size() / 64 + 1, 1, 1);
 	glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
 	__renderer_offsets->retrieveData();
+
+	appendStat("matrix compute cpu", cpuTimer.stop());
+	appendStat("matrix compute", gt_.stop());
+
+	// sort particles
+	timer t;
+	t.start();
+	if (!lockFrustum)
+		particle_renderer::setCamCull(camInv, cullpos);
+	particle_renderer::sortParticles(proj * rot * view, rot * view, pos, dir, up, screen);
+	appendStat("particles sort", t.stop());
 }
-void _camera::render()
+void camera::render()
 {
 	// _shader wireFrame("res/shaders/terrainShader/terrain.vert",
 	// 		  "res/shaders/terrainShader/terrain.tesc",
@@ -296,6 +334,8 @@ void _camera::render()
 	// 		  "res/shaders/terrainShader/terrain.frag");
 
 	// vector<GLuint>& _rendererOffsets = *(__renderer_offsets->storage);
+	if (!inited)
+		return;
 	gpuTimer t;
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	glCullFace(GL_BACK);
@@ -326,33 +366,6 @@ void _camera::render()
 		glm::mat4 vp = proj * rot;
 		currShader->setMat4("vp", vp);
 
-		// if (currShader == wireFrame.s->shader)
-		// {
-		// 	_texture t = getNamedTexture("noise");
-		// 	currShader->setTexture(0,"noise",t.t->id);
-		// 	for (auto &j : i.second)
-		// 	{
-		// 		for (auto &k : j.second)
-		// 		{
-		// 			int count = __renderer_offsets->storage->at(counter) - _rendererOffsets[counter];
-		// 			if (count > 0)
-		// 			{
-		// 				currShader->setUint("matrixOffset", _rendererOffsets[counter]);
-		// 				glBindVertexArray(k.second->VAO);
-		// 				glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
-
-		// 				glBindBuffer(GL_ARRAY_BUFFER, 0);
-		// 				glBindVertexArray(0);
-		// 			}
-		// 			++counter;
-		// 		}
-		// 	}
-		// 	glActiveTexture( GL_TEXTURE0 );
-		// 	glBindTexture( GL_TEXTURE_2D, 0 );
-
-		// }
-		// else
-		// {
 		for (auto &j : i.second)
 		{
 			texArray ta = j.first;
@@ -464,16 +477,16 @@ void _camera::render()
 	glDepthMask(GL_TRUE);
 }
 
-glm::mat4 _camera::getRotationMatrix()
+glm::mat4 camera::getRotationMatrix()
 {
-	return glm::lookAt(glm::vec3(0.f), transform->forward(), transform->up());
+	return glm::lookAt(glm::vec3(0.f), dir, up);
 	// return glm::toMat4(glm::quatLookAtLH(transform->forward(), transform->up()));
 }
-glm::mat4 _camera::GetViewMatrix()
+glm::mat4 camera::GetViewMatrix()
 {
-	return glm::translate(-transform->getPosition());
+	return glm::translate(-pos);
 }
-glm::mat4 _camera::getProjection()
+glm::mat4 camera::getProjection()
 {
 	return glm::perspective(this->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.0001f, farPlane);
 }

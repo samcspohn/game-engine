@@ -11,7 +11,7 @@ bool Model::ready()
         return false;
     for (auto &i : this->meshes)
     {
-        if (!i.ready)
+        if (!i->ready)
             return false;
     }
     return true;
@@ -21,7 +21,7 @@ bool Model::ready()
 Model::Model(string path)
 {
     modelPath = path;
-    waitForRenderJob([&]() { loadModel(modelPath); });
+    loadModel(modelPath);
 }
 Model::Model(const Model &M)
 {
@@ -30,13 +30,22 @@ Model::Model(const Model &M)
     // this->textures_loaded = M.textures_loaded;
     for (auto &i : M.meshes)
     {
-        this->meshes.push_back(Mesh(i));
+        this->meshes.push_back(new Mesh(*i));
     }
     // });
 }
 Model::Model()
 {
     loaded = true;
+}
+
+Model::~Model()
+{
+    for(auto m: meshes){
+        // waitForRenderJob([=](){
+            delete m;
+        // });
+    }
 }
 
 void Model::loadModel()
@@ -88,7 +97,7 @@ void Model::processNode(aiNode *node, const aiScene *scene)
     }
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
+Mesh *Model::processMesh(aiMesh *mesh, const aiScene *scene)
 {
     // Data to fill
     //vector<Vertex> vertices;
@@ -164,7 +173,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         vector<_texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-        // 2. Specular maps
+        // 2. Specular maps     
         vector<_texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
@@ -174,7 +183,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     }
     numVerts += vertices.size();
     // Return a mesh object created from the extracted mesh data
-    return Mesh(vertices, uvs, normals, indices, textures);
+    return new Mesh(vertices, uvs, normals, indices, textures);
 }
 
 // Checks all material textures of a given type and loads the textures if they're not loaded yet.

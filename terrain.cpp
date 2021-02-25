@@ -145,13 +145,14 @@ terrain *getTerrain(float x, float z)
         genHeightMap(width - 1, depth - 1, this->offsetX, this->offsetZ);
     }
     void terrain::onDestroy(){
-        _model model = r->getModel();
-        waitForRenderJob([&](){
-            delete model.meta();
-            modelManager::models_id.erase(model.m);
-            delete renderingManager::shader_model_vector[r->getShader().s][model.m];
-            renderingManager::shader_model_vector[r->getShader().s].erase(model.m);
-        });
+        r->getModel().destroy();
+        // _model model = r->getModel();
+        // waitForRenderJob([&](){
+        //     delete model.meta();
+        //     modelManager::models_id.erase(model.m);
+        //     delete renderingManager::shader_model_vector[r->getShader().s][model.m];
+        //     renderingManager::shader_model_vector[r->getShader().s].erase(model.m);
+        // });
     }
     void terrain::update()
     {
@@ -245,7 +246,7 @@ terrain *getTerrain(float x, float z)
         r->set(r->getShader(),model);
         if (model.meshes().size() == 0)
         {
-            model.meshes().push_back(Mesh());
+            model.meshes().push_back(new Mesh());
             // cout << "added mesh" << endl;
         }
 

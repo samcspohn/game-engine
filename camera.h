@@ -47,12 +47,11 @@ void renderQuad();
 void makeBillboard(_model m, _texture t, _renderer *r);
 // lightVolume lv;
 
-class _camera : public component
-{
-public:
-	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
-	_camera();
-
+struct camera{
+	camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
+	camera();
+	~camera();
+	
 	GLfloat fov;
 	GLfloat nearPlane;
 	GLfloat farPlane;
@@ -79,21 +78,72 @@ public:
 	glm::vec3 cullpos;
 	glm::mat3 camInv;
 
-	void onEdit();
+	// void onEdit();
 
 	glm::vec2 getScreen();
 	int order();
-	void onStart();
-	void onDestroy();
+	// void onStart();
+	// void onDestroy();
 	void prepRender(Shader &matProgram);
 	void render();
+	void update(glm::vec3 position,glm::quat rotation);
 	glm::mat4 getRotationMatrix();
 	glm::mat4 GetViewMatrix();
 	glm::mat4 getProjection();
 	glm::vec3 screenPosToRay(glm::vec2 mp);
 	// _frustum getFrustum();
+	SER_HELPER(){
+		ar &fov &nearPlane &farPlane;
+	}
+};
+
+class _camera : public component
+{
+public:
+	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
+	_camera() = default;
+	camera* c = 0;
+	// GLfloat fov;
+	// GLfloat nearPlane;
+	// GLfloat farPlane;
+	// bool lockFrustum = false;
+	// bool inited = false;
+	// // _frustum f;
+	// // map<string, map<string, gpu_vector<GLuint>* >> shader_model_culled; // for transforms
+	// // map<string, map<string, gpu_vector_proxy<matrix> *>> mats;		  // for rendering
+	// vector<GLuint> _rendererOffsets;
+
+	// renderTexture gBuffer;
+	// _shader _shaderLightingPass;
+	// _shader _quadShader;
+	// _model lightVolumeModel;
+
+	// glm::mat4 view;
+	// glm::mat4 rot;
+	// glm::mat4 proj;
+	// glm::vec2 screen;
+
+	// glm::vec3 pos;
+	// glm::vec3 dir;
+	// glm::vec3 up;
+	// glm::vec3 cullpos;
+	// glm::mat3 camInv;
+
+	void onEdit();
+
+	// glm::vec2 getScreen();
+	// int order();
+	void onStart();
+	void onDestroy();
+	// void prepRender(Shader &matProgram);
+	// void render();
+	// glm::mat4 getRotationMatrix();
+	// glm::mat4 GetViewMatrix();
+	// glm::mat4 getProjection();
+	// glm::vec3 screenPosToRay(glm::vec2 mp);
+	// _frustum getFrustum();
 	COPY(_camera);
-	SER3(fov,nearPlane,farPlane);
+	SER1(c);
 private:
 };
 // REGISTER_COMPONENT(_camera)

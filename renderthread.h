@@ -44,6 +44,18 @@ extern atomic<bool> renderDone;
 extern atomic<bool> renderThreadReady;
 extern bool recieveMouse;
 
+struct editor{
+    camera c;
+    glm::vec3 position;
+    glm::quat rotation{};
+    float speed = 1;
+
+    void translate(glm::vec3 v);
+    void rotate(glm::vec3 axis, float angle);
+    void update();
+};
+extern editor* m_editor;
+
 /////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
