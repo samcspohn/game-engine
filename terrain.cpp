@@ -158,14 +158,16 @@ terrain *getTerrain(float x, float z)
     {
         auto c = COMPONENT_LIST(_camera);
         vec3 pos = transform->getPosition();
-        vec3 pos2 = c->get(0)->transform->getPosition();
+        vec3 pos2;
+        if(_camera* cam = c->get(0))
+            pos2 = cam->transform->getPosition();
         pos.y = pos2.y = 0;
         bool inThreshold = glm::length(pos - pos2) < 2;
         if (inThreshold && scatter.size() == 0)
         {
             for (glm::vec3 p : scatterPos)
             {
-                game_object *s = new game_object(scatter_obj);
+                game_object *s = instantiate(scatter_obj);
                 s->transform->setPosition(p + root2.getPosition());
                 s->transform->rotate(vec3(1, 0, 0), radians(-90.f));
                 scatter.push_back(s->transform);

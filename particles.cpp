@@ -38,9 +38,9 @@ struct particle
     smvec3 velocity; // 2ints
     // vec3 position2;
     int next;
-    
+
     // smvec3 velocity2; // 2ints
-    float p2;    
+    float p2;
     float l;
     int p3;
 };
@@ -84,7 +84,6 @@ gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_p
 map<string, int> emitter_prototypes;
 map<int, string> emitter_proto_names;
 map<int, emitter_proto_asset *> emitter_proto_assets;
-
 
 // renderering
 array_heap<emitter> EMITTERS;
@@ -156,11 +155,12 @@ void addColorArray(colorArray &a)
     colorGradients.emplace_back(a);
 }
 
-struct gradientEditorData{
+struct gradientEditorData
+{
     int gradientKeyId;
     int color_picker_open;
 };
-unordered_map<colorArray*,gradientEditorData> gradientEditorDatas;
+unordered_map<colorArray *, gradientEditorData> gradientEditorDatas;
 bool colorArrayEdit(colorArray &a, bool *p_open)
 {
     gradientEditorDatas[&a].gradientKeyId = -1;
@@ -370,7 +370,6 @@ void floatArray::setFloatArray(float *floats)
     }
 }
 
-
 void saveEmitters(OARCHIVE &oa)
 {
     oa << emitter_prototypes_ << emitter_prototypes << emitter_proto_names << emitter_proto_assets << colorGradients;
@@ -469,15 +468,17 @@ bool emitter_proto_asset::onEdit()
 
     // emitterPrototype->edit();
 }
-void emitter_proto_asset::copy(){
+void emitter_proto_asset::copy()
+{
     emitter_prototype_ cp = createNamedEmitter(this->name + " copy");
     // cp.meta()->name = cp.meta()->name;
-	assets::registerAsset(cp.meta());
+    assets::registerAsset(cp.meta());
     cp.meta()->gradient = this->gradient;
     *(cp.meta()->ref) = *(this->ref);
 }
 
-string emitter_proto_asset::type(){
+string emitter_proto_asset::type()
+{
     return "EMITTER_PROTOTYPE_DRAG_AND_DROP";
 }
 
@@ -501,7 +502,7 @@ void particle_emitter::onEdit()
             IM_ASSERT(payload->DataSize == sizeof(int));
             int payload_n = *(const int *)payload->Data;
             prototype = getNamedEmitterProto(emitter_proto_names.at(payload_n));
-            if(this->transform.id != -1)
+            if (this->transform.id != -1)
                 this->setPrototype(prototype);
         }
         ImGui::EndDragDropTarget();
@@ -511,7 +512,7 @@ void particle_emitter::onEdit()
 
 void renderEdit(const char *name, emitter_prototype_ &ep)
 {
-    if(ep.emitterPrototype != 0)
+    if (ep.emitterPrototype != 0)
         ImGui::InputText(name, (char *)emitter_proto_names.at(ep.emitterPrototype).c_str(), emitter_proto_names.at(ep.emitterPrototype).size() + 1, ImGuiInputTextFlags_ReadOnly);
     else
         ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
@@ -547,14 +548,48 @@ void particle_emitter::setPrototype(emitter_prototype_ ep)
     lock.unlock();
 }
 
-void particle_emitter::onStart()
-{
-    this->emitter = EMITTERS._new();
-    this->emitter->transform = transform.id;
+// void particle_emitter::onStart()
+// {
+//     this->emitter = EMITTERS._new();
+//     this->emitter->transform = transform.id;
+//     this->emitter->live = 1;
+//     this->emitter->emission = 1;
+//     emitter->emitter_prototype = prototype.getId();
+//     emitter->frame = 0;
+
+//     emitterInit ei;
+//     ei.emitterProtoID = prototype.getId();
+//     ei.live = 1;
+//     ei.transformID = transform.id;
+//     ei.id = this->emitter.index;
+//     lock.lock();
+//     emitter_inits[ei.id] = ei;
+//     lock.unlock();
+// }
+// void particle_emitter::onDestroy()
+// {
+//     this->emitter->live = 0;
+//     this->emitter->emission = 0;
+//     EMITTERS._delete(this->emitter);
+
+//     emitterInit ei;
+//     ei.emitterProtoID = prototype.getId();
+//     ei.live = 0;
+//     ei.transformID = transform.id;
+//     ei.id = this->emitter.index;
+//     lock.lock();
+//     emitter_inits[ei.id] = ei;
+//     lock.unlock();
+// }
+
+void particle_emitter::init(){
+    // this->emitter = EMITTERS._new();
+
     this->emitter->live = 1;
     this->emitter->emission = 1;
     emitter->emitter_prototype = prototype.getId();
     emitter->frame = 0;
+    this->emitter->transform = transform.id;
 
     emitterInit ei;
     ei.emitterProtoID = prototype.getId();
@@ -565,12 +600,7 @@ void particle_emitter::onStart()
     emitter_inits[ei.id] = ei;
     lock.unlock();
 }
-void particle_emitter::onDestroy()
-{
-    this->emitter->live = 0;
-    this->emitter->emission = 0;
-    EMITTERS._delete(this->emitter);
-
+void particle_emitter::deinit(){
     emitterInit ei;
     ei.emitterProtoID = prototype.getId();
     ei.live = 0;
@@ -579,6 +609,21 @@ void particle_emitter::onDestroy()
     lock.lock();
     emitter_inits[ei.id] = ei;
     lock.unlock();
+    EMITTERS._delete(this->emitter);
+}
+
+particle_emitter::particle_emitter()
+{
+    this->emitter = EMITTERS._new();
+
+}
+particle_emitter::particle_emitter(const particle_emitter& pe){
+    this->emitter = EMITTERS._new();
+    this->prototype = pe.prototype;
+}
+particle_emitter::~particle_emitter()
+{
+    // EMITTERS._delete(this->emitter);
 }
 // void particle_emitter::onEdit()
 // {
@@ -644,7 +689,8 @@ int getParticleCount()
     pcMutex.unlock();
     return ret;
 }
-int getActualParticles(){
+int getActualParticles()
+{
     int ret;
     pcMutex.lock();
     ret = actualParticles;
@@ -781,11 +827,9 @@ struct d
     uint p2;
 };
 
-
 gpu_vector<uint> *atomics = new gpu_vector<uint>();
 gpu_vector_proxy<d> *_input = new gpu_vector_proxy<d>();
 gpu_vector_proxy<d> *_output = new gpu_vector_proxy<d>();
-
 
 namespace particle_renderer
 {
@@ -794,7 +838,6 @@ namespace particle_renderer
     glm::vec3 camP;
 
     _shader particleShader;
-
 
     vector<d> res;
     ofstream output;
@@ -876,7 +919,6 @@ struct d{\
         gt.start();
         particleSortProgram.use();
 
-
         particleSortProgram.setInt("stage", -1);
         particleSortProgram.setUint("count", actualParticles);
         glDispatchCompute(actualParticles / 256 + 1, 1, 1);
@@ -886,11 +928,9 @@ struct d{\
         numParticles = atomics->storage->at(0);
         appendStat("particle list create", gt.stop());
 
-
         gt.start();
         p_sort->sort(numParticles, _input, _output);
         appendStat("particle list sort", gt.stop());
-       
     }
 
     void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos)
@@ -917,7 +957,7 @@ struct d{\
         gpu_emitters->bindData(4);
         particles->bindData(2);
         _input->bindData(6);
-        
+
         // _output->bindData(6);
 
         glBindVertexArray(VAO);

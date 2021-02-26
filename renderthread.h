@@ -90,10 +90,10 @@ void updateTiming();
 extern game_object *rootGameObject;
 extern deque<function<void()> *> mainThreadWork;
 
-void save_game(const char *filename);
+void save_level(const char *filename);
 void rebuildGameObject(componentStorageBase *base, int i);
 
-void load_game(const char *filename);
+void load_level(const char *filename);
 // inspectable *inspector = 0;
 // unordered_map<int, bool> selected;
 
@@ -108,3 +108,5 @@ void renderThreadFunc();
 extern mutex transformLock;
 
 bool guiRayCast(vec3 p, vec3 d);
+bool isGameRunning();
+void StartComponents(componentStorageBase *cl);

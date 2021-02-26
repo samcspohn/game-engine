@@ -20,6 +20,7 @@ class array_heap
 	}
 
 public:
+	int active = 0;
 	struct ref
 	{
 		SER_HELPER()
@@ -55,7 +56,8 @@ public:
 		//	throw exception("invalid");
 		return data.at(i);
 	}
-	ref _new()
+	template <typename... types>
+	ref _new(types... args)
 	{
 		ref ret;
 		ret.a = this;
@@ -66,19 +68,25 @@ public:
 			avail.erase(avail.begin());
 			;
 			valid[ret.index] = true;
+			// ret.d = &data[ret.index];
 			if (ret.index >= extent)
 			{
 				extent = ret.index + 1;
 			}
+			new (&data[ret.index]) t(args...);
+
 		}
 		else
 		{
-			ret.index = data.size();
-			data.emplace_back();
+			ret.index = valid.size();
+			if(valid.size() == data.size()){
+				data.emplace_back(args...);
+			}
+			// ret.d = &data.back();
 			valid.emplace_back(true);
 			++extent;
 		}
-		data[ret.index] = t();
+		++active;
 		m.unlock();
 		return ret;
 	}
@@ -87,19 +95,13 @@ public:
 		if (r.a != this)
 			throw;
 		m.lock();
+		// delete r.d;
 		avail.emplace_front(r.index);
 		valid[r.index] = false;
-		data[r.index].~t();
-		// //(*data)[r.index] = t();
-		// if (r.index == extent - 1) {
-		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {
-		// 		avail.erase(extent - 1);
-		// 	}
-		// 	//++extant;
-		// 	data.resize(extent);
-		// 	valid.resize(extent);
-		// }
+		--active;
 		m.unlock();
+		data[r.index].~t();
+		memset(&data[r.index],0,sizeof(t));
 	}
 
 	float density()
@@ -186,12 +188,13 @@ public:
 			{
 				extent = ret.index + 1;
 			}
+			new (&data[ret.index]) t(args...);
 		}
 		else
 		{
 			ret.index = valid.size();
 			if(valid.size() == data.size()){
-				data.emplace_back();
+				data.emplace_back(args...);
 			}
 			// ret.d = &data.back();
 			valid.emplace_back(true);
@@ -199,7 +202,7 @@ public:
 		}
 		++active;
 		m.unlock();
-		new (&data[ret.index]) t(args...);
+		
 		return ret;
 	}
 	void _delete(ref r)
@@ -214,15 +217,6 @@ public:
 		m.unlock();
 		data[r.index].~t();
 		memset(&data[r.index],0,sizeof(t));
-		//(*data)[r.index] = t();
-		// if (r.index == extent - 1) {
-		// 	for (; extent > 0 && !valid[extent - 1]; --extent) {
-		// 		avail.erase(extent - 1);
-		// 	}
-		// 	//++extant;
-		// 	data.resize(extent);
-		// 	valid.resize(extent);
-		// }
 	}
 
 	float density()

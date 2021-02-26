@@ -92,9 +92,11 @@ public:
 	void setMesh(Mesh *_m);
 	void setPoint();
 	void setOBB();
-	void update();
+	// void update();
+	void _update();
 	void midUpdate();
-	void lateUpdate();
+	// void lateUpdate();
+	void _lateUpdate();
 	void update_data();
 	void onEdit();
 	COPY(collider);

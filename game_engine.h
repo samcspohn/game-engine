@@ -206,7 +206,13 @@ void physicsUpdate(float dt)
 
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
 		stopWatch.start();
-		cb->update();
+
+		parralelfor(cb->size(),{
+			if (cb->data.valid[i])
+			{
+				cb->data.data[i]._update();
+			}
+		});
 		appendStat(cb->name + "--update", stopWatch.stop());
 		stopWatch.start();
 		_parallel_for(cb->data, [&](int i) {
@@ -217,19 +223,22 @@ void physicsUpdate(float dt)
 		});
 		appendStat(cb->name + "--mid_update", stopWatch.stop());
 		stopWatch.start();
-		cb->lateUpdate();
+		parralelfor(cb->size(),{
+			if (cb->data.valid[i])
+			{
+				cb->data.data[i]._lateUpdate();
+			}
+		});
 		appendStat(cb->name + "--late_update", stopWatch.stop());
 		time -= (1.f / 30.f);
 	}
 }
 void run()
-{
-	timer stopWatch;
-	// copyWorkers = COMPONENT_LIST(copyBuffers);
-	// eventsPollDone = true;
-	// for(auto & i : collisionGraph)
-	// 	collisionLayers[i.first].clear();
+{	
+	StartComponents(COMPONENT_LIST(_renderer));
+	StartComponents(COMPONENT_LIST(terrain));
 
+	timer stopWatch;
 	timer gameLoopTotal;
 	timer gameLoopMain;
 	timer frameCap;
@@ -249,9 +258,8 @@ void run()
 		gameLoopMain.start();
 		// scripting
 		transformLock.lock();
-		if (false)
+		if (isGameRunning())
 		{
-
 			doLoopIteration(ComponentRegistry.gameComponents);
 			for (auto &i : physics_manager::collisionGraph)
 				physics_manager::collisionLayers[i.first].clear();
@@ -264,8 +272,9 @@ void run()
 			audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
 
 		stopWatch.start();
-		tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
-		toDestroy.clear();
+		tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
+		toDestroyGameObjects.clear();
+
 		entities = Transforms.getCount();
 		transformLock.unlock();
 		appendStat("destroy deffered", stopWatch.stop());
@@ -302,7 +311,7 @@ void run()
 		}
 
 		waitForRenderJob([]() { updateTiming(); });
-		waitForRenderJob([](){ batchManager::updateBatches(); });
+		waitForRenderJob([]() { batchManager::updateBatches(); });
 		stopWatch.start();
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
@@ -316,7 +325,6 @@ void run()
 		{
 			c.c->update(c.transform->getPosition(), c.transform.getRotation());
 		}
-		m_editor->update();
 
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
 		stopWatch.start();

@@ -50,15 +50,18 @@ class Light : public component
 
 public:
     Light();
+    void init();
     Light(const Light& l);
+    ~Light();
+    void deinit();
     void setColor(glm::vec3 col);
     void setlinear(float l);
     void setQuadratic(float q);
     void setConstant(float c);
     void setOuterCutoff(float radians);
     void setInnerCutoff(float radians);
-    void onStart();
-    void onDestroy();
+    // void onStart();
+    // void onDestroy();
     void onEdit();
     COPY(Light);
     SER_HELPER(){
@@ -67,13 +70,14 @@ public:
     }
     SER_OUT(){
         ar << boost::serialization::base_object<component>(*this);
-        ar << pl.itr->it;
+        ar << *pl;
     }
     SER_IN(){
-        unsigned int id;
+        // unsigned int id;
         ar >> boost::serialization::base_object<component>(*this);;
-        ar >> id;
-        pl = lightingManager::pointLights.iterators[id];
+        ar >> *pl;
+        // ar >> id;
+        // pl = lightingManager::pointLights.iterators[id];
     }
     // SER1(pl);
 };

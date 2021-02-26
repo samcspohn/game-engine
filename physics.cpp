@@ -373,7 +373,7 @@ void collider::setOBB()
 	this->o = OBB();
 }
 
-void collider::update()
+void collider::_update()
 {
 
 	// posInTree = 0;
@@ -462,7 +462,7 @@ void collider::midUpdate()
 		collisionLayers[layer].insert(a, *this, depth);
 }
 
-void collider::lateUpdate()
+void collider::_lateUpdate()
 {
 	int colCount = 0;
 	for (auto &i : collisionGraph[layer])

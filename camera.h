@@ -101,7 +101,8 @@ class _camera : public component
 {
 public:
 	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
-	_camera() = default;
+	_camera();
+	~_camera();
 	camera* c = 0;
 	// GLfloat fov;
 	// GLfloat nearPlane;
@@ -133,8 +134,8 @@ public:
 
 	// glm::vec2 getScreen();
 	// int order();
-	void onStart();
-	void onDestroy();
+	// void onStart();
+	// void onDestroy();
 	// void prepRender(Shader &matProgram);
 	// void render();
 	// glm::mat4 getRotationMatrix();

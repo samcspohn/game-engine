@@ -133,7 +133,7 @@ public:
 			{
 				for (auto &j : barrels)
 				{
-					game_object *go = new game_object(ammo);
+					game_object *go = instantiate(ammo);
 					go->transform->setScale(vec3(size));
 					go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j, 1)));
 					// go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
@@ -163,7 +163,7 @@ public:
 		// }
 	}
 	COPY(gun);
-	SER4(rof, speed, dispersion, ammo);
+	SER5(rof, speed, dispersion, barrels, ammo);
 };
 REGISTER_COMPONENT(gun)
 
@@ -256,6 +256,8 @@ public:
 	{
 		if (barrels == 0)
 		{
+			if(guns.id == -1)
+				this->onStart();
 			barrels = guns->gameObject()->getComponent<gun>();
 		}
 		return barrels->rof;
@@ -605,17 +607,17 @@ class player_sc : public component
 	_ship *ship;
 	gunManager *gm;
 
-	gui::window *info;
-	gui::text *fps;
-	gui::text *missileCounter;
-	gui::text *particleCounter;
-	gui::text *shipAcceleration;
-	gui::text *shipVelocity;
-	gui::text *lockedfrustum;
-	gui::text *colCounter;
-	gui::window *reticule;
-	gui::image *crosshair;
-	_texture crosshairtex;
+	// gui::window *info;
+	// gui::text *fps;
+	// gui::text *missileCounter;
+	// gui::text *particleCounter;
+	// gui::text *shipAcceleration;
+	// gui::text *shipVelocity;
+	// gui::text *lockedfrustum;
+	// gui::text *colCounter;
+	// gui::window *reticule;
+	// gui::image *crosshair;
+	// _texture crosshairtex;
 	game_object_prototype ammo_proto;
 
 public:
@@ -641,8 +643,9 @@ public:
 		}
 
 		ship = ship_t->gameObject()->getComponent<_ship>();
+		gm = ship_t->gameObject()->getComponent<gunManager>();
 		// rb = transform->gameObject()->getComponent<rigidBody>();
-		guns = ship_t->gameObject()->getComponents<gun>();
+		guns = transform->gameObject()->getComponents<gun>();
 		// bomb = bullets["bomb"];
 		guns[0]->ammo = ammo_proto;
 		guns[0]->rof = 3'000 / 60;
@@ -656,41 +659,42 @@ public:
 		guns[1]->size = 20;
 		guns[0]->setBarrels({vec3(0.f, -10.f, 45.f)});
 
-		info = new gui::window();
-		fps = new gui::text();
-		missileCounter = new gui::text();
-		particleCounter = new gui::text();
-		shipAcceleration = new gui::text();
-		shipVelocity = new gui::text();
-		lockedfrustum = new gui::text();
-		colCounter = new gui::text();
-		info->name = "game info";
-		ImGuiWindowFlags flags = 0;
-		flags |= ImGuiWindowFlags_NoTitleBar;
-		flags |= ImGuiWindowFlags_NoMove;
-		flags |= ImGuiWindowFlags_NoResize;
+		// info = new gui::window();
+		// fps = new gui::text();
+		// missileCounter = new gui::text();
+		// particleCounter = new gui::text();
+		// shipAcceleration = new gui::text();
+		// shipVelocity = new gui::text();
+		// lockedfrustum = new gui::text();
+		// colCounter = new gui::text();
+		// info->name = "game info";
+		// ImGuiWindowFlags flags = 0;
+		// flags |= ImGuiWindowFlags_NoTitleBar;
+		// flags |= ImGuiWindowFlags_NoMove;
+		// flags |= ImGuiWindowFlags_NoResize;
+		// // flags |= ImGuiWindowFlags_NoBackground;
+		// info->flags = flags;
+		// info->pos = ImVec2(20, 20);
+		// info->size = ImVec2(200, 150);
+		// info->children.push_back(fps);
+		// info->children.push_back(missileCounter);
+		// info->children.push_back(particleCounter);
+		// info->children.push_back(lockedfrustum);
+		// info->children.push_back(shipAcceleration);
+		// info->children.push_back(shipVelocity);
+		// info->adopt(colCounter);
+		// reticule = new gui::window();
 		// flags |= ImGuiWindowFlags_NoBackground;
-		info->flags = flags;
-		info->pos = ImVec2(20, 20);
-		info->size = ImVec2(200, 150);
-		info->children.push_back(fps);
-		info->children.push_back(missileCounter);
-		info->children.push_back(particleCounter);
-		info->children.push_back(lockedfrustum);
-		info->children.push_back(shipAcceleration);
-		info->children.push_back(shipVelocity);
-		info->adopt(colCounter);
-		reticule = new gui::window();
-		flags |= ImGuiWindowFlags_NoBackground;
-		flags |= ImGuiWindowFlags_NoScrollbar;
-		flags &= ~ImGuiWindowFlags_NoMove;
-		reticule->flags = flags;
-		reticule->name = "reticule";
-		reticule->pos = ImVec2(0, 0);
-		crosshair = new gui::image();
-		waitForRenderJob([&]() { crosshairtex.load("res/images/crosshair.png"); });
-		crosshair->img = crosshairtex;
-		reticule->adopt(crosshair);
+		// flags |= ImGuiWindowFlags_NoScrollbar;
+		// flags &= ~ImGuiWindowFlags_NoMove;
+		// reticule->flags = flags;
+		// reticule->name = "reticule";
+		// reticule->pos = ImVec2(0, 0);
+		// crosshair = new gui::image();
+		// waitForRenderJob([&]() { crosshairtex.load("res/images/crosshair.png"); });
+		// crosshair->img = crosshairtex;
+		// reticule->adopt(crosshair);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		cam = transform->gameObject()->getComponent<_camera>();
 		fov = cam->c->fov;
 	}
@@ -698,25 +702,26 @@ public:
 	{
 
 		// rb->gravity = false;
-		transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * fov / 80 * -0.01f);
-		transform->getParent()->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * fov / 80 * -0.01f);
+		float _80 = radians(80.f);
+		transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * fov / _80 * -0.01f);
+		transform->getParent()->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * fov / _80 * -0.01f);
 
 		// transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
-		fov -= Input.Mouse.getScroll() * 5;
-		fov = glm::clamp(fov, 5.f, 80.f);
+		fov -= Input.Mouse.getScroll() * 0.5;
+		fov = glm::clamp(fov, radians(5.f), _80);
 		transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
 
 		if (framecount++ > 1)
 		{
 
-			fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
-			missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
-			particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
-			shipVelocity->contents = "speed: " + to_string(ship_vel);
-			shipAcceleration->contents = "thrust: " + to_string(ship_accel);
-			lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject()->getComponent<_camera>()->c->lockFrustum);
-			reticule->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
-			crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240, SCREEN_HEIGHT / 2 - 200);
+			// fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
+			// missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
+			// particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
+			// shipVelocity->contents = "speed: " + to_string(ship_vel);
+			// shipAcceleration->contents = "thrust: " + to_string(ship_accel);
+			// lockedfrustum->contents = "locked frustum: " + to_string(transform->gameObject()->getComponent<_camera>()->c->lockFrustum);
+			// reticule->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
+			// crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240, SCREEN_HEIGHT / 2 - 200);
 			// colCounter->contents = "collisions: " + to_string(colCount);
 		}
 		cout << "\rmissiles: " + FormatWithCommas(FormatWithCommas(COMPONENT_LIST(missile)->active())) + "       ";
@@ -742,12 +747,12 @@ public:
 			Time.timeScale = 1;
 		}
 
-		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
+		if (Input.getKeyDown(GLFW_KEY_M) && cursorReleased)
 		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			cursorReleased = false;
 		}
-		else if (Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased)
+		else if (Input.getKeyDown(GLFW_KEY_M) && !cursorReleased)
 		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			cursorReleased = true;
@@ -764,16 +769,16 @@ public:
 			// guns[0]->fire();
 			gm->fire();
 		}
-		if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
-		{
-			// for(int i = 0; i <= Time.deltaTime * 100; i++){
-			// 	numBoxes++;
-			// 	auto g = new game_object(*physObj);
-			// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
-			// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
-			// }
-			guns[1]->fire();
-		}
+		// if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
+		// {
+		// 	// for(int i = 0; i <= Time.deltaTime * 100; i++){
+		// 	// 	numBoxes++;
+		// 	// 	auto g = new game_object(*physObj);
+		// 	// 	vec3 r = randomSphere() * 2.f * randf() + transform->getPosition() + transform->forward() * 12.f;
+		// 	// 	physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
+		// 	// }
+		// 	guns[1]->fire();
+		// }
 		// 	transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
 		// 	transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
 		// 	transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
@@ -895,17 +900,17 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	_model turretm("res/models/ship1/maingun.obj");
 	_model gunsm("res/models/ship1/3guns.obj");
 
-	game_object *turret = new game_object();
-	turret->addComponent<audiosource>()->set(gunSound);
-	auto r = turret->addComponent<_renderer>();
+	game_object *turret = _instantiate();
+	turret->_addComponent<audiosource>()->set(gunSound);
+	auto r = turret->_addComponent<_renderer>();
 	r->set(modelShader, turretm);
-	game_object *guns = new game_object();
-	r = guns->addComponent<_renderer>();
+	game_object *guns = _instantiate();
+	r = guns->_addComponent<_renderer>();
 	r->set(modelShader, gunsm);
 	turret->transform->adopt(guns->transform);
 	guns->transform->translate(vec3(0, -0.1, 0.6));
 	vector<vec3> barrels = {vec3(-.56, 0, 2.3), vec3(0, 0, 2.3), vec3(0.56, 0, 2.3)};
-	auto g = guns->addComponent<gun>();
+	auto g = guns->_addComponent<gun>();
 	g->setBarrels(barrels);
 	g->ammo = ammo_proto; //bullets["bomb"].proto;
 	g->rof = 1.f / 4.f;
@@ -923,7 +928,7 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	{
 		turret->transform->rotate(vec3(0, 1, 0), radians(180.f));
 	}
-	auto t = turret->addComponent<_turret>();
+	auto t = turret->_addComponent<_turret>();
 	// t->forward = forward;
 	// t->under = upright;
 	t->setTarget(target);
@@ -1149,8 +1154,8 @@ int level1(bool load)
 		bomb_proto->addComponent<collider>()->setLayer(0);
 		bomb_proto->getComponent<collider>()->dim = vec3(0.1f);
 		bomb_proto->getComponent<collider>()->setPoint();
-		// bomb_proto->addComponent<physicsObject>();
-		// bomb_proto->addComponent<audiosource>()->set(gunSound);
+		// bomb_proto->_addComponent<physicsObject>();
+		// bomb_proto->_addComponent<audiosource>()->set(gunSound);
 		bomb_proto->addComponent<particle_emitter>()->protoSetPrototype(flameEmitterProto);
 		// bomb.proto = bomb_proto;
 		bomb_proto->addComponent<missile>()->exp = getNamedEmitterProto("expflame"); //bomb.primaryexplosion;//setBullet(bomb);
@@ -1160,31 +1165,31 @@ int level1(bool load)
 		registerProto(bomb_proto);
 
 		// game_object_proto *laser_proto = new game_object_proto();
-		// laser_proto->addComponent<collider>()->setLayer(0);
+		// laser_proto->_addComponent<collider>()->setLayer(0);
 		// laser_proto->getComponent<collider>()->setPoint();
-		// laser_proto->addComponent<particle_emitter>();
+		// laser_proto->_addComponent<particle_emitter>();
 		// laser.proto = laser_proto;
-		// laser_proto->addComponent<missile>()->setBullet(laser);
+		// laser_proto->_addComponent<missile>()->setBullet(laser);
 		// bullets["laser"] = laser;
 
 		//////////////////////////////////////////////////////////
 
-		game_object *light = new game_object();
+		game_object *light = _instantiate(); //new game_object();
 		light->transform.name() = "sun";
 		light->transform->setScale(vec3(1000));
 		light->transform->setPosition(glm::vec3(30000));
-		light->addComponent<Light>()->setColor(glm::vec3(24000));
+		light->_addComponent<Light>()->setColor(glm::vec3(24000));
 		light->getComponent<Light>()->setConstant(1.f);
 		light->getComponent<Light>()->setlinear(0.000014f);
 		light->getComponent<Light>()->setQuadratic(0.000007f);
-		// auto sun = light->addComponent<sun_sc>();
+		// auto sun = light->_addComponent<sun_sc>();
 		// sun->distance = 50'000;
 		// sun->day_cycle = 100;
-		light->addComponent<_renderer>()->set(lampShader, cubeModel);
+		light->_addComponent<_renderer>()->set(lampShader, cubeModel);
 
 		// physObj = new game_object();
-		// physObj->addComponent<_renderer>()->set(modelShader, cubeModel);
-		// physObj->addComponent<physicsObject>()->init(vec3(0));
+		// physObj->_addComponent<_renderer>()->set(modelShader, cubeModel);
+		// physObj->_addComponent<physicsObject>()->init(vec3(0));
 		// numBoxes += 61;
 		// for(int i = 0; i < 60; i++){
 		// 	auto g = new game_object(*physObj);
@@ -1193,17 +1198,17 @@ int level1(bool load)
 		// 	g->getComponent<physicsObject>()->init(vec3(0));
 		// }
 
-		// game_object *player = new game_object();
-		// player->transform.name() = "player";
-		// auto playerCam = player->addComponent<_camera>();
-		// playerCam->c->fov = radians(80.f);
-		// playerCam->c->farPlane = 1e32f;
-		// playerCam->c->nearPlane = 0.00001f;
-		// player->addComponent<gun>();
-		// player->addComponent<gun>();
-		// player->addComponent<editor_sc>()->ammo_proto = game_object_prototype(bomb_proto);
+		game_object *player =_instantiate();
+		player->transform.name() = "player";
+		auto playerCam = player->_addComponent<_camera>();
+		playerCam->c->fov = radians(80.f);
+		playerCam->c->farPlane = 1e32f;
+		playerCam->c->nearPlane = 0.00001f;
+		player->_addComponent<gun>();
+		player->_addComponent<gun>();
+		// player->_addComponent<editor_sc>()->ammo_proto = game_object_prototype(bomb_proto);
 
-		// player->addComponent<Light>()->setColor(glm::vec3(3, 3, 20));
+		// player->_addComponent<Light>()->setColor(glm::vec3(3, 3, 20));
 		// player->getComponent<Light>()->setConstant(1.f);
 		// player->getComponent<Light>()->setlinear(0.0005f);
 		// player->getComponent<Light>()->setQuadratic(0.000015f);
@@ -1212,14 +1217,14 @@ int level1(bool load)
 
 		////////////////////////////////////////////
 
-		// player->addComponent<collider>()->layer = 1;
-		// player->addComponent<rigidBody>()->bounciness = 0.3;
-		// player->addComponent<rigidBody>()->gravity = false;
+		// player->_addComponent<collider>()->layer = 1;
+		// player->_addComponent<rigidBody>()->bounciness = 0.3;
+		// player->_addComponent<rigidBody>()->gravity = false;
 
 		////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////
-		// player->addComponent<player_sc>();
+
 		// player->transform->translate(vec3(0, 10, -35));
 
 		_model turretm("res/models/ship1/maingun.obj");
@@ -1230,24 +1235,25 @@ int level1(bool load)
 		REG_ASSET(gunsm);
 		REG_ASSET(shipModel);
 
-		game_object *player_prox = new game_object();
+		// game_object *player_prox = new game_object();
+		game_object *player_prox = player;
 		player_prox->transform->setPosition({0, 10, -35});
-		game_object *boom = new game_object();
+		game_object *boom = _instantiate();
 		boom->transform->adopt(player_prox->transform);
-		// auto b = boom->addComponent<_boom>();
+		// auto b = boom->_addComponent<_boom>();
 
-		auto pointer = new game_object();
+		auto pointer =_instantiate();
 		pointer->transform->setPosition(player_prox->transform->getPosition());
 		player_prox->transform->adopt(pointer->transform);
 		pointer->transform->translate(vec3(0, 0, 5000));
-		pointer->addComponent<_renderer>()->set(modelShader, cubeModel);
+		pointer->_addComponent<_renderer>()->set(modelShader, cubeModel);
 
-		game_object *ship = new game_object();
+		game_object *ship = _instantiate();
 		ship->transform->name() = "ship";
-		auto r_ = ship->addComponent<_renderer>();
+		auto r_ = ship->_addComponent<_renderer>();
 		r_->set(modelShader, shipModel);
-		ship->addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
-		auto ship_col = ship->addComponent<collider>();
+		ship->_addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
+		auto ship_col = ship->_addComponent<collider>();
 		ship_col->setMesh(&shipModel.mesh());
 		ship_col->dim = vec3(4, 2, 20);
 		ship_col->layer = 1;
@@ -1264,9 +1270,9 @@ int level1(bool load)
 		{
 			makeGun(ship->transform, vec3(0, i.x, i.y), pointer->transform, i.y > 0, i.x > 0, bomb_proto);
 		}
-		ship->addComponent<gunManager>();
+		ship->_addComponent<gunManager>();
 
-		ship->addComponent<Light>();
+		ship->_addComponent<Light>();
 		ship->getComponent<Light>()->setColor(vec3(100, 0, 0));
 		ship->getComponent<Light>()->setConstant(1.f);
 		ship->getComponent<Light>()->setlinear(0.01f);
@@ -1274,19 +1280,21 @@ int level1(bool load)
 		ship->getComponent<Light>()->setOuterCutoff(radians(5.f));
 		ship->getComponent<Light>()->setInnerCutoff(radians(4.9f));
 
-		game_object *engine = new game_object();
-		engine->addComponent<particle_emitter>()->setPrototype(getNamedEmitterProto("engineTrail"));
-		engine->addComponent<particle_emitter>()->setPrototype(getNamedEmitterProto("engineFlame"));
+		game_object *engine = _instantiate();
+		engine->_addComponent<particle_emitter>()->setPrototype(getNamedEmitterProto("engineTrail"));
+		engine->_addComponent<particle_emitter>()->setPrototype(getNamedEmitterProto("engineFlame"));
 		engine->transform->translate(vec3(0, 0, -10));
 		ship->transform->adopt(engine->transform);
-		engine = new game_object(*engine);
+		engine = _instantiate(*engine);
 		engine->transform->translate(vec3(-2.2, 0, 6));
-		engine = new game_object(*engine);
+		engine = _instantiate(*engine);
 		engine->transform->translate(vec3(2.2 * 2, 0, 0));
 
-		game_object *ship_container = new game_object();
+		game_object *ship_container = _instantiate();
 		ship_container->transform->adopt(ship->transform);
 		ship_container->transform->adopt(boom->transform);
+		player_prox->_addComponent<player_sc>();
+
 		////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////
@@ -1318,7 +1326,7 @@ int level1(bool load)
 		// int terrainsDim = 16;
 
 		// tree_rend->setCullSizes(0.04f, INFINITY);
-		// _renderer *tree_billboard = tree_go->addComponent<_renderer>();
+		// _renderer *tree_billboard = tree_go->_addComponent<_renderer>();
 		// _texture tree_bill_tex;
 		// tree_bill_tex.namedTexture("bill1");
 		// tree_bill_tex.setType("texture_diffuse");
@@ -1333,12 +1341,12 @@ int level1(bool load)
 		{
 			for (int j = -terrainsDim; j < terrainsDim + 1; j++)
 			{
-				game_object *g = new game_object(grnd);
+				game_object *g = _instantiate(grnd);
 				g->transform.name() = "terrain:" + to_string(i) + "," + to_string(j);
 				terrain *t = g->getComponent<terrain>();
 				// t->scatter_obj = tree_go;
 				// t->r = g->getComponent<_renderer>();
-				// g->addComponent<_renderer>()->set(wireFrame, t->r->getModel());
+				// g->_addComponent<_renderer>()->set(wireFrame, t->r->getModel());
 
 				g->transform->setScale(vec3(20));
 				g->transform->setPosition(vec3(20 * i * terrainWidth, -4000, 20 * j * terrainWidth));
@@ -1358,35 +1366,35 @@ int level1(bool load)
 		config >> numshooters;
 		srand(100);
 		game_object_prototype bmb(bomb_proto);
-		game_object *CUBE = new game_object(bmb);
+		game_object *CUBE = _instantiate(bmb);
 		// CUBE->getComponent<physicsObject>()->init(vec3(100));
 
 		////////////////////////////////////////////////
 
-		//gameObjects.front()->addComponent<mvpSolver>();
+		//gameObjects.front()->_addComponent<mvpSolver>();
 
 		// proto = CUBE;
 
-		game_object *shooter = new game_object();
+		game_object *shooter = _instantiate();
 		// shooter->transform->setRotation(lookAt(vec3(0),vec3(0,1,0),vec3(0,0,1)));
 		shooter->transform->move(vec3(0, 100, 0));
 		shooter->transform->scale(glm::vec3(3));
-		shooter->addComponent<_renderer>()->set(modelShader, cubeModel);
-		// shooter->addComponent<_renderer>()->set(modelShader, _model("res/models/ship1/ship.obj"));
-		gun *g = shooter->addComponent<gun>();
+		shooter->_addComponent<_renderer>()->set(modelShader, cubeModel);
+		// shooter->_addComponent<_renderer>()->set(modelShader, _model("res/models/ship1/ship.obj"));
+		gun *g = shooter->_addComponent<gun>();
 		g->ammo = bomb_proto;
 		g->rof = 100;
 		g->dispersion = 0.5;
 		g->speed = 100;
 		// g->ammo = bullets["bomb"].proto;
-		shooter->addComponent<autoShooter>();
-		shooter->addComponent<collider>()->setLayer(1);
+		shooter->_addComponent<autoShooter>();
+		shooter->_addComponent<collider>()->setLayer(1);
 		shooter->getComponent<collider>()->dim = vec3(1);
 		// shooter->transform->setScale(vec3(6));
-		game_object *go = new game_object(*shooter);
+		game_object *go = _instantiate(*shooter);
 
-		auto nanosuitMan = new game_object(*CUBE);
-		nanosuitMan->addComponent<_renderer>();
+		auto nanosuitMan = _instantiate(*CUBE);
+		nanosuitMan->_addComponent<_renderer>();
 		nanosuitMan->getComponent<_renderer>()->set(wireFrame2, nanoSuitModel);
 		// cube_sc *it = nanosuitMan->getComponent<cube_sc>();
 		// nanosuitMan->removeComponent<cube_sc>(it);
@@ -1401,18 +1409,18 @@ int level1(bool load)
 		ep2->lifetime = 7.f;
 		ep2->maxSpeed = 1;
 		ep2.color(vec4(1, .4, 0, 0.5), vec4(1, .4, 0, 0.0));
-		auto pe = nanosuitMan->addComponent<particle_emitter>();
+		auto pe = nanosuitMan->_addComponent<particle_emitter>();
 		pe->setPrototype(ep2);
 
-		game_object *proto2 = new game_object();
+		game_object *proto2 = _instantiate();
 		proto2->transform->translate(vec3(50));
-		proto2->addComponent<spinner>();
-		proto2->addComponent<_renderer>();
-		// proto2->addComponent<rigidBody>()->gravity = false;
-		proto2->addComponent<collider>()->setLayer(1);
-		// proto2->addComponent<cube_sc>();
+		proto2->_addComponent<spinner>();
+		proto2->_addComponent<_renderer>();
+		// proto2->_addComponent<rigidBody>()->gravity = false;
+		proto2->_addComponent<collider>()->setLayer(1);
+		// proto2->_addComponent<cube_sc>();
 		proto2->getComponent<_renderer>()->set(modelShader, cubeModel);
-		proto2->addComponent<particle_emitter>();
+		proto2->_addComponent<particle_emitter>();
 		// proto2->removeComponent<cube_sc>();
 		// proto2->removeComponent<particle_emitter>();
 		proto2->getComponent<particle_emitter>()->setPrototype(ep2);
@@ -1422,7 +1430,7 @@ int level1(bool load)
 		// create big cubes
 		for (int i = 0; i < 5; ++i) //20
 		{
-			proto2 = new game_object(*proto2);
+			proto2 = _instantiate(*proto2);
 			proto2->transform.name() = "box " + to_string(i);
 			proto2->transform->setScale(glm::vec3(pow(10.f, (float)(i + 1))));
 			proto2->transform->scale(vec3(2, 1, 1));
@@ -1433,7 +1441,7 @@ int level1(bool load)
 		// create shooters
 		for (int i = 0; i < numshooters; ++i)
 		{
-			go = new game_object(*go);
+			go = _instantiate(*go);
 			go->transform.name() = "shooter " + to_string(i);
 			go->transform->translate(randomSphere() * 1000.f);
 			vec3 pos = go->transform->getPosition();

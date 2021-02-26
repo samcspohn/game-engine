@@ -258,14 +258,13 @@ glm::vec2 camera::getScreen()
 // 	return 1 - 2;
 // }
 
-void _camera::onStart()
-{
+_camera::_camera(){
 	c = new camera();
 }
-void _camera::onDestroy()
-{
+_camera::~_camera(){
 	delete c;
 }
+
 void camera::update(glm::vec3 position, glm::quat rotation){
 		this->pos = position;
 		this->dir = rotation * vec3(0,0,1);
@@ -488,7 +487,7 @@ glm::mat4 camera::GetViewMatrix()
 }
 glm::mat4 camera::getProjection()
 {
-	return glm::perspective(this->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.0001f, farPlane);
+	return glm::perspective(this->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, nearPlane, farPlane);
 }
 // _frustum _camera::getFrustum()
 // {

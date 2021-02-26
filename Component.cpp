@@ -7,6 +7,8 @@ component* compItr::getComponent(){ return 0; };
 vector<int> numbers = {0};
 void component::onStart() {}
 void component::onDestroy() {}
+void component::deinit() {}
+void component::init() {}
 bool component::_registerEngineComponent() { return false; };
 void component::onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal){};
 // void component::_update(int index, unsigned int _start, unsigned int _end){};

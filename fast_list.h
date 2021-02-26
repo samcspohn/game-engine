@@ -114,6 +114,10 @@ public:
 		{
 			return itr->fl->data[itr->index];
 		}
+		const t &operator*() const
+		{
+			return itr->fl->data[itr->index];
+		}
 		iterator(){};
 		iterator(_itr *i)
 		{
@@ -171,7 +175,9 @@ public:
 			throw;
 		m.lock();
 		size_t index = itr.itr->index;
-		data[index] = std::move(data.back());
+		memset(&data[index],&data.back(),sizeof(t));
+		memset(&data.back(),0,sizeof(t));
+		// data[index] = std::move(data.back());
 		iterators.back()->index = index;		   //itr->index
 		iterators.back()->it = itr.itr->it;		   // int
 		iterators[itr.itr->it] = iterators.back(); //this pointer = back pointer

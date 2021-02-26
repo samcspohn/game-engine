@@ -34,10 +34,12 @@ public:
 	virtual void onStart();
 	virtual void onDestroy();
 
-	virtual bool _registerEngineComponent();
+	static bool _registerEngineComponent();
 	virtual void onCollision(game_object *go, glm::vec3 point, glm::vec3 normal);
 	virtual void update();
 	virtual void lateUpdate();
+	virtual void init();
+	virtual void deinit();
 
 	virtual void onEdit() = 0;
 	virtual void _copy(game_object *go) = 0;
@@ -116,7 +118,7 @@ public:
 	virtual unsigned int active() { return 0; };
 	virtual void sort(){};
 	virtual compInfo getInfo(int i) { return compInfo(); };
-	virtual void clear(){}
+	virtual void clear() {}
 	// virtual string ser(){};
 
 	friend class boost::serialization::access;
@@ -153,11 +155,17 @@ public:
 
 	t *get(int i)
 	{
-		return (t *)&(data.data[i]);
+		if (i >= data.data.size())
+			return 0;
+		else
+			return (t *)&(data.data[i]);
 	}
 	bool getv(int i)
 	{
-		return data.valid[i];
+		if (i >= data.data.size())
+			return 0;
+		else
+			return data.valid[i];
 	}
 	compInfo getInfo(int i)
 	{
@@ -236,7 +244,8 @@ public:
 		}
 		lateupdate_t = update_timer.stop();
 	}
-	void clear(){
+	void clear()
+	{
 		data.clear();
 	}
 
@@ -303,6 +312,8 @@ struct componentMetaBase
 {
 	virtual void addComponent(game_object *g);
 	virtual void addComponentProto(game_object_proto_ *g);
+	// virtual void removeComponent(game_object *g);
+	// virtual void removeComponentProto(game_object_proto_ *g);
 	virtual void floatingComponent(component *) = 0;
 };
 template <typename t>
@@ -320,8 +331,10 @@ public:
 	std::map<size_t, componentMetaBase *> meta_types;
 	std::mutex lock;
 
-	void clear(){
-		for(auto& i : components){
+	void clear()
+	{
+		for (auto &i : components)
+		{
 			i.second->clear();
 		}
 	}
@@ -351,7 +364,6 @@ public:
 // extern std::mutex componentLock;
 extern Registry ComponentRegistry;
 
-
 template <typename t>
 componentStorage<t> *GetStorage()
 {
@@ -367,10 +379,10 @@ componentStorage<t> *GetStorage()
 			csb->h_update = typeid(&t::update) != typeid(&component::update);
 			csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
 			csb->hash = hash;
-			if (t()._registerEngineComponent())
-				ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
-			else
-				ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
+			// if (t::_registerEngineComponent())
+			// 	ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
+			// else
+			ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
 		}
 		ComponentRegistry.lock.unlock();
 	}
@@ -423,7 +435,7 @@ void destroyAllComponents();
 		static component_meta<comp> const &c;             \
 		void addComponent(game_object *g)                 \
 		{                                                 \
-			g->addComponent<comp>();                      \
+			g->_addComponent<comp>();                     \
 		}                                                 \
 		void addComponentProto(game_object_proto_ *g)     \
 		{                                                 \

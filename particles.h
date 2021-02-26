@@ -224,14 +224,19 @@ class particle_emitter final : public component
     static mutex lock;
 
 public:
+    particle_emitter();
+    particle_emitter(const particle_emitter& pe);
+    ~particle_emitter();
     typename array_heap<emitter>::ref emitter;
     // typename array_heap<GLint>::ref emitter_last_particle;
     void onEdit();
     COPY(particle_emitter);
     void setPrototype(emitter_prototype_ ep);
     void protoSetPrototype(emitter_prototype_ ep);
-    void onStart();
-    void onDestroy();
+    void init();
+    void deinit();
+    // void onStart();
+    // void onDestroy();
     SER1(prototype);
 };
 extern int particleCount;

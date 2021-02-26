@@ -1,6 +1,7 @@
 #include "renderthread.h"
 #include <algorithm>
 #include <imgui/guizmo/ImGuizmo.h>
+#include "terrain.h"
 // #include <imgui/guizmo/ImGradient.h>
 // #include "physics.h"
 namespace fs = std::filesystem;
@@ -17,18 +18,28 @@ atomic<bool> renderDone(false);
 atomic<bool> renderThreadReady(false);
 bool recieveMouse = true;
 
-editor* m_editor;
+editor *m_editor;
 
-void editor::translate(glm::vec3 v){
+bool gameRunning = false;
+inspectable *inspector = 0;
+ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+transform2 selected_transform = -1;
+static unordered_map<int, bool> selected_transforms;
+
+void editor::translate(glm::vec3 v)
+{
 	this->position += this->rotation * v;
 }
-void editor::rotate(glm::vec3 axis, float radians){
+void editor::rotate(glm::vec3 axis, float radians)
+{
 	this->rotation = glm::rotate(this->rotation, radians, axis);
 }
 
-void editor::update(){
+void editor::update()
+{
 
-	if( Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2)){
+	if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
+	{
 
 		translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
 		translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
@@ -36,8 +47,8 @@ void editor::update(){
 		// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
 		rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c.fov / radians(80.f) * -0.4f);
 		rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * c.fov / radians(80.f) * -0.4f);
-		
-		rotation = quatLookAtLH(rotation * vec3(0,0,1), vec3(0, 1, 0));
+
+		rotation = quatLookAtLH(rotation * vec3(0, 0, 1), vec3(0, 1, 0));
 
 		c.fov -= Input.Mouse.getScroll() * radians(5.f);
 		c.fov = glm::clamp(c.fov, radians(5.f), radians(80.f));
@@ -47,11 +58,11 @@ void editor::update(){
 			speed *= 2;
 		}
 		if (Input.getKeyDown(GLFW_KEY_F))
- 		{
+		{
 			speed /= 2;
 		}
 	}
-	c.update(position,rotation);
+	c.update(position, rotation);
 }
 /////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
@@ -178,15 +189,38 @@ int frameCounter = 0;
 game_object *rootGameObject;
 deque<function<void()> *> mainThreadWork;
 
-void save_game(const char *filename)
+void StartComponents(componentStorageBase *cl)
+{
+	for (int i = 0; i < cl->size(); ++i)
+	{
+		if (cl->getv(i))
+		{
+			cl->get(i)->onStart();
+		}
+	}
+}
+
+void DestroyComponents(componentStorageBase *cl)
+{
+	for (int i = 0; i < cl->size(); ++i)
+	{
+		if (cl->getv(i))
+		{
+			cl->get(i)->onDestroy();
+		}
+	}
+}
+
+void save_level(const char *filename)
 {
 	// make an archive
 	std::ofstream ofs(filename);
-	std::ofstream assets("assets.lvl");
+	std::ofstream assets("assets.ass");
 	// std::ofstream oproto("proto.lvl");
 	{
 		OARCHIVE oa(assets);
 		// OARCHIVE op(oproto);
+		oa << working_file;
 		audioManager::save(oa);
 		shaderManager::save(oa);
 		modelManager::save(oa);
@@ -196,7 +230,7 @@ void save_game(const char *filename)
 	}
 	{
 		OARCHIVE oa(ofs);
-		lightingManager::save(oa);
+		// lightingManager::save(oa);
 		saveTransforms(oa);
 		oa << ComponentRegistry;
 	}
@@ -205,27 +239,35 @@ void save_game(const char *filename)
 }
 void rebuildGameObject(componentStorageBase *base, int i);
 
-void load_game(const char *filename)
+void load_level(const char *filename) // assumes only renderer and terrain are started
 {
+
+	DestroyComponents(COMPONENT_LIST(_renderer));
+	DestroyComponents(COMPONENT_LIST(terrain));
+
 	for (auto &child : rootGameObject->transform->getChildren())
 	{
 		child->gameObject()->destroy();
 	}
+	tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
+	toDestroyGameObjects.clear();
+
 	// for(auto& g : toDestroy){
 	// 	g->_destroy();
 	// }
-	tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
-	toDestroy.clear();
+	// tbb::parallel_for_each(toDestroy.range(), [](game_object *g) { g->_destroy(); });
+	// toDestroy.clear();
 	ComponentRegistry.clear();
 
 	// open the archive
 	std::ifstream ifs(filename);
-	std::ifstream assets("assets.lvl");
+	std::ifstream assets("assets.ass");
 	// std::ifstream ifsp("proto.lvl");
 	if (assets::assets.size() == 0)
 	{
 		IARCHIVE ia(assets);
 		// IARCHIVE ip(ifsp);
+		ia >> working_file;
 		audioManager::load(ia);
 		shaderManager::load(ia);
 		modelManager::load(ia);
@@ -236,7 +278,7 @@ void load_game(const char *filename)
 	if (string(filename) != "")
 	{
 		IARCHIVE ia(ifs);
-		lightingManager::load(ia);
+		// lightingManager::load(ia);
 		loadTransforms(ia);
 		ia >> ComponentRegistry;
 	}
@@ -250,22 +292,60 @@ void load_game(const char *filename)
 			}
 		}
 	}
-	for (auto &i : ComponentRegistry.components)
-	{
-		for (int j = 0; j < i.second->size(); j++)
-		{
-			if (i.second->getv(j))
-			{
-				i.second->get(j)->onStart();
-			}
-		}
-	}
+
+	StartComponents(COMPONENT_LIST(_renderer));
+	StartComponents(COMPONENT_LIST(terrain));
+	// for (int i = 0; i < cl->size(); ++i)
+	// {
+	// 	if (cl->getv(i))
+	// 	{
+	// 		cl->get(i)->onStart();
+	// 	}
+	// }
+	// for (auto &i : ComponentRegistry.components)
+	// {
+	// 	for (int j = 0; j < i.second->size(); j++)
+	// 	{
+	// 		if (i.second->getv(j))
+	// 		{
+	// 			i.second->get(j)->onStart();
+	// 		}
+	// 	}
+	// }
 }
 
-inspectable *inspector = 0;
-ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-transform2 selected_transform = -1;
-static unordered_map<int, bool> selected_transforms;
+bool isGameRunning()
+{
+	return gameRunning;
+}
+void start_game() // assumes only renderer and terrain are started.
+{
+	mainThreadWork.push_back(new function<void()>([=]() {
+		for (auto &i : ComponentRegistry.components)
+		{
+			if (i.first != typeid(_renderer).hash_code() && i.first != typeid(terrain).hash_code())
+				StartComponents(i.second);
+		}
+	}));
+	gameRunning = true;
+}
+
+void stop_game()
+{
+	gameRunning = false;
+	inspector = 0;
+	mainThreadWork.push_back(new function<void()>([=]() {
+		for (auto &child : rootGameObject->transform->getChildren())
+		{
+			child->gameObject()->destroy();
+		}
+		tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
+		toDestroyGameObjects.clear();
+
+		load_level(working_file.c_str());
+	}));
+}
+
 void renderTransform(transform2 t)
 {
 	ImGuiTreeNodeFlags flags = base_flags;
@@ -309,7 +389,7 @@ void renderTransform(transform2 t)
 		ImGui::Separator();
 		if (ImGui::Selectable("copy"))
 		{
-			new game_object(*t->gameObject());
+			_instantiate(*t->gameObject());
 		}
 		if (ImGui::Selectable("delete"))
 		{
@@ -319,7 +399,7 @@ void renderTransform(transform2 t)
 		}
 		if (ImGui::Selectable("new game object"))
 		{
-			new game_object();
+			_instantiate();
 		}
 		ImGui::EndPopup();
 	}
@@ -402,6 +482,51 @@ void nav_f(string dir)
 	}
 }
 
+void openFile()
+{
+	inspector = 0;
+	char file[1024] = {};
+	FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
+	fgets(file, 1024, f);
+	string fi(file);
+	fi = fi.substr(0, fi.size() - 1);
+	working_file = fi;
+	if (fi == "")
+		cout << "cancelled load" << endl;
+	else
+	{
+		mainThreadWork.push_back(new function<void()>([=]() {
+			load_level(fi.c_str());
+		}));
+		cout << "loaded: " << file << endl;
+	}
+}
+void saveAsFile()
+{
+	char file[1024];
+	FILE *f = popen("zenity --file-selection --save  --file-filter=*.lvl", "r");
+	fgets(file, 1024, f);
+	string fi(file);
+	fi = fi.substr(0, fi.size() - 1);
+	if (fi == "")
+		cout << "cancelled save" << endl;
+	else
+	{
+		mainThreadWork.push_back(new function<void()>([=]() {
+			save_level(fi.c_str());
+		}));
+
+		working_file = fi;
+		cout << "saved: " << file << endl;
+	}
+}
+void saveFile()
+{
+	mainThreadWork.push_back(new function<void()>([=]() {
+		save_level(working_file.c_str());
+	}));
+	cout << "saved: " << working_file << endl;
+}
 mutex transformLock;
 void dockspace()
 {
@@ -461,6 +586,18 @@ void dockspace()
 		// ShowDockingDisabledMessage();
 	}
 
+	if ((ImGui::GetIO().KeysDown[GLFW_KEY_LEFT_CONTROL] && ImGui::GetIO().KeysDown[GLFW_KEY_O]))
+	{
+		openFile();
+	}
+	if ((ImGui::GetIO().KeysDown[GLFW_KEY_LEFT_CONTROL] && ImGui::GetIO().KeysDown[GLFW_KEY_LEFT_SHIFT] && ImGui::GetIO().KeysDown[GLFW_KEY_S]))
+	{
+		saveAsFile();
+	}
+	if ((ImGui::GetIO().KeysDown[GLFW_KEY_LEFT_CONTROL] && ImGui::GetIO().KeysDown[GLFW_KEY_S]))
+	{
+		saveFile();
+	}
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
@@ -468,39 +605,15 @@ void dockspace()
 
 			if (ImGui::MenuItem("Open", NULL))
 			{
-				inspector = 0;
-				char file[1024] = {};
-				FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
-				fgets(file, 1024, f);
-				working_file = file;
-				string fi(file);
-				fi = fi.substr(0, fi.size() - 1);
-				if(fi == "")
-					cout << "cancelled load" << endl;
-				else{
-					mainThreadWork.push_back(new function<void()>([=]() {
-						load_game(fi.c_str());
-					}));
-					cout << "loaded: " << file << endl;
-				}
+				openFile();
+			}
+			if (ImGui::MenuItem("save as", NULL))
+			{
+				saveAsFile();
 			}
 			if (ImGui::MenuItem("save", NULL))
 			{
-				char file[1024];
-				FILE *f = popen("zenity --file-selection --save  --file-filter=*.lvl", "r");
-				fgets(file, 1024, f);
-				string fi(file);
-				fi = fi.substr(0, fi.size() - 1);
-				if(fi == "")
-					cout << "cancelled save" << endl;
-				else{
-					mainThreadWork.push_back(new function<void()>([=]() {
-						save_game(fi.c_str());
-					}));
-
-					working_file = file;
-					cout << "saved: " << file << endl;
-				}
+				saveFile();
 			}
 			// ImGui::Separator();
 
@@ -510,241 +623,272 @@ void dockspace()
 		}
 		ImGui::EndMenuBar();
 	}
-
-	bool editor_hov = false;
-	if (ImGui::Begin("Assets"))
+	if (!isGameRunning())
 	{
-		editor_hov |= ImGui::IsWindowHovered();
-		static assets::asset *as;
-		ImGuiStyle &style = ImGui::GetStyle();
-		int buttons_count = 20;
-		float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-
-		int kjj = 0;
-		bool open_asset = false;
-		for (auto &i : assets::assets)
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		bool editor_hov = false;
+		if (ImGui::Begin("Assets"))
 		{
-			ImGui::BeginGroup();
-			ImGui::PushItemWidth(50);
-			ImGui::PushID(i.second->id);
+			editor_hov |= ImGui::IsWindowHovered();
+			static assets::asset *as;
+			ImGuiStyle &style = ImGui::GetStyle();
+			int buttons_count = 20;
+			float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
-			char input[1024];
-			sprintf(input, i.second->name.c_str());
-			if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-				i.second->name = {input};
-			// ImVec2 sz{50,50};
-			// ImGui::Image(0,sz);
-			if (ImGui::Button(i.second->name.c_str(), {50, 50}))
+			int kjj = 0;
+			bool open_asset = false;
+			for (auto &i : assets::assets)
 			{
-				// if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)){
-				inspector = i.second;
+				ImGui::BeginGroup();
+				ImGui::PushItemWidth(50);
+				ImGui::PushID(i.second->id);
+
+				char input[1024];
+				sprintf(input, i.second->name.c_str());
+				if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
+					i.second->name = {input};
+				// ImVec2 sz{50,50};
+				// ImGui::Image(0,sz);
+				if (ImGui::Button(i.second->name.c_str(), {50, 50}))
+				{
+					// if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)){
+					inspector = i.second;
+				}
+				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+				{
+					// cout << "right clicked button" << endl;
+					as = i.second;
+					open_asset = true;
+				}
+
+				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+				{
+					// Set payload to carry the index of our item (could be anything)
+					ImGui::SetDragDropPayload(i.second->type().c_str(), &i.second->id, sizeof(int));
+					ImGui::EndDragDropSource();
+				}
+
+				ImGui::PopID();
+				ImGui::PopItemWidth();
+
+				float last_button_x2 = ImGui::GetItemRectMax().x;
+				float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
+				ImGui::EndGroup();
+				if (kjj++ + 1 < assets::assets.size() && next_button_x2 < window_visible_x2)
+					ImGui::SameLine();
 			}
-			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+			if (open_asset)
+				ImGui::OpenPopup("asset_context");
+			if (ImGui::BeginPopup("asset_context"))
 			{
-				// cout << "right clicked button" << endl;
-				as = i.second;
-				open_asset = true;
+				// ImGui::Text("collider type");
+				ImGui::Separator();
+				if (ImGui::Selectable("copy"))
+				{
+					as->copy();
+					// new game_object(*t->gameObject());
+				}
+				if (ImGui::Selectable("delete"))
+				{
+					// if (inspector == t->gameObject())
+					// 	inspector = 0;
+					// t->gameObject()->destroy();
+				}
+				ImGui::EndPopup();
 			}
-
-			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+			else if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
 			{
-				// Set payload to carry the index of our item (could be anything)
-				ImGui::SetDragDropPayload(i.second->type().c_str(), &i.second->id, sizeof(int));
-				ImGui::EndDragDropSource();
+				ImGui::OpenPopup("new_asset_context");
+			}
+			if (ImGui::BeginPopup("new_asset_context"))
+			{
+				// ImGui::Text("collider type");
+				ImGui::Separator();
+				if (ImGui::Selectable("new model"))
+				{
+					// new game_object();
+				}
+				if (ImGui::Selectable("new emitter"))
+				{
+					// new game_object();
+				}
+				if (ImGui::Selectable("new shader"))
+				{
+					// new game_object();
+				}
+				if (ImGui::Selectable("new prototype"))
+				{
+					// new game_object();
+				}
+				ImGui::EndPopup();
 			}
 
-			ImGui::PopID();
-			ImGui::PopItemWidth();
-
-			float last_button_x2 = ImGui::GetItemRectMax().x;
-			float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
-			ImGui::EndGroup();
-			if (kjj++ + 1 < assets::assets.size() && next_button_x2 < window_visible_x2)
-				ImGui::SameLine();
+			ImGui::End();
 		}
-		if (open_asset)
-			ImGui::OpenPopup("asset_context");
-		if (ImGui::BeginPopup("asset_context"))
+
+		if (ImGui::Begin("Files"))
 		{
-			// ImGui::Text("collider type");
-			ImGui::Separator();
-			if (ImGui::Selectable("copy"))
+			editor_hov |= ImGui::IsWindowHovered();
+			std::string path = ".";
+			// if (ImGui::TreeNode(dir.substr(dir.find_last_of('/')).c_str()))
+			// {
+
+			vector<string> dirs;
+			vector<string> files;
+			for (const auto &entry : fs::directory_iterator(path))
 			{
-				as->copy();
-				// new game_object(*t->gameObject());
+				if (entry.is_directory())
+				{
+					dirs.push_back(entry.path());
+				}
+				else
+				{
+					files.push_back(entry.path());
+				}
 			}
-			if (ImGui::Selectable("delete"))
+			sort(dirs.begin(), dirs.end());
+			sort(files.begin(), files.end());
+
+			for (const auto &dir : dirs)
 			{
-				// if (inspector == t->gameObject())
-				// 	inspector = 0;
-				// t->gameObject()->destroy();
+				nav_f(dir);
 			}
-			ImGui::EndPopup();
+			for (const auto &file : files)
+			{
+
+				renderFile(file);
+			}
+
+			// 	ImGui::TreePop();
+			// }
+			ImGui::End();
 		}
-		else if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
+		if (ImGui::Begin("Inspector"))
 		{
-			ImGui::OpenPopup("new_asset_context");
+			editor_hov |= ImGui::IsWindowHovered();
+			if (inspector)
+				inspector->inspect();
+			ImGui::End();
 		}
-		if (ImGui::BeginPopup("new_asset_context"))
+		if (ImGui::Begin("Hierarchy"))
 		{
-			// ImGui::Text("collider type");
-			ImGui::Separator();
-			if (ImGui::Selectable("new model"))
-			{
-				// new game_object();
-			}
-			if (ImGui::Selectable("new emitter"))
-			{
-				// new game_object();
-			}
-			if (ImGui::Selectable("new shader"))
-			{
-				// new game_object();
-			}
-			if (ImGui::Selectable("new prototype"))
-			{
-				// new game_object();
-			}
-			ImGui::EndPopup();
+			editor_hov |= ImGui::IsWindowHovered();
+			transformLock.lock();
+			renderTransform(root2);
+			transformLock.unlock();
+			ImGui::End();
 		}
 
-		ImGui::End();
+		m_editor->update();
+		bool using_gizmo = false;
+		if (selected_transform.id != -1)
+		{
+
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			float ww = ImGui::GetWindowWidth();
+			float wy = ImGui::GetWindowHeight();
+			ImGuizmo::SetRect(0.0f, 0.0f, ww, wy);
+			mat4 view = m_editor->c.rot * m_editor->c.view;
+			// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
+			mat4 proj = m_editor->c.proj;
+			// mat4 proj = glm::perspective(COMPONENT_LIST(_camera)->get(0)->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.01f, 1e6f);
+			mat4 trans = selected_transform.getModel();
+			static auto guizmo_mode = ImGuizmo::LOCAL;
+			static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
+			if (!ImGui::IsMouseDown(1))
+			{
+				if (ImGui::IsKeyPressed(GLFW_KEY_T))
+					guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
+				if (ImGui::IsKeyPressed(GLFW_KEY_R))
+					guizmo_transform = ImGuizmo::OPERATION::ROTATE;
+				if (ImGui::IsKeyPressed(GLFW_KEY_S))
+					guizmo_transform = ImGuizmo::OPERATION::SCALE;
+				if (ImGui::IsKeyPressed(GLFW_KEY_W))
+					guizmo_mode = ImGuizmo::WORLD;
+				if (ImGui::IsKeyPressed(GLFW_KEY_L))
+					guizmo_mode = ImGuizmo::LOCAL;
+			}
+
+			ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans));
+
+			if (ImGuizmo::IsUsing())
+			{
+				vec3 pos;
+				vec3 scale;
+				quat rot;
+				vec3 skew;
+				vec4 pers;
+				// ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(trans),pos,)
+				glm::decompose(trans, scale, rot, pos, skew, pers);
+
+				selected_transform.setPosition(pos);
+				selected_transform.setRotation(rot);
+				selected_transform.setScale(scale);
+				using_gizmo = true;
+			}
+		}
+
+		if (ImGui::Begin("info"))
+		{
+			editor_hov |= ImGui::IsWindowHovered();
+			ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
+			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
+			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
+			if (!isGameRunning() && ImGui::Button("play"))
+			{
+				start_game();
+			}
+			else if (isGameRunning() && ImGui::Button("stop"))
+			{
+				stop_game();
+			}
+			ImGui::End();
+		}
+
+		if (ImGui::IsMouseClicked(0) && !editor_hov && !using_gizmo)
+		{
+			ImVec2 mp = ImGui::GetMousePos();
+			ImVec2 sz = ImGui::GetWindowViewport()->Size;
+			cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
+			vec2 sz_2 = {sz.x, sz.y};
+			sz_2 /= 2.f;
+
+			camera &c = m_editor->c;
+			mat3 per = c.getProjection();
+
+			vec3 p = m_editor->position;
+			vec3 d = c.screenPosToRay({mp.x, mp.y});
+
+			mainThreadWork.push_back(new function<void()>([=]() {
+				transform2 r = renderRaycast(p, d);
+				if (r.id != -1)
+				{
+					inspector = r->gameObject();
+					selected_transform = r;
+					selected_transforms.clear();
+					selected_transforms[r.id] = true;
+				}
+			}));
+		}
 	}
-
-	if (ImGui::Begin("Files"))
+	else
 	{
-		editor_hov |= ImGui::IsWindowHovered();
-		std::string path = ".";
-		// if (ImGui::TreeNode(dir.substr(dir.find_last_of('/')).c_str()))
-		// {
-
-		vector<string> dirs;
-		vector<string> files;
-		for (const auto &entry : fs::directory_iterator(path))
+		if (ImGui::Begin("info"))
 		{
-			if (entry.is_directory())
+			ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
+			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
+			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
+			if (!isGameRunning() && ImGui::Button("play"))
 			{
-				dirs.push_back(entry.path());
+				start_game();
 			}
-			else
+			else if (isGameRunning() && (ImGui::Button("stop") || ImGui::GetIO().KeysDown[GLFW_KEY_ESCAPE]))
 			{
-				files.push_back(entry.path());
+				stop_game();
 			}
+			ImGui::End();
 		}
-		sort(dirs.begin(), dirs.end());
-		sort(files.begin(), files.end());
-
-		for (const auto &dir : dirs)
-		{
-			nav_f(dir);
-		}
-		for (const auto &file : files)
-		{
-
-			renderFile(file);
-		}
-
-		// 	ImGui::TreePop();
-		// }
-		ImGui::End();
-	}
-	if (ImGui::Begin("Inspector"))
-	{
-		editor_hov |= ImGui::IsWindowHovered();
-		if (inspector)
-			inspector->inspect();
-		ImGui::End();
-	}
-	if (ImGui::Begin("Hierarchy"))
-	{
-		editor_hov |= ImGui::IsWindowHovered();
-		transformLock.lock();
-		renderTransform(root2);
-		transformLock.unlock();
-		ImGui::End();
-	}
-	bool using_gizmo = false;
-	if (selected_transform.id != -1)
-	{
-
-		ImGuizmo::SetOrthographic(false);
-		ImGuizmo::SetDrawlist();
-		float ww = ImGui::GetWindowWidth();
-		float wy = ImGui::GetWindowHeight();
-		ImGuizmo::SetRect(0.0f, 0.0f, ww, wy);
-		mat4 view = m_editor->c.rot * m_editor->c.view;
-		// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
-		mat4 proj = m_editor->c.proj;
-		// mat4 proj = glm::perspective(COMPONENT_LIST(_camera)->get(0)->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.01f, 1e6f);
-		mat4 trans = selected_transform.getModel();
-		static auto guizmo_mode = ImGuizmo::LOCAL;
-		static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
-		if (!ImGui::IsMouseDown(1))
-		{
-			if (ImGui::IsKeyPressed(GLFW_KEY_T))
-				guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
-			if (ImGui::IsKeyPressed(GLFW_KEY_R))
-				guizmo_transform = ImGuizmo::OPERATION::ROTATE;
-			if (ImGui::IsKeyPressed(GLFW_KEY_S))
-				guizmo_transform = ImGuizmo::OPERATION::SCALE;
-			if (ImGui::IsKeyPressed(GLFW_KEY_W))
-				guizmo_mode = ImGuizmo::WORLD;
-			if (ImGui::IsKeyPressed(GLFW_KEY_L))
-				guizmo_mode = ImGuizmo::LOCAL;
-		}
-
-		ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans));
-
-		if (ImGuizmo::IsUsing())
-		{
-			vec3 pos;
-			vec3 scale;
-			quat rot;
-			vec3 skew;
-			vec4 pers;
-			// ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(trans),pos,)
-			glm::decompose(trans, scale, rot, pos, skew, pers);
-
-			selected_transform.setPosition(pos);
-			selected_transform.setRotation(rot);
-			selected_transform.setScale(scale);
-			using_gizmo = true;
-		}
-	}
-
-	if (ImGui::Begin("info"))
-	{
-		editor_hov |= ImGui::IsWindowHovered();
-		ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
-		ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
-		ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
-		ImGui::End();
-	}
-
-	if (ImGui::IsMouseClicked(0) && !editor_hov && !using_gizmo)
-	{
-		ImVec2 mp = ImGui::GetMousePos();
-		ImVec2 sz = ImGui::GetWindowViewport()->Size;
-		cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
-		vec2 sz_2 = {sz.x, sz.y};
-		sz_2 /= 2.f;
-
-		camera& c = m_editor->c;
-		mat3 per = c.getProjection();
-
-		vec3 p = m_editor->position;
-		vec3 d = c.screenPosToRay({mp.x, mp.y});
-
-		mainThreadWork.push_back(new function<void()>([=]() {
-			transform2 r = renderRaycast(p, d);
-			if (r.id != -1)
-			{
-				inspector = r->gameObject();
-				selected_transform = r;
-				selected_transforms.clear();
-				selected_transforms[r.id] = true;
-			}
-		}));
 	}
 	ImGui::End();
 }
@@ -795,8 +939,9 @@ void bindWindowCallbacks(GLFWwindow *window)
 	glfwSetWindowCloseCallback(window, window_close_callback);
 }
 
-void initiliazeStuff(){
-// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
+void initiliazeStuff()
+{
+	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
 	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
 
@@ -903,8 +1048,8 @@ void renderThreadFunc()
 	sorter<__renderer> renderer_sorter("renderer", "struct renderer {\
 	uint transform;\
 	uint id;\
-};","transform");
-
+};",
+									   "transform");
 
 	while (true)
 	{
@@ -1000,14 +1145,21 @@ void renderThreadFunc()
 				updateParticles(fo, emitterInitCount);
 				appendStat("particles compute", gt_.stop());
 
-				for (_camera &c : cameras->data.data)
+				if (isGameRunning())
 				{
-					c.c->prepRender(matProgram);
-					c.c->render();
+					for (_camera &c : cameras->data.data)
+					{
+						c.c->prepRender(matProgram);
+						c.c->render();
+					}
 				}
-				if(m_editor){
-					m_editor->c.prepRender(matProgram);
-					m_editor->c.render();
+				else
+				{
+					if (m_editor)
+					{
+						m_editor->c.prepRender(matProgram);
+						m_editor->c.render();
+					}
 				}
 
 				///////////////////////// GUI ////////////////////////////////
