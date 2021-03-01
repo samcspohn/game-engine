@@ -207,27 +207,26 @@ void physicsUpdate(float dt)
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
 		stopWatch.start();
 
-		parralelfor(cb->size(),{
-			if (cb->data.valid[i])
-			{
-				cb->data.data[i]._update();
-			}
+		tbb::parallel_for_each(cb->_data.range(),[](auto &a){
+			a.second._update();
 		});
+		// parralelfor(cb->size(),{
+		// 	if (cb->data.valid[i])
+		// 	{
+		// 		cb->data.data[i]._update();
+		// 	}
+		// });
 		appendStat(cb->name + "--update", stopWatch.stop());
 		stopWatch.start();
-		_parallel_for(cb->data, [&](int i) {
-			if (cb->data.valid[i])
-			{
-				cb->data.data[i].midUpdate();
-			}
+
+		tbb::parallel_for_each(cb->_data.range(),[](auto &a){
+			a.second.midUpdate();
 		});
 		appendStat(cb->name + "--mid_update", stopWatch.stop());
 		stopWatch.start();
-		parralelfor(cb->size(),{
-			if (cb->data.valid[i])
-			{
-				cb->data.data[i]._lateUpdate();
-			}
+
+		tbb::parallel_for_each(cb->_data.range(),[](auto &a){
+			a.second._lateUpdate();
 		});
 		appendStat(cb->name + "--late_update", stopWatch.stop());
 		time -= (1.f / 30.f);
@@ -247,10 +246,15 @@ void run()
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
-		for (auto &i : mainThreadWork)
-		{
-			(*i)();
-			delete i;
+		// for (auto &i : mainThreadWork)
+		// {
+		// 	(*i)();
+		// 	delete i;
+		// }
+		function<void()>* f;
+		while(mainThreadWork.try_pop(f)){
+			(*f)();
+			delete f;
 		}
 		mainThreadWork.clear();
 
@@ -293,12 +297,18 @@ void run()
 					Transforms.positions[i] -= fo;
 					Transforms.updates[i].pos = true;
 				});
-				_parallel_for(*colliders, [&](int i) {
-					if (colliders->data.valid[i] && colliders->data.data[i].type == colType::pointType)
+				tbb::parallel_for_each(colliders->_data.range(),[&](auto &i){
+					if (i.second.type == colType::pointType)
 					{
-						colliders->data.data[i].p.pos1 -= fo;
+						i.second.p.pos1 -= fo;
 					}
 				});
+				// _parallel_for(*colliders, [&](int i) {
+				// 	if (colliders->data.valid[i] && colliders->data.data[i].type == colType::pointType)
+				// 	{
+				// 		colliders->data.data[i].p.pos1 -= fo;
+				// 	}
+				// });
 			}
 			else
 			{
@@ -321,9 +331,9 @@ void run()
 		transformsBuffered.store(false);
 		////////////////////////////////////// update camera data for frame ///////////////////
 
-		for (_camera &c : cameras->data.data)
+		for (auto &c : cameras->_data)
 		{
-			c.c->update(c.transform->getPosition(), c.transform.getRotation());
+			c.second.c->update(c.second.transform->getPosition(), c.second.transform.getRotation());
 		}
 
 		////////////////////////////////////// set up transforms/renderer data to buffer //////////////////////////////////////
@@ -452,7 +462,8 @@ void run()
 		////////////////////////////////////// cull objects //////////////////////////////////////
 		if (Input.getKeyDown(GLFW_KEY_B))
 		{
-			cameras->data.data.front().c->lockFrustum = !cameras->data.data.front().c->lockFrustum;
+			_camera& c = cameras->_data.at(0);
+			c.c->lockFrustum = !c.c->lockFrustum;
 		}
 
 		renderJob *rj = new renderJob();

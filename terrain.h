@@ -46,8 +46,11 @@ public:
     void onStart();
     void onDestroy();
     void update();
+    void init();
+    void deinit();
     void genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ);
     void generate();
+    ~terrain();
     SER6(width,depth,offsetX,offsetZ, scatter_obj, scatter);
 
 };

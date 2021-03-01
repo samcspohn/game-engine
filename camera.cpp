@@ -257,12 +257,17 @@ glm::vec2 camera::getScreen()
 // {
 // 	return 1 - 2;
 // }
-
-_camera::_camera(){
+void _camera::init(){
 	c = new camera();
+
+}
+void _camera::deinit(){
+	delete c;
+	
+}
+_camera::_camera(){
 }
 _camera::~_camera(){
-	delete c;
 }
 
 void camera::update(glm::vec3 position, glm::quat rotation){

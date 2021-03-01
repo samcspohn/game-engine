@@ -504,6 +504,7 @@ namespace batchManager
 				if(j.second->m.meta() == 0){
 					delete renderingManager::shader_model_vector[i.first][j.first];
 					renderingManager::shader_model_vector[i.first].erase(j.first);
+					modelManager::models_id.erase(j.first);
 				}
 			}
 		}

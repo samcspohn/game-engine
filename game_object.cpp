@@ -11,8 +11,10 @@ REGISTER_ASSET(game_object_proto_);
 
 void rebuildGameObject(componentStorageBase *base, int i)
 {
-	base->get(i)->transform->gameObject()->components.insert(std::make_pair(base->get(i), base->getInfo(i).CompItr));
+	base->get(i)->transform->gameObject()->components.insert(std::make_pair(base->hash, base->getInfo(i)));
 }
+
+// void rebuildGameObject2(component* )
 
 void registerProto(game_object_proto_ *p)
 {
@@ -63,11 +65,11 @@ game_object *_instantiate(game_object &g)
 
 	for (auto &i : g.components)
 	{
-		i.first->_copy(ret);
+		i.second.second->_copy(ret);
 	}
 	for (auto &i : ret->components)
 	{
-		i.first->init();
+		i.second.second->init();
 	}
 	return ret;
 }
@@ -108,7 +110,7 @@ game_object *_instantiate(game_object_prototype &g)
 	}
 	for (auto &i : ret->components)
 	{
-		i.first->init();
+		i.second.second->init();
 		// toStart.emplace(i.first);
 		// i.first->onStart();
 	}
@@ -121,7 +123,7 @@ game_object *instantiate(game_object_prototype &g)
 	{
 		// i.first->init();
 		// toStart.emplace(i.first);
-		i.first->onStart();
+		i.second.second->onStart();
 	}
 	return ret;
 }

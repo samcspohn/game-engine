@@ -21,7 +21,9 @@
 
 #include "Transform.h"
 #include "fstream"
+// #include "game_object.h"
 #define ull unsigned long long
+
 class game_object_proto_;
 
 // bool compareTransform(Transform *t1, Transform *t2);
@@ -55,46 +57,45 @@ public:
 };
 REGISTER_BASE(component)
 
-struct compItr
-{
-	ull hash;
-	// map<component *, compItr *> *goComponents;
-	virtual void erase();
-	virtual component *getComponent();
-};
+// struct compItr
+// {
+// 	ull hash;
+// 	// map<component *, compItr *> *goComponents;
+// 	virtual void erase();
+// 	virtual component *getComponent();
+// };
 
-template <typename t>
-struct compItr_ : public compItr
-{
-	typename deque_heap<t>::ref id;
-	deque_heap<t> *l;
-	void erase()
-	{
-		//	    delete *id;
-		// (&(id.data()))->onDestroy();
-		// goComponents->erase(getComponent());
-		l->_delete(id);
-		delete this;
-	}
-	typename deque_heap<t>::ref get()
-	{
-		return id;
-	}
-	component *getComponent()
-	{
-		return (component *)&(*id);
-	}
-	compItr_(typename deque_heap<t>::ref _id, deque_heap<t> *_l) : id(_id), l(_l) {}
-	compItr_() {}
-};
+// template <typename t>
+// struct compItr_ : public compItr
+// {
+// 	typename deque_heap<t>::ref id;
+// 	deque_heap<t> *l;
+// 	void erase()
+// 	{
+// 		//	    delete *id;
+// 		// (&(id.data()))->onDestroy();
+// 		// goComponents->erase(getComponent());
+// 		l->_delete(id);
+// 		delete this;
+// 	}
+// 	typename deque_heap<t>::ref get()
+// 	{
+// 		return id;
+// 	}
+// 	component *getComponent()
+// 	{
+// 		return (component *)&(*id);
+// 	}
+// 	compItr_(typename deque_heap<t>::ref _id, deque_heap<t> *_l) : id(_id), l(_l) {}
+// 	compItr_() {}
+// };
 
-struct compInfo
-{
-	component *compPtr;
-	compItr *CompItr;
-};
+// struct compInfo
+// {
+// 	component *compPtr;
+// 	compItr *CompItr;
+// };
 
-extern tbb::affinity_partitioner update_ap;
 
 class componentStorageBase
 {
@@ -116,9 +117,11 @@ public:
 	virtual bool getv(int i) { return false; }
 	virtual int size() { return 0; };
 	virtual unsigned int active() { return 0; };
-	virtual void sort(){};
-	virtual compInfo getInfo(int i) { return compInfo(); };
+	// virtual void sort(){};
+	virtual void _delete(int i) {};
+	virtual std::pair<int,component*> getInfo(int i) { return std::pair<int,component*>(0,0); };
 	virtual void clear() {}
+	virtual void s() {}
 	// virtual string ser(){};
 
 	friend class boost::serialization::access;
@@ -128,6 +131,7 @@ public:
 		ar &name &h_update &h_lateUpdate;
 	}
 };
+void rebuildGameObject(componentStorageBase *base, int i);
 
 // std::ostream & operator<<(std::ostream &os, const componentStorageBase &base)
 // {
@@ -139,55 +143,69 @@ template <typename t>
 class componentStorage : public componentStorageBase
 {
 public:
-	deque_heap<t> data;
+	// mutex m;
+	// deque_heap<t> data;
+	tbb::concurrent_unordered_map<int,t> _data;
+	tbb::concurrent_priority_queue<int, std::greater<int>> avail;
 
-	componentStorage()
-	{
+	// componentStorage() : lock()
+	// {
+	// }
+
+	void s(){
+		tbb::parallel_for_each(_data.range(),[&](auto& i){
+			rebuildGameObject(this,i.first);
+		});
+			// for (int j = 0; j < i.second->size(); j++)
+			// {
+			// 	// if (i.second->getv(j))
+			// 	// {
+					// rebuildGameObject(i.second, j);
+			// 	// 	i.second->get(j)->init();
+			// 	// }
+			// }
 	}
 	unsigned int active()
 	{
-		return data.active;
+		return _data.size();
+
+		// return data.active;
 	}
 	int size()
 	{
-		return data.size();
+		return _data.size();
 	}
 
 	t *get(int i)
 	{
-		if (i >= data.data.size())
-			return 0;
-		else
-			return (t *)&(data.data[i]);
+
+		if(_data.find(i) != _data.end()){
+			return &_data.at(i);
+		}
+		return 0;
+		// if (i >= _data.size())
+		// 	return 0;
+		// else
+		// 	return (t *)&(_data[i]);
 	}
 	bool getv(int i)
 	{
-		if (i >= data.data.size())
-			return 0;
-		else
-			return data.valid[i];
+		if(_data.find(i) != _data.end()){
+			return true;
+		}
+		return false;
+		// if (i >= _data.size())
+		// 	return 0;
+		// else
+		// 	return data.valid[i];
 	}
-	compInfo getInfo(int i)
+	std::pair<int,component*> getInfo(int i) 
 	{
-		this->lock.lock();
-		typename deque_heap<t>::ref id = data.getRef(i);
-		this->lock.unlock();
-		// new (&(*id)) t(c);
-		// *id = std::move(c);
-
-		compInfo ret;
-		ret.compPtr = &(*id);
-		ret.CompItr = new compItr_<t>(id, &data);
-		ret.CompItr->hash = typeid(t).hash_code();
-		return ret;
-	}
-	compInfo getInfo(typename deque_heap<t>::ref id)
-	{
-		compInfo ret;
-		ret.compPtr = &(*id);
-		ret.CompItr = new compItr_<t>(id, &data);
-		ret.CompItr->hash = typeid(t).hash_code();
-		return ret;
+		// compInfo ret;
+		// ret.compPtr = &(*id);
+		// ret.CompItr = new compItr_<t>(id, &data);
+		// ret.CompItr->hash = typeid(t).hash_code();
+		return std::pair<int,component*>(i,&_data[i]);
 	}
 	string getName()
 	{
@@ -199,23 +217,25 @@ public:
 		update_timer.start();
 		if (update_t > 0.1f)
 		{
-			_parallel_for(data, [&](int i) {
-				if (data.valid[i])
-				{
-					data.data[i].update();
-				}
-			});
+			// _parallel_for(data, [&](int i) {
+			// 	if (data.valid[i])
+			// 	{
+			// 		data.data[i].update();
+			// 	}
+			// });
+			tbb::parallel_for_each(_data.range(),[](auto& i){i.second.update();});
 		}
 		else
 		{
-			int size = data.size();
-			for (int i = 0; i < size; i++)
-			{
-				if (data.valid[i])
-				{
-					data.data[i].update();
-				}
-			}
+			std::for_each(_data.begin(),_data.end(),[](auto& i){i.second.update();});
+			// int size = data.size();
+			// for (int i = 0; i < size; i++)
+			// {
+			// 	if (data.valid[i])
+			// 	{
+			// 		data.data[i].update();
+			// 	}
+			// }
 		}
 		update_t = update_timer.stop();
 	}
@@ -224,31 +244,54 @@ public:
 		update_timer.start();
 		if (lateupdate_t > 0.1f)
 		{
-			_parallel_for(data, [&](int i) {
-				if (data.valid[i])
-				{
-					data.data[i].lateUpdate();
-				}
-			});
+			// _parallel_for(data, [&](int i) {
+			// 	if (data.valid[i])
+			// 	{
+			// 		data.data[i].lateUpdate();
+			// 	}
+			// });
+			tbb::parallel_for_each(_data.range(),[](auto& i){i.second.lateUpdate();});
+
 		}
 		else
 		{
-			int size = data.size();
-			for (int i = 0; i < size; i++)
-			{
-				if (data.valid[i])
-				{
-					data.data[i].lateUpdate();
-				}
-			}
+			// int size = data.size();
+			// for (int i = 0; i < size; i++)
+			// {
+			// 	if (data.valid[i])
+			// 	{
+			// 		data.data[i].lateUpdate();
+			// 	}
+			// }
+			std::for_each(_data.begin(),_data.end(),[](auto& i){i.second.lateUpdate();});
 		}
 		lateupdate_t = update_timer.stop();
 	}
 	void clear()
 	{
-		data.clear();
+		_data.clear();
+		avail.clear();
 	}
-
+	template<typename... types>
+	std::pair<int,component*> _new(types... args){
+		int i;
+		
+		if(!avail.try_pop(i)){
+			lock.lock();
+			i = _data.size();
+			_data.emplace(i,t(args...));
+			lock.unlock();
+		}else{	
+			_data.emplace(i,t(args...));
+		}
+		return std::pair<int,t*>(i,&_data[i]);
+	}
+	void _delete(int i){
+		lock.lock();
+		avail.push(i);
+		_data.unsafe_erase(i);
+		lock.unlock();
+	}
 	friend class boost::serialization::access;
 
 	template <class Archive>
@@ -256,15 +299,32 @@ public:
 	void serialize(OARCHIVE &ar, const unsigned int)
 	{
 		string s;
-		vector<int> transforms;
-		for (auto &i : data.data)
+		unordered_map<int,int> transforms;
+		// unordered_map<int,t> data(_data.begin(),_data.end());
+		
+		vector<int> av;
+		int d;
+		while(avail.try_pop(d)){
+			av.push_back(d);
+		}
+		for(int i : av){
+			avail.push(i);
+		}
+
+
+		for (auto &i : _data)
 		{
-			transforms.push_back(i.transform.id);
+			transforms.emplace(i.first, i.second.transform.id);
 		}
 		{
 			stringstream ss;
 			OARCHIVE _ar(ss);
-			_ar << data;
+			_ar << av;
+			_ar << _data.size();
+			for(auto& i : _data){
+				_ar << i.first;
+				_ar << i.second;
+			}
 			s = ss.str();
 		}
 		ar << boost::serialization::base_object<componentStorageBase>(*this) << transforms << s;
@@ -272,25 +332,39 @@ public:
 	void serialize(IARCHIVE &ar, const unsigned int)
 	{
 		string s;
-		vector<int> transforms;
+		unordered_map<int,int> transforms;
+		// unordered_map<int,t> data;
+		vector<int> av;
+
 		ar >> boost::serialization::base_object<componentStorageBase>(*this) >> transforms >> s;
 		{
 			stringstream ss{s};
 			try
 			{
 				IARCHIVE _ar(ss);
-				_ar >> data;
+				_ar >> av;
+				avail = tbb::concurrent_priority_queue<int, std::greater<int>> (av.begin(),av.end());
+				int size;
+				_ar >> size;
+				for(int i = 0; i < size; ++i){
+					int id;
+					t type;
+					_ar >> id;
+					_ar >> type;
+					_data.emplace(std::move(pair<int,t>(id,std::move(type))));
+				}
+				// _data.insert(data.begin(),data.end());
 			}
 			catch (exception e)
 			{
-				data.data.resize(transforms.size());
+				// data.data.resize(transforms.size());
 				cout << e.what() << endl;
 			}
 			// s = ss.str();
 		}
-		for (int i = 0; i < transforms.size(); ++i)
+		for (auto &i : transforms)
 		{
-			data.data[i].transform.id = transforms[i];
+			_data[i.first].transform.id = i.second;
 		}
 	}
 	// string ser(){
@@ -398,19 +472,21 @@ component_meta<t> registerComponent()
 	return component_meta<t>();
 }
 template <typename t>
-inline compInfo addComponentToRegistry(const t &c)
+inline std::pair<int,component*> addComponentToRegistry(const t &c)
 {
 	componentStorage<t> *compStorage = GetStorage<t>();
-	typename deque_heap<t>::ref id = compStorage->data._new(c);
-	return compStorage->getInfo(id);
+	return compStorage->_new(c);
+	// typename deque_heap<t>::ref id = compStorage->data._new(c);
+	// return compStorage->getInfo(id);
 }
 
 template <typename t>
-inline compInfo addComponentToRegistry()
+inline std::pair<int,component*> addComponentToRegistry()
 {
 	componentStorage<t> *compStorage = GetStorage<t>();
-	typename deque_heap<t>::ref id = compStorage->data._new();
-	return compStorage->getInfo(id);
+	return compStorage->_new();
+	// typename deque_heap<t>::ref id = compStorage->data._new();
+	// return compStorage->getInfo(id);
 }
 
 // void save_game(const char *filename);

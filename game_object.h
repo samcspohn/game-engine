@@ -177,7 +177,7 @@ class game_object : public inspectable
 	mutex colLock;
 	bool colliding = false;
 
-	map<component *, compItr *> components;
+	unordered_multimap<ull,std::pair<int,component*>> components;
 	~game_object() { destroyed = false; };
 	bool destroyed = false;
 	//friend component;
@@ -231,15 +231,15 @@ public:
 		{
 			ImGui::PushID(n);
 			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second->hash]->getName()).c_str()))
+			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->first]->getName()).c_str()))
 			{
 				ImGui::SameLine();
 				if (ImGui::Button("x"))
 				{
-					this->_removeComponent(i->first);
+					this->_removeComponent(i->second.second);
 				}
 				else
-					i->first->onEdit();
+					i->second.second->onEdit();
 				ImGui::TreePop();
 			}
 			ImGui::PopID();
@@ -270,9 +270,9 @@ public:
 	{
 		ull hash = typeid(t).hash_code();
 		for (auto &i : components)
-			if (i.second->hash == hash)
+			if (i.first == hash)
 			{
-				return (t *)i.first;
+				return (t *)i.second.second;
 			}
 		return 0;
 	}
@@ -282,9 +282,9 @@ public:
 		vector<t *> ret;
 		ull hash = typeid(t).hash_code();
 		for (auto &i : components)
-			if (i.second->hash == hash)
+			if (i.first == hash)
 			{
-				ret.push_back((t *)i.first);
+				ret.push_back((t *)i.second.second);
 			}
 		return ret;
 	}
@@ -301,7 +301,7 @@ public:
 		}
 		for (auto &i : components)
 		{
-			i.first->onCollision(go, point, normal);
+			i.second.second->onCollision(go, point, normal);
 		}
 		colliding = false;
 		colLock.unlock();
@@ -315,10 +315,10 @@ public:
 	t *addComponent()
 	{
 		// gameLock.lock();
-		compInfo ci = addComponentToRegistry<t>();
-		t *ret = (t *)ci.compPtr;
+		auto ci = addComponentToRegistry<t>();
+		t *ret = (t *)ci.second;
 		// ci.CompItr->goComponents = &this->components;
-		components.insert(std::make_pair(ret, ci.CompItr));
+		components.insert(std::make_pair(typeid(t).hash_code(), ci));
 		ret->transform = this->transform;
 		ret->transform->setGameObject(this);
 		ret->init();
@@ -333,10 +333,10 @@ public:
 	t *_addComponent()
 	{
 		// gameLock.lock();
-		compInfo ci = addComponentToRegistry<t>();
-		t *ret = (t *)ci.compPtr;
+		auto ci = addComponentToRegistry<t>();
+		t *ret = (t *)ci.second;
 		// ci.CompItr->goComponents = &this->components;
-		components.insert(std::make_pair(ret, ci.CompItr));
+		components.insert(std::make_pair(typeid(t).hash_code(), ci));
 		ret->transform = this->transform;
 		ret->transform->setGameObject(this);
 		ret->init();
@@ -351,10 +351,10 @@ public:
 	t *addComponent(const t &c)
 	{
 		// gameLock.lock();
-		compInfo ci = addComponentToRegistry(c);
-		t *ret = (t *)ci.compPtr;
+		auto ci = addComponentToRegistry(c);
+		t *ret = (t *)ci.second;
 		// ci.CompItr->goComponents = &this->components;
-		components.insert(std::make_pair(ret, ci.CompItr));
+		components.insert(std::make_pair(typeid(t).hash_code(), ci));
 		ret->transform = this->transform;
 		ret->transform->setGameObject(this);
 		ret->init();
@@ -369,10 +369,10 @@ public:
 	t *dupComponent(const t &c)
 	{
 		// gameLock.lock();
-		compInfo ci = addComponentToRegistry(c);
-		t *ret = (t *)ci.compPtr;
+		auto ci = addComponentToRegistry(c);
+		t *ret = (t *)ci.second;
 		// ci.CompItr->goComponents = &this->components;
-		components.insert(std::make_pair(ret, ci.CompItr));
+		components.insert(std::make_pair(typeid(t).hash_code(), ci));
 		ret->transform = this->transform;
 		ret->transform->setGameObject(this);
 		// gameLock.unlock();
@@ -382,24 +382,28 @@ public:
 	void removeComponent(t *c)
 	{
 		// gameLock.lock();
-		auto toR = components.find(c);
-		toR->first->deinit();
+		ull hash = typeid(*c).hash_code();
+		auto toR = components.find(hash);
+		toR->second.second->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
+		toR->second.second->onDestroy();
 		// componentCleanUp.emplace(toR->second);
-		toR->second->erase();
+		COMPONENT_LIST(t)->_delete(toR->second.first);
+		// toR->second->erase();
 		components.erase(toR);
 		// gameLock.unlock();
 	}
 	void removeComponent(component *c)
 	{
 		// gameLock.lock();
-		auto toR = components.find(c);
-		toR->first->deinit();
+		ull hash = typeid(*c).hash_code();
+		auto toR = components.find(hash);
+		toR->second.second->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
+		toR->second.second->onDestroy();
 		// componentCleanUp.emplace(toR->second);
-		toR->second->erase();
+		ComponentRegistry.components.at(hash)->_delete(toR->second.first);
+		
 		components.erase(toR);
 		// gameLock.unlock();
 	}
@@ -407,28 +411,24 @@ public:
 	void _removeComponent(component *c)
 	{
 		// gameLock.lock();
-		auto toR = components.find(c);
-		toR->first->deinit();
+		ull hash = typeid(*c).hash_code();
+		auto toR = components.find(hash);
+		toR->second.second->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
+		// toR->second.second->onDestroy();
 		// componentCleanUp.emplace(toR->second);
-		toR->second->erase();
-		components.erase(toR);
-		// gameLock.unlock();
+		ComponentRegistry.components.at(hash)->_delete(toR->second.first);
 	}
 	template <class t>
 	void removeComponent()
 	{
-		// gameLock.lock();
-		component *c = getComponent<t>();
-		auto toR = components.find(c);
-		toR->first->deinit();
+		ull hash = typeid(t).hash_code();
+		auto toR = components.find(hash);
+		toR->second.second->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
+		toR->second.second->onDestroy();
 		// componentCleanUp.emplace(toR->second);
-		toR->second->erase();
-		components.erase(toR);
-		// gameLock.unlock();
+		ComponentRegistry.components.at(hash)->_delete(toR->second.first);
 	}
 
 	void destroy()
@@ -489,7 +489,7 @@ private:
 	{
 		for (auto &i : g.components)
 		{
-			i.first->onStart();
+			i.second.second->onStart();
 		}
 		for (transform2 t : g.transform->getChildren())
 		{
@@ -514,11 +514,11 @@ private:
 
 		for (auto &i : g.components)
 		{
-			i.first->_copy(this);
+			i.second.second->_copy(this);
 		}
 		for (auto &i : this->components)
 		{
-			i.first->init();
+			i.second.second->init();
 		}
 
 		// gameLock.unlock();
@@ -556,14 +556,15 @@ private:
 		// }
 		for (auto &i : components)
 		{
-			i.first->deinit();
-			i.first->onDestroy();
+			i.second.second->deinit();
+			i.second.second->onDestroy();
 		}
 
-		while (components.size() > 0)
+		for(auto &c : components)
 		{
-			components.begin()->second->erase();
-			components.erase(components.begin());
+			// c.second->erase();
+			ComponentRegistry.components.at(c.first)->_delete(c.second.first);
+			// components.erase(components.begin());
 		}
 		while (transform->getChildren().size() > 0)
 		{

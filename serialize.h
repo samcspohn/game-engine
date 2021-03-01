@@ -21,6 +21,8 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/priority_queue.hpp>
 #include <boost/serialization/queue.hpp>
+#include <tbb/concurrent_unordered_map.h>
+// #include <tbb/co.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -134,5 +136,30 @@ namespace boost::serialization
     {
         ar &v.x &v.y &v.z &v.w;
     }
+    // template <typename a, typename b>
+    // inline void serialize(OARCHIVE &ar, tbb::concurrent_unordered_map<a,b>& m, unsigned /*unused*/)
+    // {
+    //     ar << m.size();
+    //     for(auto &i : m){
+    //         ar << i.first;
+    //         ar << i.second;
+    //     }
+    //     // ar &v.x &v.y;
+    // }
+    // template <typename a, typename b>
+    // inline void serialize(IARCHIVE &ar, tbb::concurrent_unordered_map<a,b>& m, unsigned /*unused*/)
+    // {
+    //     int size;
+    //     size << ar;
+    //     // ar & m.size();
+    //     for(auto &i : m){
+    //         std::pair<a,b> c;
+    //         c.first << ar;
+    //         c.second << ar;
+    //         m.emplace(c);
+    //         // ar & i.first & i.second;
+    //     }
+    //     // ar &v.x &v.y;
+    // }
 
 } // namespace boost::serialization

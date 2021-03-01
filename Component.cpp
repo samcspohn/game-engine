@@ -1,8 +1,8 @@
 #include "Component.h"
 #define ull unsigned long long
 
-void compItr::erase(){};
-component* compItr::getComponent(){ return 0; };
+// void compItr::erase(){};
+// component* compItr::getComponent(){ return 0; };
 
 vector<int> numbers = {0};
 void component::onStart() {}

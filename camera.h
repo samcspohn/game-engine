@@ -103,6 +103,8 @@ public:
 	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
 	_camera();
 	~_camera();
+	void init();
+	void deinit();
 	camera* c = 0;
 	// GLfloat fov;
 	// GLfloat nearPlane;
