@@ -383,9 +383,9 @@ public:
 	{
 		// gameLock.lock();
 		auto toR = components.find(c);
+		toR->first->onDestroy();
 		toR->first->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
 		// componentCleanUp.emplace(toR->second);
 		toR->second->erase();
 		components.erase(toR);
@@ -395,9 +395,9 @@ public:
 	{
 		// gameLock.lock();
 		auto toR = components.find(c);
+		toR->first->onDestroy();
 		toR->first->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
 		// componentCleanUp.emplace(toR->second);
 		toR->second->erase();
 		components.erase(toR);
@@ -408,9 +408,9 @@ public:
 	{
 		// gameLock.lock();
 		auto toR = components.find(c);
+		toR->first->onDestroy();
 		toR->first->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
 		// componentCleanUp.emplace(toR->second);
 		toR->second->erase();
 		components.erase(toR);
@@ -422,9 +422,9 @@ public:
 		// gameLock.lock();
 		component *c = getComponent<t>();
 		auto toR = components.find(c);
+		toR->first->onDestroy();
 		toR->first->deinit();
 		// toDestroyComponents.emplace(toR->first);
-		toR->first->onDestroy();
 		// componentCleanUp.emplace(toR->second);
 		toR->second->erase();
 		components.erase(toR);
@@ -556,15 +556,19 @@ private:
 		// }
 		for (auto &i : components)
 		{
-			i.first->deinit();
 			i.first->onDestroy();
+			i.first->deinit();
 		}
 
-		while (components.size() > 0)
-		{
-			components.begin()->second->erase();
-			components.erase(components.begin());
+		for(auto &c : components){
+			c.second->erase();
 		}
+		components.clear();
+		// while (components.size() > 0)
+		// {
+		// 	components.begin()->second->erase();
+		// 	components.erase(components.begin());
+		// }
 		while (transform->getChildren().size() > 0)
 		{
 			transform->getChildren().front()->gameObject()->_destroy();

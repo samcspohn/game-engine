@@ -187,7 +187,7 @@ int frameCounter = 0;
 // }
 
 game_object *rootGameObject;
-deque<function<void()> *> mainThreadWork;
+tbb::concurrent_queue<function<void()> *> mainThreadWork;
 
 void StartComponents(componentStorageBase *cl)
 {
@@ -289,6 +289,7 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 			if (i.second->getv(j))
 			{
 				rebuildGameObject(i.second, j);
+				i.second->get(j)->init();
 			}
 		}
 	}
@@ -314,13 +315,26 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	// }
 }
 
+stringstream ss;
+
 bool isGameRunning()
 {
 	return gameRunning;
 }
+// #define IARCHIVE boost::archive::binary_iarchive
+// #define OARCHIVE boost::archive::binary_oarchive
 void start_game() // assumes only renderer and terrain are started.
 {
-	mainThreadWork.push_back(new function<void()>([=]() {
+
+	mainThreadWork.push(new function<void()>([&]() {
+		{
+			// boost::archive::binary_oarchive oa(ss);
+			OARCHIVE oa(ss);
+			// lightingManager::save(oa);
+			saveTransforms(oa);
+			oa << ComponentRegistry;
+		}
+
 		for (auto &i : ComponentRegistry.components)
 		{
 			if (i.first != typeid(_renderer).hash_code() && i.first != typeid(terrain).hash_code())
@@ -330,19 +344,50 @@ void start_game() // assumes only renderer and terrain are started.
 	gameRunning = true;
 }
 
+atomic<bool> stoppingGame;
 void stop_game()
 {
 	gameRunning = false;
 	inspector = 0;
-	mainThreadWork.push_back(new function<void()>([=]() {
-		for (auto &child : rootGameObject->transform->getChildren())
-		{
-			child->gameObject()->destroy();
-		}
-		tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
-		toDestroyGameObjects.clear();
+	stoppingGame = true;
+	mainThreadWork.push(new function<void()>([&]() {
+		// for (auto &child : rootGameObject->transform->getChildren())
+		// {
+		// 	child->gameObject()->destroy();
+		// }
 
-		load_level(working_file.c_str());
+		transformLock.lock();
+		rootGameObject->_destroy();
+		// tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
+		// toDestroyGameObjects.clear();
+		ComponentRegistry.clear();
+		{
+			// boost::archive::binary_iarchive ia(ss);
+			IARCHIVE ia(ss);
+			// lightingManager::load(ia);
+			loadTransforms(ia);
+			ia >> ComponentRegistry;
+		}
+		for (auto &i : ComponentRegistry.components)
+		{
+			for (int j = 0; j < i.second->size(); j++)
+			{
+				if (i.second->getv(j))
+				{
+					rebuildGameObject(i.second, j);
+					i.second->get(j)->init();
+
+				}
+			}
+		}
+		ss.clear();
+		StartComponents(COMPONENT_LIST(_renderer));
+		StartComponents(COMPONENT_LIST(terrain));
+
+		transformLock.unlock();
+		stoppingGame = false;
+
+		// load_level(working_file.c_str());
 	}));
 }
 
@@ -495,7 +540,7 @@ void openFile()
 		cout << "cancelled load" << endl;
 	else
 	{
-		mainThreadWork.push_back(new function<void()>([=]() {
+		mainThreadWork.push(new function<void()>([=]() {
 			load_level(fi.c_str());
 		}));
 		cout << "loaded: " << file << endl;
@@ -512,7 +557,7 @@ void saveAsFile()
 		cout << "cancelled save" << endl;
 	else
 	{
-		mainThreadWork.push_back(new function<void()>([=]() {
+		mainThreadWork.push(new function<void()>([=]() {
 			save_level(fi.c_str());
 		}));
 
@@ -522,7 +567,7 @@ void saveAsFile()
 }
 void saveFile()
 {
-	mainThreadWork.push_back(new function<void()>([=]() {
+	mainThreadWork.push(new function<void()>([=]() {
 		save_level(working_file.c_str());
 	}));
 	cout << "saved: " << working_file << endl;
@@ -773,9 +818,14 @@ void dockspace()
 		if (ImGui::Begin("Hierarchy"))
 		{
 			editor_hov |= ImGui::IsWindowHovered();
-			transformLock.lock();
-			renderTransform(root2);
-			transformLock.unlock();
+			// if(transformLock.try_lock()){
+			
+			if(!stoppingGame){
+				transformLock.lock();
+				renderTransform(root2);
+				transformLock.unlock();
+			}
+			// }
 			ImGui::End();
 		}
 
@@ -860,7 +910,7 @@ void dockspace()
 			vec3 p = m_editor->position;
 			vec3 d = c.screenPosToRay({mp.x, mp.y});
 
-			mainThreadWork.push_back(new function<void()>([=]() {
+			mainThreadWork.push(new function<void()>([=]() {
 				transform2 r = renderRaycast(p, d);
 				if (r.id != -1)
 				{

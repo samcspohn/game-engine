@@ -92,7 +92,9 @@ terrain *getTerrain(float x, float z)
     return 0;
 }
 
-
+    terrain::~terrain(){
+        cout << "deconstruct terrain" << endl;
+    }
     int terrain::xz(int x, int z)
     {
         return x * width + z;
@@ -243,7 +245,8 @@ terrain *getTerrain(float x, float z)
 
         if (r == 0)
             return;
-        _model model = r->getModel();
+        // _model model = r->getModel();
+        _model model = _model();
         model.makeUnique();
         r->set(r->getShader(),model);
         if (model.meshes().size() == 0)

@@ -234,8 +234,8 @@ class _turret final : public component
 	transform2 target;
 	transform2 guns;
 	// emitter_prototype_ muzzelSmoke;
-	gun *barrels;
-	audiosource *sound;
+	gun *barrels = 0;
+	audiosource *sound = 0;
 	float turret_angle;
 	float guns_angle;
 	bool canFire;
@@ -383,7 +383,7 @@ public:
 	SER_HELPER()
 	{
 		SER_BASE(component);
-		ar &target &gun_speed &muzzelFlash &guns &t_angles &g_angles &turret_angle &guns_angle; // & forward & under;
+		ar &target &gun_speed &turret_speed &muzzelFlash &guns &t_angles &g_angles &turret_angle &guns_angle; // & forward & under;
 	}
 };
 REGISTER_COMPONENT(_turret)
@@ -477,15 +477,14 @@ public:
 	float maxReverse;
 	float maxForward;
 	float rotationSpeed;
-	bool fire = false;
-	void onStart()
-	{
-		accel = 0;
-		thrust = 20;
-		maxReverse = 50;
-		maxForward = 10000;
-		rotationSpeed = radians(10.f);
-	}
+	// void onStart()
+	// {
+	// 	accel = 0;
+	// 	thrust = 20;
+	// 	maxReverse = 50;
+	// 	maxForward = 10000;
+	// 	rotationSpeed = radians(10.f);
+	// }
 	void accelerate(float acc)
 	{
 
@@ -518,11 +517,13 @@ public:
 	{
 		vel -= vel * 0.4f * Time.deltaTime;
 		vel += transform->forward() * accel * 0.4f * Time.deltaTime;
+		accel = glm::clamp(accel, -maxReverse, maxForward);
+		if(length(vel) > maxForward){
+			vel = normalize(vel) * maxForward;
+		}
+		transform->getParent()->move(vel * Time.deltaTime, true);
 		ship_vel = length(vel);
 		ship_accel = accel;
-		if(fire){
-			transform->gameObject()->getComponent<gunManager>()->fire();
-		}
 		// 	transform->rotate(glm::vec3(0, 1, 0), (Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * rotationSpeed);
 		// 	transform->rotate(glm::vec3(1, 0, 0), (Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * rotationSpeed);
 		// 	transform->rotate(glm::vec3(0, 0, 1), (Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * rotationSpeed);
@@ -556,16 +557,15 @@ public:
 	}
 	void onEdit()
 	{
-		RENDER(accel);
+		// RENDER(accel);
 		RENDER(thrust);
 		RENDER(maxReverse);
 		RENDER(maxForward);
 		RENDER(rotationSpeed);
-		RENDER(fire);
 	}
 	//UPDATE(_ship,update);
 	COPY(_ship);
-	SER2(maxReverse, maxForward);
+	SER4(maxReverse, maxForward,thrust,rotationSpeed);
 };
 REGISTER_COMPONENT(_ship)
 
@@ -694,7 +694,7 @@ public:
 		// waitForRenderJob([&]() { crosshairtex.load("res/images/crosshair.png"); });
 		// crosshair->img = crosshairtex;
 		// reticule->adopt(crosshair);
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		// glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		cam = transform->gameObject()->getComponent<_camera>();
 		fov = cam->c->fov;
 	}
@@ -724,7 +724,7 @@ public:
 			// crosshair->pos = ImVec2(SCREEN_WIDTH / 2 - 240, SCREEN_HEIGHT / 2 - 200);
 			// colCounter->contents = "collisions: " + to_string(colCount);
 		}
-		cout << "\rmissiles: " + FormatWithCommas(FormatWithCommas(COMPONENT_LIST(missile)->active())) + "       ";
+		// cout << "\rmissiles: " + FormatWithCommas(FormatWithCommas(COMPONENT_LIST(missile)->active())) + "       ";
 
 		if (Input.getKeyDown(GLFW_KEY_R))
 		{
@@ -1253,6 +1253,9 @@ int level1(bool load)
 		auto r_ = ship->_addComponent<_renderer>();
 		r_->set(modelShader, shipModel);
 		ship->_addComponent<_ship>()->rotationSpeed = glm::radians(20.f);
+		ship->getComponent<_ship>()->maxForward = 50.f;
+		ship->getComponent<_ship>()->maxReverse = 20.f;
+		ship->getComponent<_ship>()->thrust = 8.f;
 		auto ship_col = ship->_addComponent<collider>();
 		ship_col->setMesh(&shipModel.mesh());
 		ship_col->dim = vec3(4, 2, 20);
@@ -1319,10 +1322,10 @@ int level1(bool load)
 		registerProto(ground);
 
 		// terrainWidth = 1024;
-		terrainWidth = 128;
+		terrainWidth = 512;
 		// terrainWidth = 32;
 		// int terrainsDim = 0;
-		int terrainsDim = 2;
+		int terrainsDim = 0;
 		// int terrainsDim = 16;
 
 		// tree_rend->setCullSizes(0.04f, INFINITY);
@@ -1350,7 +1353,10 @@ int level1(bool load)
 
 				g->transform->setScale(vec3(20));
 				g->transform->setPosition(vec3(20 * i * terrainWidth, -4000, 20 * j * terrainWidth));
-				t->genHeightMap(terrainWidth, terrainWidth, i * terrainWidth - terrainWidth * 0.5f, j * terrainWidth - terrainWidth * 0.5f);
+				t->width = t->depth = terrainWidth + 1;
+				t->offsetX =  i * terrainWidth - terrainWidth * 0.5f;
+				t->offsetZ =  j * terrainWidth - terrainWidth * 0.5f;
+				// t->genHeightMap(terrainWidth, terrainWidth, i * terrainWidth - terrainWidth * 0.5f, j * terrainWidth - terrainWidth * 0.5f);
 				if (i == 0 && j == 0)
 				{
 					terr = t;

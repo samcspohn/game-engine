@@ -88,7 +88,7 @@ void updateTiming();
 // }
 
 extern game_object *rootGameObject;
-extern deque<function<void()> *> mainThreadWork;
+extern tbb::concurrent_queue<function<void()> *> mainThreadWork;
 
 void save_level(const char *filename);
 void rebuildGameObject(componentStorageBase *base, int i);

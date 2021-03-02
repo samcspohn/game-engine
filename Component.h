@@ -292,6 +292,7 @@ public:
 		{
 			data.data[i].transform.id = transforms[i];
 		}
+		hash = typeid(t).hash_code();
 	}
 	// string ser(){
 	// 	stringstream ss;
@@ -325,8 +326,8 @@ class Registry
 {
 public:
 	std::map<size_t, componentStorageBase *> components;
-	std::map<size_t, componentStorageBase *> gameEngineComponents;
-	std::map<size_t, componentStorageBase *> gameComponents;
+	// std::map<size_t, componentStorageBase *> gameEngineComponents;
+	// std::map<size_t, componentStorageBase *> gameComponents;
 	std::map<std::string, componentMetaBase *> meta;
 	std::map<size_t, componentMetaBase *> meta_types;
 	std::mutex lock;
@@ -335,8 +336,12 @@ public:
 	{
 		for (auto &i : components)
 		{
-			i.second->clear();
+			delete i.second;
+			// i.second->clear();
 		}
+		components.clear();
+		// gameEngineComponents.clear();
+		// gameComponents.clear();
 	}
 
 	friend class boost::serialization::access;
@@ -344,7 +349,7 @@ public:
 	template <class Archive>
 	void serialize(Archive &ar, const unsigned int /* file_version */)
 	{
-		ar &components &gameEngineComponents &gameComponents;
+		ar &components;// &gameEngineComponents &gameComponents;
 	}
 	template <typename t>
 	inline componentStorage<t> *registry()
@@ -382,7 +387,7 @@ componentStorage<t> *GetStorage()
 			// if (t::_registerEngineComponent())
 			// 	ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
 			// else
-			ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
+			// ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
 		}
 		ComponentRegistry.lock.unlock();
 	}

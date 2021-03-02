@@ -25,6 +25,7 @@ class terrain : public component
 {
 public:
     COPY(terrain);
+    ~terrain();
     void onEdit();
     game_object_prototype scatter_obj;
     vector<transform2> scatter;

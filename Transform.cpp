@@ -165,10 +165,10 @@ void transform2::adopt(transform2 transform)
 		return;
 	transform->orphan();
 	Transforms.meta[transform.id].parent.id = this->id;
-	Transforms.meta[transform.id].m.lock();
+	Transforms.meta[id].m.lock();
 	Transforms.meta[id].children.push_back(transform);
 	Transforms.meta[transform.id].childId = (--Transforms.meta[id].children.end());
-	Transforms.meta[transform.id].m.unlock();
+	Transforms.meta[id].m.unlock();
 }
 
 game_object *transform2::gameObject()

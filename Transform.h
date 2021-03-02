@@ -246,6 +246,9 @@ struct _Transforms
 	void _delete(transform2 t)
 	{
 		meta[t.id].parent = -1;
+		meta[t.id].gameObject = 0;
+		meta[t.id].children.clear();
+		meta[t.id].childId = list<transform2>::iterator();
 		m.lock();
 		avail.push(t.id);
 		m.unlock();

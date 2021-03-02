@@ -67,87 +67,6 @@ void setRootGameObject(transform2 r)
 	rootGameObject = new game_object(root2);
 }
 
-class editor_sc : public component
-{
-	float speed = 3.f;
-	bool cursorReleased = true;
-	float fov = radians(80.f);
-	// vector<gun *> guns;
-
-public:
-	game_object_prototype ammo_proto;
-	void onStart()
-	{
-		// guns = transform->gameObject()->getComponents<gun>();
-		// // bomb = bullets["bomb"];
-		// guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
-		// guns[0]->rof = 3'000 / 60;
-		// guns[0]->dispersion = 0.3f;
-		// guns[0]->speed = 200;
-		// guns[0]->setBarrels({vec3(-2.0, 0.9, 1)});
-	}
-	void update()
-	{
-		// int numMissiles = COMPONENT_LIST(missile)->size();
-		// // cout << "\rmissiles: " + FormatWithCommas(numMissiles) + "       ";
-		// fps->contents = "fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime);
-		// missileCounter->contents = "missiles: " + FormatWithCommas(COMPONENT_LIST(missile)->active());
-		// particleCounter->contents = "particles: " + FormatWithCommas(getParticleCount());
-		// aparticleCounter->contents = "aparticles: " + FormatWithCommas(getActualParticles());
-		// base->size = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-		if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
-		{
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			cursorReleased = false;
-		}
-		else if (Input.getKeyDown(GLFW_KEY_ESCAPE) && !cursorReleased)
-		{
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			cursorReleased = true;
-		}
-
-		if (!cursorReleased || Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
-		{
-			transform->translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
-			transform->translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
-			transform->translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
-			// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
-			transform->rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * fov / radians(80.f) * -0.4f);
-			transform->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * fov / radians(80.f) * -0.4f);
-			transform->lookat(transform->forward(), vec3(0, 1, 0));
-
-			fov -= Input.Mouse.getScroll() * radians(5.f);
-			fov = glm::clamp(fov, radians(5.f), radians(80.f));
-			transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
-
-			if (Input.getKeyDown(GLFW_KEY_R))
-			{
-				speed *= 2;
-			}
-			if (Input.getKeyDown(GLFW_KEY_F))
-			{
-				speed /= 2;
-			}
-			// if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT))
-			// {
-			// 	guns[0]->fire();
-			// }
-		}
-		// if (Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKey(GLFW_KEY_S))
-		// {
-		// 	save_game("game.lvl");
-		// }
-	}
-	void onEdit()
-	{
-		RENDER(speed);
-	}
-	COPY(editor_sc);
-	SER3(speed, fov, ammo_proto);
-};
-REGISTER_COMPONENT(editor_sc)
-
 bool guiRayCast(vec3 p, vec3 d)
 {
 	return raycast(p, d);
@@ -207,7 +126,7 @@ void physicsUpdate(float dt)
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
 		stopWatch.start();
 
-		parralelfor(cb->size(),{
+		parralelfor(cb->size(), {
 			if (cb->data.valid[i])
 			{
 				cb->data.data[i]._update();
@@ -223,7 +142,7 @@ void physicsUpdate(float dt)
 		});
 		appendStat(cb->name + "--mid_update", stopWatch.stop());
 		stopWatch.start();
-		parralelfor(cb->size(),{
+		parralelfor(cb->size(), {
 			if (cb->data.valid[i])
 			{
 				cb->data.data[i]._lateUpdate();
@@ -234,7 +153,7 @@ void physicsUpdate(float dt)
 	}
 }
 void run()
-{	
+{
 	StartComponents(COMPONENT_LIST(_renderer));
 	StartComponents(COMPONENT_LIST(terrain));
 
@@ -247,36 +166,48 @@ void run()
 
 	while (!glfwWindowShouldClose(window) && Time.time < maxGameDuration)
 	{
-		for (auto &i : mainThreadWork)
+
+		function<void()> *f;
+		while (mainThreadWork.try_pop(f))
 		{
-			(*i)();
-			delete i;
+			(*f)();
+			delete f;
+			/* code */
 		}
-		mainThreadWork.clear();
+		//  (auto &i : mainThreadWork)
+		// {
+		// 	(*i)();
+		// 	delete i;
+		// }
+		// mainThreadWork.clear();
+		transformLock.lock();
 
 		gameLoopTotal.start();
 		gameLoopMain.start();
-		// scripting
-		transformLock.lock();
-		if (isGameRunning())
 		{
-			doLoopIteration(ComponentRegistry.gameComponents);
-			for (auto &i : physics_manager::collisionGraph)
-				physics_manager::collisionLayers[i.first].clear();
-			// doLoopIteration(gameEngineComponents, false);
 
-			/////////////////////////////////////////////////
-			physicsUpdate(Time.unscaledDeltaTime);
+			// unique_lock l(transformLock);
+			// scripting
+			if (isGameRunning())
+			{
+				doLoopIteration(ComponentRegistry.components);
+				for (auto &i : physics_manager::collisionGraph)
+					physics_manager::collisionLayers[i.first].clear();
+				// doLoopIteration(gameEngineComponents, false);
+
+				/////////////////////////////////////////////////
+				physicsUpdate(Time.unscaledDeltaTime);
+			}
+			if (COMPONENT_LIST(_camera)->size())
+				audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
+
+			stopWatch.start();
+			tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
+			toDestroyGameObjects.clear();
+
+			entities = Transforms.getCount();
+			transformLock.unlock();
 		}
-		if (COMPONENT_LIST(_camera)->size())
-			audioManager::updateListener(COMPONENT_LIST(_camera)->get(0)->transform->getPosition());
-
-		stopWatch.start();
-		tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
-		toDestroyGameObjects.clear();
-
-		entities = Transforms.getCount();
-		transformLock.unlock();
 		appendStat("destroy deffered", stopWatch.stop());
 		appendStat("game loop main", gameLoopMain.stop());
 
