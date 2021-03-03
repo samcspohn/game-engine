@@ -543,13 +543,13 @@ private:
 	// }
 	void _destroy()
 	{
-		lock.lock();
-		if (this->colliding)
-		{
-			this->destroyed = true;
-			lock.unlock();
-			return;
-		}
+		// lock.lock();
+		// if (this->colliding)
+		// {
+		// 	this->destroyed = true;
+		// 	lock.unlock();
+		// 	return;
+		// }
 		// if(this->destroyed){
 		// 	lock.unlock();
 		// 	return;
@@ -574,7 +574,7 @@ private:
 			transform->getChildren().front()->gameObject()->_destroy();
 		}
 		transform->_destroy();
-		lock.unlock();
+		// lock.unlock();
 		// this->_destroy();
 		delete this;
 	}

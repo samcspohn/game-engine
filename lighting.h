@@ -35,8 +35,8 @@ namespace lightingManager
 {
     extern fast_list<pointLight> pointLights;
     extern gpu_vector<pointLight> *gpu_pointLights;
-    void save(OARCHIVE &oa);
-    void load(IARCHIVE &ia);
+    // void save(OARCHIVE &oa);
+    // void load(IARCHIVE &ia);
 }; // namespace lightingManager
 
 namespace lighting
@@ -70,12 +70,12 @@ public:
     }
     SER_OUT(){
         ar << boost::serialization::base_object<component>(*this);
-        ar << *pl;
+        ar << (*pl);
     }
     SER_IN(){
         // unsigned int id;
         ar >> boost::serialization::base_object<component>(*this);;
-        ar >> *pl;
+        ar >> (*pl);
         // ar >> id;
         // pl = lightingManager::pointLights.iterators[id];
     }

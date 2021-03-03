@@ -209,7 +209,6 @@ void run()
 			transformLock.unlock();
 		}
 		appendStat("destroy deffered", stopWatch.stop());
-		appendStat("game loop main", gameLoopMain.stop());
 
 		auto cameras = COMPONENT_LIST(_camera);
 		auto colliders = COMPONENT_LIST(collider);
@@ -240,10 +239,12 @@ void run()
 		{
 			floating_origin.push(vec3(0));
 		}
+		appendStat("game loop main", gameLoopMain.stop());
 
-		waitForRenderJob([]() { updateTiming(); });
+
 		waitForRenderJob([]() { batchManager::updateBatches(); });
 		stopWatch.start();
+		waitForRenderJob([]() { updateTiming(); });
 		renderLock.lock();
 		appendStat("wait for render", stopWatch.stop());
 
@@ -404,7 +405,7 @@ void run()
 
 	// concurrency::pinningObserver.observe(false);
 
-	rootGameObject->destroy();
+	rootGameObject->_destroy();
 	destroyAllComponents();
 	audioManager::destroy();
 

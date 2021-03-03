@@ -245,12 +245,13 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	DestroyComponents(COMPONENT_LIST(_renderer));
 	DestroyComponents(COMPONENT_LIST(terrain));
 
-	for (auto &child : rootGameObject->transform->getChildren())
-	{
-		child->gameObject()->destroy();
-	}
-	tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
-	toDestroyGameObjects.clear();
+	rootGameObject->_destroy();
+	// for (auto &child : rootGameObject->transform->getChildren())
+	// {
+	// 	child->gameObject()->destroy();
+	// }
+	// tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
+	// toDestroyGameObjects.clear();
 
 	// for(auto& g : toDestroy){
 	// 	g->_destroy();
@@ -315,25 +316,27 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	// }
 }
 
-stringstream ss;
+// stringstream ss;
 
 bool isGameRunning()
 {
 	return gameRunning;
 }
-// #define IARCHIVE boost::archive::binary_iarchive
-// #define OARCHIVE boost::archive::binary_oarchive
+#define IAR boost::archive::binary_iarchive
+#define OAR boost::archive::binary_oarchive
 void start_game() // assumes only renderer and terrain are started.
 {
 
 	mainThreadWork.push(new function<void()>([&]() {
+		ofstream f(".temp");
 		{
 			// boost::archive::binary_oarchive oa(ss);
-			OARCHIVE oa(ss);
+			OARCHIVE oa(f);
 			// lightingManager::save(oa);
 			saveTransforms(oa);
 			oa << ComponentRegistry;
 		}
+		f.close();
 
 		for (auto &i : ComponentRegistry.components)
 		{
@@ -361,13 +364,15 @@ void stop_game()
 		// tbb::parallel_for_each(toDestroyGameObjects.range(), [](game_object *g) { g->_destroy(); });
 		// toDestroyGameObjects.clear();
 		ComponentRegistry.clear();
+		ifstream f(".temp");
 		{
 			// boost::archive::binary_iarchive ia(ss);
-			IARCHIVE ia(ss);
+			IARCHIVE ia(f);
 			// lightingManager::load(ia);
 			loadTransforms(ia);
 			ia >> ComponentRegistry;
 		}
+		f.close();
 		for (auto &i : ComponentRegistry.components)
 		{
 			for (int j = 0; j < i.second->size(); j++)
@@ -380,7 +385,8 @@ void stop_game()
 				}
 			}
 		}
-		ss.clear();
+		rootGameObject = transform2(0)->gameObject();
+		// ss.clear();
 		StartComponents(COMPONENT_LIST(_renderer));
 		StartComponents(COMPONENT_LIST(terrain));
 

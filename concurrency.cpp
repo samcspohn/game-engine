@@ -5,8 +5,8 @@
 
 namespace concurrency {
 #define not_threads 0
-	// int numThreads = std::thread::hardware_concurrency() - not_threads;
-	int numThreads = 1;
+	int numThreads = std::thread::hardware_concurrency() - not_threads;
+	// int numThreads = 1;
 	tbb::task_scheduler_init tbbinit(numThreads);
 // 	pinning_observer pinningObserver(1);
 

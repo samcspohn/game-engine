@@ -39,7 +39,7 @@ public:
     float middle;
     float max_height;
     bool generated = false;
-    vector<vector<float>> heightMap;
+    vector<vector<float>>* heightMap = 0;
     int xz(int x, int z);
     terrainHit getHeight(float x, float z);
     float makeHeight(float x, float z);

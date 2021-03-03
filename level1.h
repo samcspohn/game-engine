@@ -235,7 +235,7 @@ class _turret final : public component
 	transform2 guns;
 	// emitter_prototype_ muzzelSmoke;
 	gun *barrels = 0;
-	audiosource *sound = 0;
+	// audiosource *sound = 0;
 	float turret_angle;
 	float guns_angle;
 	bool canFire;
@@ -275,8 +275,8 @@ public:
 		// }
 		guns = transform->getChildren().front();
 		barrels = guns->gameObject()->getComponent<gun>();
-		sound = transform->gameObject()->getComponent<audiosource>();
-		sound->gain = 0.05;
+		// sound = transform->gameObject()->getComponent<audiosource>();
+		// sound->gain = 0.05;
 		muzzelFlash = getNamedEmitterProto("muzzelFlash");
 		// muzzelSmoke = getEmitterPrototypeByName("muzzelSmoke");
 	}
@@ -364,7 +364,7 @@ public:
 				// cout << "fire" << endl;
 				muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(), guns->forward(), 20);
 				getNamedEmitterProto("shockWave").burst(transform->getPosition(), guns->forward(), vec3(0.2), 60);
-				sound->play();
+				// sound->play();
 				// muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
 				return true;
 			}
@@ -901,7 +901,7 @@ void makeGun(transform2 ship, vec3 pos, transform2 target, bool forward, bool up
 	_model gunsm("res/models/ship1/3guns.obj");
 
 	game_object *turret = _instantiate();
-	turret->_addComponent<audiosource>()->set(gunSound);
+	// turret->_addComponent<audiosource>()->set(gunSound);
 	auto r = turret->_addComponent<_renderer>();
 	r->set(modelShader, turretm);
 	game_object *guns = _instantiate();
@@ -1322,7 +1322,7 @@ int level1(bool load)
 		registerProto(ground);
 
 		// terrainWidth = 1024;
-		terrainWidth = 512;
+		terrainWidth = 1024;
 		// terrainWidth = 32;
 		// int terrainsDim = 0;
 		int terrainsDim = 0;
@@ -1445,7 +1445,7 @@ int level1(bool load)
 		}
 
 		// create shooters
-		for (int i = 0; i < numshooters; ++i)
+		for (int i = 0; i < 300; ++i)
 		{
 			go = _instantiate(*go);
 			go->transform.name() = "shooter " + to_string(i);

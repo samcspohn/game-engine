@@ -428,7 +428,7 @@ void destroyAllComponents();
 #define COPY(component_type)                     \
 	void _copy(game_object *go)                  \
 	{                                            \
-		go->dupComponent(component_type(*this)); \
+		go->dupComponent(*this); \
 	}
 
 #define REGISTER_COMPONENT(comp)                          \

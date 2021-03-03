@@ -73,8 +73,9 @@ public:
 			{
 				extent = ret.index + 1;
 			}
-			new (&data[ret.index]) t(args...);
-
+			++active;
+			m.unlock();
+			new (&data[ret.index]) t{args...};
 		}
 		else
 		{
@@ -85,12 +86,13 @@ public:
 			// ret.d = &data.back();
 			valid.emplace_back(true);
 			++extent;
+			++active;
+			m.unlock();
+
 		}
-		++active;
-		m.unlock();
 		return ret;
 	}
-	void _delete(ref r)
+	void _delete(ref& r)
 	{
 		if (r.a != this)
 			throw;
@@ -101,7 +103,7 @@ public:
 		--active;
 		m.unlock();
 		data[r.index].~t();
-		memset(&data[r.index],0,sizeof(t));
+		// memset(&data[r.index],0,sizeof(t));
 	}
 
 	float density()
@@ -188,7 +190,9 @@ public:
 			{
 				extent = ret.index + 1;
 			}
-			new (&data[ret.index]) t(args...);
+			++active;
+			m.unlock();
+			new (&data[ret.index]) t{args...};
 		}
 		else
 		{
@@ -199,13 +203,13 @@ public:
 			// ret.d = &data.back();
 			valid.emplace_back(true);
 			++extent;
+			++active;
+			m.unlock();
+
 		}
-		++active;
-		m.unlock();
-		
 		return ret;
 	}
-	void _delete(ref r)
+	void _delete(ref& r)
 	{
 		if (r.a != this)
 			throw;
@@ -215,8 +219,9 @@ public:
 		valid[r.index] = false;
 		--active;
 		m.unlock();
+		// delete (&data[r.index]);
 		data[r.index].~t();
-		memset(&data[r.index],0,sizeof(t));
+		// memset(&data[r.index],0,sizeof(t));
 	}
 
 	float density()
@@ -236,8 +241,14 @@ public:
 	void clear(){
 		extent = 0;
 		avail.clear();
+		avail.shrink_to_fit();
 		valid.clear();
+		valid.shrink_to_fit();
+		for(auto &i : data){
+			memset(&i,0,sizeof(t));
+		}
 		data.clear();
+		data.shrink_to_fit();
 	}
 
 	deque<t> data;

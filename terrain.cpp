@@ -93,6 +93,8 @@ terrain *getTerrain(float x, float z)
 }
 
     terrain::~terrain(){
+        if(heightMap)
+            delete heightMap;
         cout << "deconstruct terrain" << endl;
     }
     int terrain::xz(int x, int z)
@@ -103,7 +105,7 @@ terrain *getTerrain(float x, float z)
     terrainHit terrain::getHeight(float x, float z)
     {
         if (!generated)
-            return terrainHit(vec3(0, 1, 0), -INFINITY);
+            return terrainHit(vec3(0, 1, 0), INFINITY);
 
         vec3 scale = transform->getScale();
         vec3 pos = transform->getPosition();
@@ -115,18 +117,18 @@ terrain *getTerrain(float x, float z)
         x += (width) / 2;
         z += (depth) / 2;
         if (x >= width - 1.f || z >= width - 1.f || x < 0.f || z < 0.f)
-            return terrainHit(vec3(0, 1, 0), -INFINITY);
+            return terrainHit(vec3(0, 1, 0), INFINITY);
         // return 1.f;
 
         float xr = fmod(x, 1.f);
         float yr = fmod(z, 1.f);
-        float a1 = heightMap[(int)x][(int)z];
+        float a1 = (*heightMap)[(int)x][(int)z];
         vec3 v1 = vec3(0, a1, 0);
-        float a2 = heightMap[(int)x + 1][(int)z];
+        float a2 = (*heightMap)[(int)x + 1][(int)z];
         vec3 v2 = vec3(1, a2, 0);
-        float a3 = heightMap[(int)x][(int)z + 1];
+        float a3 = (*heightMap)[(int)x][(int)z + 1];
         vec3 v3 = vec3(0, a3, 1);
-        float a4 = heightMap[(int)x + 1][((int)z + 1)];
+        float a4 = (*heightMap)[(int)x + 1][((int)z + 1)];
         float x1 = a1 * (1 - xr) + a2 * (xr);
         float x2 = a3 * (1 - xr) + a4 * (xr);
         float h = (x1 * (1 - yr) + x2 * (yr)) * scale.y + pos.y;
@@ -186,6 +188,7 @@ terrain *getTerrain(float x, float z)
     }
     void terrain::genHeightMap(int _width, int _depth, int _offsetX, int _offsetZ)
     {
+        heightMap = new vector<vector<float>>();
         if (_width == -1)
             return;
         width = _width + 1;
@@ -196,11 +199,11 @@ terrain *getTerrain(float x, float z)
         float max = -1000000;
         for (int x = offsetX; x < width + offsetX; x++)
         {
-            heightMap.push_back(vector<float>());
+            (*heightMap).push_back(vector<float>());
             for (int z = offsetZ; z < depth + offsetZ; z++)
             {
                 float h = makeHeight(x, z);
-                heightMap.back().push_back(h);
+                (*heightMap).back().push_back(h);
                 if (h > max)
                     max = h;
                 if (h < min)
@@ -295,7 +298,7 @@ terrain *getTerrain(float x, float z)
                 uv2.y = u;
             for (int z = 0; z < depth; z++)
             {
-                verts[x * width + z] = glm::vec3(x - (width - 1) / 2.0, heightMap[x][z], z - (depth - 1) / 2.0);
+                verts[x * width + z] = glm::vec3(x - (width - 1) / 2.0, (*heightMap)[x][z], z - (depth - 1) / 2.0);
                 uvs[x * width + z] = uv;
                 uv.x = (float)!(bool)(int)uv.x;
 
