@@ -10,13 +10,17 @@
 #include <iostream>
 #include <assimp/postprocess.h>
 #include <chrono>
+#include <thread>
+#include <atomic>
+#include <filesystem>
+#include <tbb/tbb.h>
+#include <mutex>
+
 #include "Model.h"
 #include "Shader.h"
-#include <thread>
 
 #include "gpu_vector.h"
 #include "Input.h"
-#include <atomic>
 #include "game_object.h"
 #include "rendering.h"
 #include "camera.h"
@@ -27,9 +31,7 @@
 #include "gui.h"
 #include "gpu_sort.h"
 #include "thread"
-#include <tbb/tbb.h>
-#include <filesystem>
-#include <mutex>
+
 namespace fs = std::filesystem;
 
 using namespace std;

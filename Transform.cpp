@@ -1,7 +1,7 @@
 #include "Transform.h"
 #include "concurrency.h"
 #include <fstream>
-#include "game_object.h"
+// #include "game_object.h"
 
 using namespace std;
 
@@ -277,6 +277,17 @@ void transform2::orphan()
 	Transforms.meta[id].parent.id = -1;
 }
 
+// size_t transform2::operator=(const transform2& t){
+// 	return static_cast<size_t>(t.id);
+// }
+
+bool operator<(const transform2 &l, const transform2 &r){
+	return l.id < r.id;
+}
+bool operator==(const transform2 &l, const transform2 &r){
+	return l.id == r.id;
+}
+
 // bool compareTransform(transform2* t1, transform2* t2){
 // 	return t1->_T < t2->_T;
 // }
@@ -298,303 +309,58 @@ void initTransform()
 	transformIds->usage = GL_STREAM_COPY;
 }
 
-void renderEdit(const char* name, transform2& t){
-	if(t.id == -1) // uninitialized
-		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
-	else if(t.name() == ""){
-		string n = "game object " + to_string(t.id);
-		ImGui::InputText(name, (char*)n.c_str(), n.size() + 1, ImGuiInputTextFlags_ReadOnly);
-	}
-	else 
-		ImGui::InputText(name, (char *)t.name().c_str(), t.name().size() + 1, ImGuiInputTextFlags_ReadOnly);
-	if (ImGui::BeginDragDropTarget())
-	{
-		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
-		{
-			IM_ASSERT(payload->DataSize == sizeof(int));
-			int payload_n = *(const int *)payload->Data;
-			t.id = payload_n;
-		}
-		ImGui::EndDragDropTarget();
-	}
-}
-void saveTransforms(OARCHIVE &oa)
-{
-	oa << Transforms;
-	// ofstream f("transform.lvl", std::fstream::binary);
-	// _transform t;
-	// for (int i = 0; i < Transforms.size(); i++)
-	// {
-	// 	t = transform2(i).getTransform();
-	// 	t.parent = transform2(i).getParent().id;
-	// 	f.write((char *)&t, sizeof(_transform));
-	// }
-	// f.close();
-}
-
-void setRootGameObject(transform2 r);
-
-
-void loadTransforms(IARCHIVE &ia)
-{
-// 	ifstream f("transform.lvl", std::fstream::binary);
-// 	f.seekg(0, f.end);
-// 	size_t size = f.tellg();
-// 	size /= sizeof(_transform);
-// 	f.seekg(0, f.beg);
-	// delete root2.gameObject();
-	// root2 = transform2(0);
-	// rootGameObject = new game_object(root2);
-	Transforms.clear();
-	ia >> Transforms;
-	// setRootGameObject(root2);
-
-	// for (int i = 0; i < size; i++)
-	// {
-	// 	Transforms._new();
-	// }
-	// ////////////////////////////////////
-	// _transform _t;
-	// f.read((char *)&_t, sizeof(_transform));
-	// Transforms.positions[0] = _t.position;
-	// Transforms.rotations[0] = _t.rotation;
-	// Transforms.scales[0] = _t.scale;
-	// Transforms.meta[0].parent = transform2(_t.parent);
-	////////////////////////////////////
-	newGameObject(transform2(0));
-	setRootGameObject(transform2(0));
-	for (int i = 1; i < Transforms.size(); i++)
-	{
-		// f.read((char *)&_t, sizeof(_transform));
-		transform2 t(i);
-		// // transform2 t2 = Transforms._new();
-		// Transforms.positions[i] = _t.position;
-		// Transforms.rotations[i] = _t.rotation;
-		// Transforms.scales[i] = _t.scale;
-		// Transforms.meta[i].parent = t.getParent();
-		if(t.getParent().id != -1){
-			Transforms.meta[t.getParent().id].children.push_back(t);
-			Transforms.meta[i].childId = (--Transforms.meta[t.getParent().id].children.end());
-			newGameObject(t);
-		}
-		// Transforms.meta[i].gameObject = new game_object()
-	}
-}
-
-int switchAH(int index)
-{
-	return ~index - 1;
-}
-unsigned int transforms_enabled = 0;
-
-Transform *root;
-
-void Transform::init()
-{
-	// gameLock.lock();
-	_T = TRANSFORMS._new();
-	// gameLock.unlock();
-	parent = 0;
-	root->adopt(this);
-}
-game_object *Transform::gameObject()
-{
-	return this->_gameObject;
-}
-void Transform::setGameObject(game_object *g)
-{
-	this->_gameObject = g;
-}
-Transform::Transform(game_object *g) : m()
-{
-	this->setGameObject(g);
-	init();
-}
-
-Transform::Transform(Transform &other, game_object *go) : m()
-{
-	this->setGameObject(go);
-	init();
-	_T->position = other.getPosition();
-	_T->rotation = other.getRotation();
-	_T->scale = other.getScale();
-}
-
-// Transform Transform::operator=(const Transform& t) {
-// 	this->_T = t._T;
-// 	this->gameObject = t.gameObject;
-// 	this->children = t.children;
-// 	this->parent = t.parent;
-// 	return *this;
+// void renderEdit(const char* name, transform2& t){
+// 	if(t.id == -1) // uninitialized
+// 		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+// 	else if(t.name() == ""){
+// 		string n = "game object " + to_string(t.id);
+// 		ImGui::InputText(name, (char*)n.c_str(), n.size() + 1, ImGuiInputTextFlags_ReadOnly);
+// 	}
+// 	else 
+// 		ImGui::InputText(name, (char *)t.name().c_str(), t.name().size() + 1, ImGuiInputTextFlags_ReadOnly);
+// 	if (ImGui::BeginDragDropTarget())
+// 	{
+// 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
+// 		{
+// 			IM_ASSERT(payload->DataSize == sizeof(int));
+// 			int payload_n = *(const int *)payload->Data;
+// 			t.id = payload_n;
+// 		}
+// 		ImGui::EndDragDropTarget();
+// 	}
+// }
+// void saveTransforms(OARCHIVE &oa)
+// {
+// 	oa << Transforms;
+// 	// ofstream f("transform.lvl", std::fstream::binary);
+// 	// _transform t;
+// 	// for (int i = 0; i < Transforms.size(); i++)
+// 	// {
+// 	// 	t = transform2(i).getTransform();
+// 	// 	t.parent = transform2(i).getParent().id;
+// 	// 	f.write((char *)&t, sizeof(_transform));
+// 	// }
+// 	// f.close();
 // }
 
-void Transform::lookat(glm::vec3 direction, glm::vec3 up)
-{
-	_T->rotation = quatLookAtLH(direction, up);
-}
-glm::vec3 Transform::forward()
-{
-	return glm::normalize(_T->rotation * glm::vec3(0.0f, 0.0f, 1.0f));
-}
-glm::vec3 Transform::right()
-{
-	return glm::normalize(_T->rotation * glm::vec3(1.0f, 0.0f, 0.0f));
-}
-glm::vec3 Transform::up()
-{
-	return glm::normalize(_T->rotation * glm::vec3(0.0f, 1.0f, 0.0f));
-}
-glm::mat4 Transform::getModel()
-{
-	return (glm::translate(_T->position) * glm::toMat4(_T->rotation) * glm::scale(_T->scale));
-}
+// void setRootGameObject(transform2 r);
 
 
-glm::vec3 Transform::getScale()
-{
-	return _T->scale;
-}
-void Transform::setScale(glm::vec3 scale)
-{
-	this->scale(scale / _T->scale);
-}
-glm::vec3 Transform::getPosition()
-{
-	return _T->position;
-}
-void Transform::setPosition(glm::vec3 pos)
-{
-	// m.lock();
-	for (Transform *c : children)
-		c->translate(pos - _T->position, glm::quat());
-	_T->position = pos;
-	// m.unlock();
-}
-glm::quat Transform::getRotation()
-{
-	return _T->rotation;
-}
-
-void Transform::setRotation(glm::quat r)
-{
-	_T->rotation = r;
-}
-list<Transform *> &Transform::getChildren()
-{
-	return children;
-}
-Transform *Transform::getParent()
-{
-	return parent;
-}
-mutex m;
-void Transform::adopt(Transform *transform)
-{
-	if (transform->parent == this)
-		return;
-	transform->orphan();
-	transform->parent = this;
-	this->m.lock();
-	this->children.push_back(transform);
-	transform->childId = (--this->children.end());
-	this->m.unlock();
-}
-
-void Transform::_destroy()
-{
-	orphan();
-	_T._delete();
-	// if (enabled) {
-	// 	TRANSFORMS._delete(_T);
-	// }
-	// else
-	// {
-	// 	STATIC_TRANSFORMS._delete(_T);
-	// }
-	// if (enabled)
-	// 	--transforms_enabled;
-	delete this;
-}
-
-void Transform::move(glm::vec3 movement, bool hasChildren)
-{
-	_T->position += movement;
-	if (hasChildren)
-	{
-		for (auto a : children)
-			a->translate(movement, glm::quat(1, 0, 0, 0));
-	}
-}
-void Transform::translate(glm::vec3 translation)
-{
-	// m.lock();
-	_T->position += _T->rotation * translation;
-	for (auto a : children)
-		a->translate(translation, _T->rotation);
-	// m.unlock();
-}
-void Transform::translate(glm::vec3 translation, glm::quat r)
-{
-	// m.lock();
-	_T->position += r * translation;
-	for (Transform *a : children)
-		a->translate(translation, r);
-	// m.unlock();
-}
-void Transform::scale(glm::vec3 scale)
-{
-	// m.lock();
-	_T->scale *= scale;
-	for (Transform *a : children)
-		a->scaleChild(_T->position, scale);
-	// m.unlock();
-}
-void Transform::scaleChild(glm::vec3 pos, glm::vec3 scale)
-{
-	// m.lock();
-	_T->position = (_T->position - pos) * scale + pos;
-	_T->scale *= scale;
-	for (Transform *a : children)
-		a->scaleChild(pos, scale);
-	// m.unlock();
-}
-void Transform::rotate(glm::vec3 axis, float radians)
-{
-	// m.lock();
-	_T->rotation = glm::rotate(_T->rotation, radians, axis);
-	for (Transform *a : children)
-		a->rotateChild(axis, _T->position, _T->rotation, radians);
-	_T->rotation = normalize(_T->rotation);
-	// m.unlock();
-}
-void Transform::rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle)
-{
-	// m.lock();
-	glm::vec3 ax = r * axis;
-	_T->position = pos + glm::rotate(_T->position - pos, angle, ax);
-	_T->rotation = glm::rotate(_T->rotation, angle, glm::inverse(_T->rotation) * ax); // glm::rotate(rotation, angle, axis);
-	for (Transform *a : children)
-		a->rotateChild(axis, pos, r, angle);
-	_T->rotation = normalize(_T->rotation);
-	// m.unlock();
-}
-
-Transform::~Transform() {}
-Transform::Transform(Transform &other)
-{
-}
-
-void Transform::orphan()
-{
-	if (this->parent == 0)
-		return;
-	this->parent->m.lock();
-	this->parent->children.erase(childId);
-	this->parent->m.unlock();
-	this->parent = 0;
-}
-
-bool compareTransform(Transform *t1, Transform *t2)
-{
-	return t1->_T < t2->_T;
-}
+// void loadTransforms(IARCHIVE &ia)
+// {
+// 	Transforms.clear();
+// 	ia >> Transforms;
+// 	////////////////////////////////////
+// 	newGameObject(transform2(0));
+// 	// setRootGameObject(transform2(0));
+// 	for (int i = 1; i < Transforms.size(); i++)
+// 	{
+// 		transform2 t(i);
+// 		if(t.getParent().id != -1){
+// 			Transforms.meta[t.getParent().id].children.push_back(t);
+// 			Transforms.meta[i].childId = (--Transforms.meta[t.getParent().id].children.end());
+// 			newGameObject(t);
+// 		}
+// 		// Transforms.meta[i].gameObject = new game_object()
+// 	}
+// }

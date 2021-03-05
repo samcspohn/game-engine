@@ -11,7 +11,7 @@
 // #include "Component.h"
 #include "gpu_vector.h"
 #include "serialize.h"
-#include "editor.h"
+// #include "editor.h"
 // ~-1 = 0
 
 using namespace std;
@@ -70,6 +70,8 @@ struct transform2
 	void adopt(transform2 transform);
 	game_object *gameObject();
 	void setGameObject(game_object *g);
+	// size_t operator=(const transform2& t);
+	operator size_t() const { return static_cast<size_t>(id); }
 
 	void _destroy();
 
@@ -279,64 +281,10 @@ void initTransform();
 
 int switchAH(int index);
 extern unsigned int transforms_enabled;
-void renderEdit(const char* name, transform2& t);
+// void renderEdit(const char* name, transform2& t);
 void saveTransforms(OARCHIVE &oa);
 void loadTransforms(IARCHIVE &ia);
 
 extern transform2 root2;
-
-class Transform
-{
-	// mutex m;
-	tbb::spin_mutex m;
-
-public:
-	deque_heap<_transform>::ref _T;
-	game_object *_gameObject;
-
-	void init();
-	Transform(game_object *g);
-	Transform(Transform &other, game_object *go);
-
-	// Transform operator=(const Transform& t);
-	void lookat(glm::vec3 lookatPoint, glm::vec3 up);
-	glm::vec3 forward();
-	glm::vec3 right();
-	glm::vec3 up();
-	glm::mat4 getModel();
-	glm::vec3 getScale();
-	void setScale(glm::vec3 scale);
-	glm::vec3 getPosition();
-	void setPosition(glm::vec3 pos);
-	glm::quat getRotation();
-	void setRotation(glm::quat r);
-	list<Transform *> &getChildren();
-	Transform *getParent();
-	void adopt(Transform *transform);
-	game_object *gameObject();
-	void setGameObject(game_object *g);
-
-	void _destroy();
-
-	void move(glm::vec3 movement, bool hasChildren = false);
-	void translate(glm::vec3 translation);
-	void translate(glm::vec3 translation, glm::quat r);
-	void scale(glm::vec3 scale);
-	void scaleChild(glm::vec3 pos, glm::vec3 scale);
-	void rotate(glm::vec3 axis, float radians);
-	void rotateChild(glm::vec3 axis, glm::vec3 pos, glm::quat r, float angle);
-
-private:
-	// bool enabled = true;
-	Transform *parent;
-	list<Transform *> children;
-	list<Transform *>::iterator childId;
-
-	friend void destroyRoot(Transform *t);
-	~Transform();
-	Transform(Transform &other);
-
-	void orphan();
-};
-
-bool compareTransform(Transform *t1, Transform *t2);
+bool operator<(const transform2 &l, const transform2 &r);
+bool operator==(const transform2 &l, const transform2 &r);

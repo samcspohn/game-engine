@@ -46,6 +46,9 @@ public:
 		{
 			return a->data.at(index);
 		}
+		void _delete(){
+			a->_delete(*this);
+		}
 	};
 
 	t &operator[](unsigned int i)

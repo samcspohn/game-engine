@@ -7,7 +7,7 @@ project(game_engine)
 # add_subdirectory(bullet)
 # add the executable
 
-include_directories(${CMAKE_SOURCE_DIR}/imgui)
+include_directories(${CMAKE_SOURCE_DIR}/imgui ${CMAKE_SOURCE_DIR}/_rendering)
 # add_subdirectory(imgui)
 
 # add_subdirectory(bullet)
@@ -20,7 +20,7 @@ add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW
  GLM_GTX_intersect #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
  #define GLM_FORCE_SIMD_AVX2
  )
-file(GLOB SOURCES "*.cpp"  "imgui/*.cpp" "imgui/guizmo/*.cpp")
+file(GLOB SOURCES "*.cpp"  "imgui/*.cpp" "imgui/guizmo/*.cpp" "_rendering/*.cpp")
  
 add_executable(game ${SOURCES})
 
@@ -56,12 +56,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/res
             ${CMAKE_CURRENT_BINARY_DIR}/res)
-
-add_custom_command(
-    TARGET game POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_CURRENT_SOURCE_DIR}/config.txt
-            ${CMAKE_CURRENT_BINARY_DIR}/config.txt)
 
 # specify the C++ standard
 add_definitions(-DGLM_FORCE_SWIZZLE)
