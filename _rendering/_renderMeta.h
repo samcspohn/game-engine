@@ -1,12 +1,18 @@
 #include "_rendering/_model.h"
 #include "_rendering/_shader.h"
 #include "../fast_list.h"
+#include "../array_heap.h"
 #include <mutex>
+#include <vector>
+#include <list>
 #include <limits>
 struct renderingMeta
 {
 	// gpu_vector<__renderer>* __renderers;
+	// deque_heap<GLuint> ids;
 	fast_list_deque<GLuint> ids;
+	// list<GLuint> ids;
+	// deque<GLuint> ids_cache;
 
 	_shader s;
 	_model m;

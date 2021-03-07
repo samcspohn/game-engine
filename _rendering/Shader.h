@@ -266,9 +266,8 @@ public:
 
 		this->computeFile = computePath;
 		_shaders.emplace(pair<GLenum,string>(GL_COMPUTE_SHADER,computeFile));
-		//_Shader(vertexFile, fragmentFile, this->shadowMap);
-		enqueRenderJob([&]() { _Shader(); });
-		// enqueRenderJob([&]() { _Shader(computeFile); });
+		// enqueRenderJob([&]() { _Shader(); });
+		_Shader();
 	}
 
 	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
@@ -278,9 +277,8 @@ public:
 		this->fragmentFile = fragmentPath;
 		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
-		//_Shader(vertexFile, fragmentFile, this->shadowMap);
-		enqueRenderJob([&]() { _Shader(); });
-		// enqueRenderJob([&]() { _Shader(vertexFile, fragmentFile, this->shadowMap); });
+		// enqueRenderJob([&]() { _Shader(); });
+		_Shader();
 	}
 	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
@@ -291,10 +289,8 @@ public:
 		this->fragmentFile = fragmentPath;
 		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
-		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
-*/
-		enqueRenderJob([&]() { _Shader(); });
-		// enqueRenderJob([&]() { _Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap); });
+		_Shader();
+		// enqueRenderJob([&]() { _Shader(); });
 	}
 	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
@@ -309,11 +305,8 @@ public:
 		this->fragmentFile = fragmentPath;
 		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
-		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
-*/
-		enqueRenderJob([&]() { _Shader(); });
-
-		// enqueRenderJob([&]() { _Shader(vertexFile, tessCtrlFile, tessEvalFile, geometryFile, fragmentFile, this->shadowMap); });
+		_Shader();
+		// enqueRenderJob([&]() { _Shader(); });
 	}
 	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
 	{
@@ -326,16 +319,8 @@ this->vertexFile = vertexPath;
 		this->fragmentFile = fragmentPath;
 		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
 		this->shadowMap = shadowMap;
-				// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
-		// shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
-		// shaders.push_back(loadFile(tessControlPath, GL_TESS_CONTROL_SHADER));
-		// shaders.push_back(loadFile(tessEvalPath, GL_TESS_EVALUATION_SHADER));
-		// shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
-		// shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
-		/*_Shader(vertexFile, geometryFile, fragmentFile, this->shadowMap);
-*/
-		// enqueRenderJob([&]() { _Shader(vertexFile, tessCtrlFile, tessEvalFile, fragmentFile, this->shadowMap); });
-		enqueRenderJob([&]() { _Shader(); });
+		_Shader();
+		// enqueRenderJob([&]() { _Shader(); });
 	}
 	GLuint loadFile(string file, GLenum ShaderType)
 	{

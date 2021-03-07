@@ -997,6 +997,7 @@ void bindWindowCallbacks(GLFWwindow *window)
 
 void initiliazeStuff()
 {
+
 	// shadowShader = new Shader("res/shaders/directional_shadow_map.vert", "res/shaders/directional_shadow_map.frag", false);
 	// OmniShadowShader = new Shader("res/shaders/omni_shadow_map.vert", "res/shaders/omni_shadow_map.geom", "res/shaders/omni_shadow_map.frag", false);
 	GPU_MATRIXES = new gpu_vector_proxy<matrix>();
@@ -1206,7 +1207,7 @@ void renderThreadFunc()
 					for (_camera &c : cameras->data.data)
 					{
 						c.c->prepRender(matProgram);
-						c.c->render();
+						// c.c->render(window);
 					}
 				}
 				else
@@ -1214,7 +1215,7 @@ void renderThreadFunc()
 					if (m_editor)
 					{
 						m_editor->c.prepRender(matProgram);
-						m_editor->c.render();
+						m_editor->c.render(window);
 					}
 				}
 

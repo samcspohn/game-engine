@@ -7,7 +7,7 @@
 #include <vector>
 #include <list>
 #include <string>
-#include "texture.h"
+#include "_rendering/texture.h"
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>

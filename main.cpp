@@ -1,7 +1,6 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#define GLM_FORCE_SWIZZLE
 #include <glm/glm.hpp>
 // #include <glm/gtc/swizzle.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,9 +19,9 @@
 #include "Input.h"
 #include "helper1.h"
 #include "Transform.h"
-#include "_renderer.h"
+// #include "_renderer.h"
+#include "renderthread.h"
 using namespace std;
-
 
 GLFWwindow *window;
 GLdouble lastFrame = 0;
@@ -193,7 +192,7 @@ void bindWindowCallbacks(GLFWwindow *window)
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetWindowCloseCallback(window, window_close_callback);
 }
-ImFont* font_default;
+ImFont *font_default;
 void initGL()
 {
     glfwInit();
@@ -253,114 +252,191 @@ void initGL()
 
 tbb::concurrent_unordered_set<transform2> toDestroy;
 
-
-class itr_base{
+class itr_base
+{
 public:
     virtual void erase() {}
 };
 
-template<typename t>
-class itr : public itr_base{
+template <typename t>
+class itr : public itr_base
+{
     typename deque_heap<t>::ref r;
+
 public:
-    itr(typename deque_heap<t>::ref re) : r(re){}
-    void erase(){
+    itr(typename deque_heap<t>::ref re) : r(re) {}
+    void erase()
+    {
         r._delete();
     }
 };
 
-
-class gObject{
+class gObject
+{
 public:
-    map<component*, unique_ptr<itr_base>> components;
+    map<component *, unique_ptr<itr_base>> components;
 };
 
-map<transform2,gObject> gobjects;
+map<transform2, gObject> gobjects;
 
-class comp : public component {
+class comp : public component
+{
 public:
-    _renderer* r;
+    _renderer *r;
     int updateCount = 0;
-    void update(){
-        transform.rotate(glm::vec3(0,1,0),glm::radians(50.f));
-        updateCount++;// += (rand() % 2 ? 1 : 2);
-        if(updateCount > 1000){
+    void update()
+    {
+        transform.rotate(glm::vec3(0, 1, 0), glm::radians(50.f));
+        updateCount += (rand() % 2 ? 1 : 2);
+        if (updateCount > 1000)
+        {
             toDestroy.emplace(transform);
         }
     }
 };
 
-deque_heap<_renderer> _rs;
+deque_heap<_renderer> _renderers;
 deque_heap<comp> comps;
 
-void newObject(){
+void newObject(_model& m, _shader& s)
+{
     transform2 t = Transforms._new();
-    gObject& g = gobjects[t];
+    gObject &g = gobjects[t];
     auto refj = comps._new();
     refj->transform = t;
+    auto refr = _renderers._new();
+    refr->transform = t;
+    refr->set(s,m);
+    t.setPosition(randomSphere() * 100.f); // + glm::vec3(0,0,100))
+    // t.setPosition(glm::vec3(0,0,4));
     // refj->transform = t;
     // auto pj = make_unique<itr_base>(new itr<comp>(refj));
     // unique_ptr<itr_base> pj = make_unique<itr<comp>>(refj);
-    g.components.emplace(&(*refj),make_unique<itr<comp>>(refj));
+    g.components.emplace(&(*refj), make_unique<itr<comp>>(refj));
+    g.components.emplace(&(*refr), make_unique<itr<_renderer>>(refr));
 
     // auto refr = _rs._new();
     // auto pr = make_unique<itr_base>(new itr<_renderer>(refr));
     // g.components.emplace(&(*refr),pr);
 }
 
-void destroyObject(transform2& t){
-    for(auto& j : gobjects[t].components){
+void destroyObject(transform2 &t)
+{
+    for (auto &j : gobjects[t].components)
+    {
+        j.first->onDestroy();
         j.second->erase();
     }
     gobjects.erase(t);
     t->_destroy();
 }
 
+struct editor{
+    camera c;
+    glm::vec3 position;
+    glm::quat rotation{};
+    float speed = 1;
+
+    void translate(glm::vec3 v);
+    void rotate(glm::vec3 axis, float angle);
+    void update();
+};
+
+void editor::translate(glm::vec3 v)
+{
+	this->position += this->rotation * v;
+}
+void editor::rotate(glm::vec3 axis, float radians)
+{
+	this->rotation = glm::rotate(this->rotation, radians, axis);
+}
+
+void editor::update()
+{
+
+	if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
+	{
+
+		translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+		translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+		translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+		// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+        
+		rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c.fov / glm::radians(80.f) * -0.4f);
+		rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * c.fov / glm::radians(80.f) * -0.4f);
+
+		rotation = glm::quatLookAtLH(rotation * glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+
+		c.fov -= Input.Mouse.getScroll() * glm::radians(1.f);
+		c.fov = glm::clamp(c.fov, glm::radians(5.f), glm::radians(80.f));
+
+		if (Input.getKeyDown(GLFW_KEY_R))
+		{
+			speed *= 2;
+		}
+		if (Input.getKeyDown(GLFW_KEY_F))
+		{
+			speed /= 2;
+		}
+	}
+	c.update(position, rotation);
+}
 int main(int argc, char **argv)
 {
-    cout << "hello" << endl;
+
 
     initGL();
-    _model("res/models/cube/cube.obj");
+    initiliazeStuff();
+    matProgram = Shader("res/shaders/transform.comp");
+
+    _model cube("res/models/cube/cube.obj");
+    _shader shader("res/shaders/model.vert", "res/shaders/model.frag");
+
+    rolling_buffer fps;
+    timer time;
+    editor ed;
+    ed.c.fov = glm::radians(80.f);
+    ed.c.nearPlane = 1;
+    ed.c.farPlane = 1000;
 
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
     {
 
-        if(frameCount++ % 1000 == 0){
+        time.start();
+        if (frameCount++ % 1000 == 0)
+        {
             cout << "##########################" << endl;
-            cout << "gobject s" << gobjects.size() << endl;
-            cout << "comps " << comps.data.size() << endl;
-            cout << comps.valid.size() << endl;
-            cout << "transforms " << Transforms.size() << endl;
+            cout << "gobjects " << gobjects.size() << endl;
+            cout << "comps " << comps.active() << endl;
+            // cout << comps.valid.size() << endl;
+            cout << "transforms " << Transforms.active() << endl;
         }
-        while(gobjects.size() < 10'000){
-            newObject();
+        while (gobjects.size() < 1000)
+        {
+            newObject(cube,shader);
         }
 
-        for(int i = 0; i < comps.size(); i++){
-            if(comps.valid[i]){
+        for (int i = 0; i < comps.size(); i++)
+        {
+            if (comps.valid[i])
+            {
                 comps.data[i].update();
             }
         }
-
-        for(auto &i : toDestroy){
-           destroyObject(i);
+        for (auto &i : toDestroy)
+        {
+            destroyObject(i);
         }
         toDestroy.clear();
+        
+        updateTiming();
+        ed.update();
+        updateRenderers();
+        updateTransforms();
 
-
-        float ratio;
-        int width, height;
-        // mat4x4 m, p, mvp;
-
-        glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float)height;
-
-        glViewport(0, 0, width, height);
-        glClearColor(1.f,.5f,.3f,1.f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        ed.c.prepRender(matProgram);
+        renderFunc(ed.c,window);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -371,10 +447,9 @@ int main(int argc, char **argv)
 
         // dockspace();
 
-        // for (auto &i : gui::gui_windows)
-        // {
-        // 	i->render();
-        // }
+        ImGui::Begin("info");
+        ImGui::Text(("fps: " + std::to_string(1.f / fps.getAverageValue() * 1000)).c_str());
+        ImGui::End();
         ImGui::PopFont();
         // Rendering
         ImGui::Render();
@@ -383,6 +458,8 @@ int main(int argc, char **argv)
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        fps.add(time.stop());
     }
 
     // Cleanup gui

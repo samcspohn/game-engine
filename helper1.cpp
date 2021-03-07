@@ -87,6 +87,7 @@ void timer::start()
 {
 	tstart = high_resolution_clock::now();
 }
+// return time in milliseconds since start
 float timer::stop()
 {
 	return (float)duration_cast<microseconds>(high_resolution_clock::now() - tstart).count() / 1000.0;

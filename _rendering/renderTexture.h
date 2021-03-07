@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <iostream>
 enum renderTextureType{
 	FLOAT,
 	UNSIGNED_BYTE
@@ -17,10 +18,10 @@ public:
 	int scr_width = 1;
 	int scr_height = 1;
 	GLuint FramebufferName = 0;
-	std::map<string, tex> textures;
+	std::map<std::string, tex> textures;
 	unsigned int rboDepth = -1;
 
-	GLuint getTexture(string name){
+	GLuint getTexture(std::string name){
 		return textures.at(name).id;
 	}
 	bool resize(int width, int height){
@@ -29,8 +30,8 @@ public:
 			scr_height = height;
 
 			destroy();
-			scr_width = SCREEN_WIDTH;
-			scr_height = SCREEN_HEIGHT;
+			scr_width = width;
+			scr_height = height;
 			init();
 			for(auto &i : textures){
 				addColorAttachment(i.first,i.second.type,i.second.location);
@@ -53,7 +54,7 @@ public:
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		glDeleteFramebuffersEXT(1, &FramebufferName);
 	}
-	void addColorAttachment(string name, renderTextureType type, GLuint location){
+	void addColorAttachment(std::string name, renderTextureType type, GLuint location){
 		
 		textures[name];
 		glGenTextures(1, &textures[name].id);
@@ -90,7 +91,7 @@ public:
 	}
 	
 	void finalize(){
-		vector<GLenum> drawBuffers;
+		std::vector<GLenum> drawBuffers;
 		for(int i = 0; i < textures.size(); i++){
 			drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
 		}

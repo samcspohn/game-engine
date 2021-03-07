@@ -77,7 +77,7 @@ public:
 			ar &fl &index &it;
 		}
 	};
-	vector<_itr *> iterators;
+	vector<unique_ptr<_itr>> iterators;
 
 	struct iterator
 	{
@@ -158,11 +158,11 @@ public:
 	{
 		return data[0];
 	}
-	iterator push_back(t element)
+	iterator push_back(const t &element)
 	{
 		m.lock();
+		auto it = make_unique<_itr>(data.size(), this);
 		data.push_back(element);
-		_itr *it = new _itr(data.size() - 1, this);
 		it->it = iterators.size();
 		iterators.push_back(it);
 		m.unlock();
@@ -175,23 +175,21 @@ public:
 			throw;
 		m.lock();
 		size_t index = itr.itr->index;
-		memset(&data[index],&data.back(),sizeof(t));
-		memset(&data.back(),0,sizeof(t));
-		// data[index] = std::move(data.back());
-		iterators.back()->index = index;		   //itr->index
-		iterators.back()->it = itr.itr->it;		   // int
-		iterators[itr.itr->it] = iterators.back(); //this pointer = back pointer
-		iterators.erase(--(iterators.end()));
+		std::swap(data[index],data.back());
+		iterators.back()->index = itr.itr->index;
+		iterators.back()->it = itr.itr->it;
+		std::swap(iterators[itr.itr->it],iterators.back()); //this pointer = back pointer
+		iterators.pop_back();
 		data.pop_back();
-		delete itr.itr;
+		// delete itr.itr;
 
 		m.unlock();
 		//m.unlock();
 	}
 	void clear()
 	{
-		for (typename vector<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
-			delete *i;
+		// for (typename vector<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
+		// 	delete *i;
 		iterators.clear();
 		data.clear();
 	}
@@ -212,11 +210,11 @@ public:
 		data[r] = std::move(tempt);
 	}
 
-	~fast_list()
-	{
-		for (typename vector<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
-			delete *i;
-	}
+	// ~fast_list()
+	// {
+	// 	for (typename vector<_itr *>::iterator i = iterators.begin(); i != iterators.end(); i++)
+	// 		delete *i;
+	// }
 };
 
 template <typename t>
@@ -344,11 +342,11 @@ public:
 	{
 		return data[0];
 	}
-	iterator push_back(t element)
+	iterator push_back(const t &element)
 	{
 		m.lock();
+		_itr *it = new _itr(data.size(), this);
 		data.push_back(element);
-		_itr *it = new _itr(data.size() - 1, this);
 		it->it = iterators.size();
 		iterators.push_back(it);
 		m.unlock();

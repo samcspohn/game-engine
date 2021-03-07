@@ -1,7 +1,4 @@
 #version 430 core
- #extension GL_ARB_conservative_depth : enable
-
-layout(depth_less) out float gl_FragDepth;
 
 struct Material{
 	sampler2D texture_diffuse0;
@@ -16,7 +13,6 @@ in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
 in vec4 DirLightSpacePos;
-in float logz;
 
 layout(location = 0) out vec4 gAlbedoSpec;
 layout(location = 1) out vec4 gPosition;
@@ -41,5 +37,4 @@ void main()
     gNormal = vec4(normalize(Normal),1);
     gAlbedoSpec.rgb = diffuseColor.rgb;
     gAlbedoSpec.a = specColor.r;
-	gl_FragDepth = log2(logz) * 0.5 * FC;
 }

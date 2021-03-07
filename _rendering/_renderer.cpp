@@ -1,5 +1,8 @@
 #include "_rendering/_renderer.h"
 
+
+_shader _quadShader;
+
 void destroyRendering()
 {
 	shaderManager::destroy();
@@ -36,10 +39,10 @@ void _renderer::set(_shader s, _model m)
 {
 	shader = s;
 	model = m;
-	if (!transformIdRef.isNull())
-	{
-		meta->ids.erase(transformIdRef);
-	}
+	// if (!transformIdRef.isNull())
+	// {
+	// 	meta->ids.erase(transformIdRef);
+	// }
 	if (s.s == 0 || m.m == 0)
 		return;
 	renderingManager::lock();
@@ -63,6 +66,7 @@ void _renderer::set(_shader s, _model m)
 	renderingManager::unlock();
 
 	meta = (r->second[m.m]);
+		
 	transformIdRef = meta->ids.push_back(transform.id);
 }
 
@@ -101,10 +105,12 @@ void _renderer::set(renderingMeta *_meta)
 	// else
 	// {
 	meta = _meta;
-	if (!transformIdRef.isNull())
-	{
-		meta->ids.erase(transformIdRef);
-	}
+	// if (!transformIdRef.isNull())
+	// {
+	// 	// meta->ids._delete(transformIdRef);
+	// }
+	// meta->ids.push_back(transform.id);
+	// transformIdRef = --meta->ids.end();
 	transformIdRef = meta->ids.push_back(transform.id);
 	// }
 }
@@ -113,10 +119,11 @@ _renderer::_renderer(const _renderer &other)
 	shader = other.shader;
 	model = other.model;
 	meta = other.meta;
-	transformIdRef = fast_list_deque<GLuint>::iterator();
+	// transformIdRef = fast_list_deque<GLuint>::iterator();
 }
 void _renderer::onDestroy()
 {
+	// transformIdRef._delete();
 	if (meta != 0)
 	{
 		meta->ids.erase(transformIdRef);
@@ -173,3 +180,9 @@ void _renderer::onEdit()
 		this->set(shader, model);
 	}
 }
+
+gpu_vector_proxy<matrix> *GPU_MATRIXES;
+gpu_vector<__renderer> *__RENDERERS_in;
+// gpu_vector_proxy<__renderer> *__RENDERERS_out;
+gpu_vector<GLuint> *__renderer_offsets;
+gpu_vector<__renderMeta> *__rendererMetas;

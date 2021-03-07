@@ -8,7 +8,7 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform vec3 viewPos;
 
-layout(std430, binding = 0) buffer l{ vec4 lights[];};
+// layout(std430, binding = 0) buffer l{ vec4 lights[];};
 
 void main()
 {             

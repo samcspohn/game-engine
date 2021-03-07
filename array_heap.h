@@ -136,9 +136,8 @@ class deque_heap
 public:
 	SER_HELPER()
 	{
-		ar &extent &active &avail &valid &data;
+		ar &extent &avail &valid &data;
 	}
-	int active = 0;
 	struct ref
 	{
 		int index;
@@ -193,7 +192,6 @@ public:
 			{
 				extent = ret.index + 1;
 			}
-			++active;
 			m.unlock();
 			new (&data[ret.index]) t{args...};
 		}
@@ -206,7 +204,6 @@ public:
 			// ret.d = &data.back();
 			valid.emplace_back(true);
 			++extent;
-			++active;
 			m.unlock();
 
 		}
@@ -220,7 +217,6 @@ public:
 		// delete r.d;
 		avail.emplace_front(r.index);
 		valid[r.index] = false;
-		--active;
 		m.unlock();
 		// delete (&data[r.index]);
 		data[r.index].~t();
@@ -239,6 +235,9 @@ public:
 	unsigned int size()
 	{
 		return extent;
+	}
+	int active(){
+		return data.size() - avail.size();
 	}
 
 	void clear(){

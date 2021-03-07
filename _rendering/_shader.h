@@ -20,11 +20,11 @@ struct _shaderMeta : public assets::asset
 	string type();
 	Shader *shader = 0;
 	friend struct _shader;
-	SER_HELPER()
-	{
-		SER_BASE_ASSET
-		ar &shader;
-	}
+	// SER_HELPER()
+	// {
+	// 	SER_BASE_ASSET
+	// 	ar &shader;
+	// }
 };
 
 namespace shaderManager
@@ -50,10 +50,10 @@ public:
 	Shader &ref();
 	Shader *operator->();
 	_shaderMeta *meta() const;
-	SER_HELPER()
-	{
-		ar &s;
-	}
+	// SER_HELPER()
+	// {
+	// 	ar &s;
+	// }
 };
 
 bool operator<(const _shader &l, const _shader &r);

@@ -96,7 +96,7 @@ void Mesh::reloadMesh()
 
 void Mesh::setupMesh()
 {
-    enqueRenderJob([&]() {
+    // enqueRenderJob([&]() {
         // Create buffers/arrays
         if (this->VAO == 0)
         {
@@ -142,7 +142,7 @@ void Mesh::setupMesh()
 
         glBindVertexArray(0);
         ready = true;
-    });
+    // });
 }
 
 void lightVolume::setupMesh()
