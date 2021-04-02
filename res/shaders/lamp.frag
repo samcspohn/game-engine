@@ -1,6 +1,5 @@
 #version 430 core
- #extension GL_ARB_conservative_depth : enable
-
+#extension GL_ARB_conservative_depth : enable
 layout(depth_less) out float gl_FragDepth;
 
 in vec3 Normal;
@@ -20,9 +19,9 @@ void main()
 {
 	gPosition = vec4(FragPos,1);
     // also store the per-fragment normals into the gbuffer
-    gNormal = vec4(normalize(-Normal),1);
+    gNormal = vec4(normalize(Normal),1);
     // and the diffuse per-fragment color
-    gAlbedoSpec.rgb = vec3(1,0.95,0.7);
+    gAlbedoSpec.rgb = vec3(0.5176, 0.8863, 0.9686);
     // gAlbedoSpec.a = 0.5;
     // store specular intensity in gAlbedoSpec's alpha component
     gAlbedoSpec.a = 1;

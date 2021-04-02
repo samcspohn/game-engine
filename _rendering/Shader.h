@@ -116,18 +116,14 @@ using namespace std;
 // 	}
 // };
 
-
-
-
 struct texArray
 {
 	vector<_texture> textures;
 	size_t hash;
 
-	size_t getTexARrayHash(vector<GLuint>& v){
-		
-
-	}
+	// size_t getTexARrayHash(vector<GLuint> &v)
+	// {
+	// }
 	void calcHash()
 	{
 		if (textures.size() == 0)
@@ -166,7 +162,6 @@ struct texArray
 	}
 };
 
-
 // class shaderVariables {
 // 	map<string, shaderVariable> variables;
 // };
@@ -175,20 +170,30 @@ class Shader
 {
 public:
 	GLuint Program = -1;
-	string vertexFile;
-	string geometryFile;
-	string tessCtrlFile;
-	string tessEvalFile;
-	string fragmentFile;
-	string computeFile;
-	map<GLenum,string> _shaders;
+
+	map<GLenum, string> _shaders;
 	GLenum primitiveType = GL_TRIANGLES;
 	bool shadowMap;
+	unordered_map<std::string, GLuint> vars;
 
-	SER_HELPER(){
-		ar & _shaders & primitiveType & shadowMap;
+	SER_HELPER()
+	{
+		ar &_shaders &primitiveType &shadowMap;
 	}
 
+	GLuint getVar(const string &name)
+	{
+		auto var = vars.find(name);
+		if (var != vars.end())
+		{
+			return var->second;
+		}
+		else
+		{
+			vars.emplace(name, glGetUniformLocation(Program, name.c_str()));
+			return vars.at(name);
+		}
+	}
 	void use()
 	{
 		glUseProgram(Program);
@@ -257,67 +262,52 @@ public:
 			}
 			number = ss.str();
 
-			setTexture(i,"material." + name + number,ta[i].t->id);
+			setTexture(i, "material." + name + number, ta[i].t->id);
 		}
 	}
 	Shader() {}
 	Shader(const string computePath)
 	{
 
-		this->computeFile = computePath;
-		_shaders.emplace(pair<GLenum,string>(GL_COMPUTE_SHADER,computeFile));
+		_shaders.emplace(GL_COMPUTE_SHADER, computePath);
 		// enqueRenderJob([&]() { _Shader(); });
 		_Shader();
 	}
 
 	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
 	{
-		this->vertexFile = vertexPath;
-		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER, vertexPath));
-		this->fragmentFile = fragmentPath;
-		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
+		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
+		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
 		this->shadowMap = shadowMap;
 		// enqueRenderJob([&]() { _Shader(); });
 		_Shader();
 	}
 	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
-		this->vertexFile = vertexPath;
-		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER,vertexPath));
-		this->geometryFile = geometryPath;
-		_shaders.emplace(pair<GLenum,string>(GL_GEOMETRY_SHADER,geometryPath));
-		this->fragmentFile = fragmentPath;
-		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
+		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
+		_shaders.emplace(GL_GEOMETRY_SHADER, geometryPath);
+		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
 		this->shadowMap = shadowMap;
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
 	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
 	{
-		this->vertexFile = vertexPath;
-		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER,vertexPath));
-		this->tessCtrlFile = tessControlPath;
-		_shaders.emplace(pair<GLenum,string>(GL_TESS_CONTROL_SHADER, tessControlPath));
-		this->tessEvalFile = tessEvalPath;
-		_shaders.emplace(pair<GLenum,string>(GL_TESS_EVALUATION_SHADER, tessEvalPath));
-		this->geometryFile = geometryPath;
-		_shaders.emplace(pair<GLenum,string>(GL_GEOMETRY_SHADER,geometryPath));
-		this->fragmentFile = fragmentPath;
-		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
+		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
+		_shaders.emplace(GL_TESS_CONTROL_SHADER, tessControlPath);
+		_shaders.emplace(GL_TESS_EVALUATION_SHADER, tessEvalPath);
+		_shaders.emplace(GL_GEOMETRY_SHADER, geometryPath);
+		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
 		this->shadowMap = shadowMap;
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
 	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
 	{
-this->vertexFile = vertexPath;
-		_shaders.emplace(pair<GLenum,string>(GL_VERTEX_SHADER,vertexPath));
-		this->tessCtrlFile = tessControlPath;
-		_shaders.emplace(pair<GLenum,string>(GL_TESS_CONTROL_SHADER, tessControlPath));
-		this->tessEvalFile = tessEvalPath;
-		_shaders.emplace(pair<GLenum,string>(GL_TESS_EVALUATION_SHADER, tessEvalPath));
-		this->fragmentFile = fragmentPath;
-		_shaders.emplace(pair<GLenum,string>(GL_FRAGMENT_SHADER, fragmentPath));
+		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
+		_shaders.emplace(GL_TESS_CONTROL_SHADER, tessControlPath);
+		_shaders.emplace(GL_TESS_EVALUATION_SHADER, tessEvalPath);
+		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
 		this->shadowMap = shadowMap;
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
@@ -383,7 +373,7 @@ this->vertexFile = vertexPath;
 		if (!success)
 		{
 			glGetProgramInfoLog(this->Program, 4096, NULL, infoLog);
-			std::cout << this->vertexFile << ", " << this->tessCtrlFile << ", " << this->geometryFile << ", " << this->fragmentFile << ", " << this->computeFile << std::endl;
+			// std::cout << this->vertexFile << ", " << this->tessCtrlFile << ", " << this->geometryFile << ", " << this->fragmentFile << ", " << this->computeFile << std::endl;
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
 					  << infoLog << std::endl;
 		}
@@ -391,64 +381,29 @@ this->vertexFile = vertexPath;
 		for (auto &s : shaders)
 			glDeleteShader(s);
 	}
-	void _Shader(){
-		if(this->Program != 0){
-			glDeleteProgram(this->Program);
-			this->Program = 0;
-		}
-		vector<GLuint> shaders;
-		for(auto& i : _shaders){
-				shaders.push_back(loadFile(i.second,i.first));		
-		}
-		compileShader(shaders);
+	void _Shader()
+	{
+		waitForRenderJob([&]() {
+			if (this->Program != 0)
+			{
+				glDeleteProgram(this->Program);
+				this->Program = 0;
+			}
+			vector<GLuint> shaders;
+			for (auto &i : _shaders)
+			{
+				shaders.push_back(loadFile(i.second, i.first));
+			}
+			compileShader(shaders);
+		});
 	}
-	// void _Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
-	// {
-	// 	vector<GLuint> shaders;
-	// 	// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
-	// 	shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
-	// 	shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
-	// 	shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
-	// 	compileShader(shaders);
-	// }
-	// void _Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
-	// {
-	// 	vector<GLuint> shaders;
-	// 	// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
-	// 	shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
-	// 	shaders.push_back(loadFile(tessControlPath, GL_TESS_CONTROL_SHADER));
-	// 	shaders.push_back(loadFile(tessEvalPath, GL_TESS_EVALUATION_SHADER));
-	// 	shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
-	// 	shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
-	// 	compileShader(shaders);
-	// }
-	// void _Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
-	// {
-	// 	vector<GLuint> shaders;
-	// 	// std::cout << vertexPath << geometryPath << fragmentPath << std::endl;
-	// 	shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
-	// 	shaders.push_back(loadFile(tessControlPath, GL_TESS_CONTROL_SHADER));
-	// 	shaders.push_back(loadFile(tessEvalPath, GL_TESS_EVALUATION_SHADER));
-	// 	// shaders.push_back(loadFile(geometryPath, GL_GEOMETRY_SHADER));
-	// 	shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
-	// 	compileShader(shaders);
-	// }
-	// void _Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
-	// {
-
-	// 	vector<GLuint> shaders;
-	// 	// std::cout << vertexPath << fragmentPath << std::endl;
-	// 	shaders.push_back(loadFile(vertexPath, GL_VERTEX_SHADER));
-	// 	shaders.push_back(loadFile(fragmentPath, GL_FRAGMENT_SHADER));
-	// 	compileShader(shaders);
-	// }
-	// void _Shader(const string computePath)
-	// {
-	// 	vector<GLuint> shaders;
-	// 	// cout << computeFile << endl;
-	// 	shaders.push_back(loadFile(computeFile, GL_COMPUTE_SHADER));
-	// 	compileShader(shaders);
-	// }
+	~Shader()
+	{
+		waitForRenderJob([&]() {
+			glDeleteProgram(this->Program);
+			_shaders.clear();
+		})
+	}
 };
 
 #endif

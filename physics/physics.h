@@ -1,7 +1,7 @@
 
 #pragma once
 #include <glm/glm.hpp>
-#include "Component.h"
+#include "components/Component.h"
 #include "fast_list.h"
 #include "Transform.h"
 #include <iostream>
@@ -10,13 +10,14 @@
 #include <list>
 #include <atomic>
 #include <deque>
-#include "game_object.h"
+#include "components/game_object.h"
 #include <array>
 #include "Input.h"
 #include <math.h>
 #include <functional>
-#include "terrain.h"
+// #include "terrain.h"
 #include "collision.h"
+#include "_rendering/Mesh.h"
 using namespace std;
 
 
@@ -52,7 +53,12 @@ private:
 	glm::vec3 vel = glm::vec3(0);
 	glm::quat axis;
 	float rotVel;
-	SER4(gravity, bounciness, mass, damping);
+	SER_FUNC()
+		SER(gravity)
+		SER(bounciness)
+		SER(mass)
+		SER(damping)
+	SER_END
 };
 
 enum colType
@@ -71,10 +77,10 @@ public:
 	// colDat *posInTree = 0;
 	glm::vec3 r = glm::vec3(1);
 	// colDat cd;
-	glm::vec3 dim = vec3(1);
+	glm::vec3 dim = glm::vec3(1);
 	AABB2 a;
 	union
-	{
+	{ 
 		OBB o;
 		mesh m;
 		point p;
@@ -98,30 +104,30 @@ public:
 	// void lateUpdate();
 	void _lateUpdate();
 	void update_data();
-	void onEdit();
+	void ser_edit(ser_mode x);
 	COPY(collider);
 
-	SER_HELPER(){
-		ar &boost::serialization::base_object<component>(*this);
-		ar &layer &type &r &dim;
-		switch (this->type)
-		{
-		case aabbType:
-			ar & this->a;
-			break;
-		case obbType:
-			ar & this->o;
-			break;
-		case meshType:
-			ar & this->m;
-			break;
-		case pointType:
-			ar & this->p;
-			break;
-		default:
-			break;
-		}
-	}
+	// SER_HELPER(){
+	// 	ar &boost::serialization::base_object<component>(*this);
+	// 	ar &layer &type &r &dim;
+	// 	switch (this->type)
+	// 	{
+	// 	case aabbType:
+	// 		ar & this->a;
+	// 		break;
+	// 	case obbType:
+	// 		ar & this->o;
+	// 		break;
+	// 	case meshType:
+	// 		ar & this->m;
+	// 		break;
+	// 	case pointType:
+	// 		ar & this->p;
+	// 		break;
+	// 	default:
+	// 		break;
+	// 	}
+	// }
 };
 
 struct treenode
@@ -176,4 +182,4 @@ void assignRigidBody(collider *c, rigidBody *rb);
 
 bool testCollision(collider &c1, collider &c2, glm::vec3 &result);
 
-bool raycast(vec3 p, vec3 dir);
+bool raycast(glm::vec3 p, glm::vec3 dir);

@@ -4,18 +4,18 @@ atomic<int> uniqueMeshIdGenerator{1};
 
 _modelMeta::_modelMeta()
 {
-	model = new Model();
+	model = make_unique<Model>();
 	getBounds();
 }
 _modelMeta::_modelMeta(string _file)
 {
 	file = _file;
-	model = new Model(file);
+	model = make_unique<Model>(file);
 	getBounds();
 }
 _modelMeta::~_modelMeta()
 {
-	delete model;
+	// delete model;
 }
 bool _modelMeta::onEdit()
 {
@@ -35,16 +35,13 @@ REGISTER_ASSET(_modelMeta);
 
 namespace modelManager
 {
-	map<size_t, _modelMeta *> models;
-	map<int, _modelMeta *> models_id;
+	map<size_t, shared_ptr<_modelMeta>> models;
+	map<int, shared_ptr<_modelMeta>> models_id;
 	// map<int, _modelMeta *> unique_models;
 	void destroy()
 	{
-		while (models.size() > 0)
-		{
-			delete models.begin()->second;
-			models.erase(models.begin());
-		}
+		models.clear();
+		models_id.clear();
 	}
 
 	void save(OARCHIVE &oa)
@@ -87,7 +84,7 @@ _model::_model(string fileName)
 	}
 	else
 	{
-		_modelMeta *_mm = new _modelMeta(fileName);
+		auto _mm = make_shared<_modelMeta>(fileName);
 		modelManager::models[key] = _mm;
 		modelManager::models_id[_mm->genID()] = _mm;
 		m = _mm->id;
@@ -107,7 +104,7 @@ void _model::makeUnique()
 	int id = uniqueMeshIdGenerator.fetch_add(1);
 	m = -id;
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	modelManager::models_id[m] = new _modelMeta();
+	modelManager::models_id[m] = make_shared<_modelMeta>();
 	modelManager::models_id[m]->name = idStr;
 	modelManager::models_id[m]->unique = true;
 }
@@ -116,12 +113,12 @@ void _model::makeProcedural()
 	int id = uniqueMeshIdGenerator.fetch_add(1);
 	m = -id;
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	modelManager::models_id[m] = new _modelMeta();
+	modelManager::models_id[m] = make_shared<_modelMeta>();
 	modelManager::models_id[m]->name = idStr;
 }
 _modelMeta *_model::meta() const
 {
-	return modelManager::models_id[m];
+	return modelManager::models_id[m].get();
 }
 void _modelMeta::getBounds()
 {

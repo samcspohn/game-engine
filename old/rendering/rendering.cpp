@@ -796,7 +796,7 @@ transform2 renderRaycast(glm::vec3 p, glm::vec3 dir)
 	float closest = numeric_limits<float>().max();
 	transform2 ret;
 	mutex lock;
-	parralelfor(renderers->size(), 
+	parallelfor(renderers->size(), 
 	// for (uint32_t i = 0; i < renderers->size(); ++i)
 	{
 	

@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <map>
 #include "serialize.h"
@@ -18,20 +19,20 @@ struct _shaderMeta : public assets::asset
 	bool onEdit();
 	void inspect();
 	string type();
-	Shader *shader = 0;
+	unique_ptr<Shader> shader = 0;
 	friend struct _shader;
-	// SER_HELPER()
-	// {
-	// 	SER_BASE_ASSET
-	// 	ar &shader;
-	// }
+	SER_HELPER()
+	{
+		SER_BASE_ASSET
+		ar &shader;
+	}
 };
 
 namespace shaderManager
 {
 
-	extern map<size_t, _shaderMeta *> shaders;
-	extern map<int, _shaderMeta *> shaders_ids;
+	extern map<size_t, shared_ptr<_shaderMeta>> shaders;
+	extern map<int, shared_ptr<_shaderMeta>> shaders_ids;
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
@@ -50,10 +51,10 @@ public:
 	Shader &ref();
 	Shader *operator->();
 	_shaderMeta *meta() const;
-	// SER_HELPER()
-	// {
-	// 	ar &s;
-	// }
+	SER_HELPER()
+	{
+		ar &s;
+	}
 };
 
 bool operator<(const _shader &l, const _shader &r);

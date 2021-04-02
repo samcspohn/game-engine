@@ -1,6 +1,7 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#define GLM_FORCE_SWIZZLE
 #include <glm/glm.hpp>
 // #include <glm/gtc/swizzle.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,464 +11,348 @@
 #include <iostream>
 #include <assimp/postprocess.h>
 #include <chrono>
-
+#include <algorithm>
+#include <execution>
+// #include <omp.h>
 #define IMGUI_IMPL_OPENGL_LOADER_GLEW
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "_serialize.h"
 #include "Input.h"
 #include "helper1.h"
 #include "Transform.h"
 // #include "_renderer.h"
-#include "renderthread.h"
+// #include "renderthread.h"
+#include "editor_layer.h"
+// #include <tbb/concurrent_vector.h>
+// #include <tbb/spin_mutex.h>
+#include "components/game_object.h"
+#include "physics/physics.h"
+#include "particles/particles.h"
+
 using namespace std;
 
-GLFWwindow *window;
-GLdouble lastFrame = 0;
-// Shader *shadowShader;
-// Shader *OmniShadowShader;
-
-bool hideMouse = true;
-// atomic<bool> renderDone(false);
-// atomic<bool> renderThreadReady(false);
-bool recieveMouse = true;
-
-// editor *m_editor;
-
-bool gameRunning = false;
-// inspectable *inspector = 0;
-// ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-// transform2 selected_transform = -1;
-static unordered_map<int, bool> selected_transforms;
-
-// void editor::translate(glm::vec3 v)
-// {
-// 	this->position += this->rotation * v;
-// }
-// void editor::rotate(glm::vec3 axis, float radians)
-// {
-// 	this->rotation = glm::rotate(this->rotation, radians, axis);
-// }
-
-// void editor::update()
-// {
-
-// 	if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
-// 	{
-
-// 		translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
-// 		translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
-// 		translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
-// 		// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
-// 		rotate(vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c.fov / radians(80.f) * -0.4f);
-// 		rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * c.fov / radians(80.f) * -0.4f);
-
-// 		rotation = quatLookAtLH(rotation * vec3(0, 0, 1), vec3(0, 1, 0));
-
-// 		c.fov -= Input.Mouse.getScroll() * radians(5.f);
-// 		c.fov = glm::clamp(c.fov, radians(5.f), radians(80.f));
-
-// 		if (Input.getKeyDown(GLFW_KEY_R))
-// 		{
-// 			speed *= 2;
-// 		}
-// 		if (Input.getKeyDown(GLFW_KEY_F))
-// 		{
-// 			speed /= 2;
-// 		}
-// 	}
-// 	c.update(position, rotation);
-// }
-/////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////GL WINDOW FUNCTIONS////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-
-void window_close_callback(GLFWwindow *window)
-{
-    //if (!time_to_close)
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-void mouseFrameBegin()
-{
-    Input.Mouse.xOffset = Input.Mouse.yOffset = Input.Mouse.mouseScroll = 0;
-}
-void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
-{
-    if (button >= 0 && button < 1024)
-    {
-        if (action == GLFW_PRESS)
-        {
-            Input.Mouse.mouseButtons[button] = true;
-            // ImGui::GetIO().MouseDown[button] = true;
-        }
-        else if (action == GLFW_RELEASE)
-        {
-            Input.Mouse.mouseButtons[button] = false;
-            ImGui::GetIO().MouseDown[button] = false;
-        }
-    }
-}
-
-void MouseCallback(GLFWwindow *window, double xPos, double yPos)
-{
-    if (recieveMouse)
-    {
-        if (Input.Mouse.firstMouse)
-        {
-            Input.Mouse.lastX = xPos;
-            Input.Mouse.lastY = yPos;
-            Input.Mouse.firstMouse = false;
-        }
-
-        Input.Mouse.xOffset = xPos - Input.Mouse.lastX;
-        Input.Mouse.yOffset = Input.Mouse.lastY - yPos;
-
-        Input.Mouse.lastX = xPos;
-        Input.Mouse.lastY = yPos;
-    }
-    //camera.ProcessMouseMovement(xOffset, yOffset);
-}
-void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-
-    if (key >= 0 && key < 1024)
-    {
-        if (action == GLFW_PRESS)
-        {
-            Input.keys[key] = true;
-            ImGui::GetIO().KeysDown[key] = true;
-            Input.keyDowns[key] = true;
-        }
-        else if (action == GLFW_RELEASE)
-        {
-            Input.keys[key] = false;
-            ImGui::GetIO().KeysDown[key] = false;
-        }
-    }
-}
-void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
-{
-    Input.Mouse.mouseScroll = yOffset;
-    ImGuiIO &io = ImGui::GetIO();
-    io.MouseWheelH += (float)xOffset;
-    io.MouseWheel += (float)yOffset;
-    //camera.ProcessMouseScroll(yOffset);
-}
-void window_size_callback(GLFWwindow *window, int width, int height)
-{
-    glfwSetWindowSize(window, width, height);
-}
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-    SCREEN_WIDTH = width;
-    SCREEN_HEIGHT = height;
-    glViewport(0, 0, width, height);
-}
-// bool eventsPollDone;
-void updateTiming()
-{
-    Input.resetKeyDowns();
-    mouseFrameBegin();
-    glfwPollEvents();
-
-    double currentFrame = glfwGetTime();
-    Time.unscaledTime = currentFrame;
-    Time.unscaledDeltaTime = currentFrame - lastFrame;
-    Time.deltaTime = std::min(Time.unscaledDeltaTime, 1.f / 30.f) * Time.timeScale;
-    Time.time += Time.deltaTime;
-    Time.timeBuffer.add(Time.unscaledDeltaTime);
-    lastFrame = currentFrame;
-    Time.unscaledSmoothDeltaTime = Time.timeBuffer.getAverageValue();
-    // eventsPollDone = true;
-}
-
-void bindWindowCallbacks(GLFWwindow *window)
-{
-    glfwSetWindowSizeCallback(window, window_size_callback);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetKeyCallback(window, KeyCallback);
-    glfwSetCursorPosCallback(window, MouseCallback);
-    glfwSetScrollCallback(window, ScrollCallback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetWindowCloseCallback(window, window_close_callback);
-}
-ImFont *font_default;
-void initGL()
-{
-    glfwInit();
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-
-    window = glfwCreateWindow(WIDTH, HEIGHT, "game engine", nullptr, nullptr);
-    if (window == nullptr)
-    {
-        cout << "failed to create GLFW window" << endl;
-        glfwTerminate();
-
-        throw EXIT_FAILURE;
-    }
-
-    ///////////////////////// GUI ////////////////////////////////
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable docking
-
-    // Setup style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-    // ImGui::StyleColorsLight();
-
-    font_default = io.Fonts->AddFontDefault();
-
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 130");
-    IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!"); // Exceptionally add an extra assert here for people confused with initial dear imgui setup
-
-    /////////////////////////////////////////////////////////////
-
-    glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-    // if (hideMouse)
-    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    bindWindowCallbacks(window);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(0);
-    if (glewInit() != GLEW_OK)
-    {
-        cout << "failed to initialize GLEW" << endl;
-        throw EXIT_FAILURE;
-    }
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-}
-
-tbb::concurrent_unordered_set<transform2> toDestroy;
-
-class itr_base
-{
-public:
-    virtual void erase() {}
-};
-
-template <typename t>
-class itr : public itr_base
-{
-    typename deque_heap<t>::ref r;
-
-public:
-    itr(typename deque_heap<t>::ref re) : r(re) {}
-    void erase()
-    {
-        r._delete();
-    }
-};
-
-class gObject
-{
-public:
-    map<component *, unique_ptr<itr_base>> components;
-};
-
-map<transform2, gObject> gobjects;
+// mutex toDestroym;
+// std::deque<transform2> toDestroy;
 
 class comp : public component
 {
 public:
-    _renderer *r;
+    // _renderer *r;
+    static transform2 orbiter;
     int updateCount = 0;
+    glm::vec3 vel;
+    void onStart()
+    {
+        // updateCount = numeric_limits<float>::max();
+        // updateCount = Time.time + randf() * 50 + 50;
+        transform->setRotation(glm::quatLookAtLH(randomSphere(), randomSphere()));
+        updateCount = 100; //10 + (transform.id % 55);
+    }
     void update()
     {
-        transform.rotate(glm::vec3(0, 1, 0), glm::radians(50.f));
-        updateCount += (rand() % 2 ? 1 : 2);
-        if (updateCount > 1000)
+        float r2 = glm::length2(transform.getPosition());
+        glm::vec3 dir = glm::normalize(transform.getPosition() - comp::orbiter->getPosition());
+        vel += Time.deltaTime * glm::clamp(500.f / r2, 10.f, 10000.f) * -dir;
+        // transform.rotate(vel, glm::radians(50.f) * Time.deltaTime);
+        transform.move(vel * Time.deltaTime);
+        // if (updateCount < Time.time)
+        // {
+        //     transform->gameObject()->destroy();
+        // }
+        // if (--updateCount <= 0)
+        // {
+        //     transform->gameObject()->destroy();
+        // }
+    }
+    void onCollision(game_object *go, glm::vec3 point, glm::vec3 normal)
+    {
+        // cout << "collision\n";
+        glm::vec3 v = transform->getPosition() - go->transform->getPosition();
+        vel = glm::reflect(vel, glm::normalize(v));
+        if (glm::length2(v) < 2.5)
+            transform->move((v) / 2.f);
+        // vel += v / 2.f;
+    }
+    SER_FUNC()
+    SER(vel);
+    SER_END
+    COPY(comp);
+};
+transform2 comp::orbiter;
+
+void newObject(_model &m, _shader &s);
+class orbit : public component
+{
+    _model cube;
+    _shader shader;
+
+public:
+    void onStart()
+    {
+        cube = _model("res/models/cube/cube.obj");
+        shader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
+    }
+    void update()
+    {
+        transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
+
+        int to_spawn = 1'0'000 - Transforms.active();
+        for (int i = 0; i < to_spawn; i++)
         {
-            toDestroy.emplace(transform);
+            auto g = instantiate();
+            g->addComponent<comp>();
+            g->addComponent<_renderer>()->set(shader, cube);
+            // g->addComponent<collider>()->setOBB();
+            // g->getComponent<collider>()->setLayer(0);
+            // g->getComponent<collider>()->dim = glm::vec3(1);
+            // g->transform->setPosition(glm::vec3(randf(), 0, randf()) * 100.f);
+            g->transform->setPosition(randomSphere() * 500.f);
+        }
+        // newObject(cube,shader);
+        // concurrency::_parallelfor.doWork(to_spawn,[&](int i){
+        // parallelfor(to_spawn, newObject(cube, shader););
+    }
+    SER_FUNC()
+    SER_END
+    COPY(orbit);
+};
+
+REGISTER_COMPONENT(orbit);
+REGISTER_COMPONENT(comp);
+REGISTER_COMPONENT(_renderer);
+
+void doLoopIteration()
+{
+    timer stopWatch;
+
+    // //UPDATE
+    for (auto &i : ComponentRegistry.meta_types)
+    {
+        componentStorageBase *cb = i.second->getStorage();
+        if (cb->hasUpdate())
+        {
+            stopWatch.start();
+            cb->update();
+            appendStat(cb->name + "--update", stopWatch.stop());
         }
     }
-};
-
-deque_heap<_renderer> _renderers;
-deque_heap<comp> comps;
-
-void newObject(_model& m, _shader& s)
-{
-    transform2 t = Transforms._new();
-    gObject &g = gobjects[t];
-    auto refj = comps._new();
-    refj->transform = t;
-    auto refr = _renderers._new();
-    refr->transform = t;
-    refr->set(s,m);
-    t.setPosition(randomSphere() * 100.f); // + glm::vec3(0,0,100))
-    // t.setPosition(glm::vec3(0,0,4));
-    // refj->transform = t;
-    // auto pj = make_unique<itr_base>(new itr<comp>(refj));
-    // unique_ptr<itr_base> pj = make_unique<itr<comp>>(refj);
-    g.components.emplace(&(*refj), make_unique<itr<comp>>(refj));
-    g.components.emplace(&(*refr), make_unique<itr<_renderer>>(refr));
-
-    // auto refr = _rs._new();
-    // auto pr = make_unique<itr_base>(new itr<_renderer>(refr));
-    // g.components.emplace(&(*refr),pr);
-}
-
-void destroyObject(transform2 &t)
-{
-    for (auto &j : gobjects[t].components)
+    // LATE //UPDATE
+    for (auto &i : ComponentRegistry.meta_types)
     {
-        j.first->onDestroy();
-        j.second->erase();
+        componentStorageBase *cb = i.second->getStorage();
+        if (cb->hasLateUpdate())
+        {
+            stopWatch.start();
+            cb->lateUpdate();
+            appendStat(cb->name + "--late_update", stopWatch.stop());
+        }
     }
-    gobjects.erase(t);
-    t->_destroy();
 }
 
-struct editor{
-    camera c;
-    glm::vec3 position;
-    glm::quat rotation{};
-    float speed = 1;
+mutex renderLock;
 
-    void translate(glm::vec3 v);
-    void rotate(glm::vec3 axis, float angle);
-    void update();
-};
-
-void editor::translate(glm::vec3 v)
+void renderFunc(editor *ed, rolling_buffer &fps)
 {
-	this->position += this->rotation * v;
+    // lock_guard<mutex> lk(transformLock);
+    // renderLock.lock();
+    updateTransforms();
+    updateRenderers();
+
+    uint emitterInitCount = emitterInits.size();
+    prepParticles();
+
+    ed->c.prepRender(*matProgram.meta()->shader.get());
+
+    updateParticles(vec3(0), emitterInitCount);
+    // glFlush();
+    renderFunc(ed->c, window);
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
+
+    // ImGui::PushFont(font_default);
+
+    dockspace(window, ed);
+
+    // Rendering
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui::EndFrame();
+
+    glfwSwapBuffers(window);
 }
-void editor::rotate(glm::vec3 axis, float radians)
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <termios.h>
+
+ssize_t ngetc(char &c)
 {
-	this->rotation = glm::rotate(this->rotation, radians, axis);
+    return read(0, &c, 1);
 }
 
-void editor::update()
+void physicsUpdate(float dt)
 {
+    for (auto &i : physics_manager::collisionGraph)
+        physics_manager::collisionLayers[i.first].clear();
+    timer stopWatch;
+    static float time = 0;
+    time += dt;
+    if (time > 1.f / 30.f)
+    {
 
-	if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
-	{
+        componentStorage<collider> *cb = COMPONENT_LIST(collider);
+        stopWatch.start();
 
-		translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
-		translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
-		translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
-		// transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
-        
-		rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c.fov / glm::radians(80.f) * -0.4f);
-		rotate(glm::vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * c.fov / glm::radians(80.f) * -0.4f);
-
-		rotation = glm::quatLookAtLH(rotation * glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-
-		c.fov -= Input.Mouse.getScroll() * glm::radians(1.f);
-		c.fov = glm::clamp(c.fov, glm::radians(5.f), glm::radians(80.f));
-
-		if (Input.getKeyDown(GLFW_KEY_R))
-		{
-			speed *= 2;
-		}
-		if (Input.getKeyDown(GLFW_KEY_F))
-		{
-			speed /= 2;
-		}
-	}
-	c.update(position, rotation);
+        parallelfor(
+            cb->size(),
+            if (cb->data.getv(i)) {
+                cb->data.get(i)._update();
+            });
+        appendStat(cb->name + "--update", stopWatch.stop());
+        stopWatch.start();
+        parallelfor(
+            cb->data.size(),
+            if (cb->data.getv(i)) {
+                cb->data.get(i).midUpdate();
+            });
+        appendStat(cb->name + "--mid_update", stopWatch.stop());
+        stopWatch.start();
+        parallelfor(
+            cb->size(),
+            if (cb->data.getv(i)) {
+                cb->data.get(i)._lateUpdate();
+            });
+        appendStat(cb->name + "--late_update", stopWatch.stop());
+        time -= (1.f / 30.f);
+    }
 }
+
 int main(int argc, char **argv)
 {
+    physics_manager::collisionGraph[-1] = {};
+    physics_manager::collisionGraph[0] = {0};
+    // physics_manager::collisionGraph[1] = {0, 1};
 
+    root2 = Transforms._new();
+    newGameObject(root2);
+    rootGameObject = root2->gameObject();
 
-    initGL();
-    initiliazeStuff();
-    matProgram = Shader("res/shaders/transform.comp");
+    thread renderthread(renderLoop);
+    waitForRenderJob([&]() {
+        initGL();
+        initiliazeStuff();
+    });
+    initParticles2();
+    particle_renderer::init2();
+    _quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
+    matProgram = _shader("res/shaders/transform.comp");
 
     _model cube("res/models/cube/cube.obj");
     _shader shader("res/shaders/model.vert", "res/shaders/model.frag");
+    _shader lamp("res/shaders/model.vert", "res/shaders/lamp.frag");
+
+    auto orbiter = _instantiate();
+    orbiter->_addComponent<_renderer>()->set(lamp, cube);
+    orbiter->_addComponent<orbit>();
+    orbiter->transform->setScale(glm::vec3(6.f));
+    orbiter->_addComponent<collider>();
+    orbiter->getComponent<collider>()->setLayer(0);
+    orbiter->getComponent<collider>()->setOBB();
+
+    comp::orbiter = orbiter->transform;
 
     rolling_buffer fps;
     timer time;
-    editor ed;
-    ed.c.fov = glm::radians(80.f);
-    ed.c.nearPlane = 1;
-    ed.c.farPlane = 1000;
+    editor *ed = new editor();
+    ed->c.fov = glm::radians(80.f);
+    ed->c.nearPlane = 1;
+    ed->c.farPlane = 100000;
+    ed->c.width = 1920;
+    ed->c.height = 1080;
+    ed->position = glm::vec3(0, 0, -200);
+
+    toDestroyGameObjects.reserve(10'000);
 
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
+    // while (true)
+    // struct termios t;
+    // tcgetattr(0, &t);
+    // t.c_lflag &= ~ICANON;
+    // tcsetattr(0, TCSANOW, &t);
+
+    // fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+
+    // char c = 0;
+    // while (!c)
     {
 
+        function<void()> *f;
+        while (mainThreadWork.try_pop(f))
+        {
+            (*f)();
+            delete f;
+            /* code */
+        }
+
+        // ngetc(c);
         time.start();
-        if (frameCount++ % 1000 == 0)
         {
-            cout << "##########################" << endl;
-            cout << "gobjects " << gobjects.size() << endl;
-            cout << "comps " << comps.active() << endl;
-            // cout << comps.valid.size() << endl;
-            cout << "transforms " << Transforms.active() << endl;
-        }
-        while (gobjects.size() < 1000)
-        {
-            newObject(cube,shader);
-        }
-
-        for (int i = 0; i < comps.size(); i++)
-        {
-            if (comps.valid[i])
+            lock_guard<mutex> lck(transformLock);
+            if (isGameRunning())
             {
-                comps.data[i].update();
+                doLoopIteration();
+                physicsUpdate(Time.time);
             }
+            parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
+            toDestroyGameObjects.clear();
         }
-        for (auto &i : toDestroy)
-        {
-            destroyObject(i);
-        }
-        toDestroy.clear();
-        
-        updateTiming();
-        ed.update();
-        updateRenderers();
-        updateTransforms();
 
-        ed.c.prepRender(matProgram);
-        renderFunc(ed.c,window);
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        // ImGuizmo::BeginFrame();
-
-        ImGui::PushFont(font_default);
-
-        // dockspace();
-
-        ImGui::Begin("info");
-        ImGui::Text(("fps: " + std::to_string(1.f / fps.getAverageValue() * 1000)).c_str());
-        ImGui::End();
-        ImGui::PopFont();
-        // Rendering
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        ImGui::EndFrame();
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        waitForRenderJob([&]() {
+            updateTiming();
+        });
+        ed->update();
+        copyTransforms();
+        copyRenderers();
+        // ############################################################
+        enqueRenderJob([&]() {
+            emitterInits.clear();
+            for (auto &i : emitter_inits)
+                emitterInits.push_back(i.second);
+            emitter_inits.clear();
+            renderFunc(ed, fps);
+        });
 
         fps.add(time.stop());
     }
+    delete ed;
+    renderingManager::destroy();
+    shaderManager::destroy();
+    modelManager::destroy();
+    particle_renderer::end();
 
-    // Cleanup gui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    waitForRenderJob([&]() {
+        while (gpu_buffers.size() > 0)
+        {
+            (gpu_buffers.begin()->second)->deleteBuffer();
+        }
+        // Cleanup gui
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
 
-    glFlush();
-    glfwTerminate();
+        glFlush();
+        glfwTerminate();
+    });
+
+    renderRunning = false;
+    renderthread.join();
+
     return 1;
 }

@@ -77,12 +77,14 @@ Mesh::Mesh(const Mesh &M)
 }
 Mesh::~Mesh()
 {
-    if (this->VAO != 0)
-    {
-        glDeleteBuffers(1, &this->EBO);
-        glDeleteBuffers(1, &this->VBO);
-        glDeleteVertexArrays(1, &this->VAO);
-    }
+    waitForRenderJob([&](){
+        if (this->VAO != 0)
+        {
+            glDeleteBuffers(1, &this->EBO);
+            glDeleteBuffers(1, &this->VBO);
+            glDeleteVertexArrays(1, &this->VAO);
+        }
+    })
 }
 void Mesh::addTexture(_texture t)
 {

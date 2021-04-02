@@ -47,8 +47,8 @@ struct transform2
 	void _init();
 	transform2();
 	transform2(int i);
-	void init(game_object *g);
-	void init(transform2 other, game_object *go);
+	void init(int g);
+	void init(transform2 other, int go);
 	void init(transform2 &other);
 
 	_transform getTransform();
@@ -69,7 +69,7 @@ struct transform2
 	transform2 getParent();
 	void adopt(transform2 transform);
 	game_object *gameObject();
-	void setGameObject(game_object *g);
+	void setGameObject(int g);
 	// size_t operator=(const transform2& t);
 	operator size_t() const { return static_cast<size_t>(id); }
 
@@ -116,12 +116,13 @@ struct trans_update
 
 struct transform_meta
 {
-	game_object *gameObject;
+	atomic<int> gameObject;
 	transform2 parent{-1};
 	list<transform2> children;
 	list<transform2>::iterator childId;
 	string name;
-	tbb::spin_mutex m;
+	// tbb::spin_mutex m;
+	mutex m;
 	SER_HELPER(){
 		ar & parent & name;
 	}
@@ -165,7 +166,8 @@ struct _Transforms
 	std::priority_queue<int,vector<int>,std::greater<int>> avail;
 	// tbb::concurrent_priority_queue<int,std::greater<int>> avail;
 	// std::queue<int> avail;
-	tbb::spin_mutex m;
+	// tbb::spin_mutex m;
+	mutex m;
 
 
 
@@ -282,8 +284,8 @@ void initTransform();
 int switchAH(int index);
 extern unsigned int transforms_enabled;
 // void renderEdit(const char* name, transform2& t);
-void saveTransforms(OARCHIVE &oa);
-void loadTransforms(IARCHIVE &ia);
+// void saveTransforms(OARCHIVE &oa);
+// void loadTransforms(IARCHIVE &ia);
 
 extern transform2 root2;
 bool operator<(const transform2 &l, const transform2 &r);

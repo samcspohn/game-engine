@@ -84,6 +84,13 @@ public:
 
 	}
 	void addDepthBuffer(){
+		// glGenTextures(1,&rboDepth);
+		// glBindTexture(GL_TEXTURE_2D, rboDepth);
+		// glTexImage2D(GL_TEXTURE_2D, 0,GL_R32F, scr_width, scr_height, 0,GL_RED, GL_FLOAT, 0);
+		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		// glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, rboDepth, 0);
+
 		glGenRenderbuffers(1, &rboDepth);
 		glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, scr_width, scr_height);

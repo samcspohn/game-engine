@@ -1,85 +1,53 @@
 #pragma once
-#include "fast_list.h"
+
 #include <map>
 #include <unordered_map>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include "game_object.h"
-#include "editor.h"
-#include <fstream>
-using namespace std;
-using namespace glm;
+#include "_serialize.h"
+#include "_rendering/texture.h"
+#include <glm/glm.hpp>
+#include "particles/gradient.h"
+#include "gpu_vector.h"
+#include "array_heap.h"
+// #include "particles/emitter.h"
 
-void saveEmitters(OARCHIVE &oa);
-void loadEmitters(IARCHIVE &ia);
-
-class component;
-class particle_emitter;
-
-struct colorArray
+struct _burst
 {
-    struct key{
-        int id;
-        vec4 value;
-        SER_HELPER(){
-            ar & id & value;
-        }
-        key(int _id, vec4 _value) : id(_id), value(_value) {
-
-        }
-        key() = default;
-    };
-    static int idGenerator;
-    _texture t;
-    map<float,key> keys;
-    colorArray &addKey(vec4 color, float position);
-    void setColorArray(vec4 *colors);
-    SER_HELPER(){
-        ar & keys;
-    }
+    glm::vec3 position;
+    uint emitter_prototype;
+    glm::vec3 direction;
+    uint count;
+    glm::vec3 scale;
+    int p1;
 };
 
-extern deque<colorArray> colorGradients;
-extern int gradient_index;
-void addColorArray(colorArray& c);
-extern _texture gradientEdit;
-bool colorArrayEdit(colorArray &a, bool *p_open);
-
-struct floatArray
-{
-    struct key
-    {
-        float value;
-        float pos;
-    };
-    vector<key> keys;
-    floatArray &addKey(float v, float position);
-    void setFloatArray(float *floats);
-};
 struct emitter_prototype
 {
-    float emission_rate;
-    float lifetime;
-    float rotation_rate;
-    float dispersion;
+    float emission_rate{10};
+    float lifetime{2};
+    float rotation_rate{0};
+    float dispersion{3.14159f};
 
     // vec4 color;
 
-    float minSpeed;
-    float maxSpeed;
-    float lifetime2;
+    float minSpeed{2};
+    float maxSpeed{3};
+    float lifetime2{3};
     int live;
 
-    vec2 scale;
-    int billboard;
+    glm::vec2 scale{1};
+    int billboard{1};
     int p3;
 
-    int velAlign;
-    float radius;
+    int velAlign{0};
+    float radius{0};
     int p2;
-    int trail;
-    vec4 colorLife[100];
-    float sizeLife[100];
+    int trail{0};
+    array<glm::vec4,100> colorLife;
+    array<float,100> sizeLife{1.f};
+    emitter_prototype(){
+        colorLife.fill(glm::vec4(1));
+        sizeLife.fill(1.f);
+    }
     SER_HELPER()
     {
         ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
@@ -117,7 +85,7 @@ struct emitter_prototype
             ImGui::Begin("color over life", &col_p_open);
 
             if(colorArrayEdit(ca,&col_p_open)){
-                ca.setColorArray(colorLife);
+                ca.setColorArray(colorLife.data());
             }
 
             ImGui::Text("color over life");
@@ -148,7 +116,7 @@ struct emitter_prototype
 class emitter_proto_asset : public assets::asset
 {
 public:
-    typename array_heap<emitter_prototype>::ref ref;
+    int ref;
     colorArray gradient;
     bool onEdit();
     void copy();
@@ -160,7 +128,10 @@ public:
         ar &ref &gradient;
     }
 };
+extern gpu_vector<emitter_prototype> *gpu_emitter_prototypes;
+extern array_heap<emitter_prototype> emitter_prototypes_;
 extern map<int, emitter_proto_asset *> emitter_proto_assets;
+extern gpu_vector<_burst> *gpu_particle_bursts;
 
 class emitter_prototype_
 {
@@ -173,9 +144,9 @@ class emitter_prototype_
     friend class particle_emitter;
 
 public:
-    void color(vec4 c);
+    void color(glm::vec4 c);
     void color(colorArray& c);
-    void color(vec4 c1, vec4 c2);
+    void color(glm::vec4 c1, glm::vec4 c2);
     void size(float c);
     void size(float c1, float c2);
 
@@ -185,8 +156,9 @@ public:
     emitter_prototype &operator*();
     void burst(glm::vec3 pos, glm::vec3 dir, uint count);
     void burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, uint count);
-    friend emitter_prototype_ createNamedEmitter(string name);
-    friend emitter_prototype_ getNamedEmitterProto(string name);
+    // friend emitter_prototype_ createNamedEmitter(string name);
+    // friend emitter_prototype_ getNamedEmitterProto(string name);
+    friend emitter_prototype_ createEmitter(string name);
     SER_HELPER()
     {
         ar &emitterPrototype;
@@ -194,70 +166,7 @@ public:
 };
 
 void renderEdit(string name, emitter_prototype_ &ep);
-emitter_prototype_ createNamedEmitter(string name);
-emitter_prototype_ getNamedEmitterProto(string name);
+emitter_prototype_ createEmitter(string name);
 
-struct emitterInit
-{
-    uint transformID;
-    uint emitterProtoID;
-    int live;
-    int id;
-};
-struct emitter
-{
-    uint transform;
-    uint emitter_prototype;
-    float emission;
-    int live;
 
-    vec2 p;
-    int last;
-    int frame;
-};
-extern vector<emitterInit> emitterInits;
-extern vector<emitterInit> emitterInitsdb;
-extern unordered_map<uint, emitterInit> emitter_inits;
-class particle_emitter final : public component
-{
-    emitter_prototype_ prototype;
-    static mutex lock;
-
-public:
-    particle_emitter();
-    particle_emitter(const particle_emitter& pe);
-    ~particle_emitter();
-    typename array_heap<emitter>::ref emitter;
-    // typename array_heap<GLint>::ref emitter_last_particle;
-    void onEdit();
-    COPY(particle_emitter);
-    void setPrototype(emitter_prototype_ ep);
-    void protoSetPrototype(emitter_prototype_ ep);
-    void init();
-    void deinit();
-    // void onStart();
-    // void onDestroy();
-    SER1(prototype);
-};
-extern int particleCount;
-extern int actualParticles;
-void initParticles();
-
-void updateParticles(vec3 floatingOrigin, uint emitterInitCount);
-
-namespace particle_renderer
-{
-    void setCamCull(glm::mat3 ci, glm::vec3 cp);
-    void init();
-
-    void end();
-
-    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen);
-
-    void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos);
-}; // namespace particle_renderer
-
-void prepParticles();
-void swapBurstBuffer();
-int getParticleCount();
-int getActualParticles();
+void init_prototypes();

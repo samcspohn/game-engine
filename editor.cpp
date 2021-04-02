@@ -59,7 +59,7 @@ void renderEdit(const char *name, bool &b)
 }
 void renderEdit(const char *name, std::string &s)
 {
-    vector<char> t(s.length() + 2);
+    vector<char> t(s.length() + 200);
     // cout << "s: " << s.size() << ": " << s.length() << endl;
     sprintf(t.data(), s.c_str());
     if (ImGui::InputText(name, t.data(), t.size()))

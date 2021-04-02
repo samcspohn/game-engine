@@ -59,6 +59,9 @@ struct emitter{
     vec2 p;
     int last;
     int frame;
+    
+    vec3 prevPos;
+    int p2;
 };
 struct emitterInit{
     uint transformID;

@@ -126,7 +126,7 @@ void physicsUpdate(float dt)
 		componentStorage<collider> *cb = COMPONENT_LIST(collider);
 		stopWatch.start();
 
-		parralelfor(cb->size(), {
+		parallelfor(cb->size(), {
 			if (cb->data.valid[i])
 			{
 				cb->data.data[i]._update();
@@ -142,7 +142,7 @@ void physicsUpdate(float dt)
 		});
 		appendStat(cb->name + "--mid_update", stopWatch.stop());
 		stopWatch.start();
-		parralelfor(cb->size(), {
+		parallelfor(cb->size(), {
 			if (cb->data.valid[i])
 			{
 				cb->data.data[i]._lateUpdate();

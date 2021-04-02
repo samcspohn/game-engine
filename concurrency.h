@@ -1,9 +1,11 @@
 #pragma once
 #include "thread"
-#include <tbb/tbb.h>
+#include "threadpool.h"
+// #include <tbb/tbb.h>
 
 namespace concurrency {
 	extern int numThreads;
+	extern threadpool _parallelfor;
 	// class pinning_observer: public tbb::task_scheduler_observer {
 	// 	cpu_set_t *mask;
 

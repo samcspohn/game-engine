@@ -6,127 +6,10 @@
 #include <deque>
 #include <mutex>
 #include <math.h>
+#include <atomic>
 #include "concurrency.h"
 #include "serialize.h"
 using namespace std;
-
-template <typename t>
-class array_heap
-{
-	mutex m;
-	SER_HELPER()
-	{
-		ar &extent &avail &data &valid;
-	}
-
-public:
-	int active = 0;
-	struct ref
-	{
-		SER_HELPER()
-		{
-			ar &a &index;
-		}
-
-		int index;
-		array_heap<t> *a;
-		t *operator->()
-		{
-			return &(a->data.at(index));
-		}
-		operator int()
-		{
-			return index;
-		}
-		t &operator*()
-		{
-			return a->data[index];
-		}
-		t &data()
-		{
-			return a->data.at(index);
-		}
-		void _delete(){
-			a->_delete(*this);
-		}
-	};
-
-	t &operator[](unsigned int i)
-	{
-		//		if (i >= extent)
-		//			throw -10;//"out of bounds";
-		//if(!valid[i])
-		//	throw exception("invalid");
-		return data.at(i);
-	}
-	template <typename... types>
-	ref _new(types... args)
-	{
-		ref ret;
-		ret.a = this;
-		m.lock();
-		if (avail.size() > 0)
-		{
-			ret.index = *avail.begin();
-			avail.erase(avail.begin());
-			;
-			valid[ret.index] = true;
-			// ret.d = &data[ret.index];
-			if (ret.index >= extent)
-			{
-				extent = ret.index + 1;
-			}
-			++active;
-			m.unlock();
-			new (&data[ret.index]) t{args...};
-		}
-		else
-		{
-			ret.index = valid.size();
-			if(valid.size() == data.size()){
-				data.emplace_back(args...);
-			}
-			// ret.d = &data.back();
-			valid.emplace_back(true);
-			++extent;
-			++active;
-			m.unlock();
-
-		}
-		return ret;
-	}
-	void _delete(ref& r)
-	{
-		if (r.a != this)
-			throw;
-		m.lock();
-		// delete r.d;
-		avail.emplace_front(r.index);
-		valid[r.index] = false;
-		--active;
-		m.unlock();
-		data[r.index].~t();
-		// memset(&data[r.index],0,sizeof(t));
-	}
-
-	float density()
-	{
-		if (extent == 0)
-			return INFINITY;
-		return 1 - (float)avail.size() / (float)extent;
-	}
-
-	unsigned int size()
-	{
-		return extent;
-	}
-	vector<t> data;
-	std::vector<bool> valid;
-
-private:
-	deque<uint> avail;
-	uint extent = 0;
-};
 
 template <typename t>
 class deque_heap
@@ -136,222 +19,352 @@ class deque_heap
 public:
 	SER_HELPER()
 	{
-		ar &extent &avail &valid &data;
-	}
-	struct ref
-	{
-		int index;
-		deque_heap<t> *a;
-		// t* d;
-		t *operator->()
-		{
-			// return d;
-			return &(a->data[index]);
-			// return &(a->data.at(index));
-		}
-		operator int()
-		{
-			return index;
-		}
-		t &operator*()
-		{
-			return a->data[index];
-		}
-		t &data()
-		{
-			return a->data.at(index);
-		}
-		void _delete()
-		{
-			a->_delete(*this);
-		}
-	};
-	ref getRef(int i)
-	{
-		return ref{i, this};
+		ar &avail &valid &data;
 	}
 
-	t &operator[](unsigned int i)
+	t &get(int i)
 	{
 		return data[i];
 	}
-	template <typename... types>
-	ref _new(types... args)
+	bool getv(int i)
 	{
-		ref ret;
-		ret.a = this;
+		return valid[i];
+	}
+
+	template <typename... types>
+	int _new(types... args)
+	{
+		// std::lock_guard<std::mutex> lck(this->m);
+		int id = -1;
 		m.lock();
 		if (avail.size() > 0)
 		{
-			ret.index = *avail.begin();
-			avail.erase(avail.begin());
-			;
-			valid[ret.index] = true;
-			// ret.d = &data[ret.index];
-			if (ret.index >= extent)
-			{
-				extent = ret.index + 1;
-			}
+			id = avail.back();
+			avail.pop_back();
+			new (&data[id]) t{args...};
+			valid[id] = true;
 			m.unlock();
-			new (&data[ret.index]) t{args...};
 		}
 		else
 		{
-			ret.index = valid.size();
-			if(valid.size() == data.size()){
-				data.emplace_back(args...);
-			}
-			// ret.d = &data.back();
+			id = data.size();
+			data.emplace_back(args...);
 			valid.emplace_back(true);
-			++extent;
 			m.unlock();
-
 		}
-		return ret;
-	}
-	void _delete(ref& r)
-	{
-		if (r.a != this)
-			throw;
-		m.lock();
-		// delete r.d;
-		avail.emplace_front(r.index);
-		valid[r.index] = false;
-		m.unlock();
-		// delete (&data[r.index]);
-		data[r.index].~t();
-		// memset(&data[r.index],0,sizeof(t));
+		return id;
 	}
 
-	float density()
+	void _delete(int i)
 	{
-		if (extent == 0)
-			return INFINITY;
-		return 1 - (float)avail.size() / (float)extent;
+		data[i].~t();
+		{
+			std::lock_guard<std::mutex> lck(this->m);
+			avail.push_back(i);
+			valid[i] = false;
+		}
+		// memset(&data[r.id],0,sizeof(t));
 	}
-	// unsigned int active(){
-	// return this->active;
-	// }
-	unsigned int size()
+
+	int size()
 	{
-		return extent;
+		return data.size();
 	}
-	int active(){
+	int active()
+	{
 		return data.size() - avail.size();
 	}
 
-	void clear(){
-		extent = 0;
+	void clear()
+	{
 		avail.clear();
 		avail.shrink_to_fit();
 		valid.clear();
 		valid.shrink_to_fit();
-		for(auto &i : data){
-			memset(&i,0,sizeof(t));
+		for (auto &i : data)
+		{
+			memset(&i, 0, sizeof(t));
 		}
 		data.clear();
 		data.shrink_to_fit();
 	}
 
 	deque<t> data;
-	std::deque<bool> valid;
+	deque<bool> valid;
 private:
 	deque<uint> avail;
-	uint extent = 0;
 };
 
-// template<typename t>
-// class heap2{
+
+
+template <typename t>
+class array_heap
+{
+	mutex m;
+
+public:
+	SER_HELPER()
+	{
+		ar &avail &valid &data;
+	}
+
+	t &get(int i)
+	{
+		return data[i];
+	}
+	bool getv(int i)
+	{
+		return valid[i];
+	}
+
+	template <typename... types>
+	int _new(types... args)
+	{
+		// std::lock_guard<std::mutex> lck(this->m);
+		int id = -1;
+		m.lock();
+		if (avail.size() > 0)
+		{
+			id = avail.back();
+			avail.pop_back();
+			new (&data[id]) t{args...};
+			valid[id] = true;
+			m.unlock();
+		}
+		else
+		{
+			id = data.size();
+			data.emplace_back(args...);
+			valid.emplace_back(true);
+			m.unlock();
+		}
+		return id;
+	}
+
+	void _delete(int i)
+	{
+		data[i].~t();
+		{
+			std::lock_guard<std::mutex> lck(this->m);
+			avail.push_back(i);
+			valid[i] = false;
+		}
+		// memset(&data[r.id],0,sizeof(t));
+	}
+
+	int size()
+	{
+		return data.size();
+	}
+	int active()
+	{
+		return data.size() - avail.size();
+	}
+
+	void clear()
+	{
+		avail.clear();
+		avail.shrink_to_fit();
+		valid.clear();
+		valid.shrink_to_fit();
+		for (auto &i : data)
+		{
+			memset(&i, 0, sizeof(t));
+		}
+		data.clear();
+		data.shrink_to_fit();
+	}
+
+	vector<t> data;
+	deque<bool> valid;
+private:
+	deque<uint> avail;
+};
+
+
+template <typename t>
+class storage
+{
+	mutex m;
+#define chunk 256
+ 	vector<unique_ptr<t[]>> data;
+	vector<t*> d1;
+	vector<t*> d2;
+	atomic<vector<t*>*> r;
+    deque<int> avail;
+    deque<atomic<bool>> valid;
+
+	atomic<int> extent;
+	atomic<int> avail_count;
+public:
+
+    t &get(int id)
+    {
+        // return data[id];
+        return (*r)[id / chunk][id % chunk];
+    }
+    bool getv(int id)
+    {
+        return valid[id];
+    };
+	template <typename... types>
+	int _new(types&&... args)
+    {
+        int id;
+        {
+            lock_guard<mutex> lck(m);
+            if (avail.size() > 0)
+            {
+                id = avail.front();
+                avail.pop_front();
+				--avail_count;
+                valid[id] = true;
+            }
+            else
+            {
+                id = valid.size();
+                valid.emplace_back(true);
+				++extent;
+                if (valid.size() >= data.size() * chunk)
+                {
+                    data.emplace_back(new t[chunk]);
+					if(r == &d1){
+						d2.emplace_back(data.back().get());
+						r = &d2;
+						d1.emplace_back(data.back().get());
+					}else{
+						d1.emplace_back(data.back().get());
+						r = &d1;
+						d2.emplace_back(data.back().get());
+					}
+                }
+            }
+        }
+        new (&(*r)[id / chunk][id % chunk]) t{args...};
+        return id;
+    }
+    void _delete(int i)
+    {
+        data[i / chunk][i % chunk].~t();
+        {
+            lock_guard<mutex> lck(m);
+            valid[i] = false;
+            avail.push_front(i);
+			++avail_count;
+        }
+    }
+    int size()
+    {
+		// lock_guard<mutex> lck(m);
+        return extent;
+    }
+    int active()
+    {
+		lock_guard<mutex> lck(m);
+        return extent - avail_count;
+    }
+	void clear(){
+		for (int i = 0; i < valid.size(); i++)
+        {
+            if (valid[i])
+            {
+                _delete(i);
+            }
+        }
+        for (int i = 0; i < data.size(); i++)
+        {
+            for (int j = 0; j < chunk; j++)
+            {
+                memset(&data[i][j], 0, sizeof(t));
+            }
+        }
+        data.clear();
+		valid.clear();
+		avail.clear();
+	}
+    ~storage()
+    {
+        clear();
+    }
+	storage() : m{}, extent{0}, avail_count{0}{	}
+
+#undef chunk
+#undef get
+};
+
+// template <typename t>
+// class storage
+// {
+// #define chunk chunk
+// #define _chunk 0b1111111111
+// #define _get(id) data[id >> 10][(id & _chunk) * sizeof(t)]
+// 	int extent = 0;
 // 	mutex m;
-// 	#define bit_shift 10
-// 	#define heap2BlockSize 1<<bit_shift
-// 	uint type_size = sizeof(m_element);
-// 	uint block_mask = ~0>>bit_shift;
-// 	struct m_element {
-// 		bool valid;
-// 		t data;
-// 	};
-// 	struct ref{
-// 		uint index;
-// 		heap2* a;
-// 		m_element* d;
-// 		t* operator->() {
-// 			return d->data;
-// 		}
-// 	};
-// 	struct m_block{
-// 		char* data;
-// 		m_block* next;
-// 		m_block* prev;
-// 		m_block(){
-// 			data = new char[type_size*heap2BlockSize];
-// 		}
-// 		m_element& operator[](uint i) {
-// 			return ((m_element*)data)[i];
-// 		}
-// 		m_element&at(uint i){
-// 			return ((m_element*)data)[i];
-// 		}
-// 		~m_block(){
-// 			delete[] data;
-// 		}
-// 	};
-// 	uint m_size;
-// 	std::map<uint,m_block*> index1;
-// 	std::map<uint,m_block*> index2;
-// 	std::map<uint,m_block*>* indexing;
-
-// 	deque<uint> avail;
-
-// 	heap2(){
-// 		m_size = 0;
+// 	// const int _size = sizeof(t);
+// 	vector<array<t, chunk>> data;
+// 	vector<array<bool,chunk>> valid;
+// 	vector<int> avail;
+// 	bool& _getv(int id){
+// 		return valid[id >> 10][id & _chunk];
 // 	}
-// 	t& operator[](unsigned int i){
-// 		return indexing->at(i>>bit_shift)->at(i&block_mask);
-// 	}
-// 	ref _new(){
-// 		ref ret;
-// 		ret.a = this;
 
-// 		m.lock();
-// 		if (avail.size() > 0) {
-// 			ret.index = *avail.begin();
-// 			avail.erase(avail.begin());;
+// public:
+// 	t &get(int id)
+// 	{
+// 		// return *reinterpret_cast<t *>(&_get(id));
+// 		return data[id >> 10][id & _chunk];
+// 	}
+// 	bool getv(int id)
+// 	{
+// 		return _getv(id);
+// 	}
+// 	int active()
+// 	{
+// 		return extent - avail.size();
+// 	}
+// 	int size()
+// 	{
+// 		return extent;
+// 	}
+// 	void clear(){
+// 		data.clear();
+// 		valid.clear();
+// 		avail.clear();
+// 	}
+
+// 	template <typename... types>
+// 	int _new(types... args)
+// 	{
+// 		lock_guard lck(m);
+// 		int id;
+// 		if (avail.size() > 0)
+// 		{
+// 			id = avail.back();
+// 			avail.pop_back();
 // 		}
-// 		else {
-// 			ret.index = m_size;
-// 			if(ret.index>>bit_shift >= indexing->size()){
-// 				std::map<uint,m_block*>* temp;
-// 				if(indexing == &index1)
-// 					temp = &index2;
-// 				else
-// 					temp = &index1;
-// 				*temp = *indexing;
-// 				m_block* new_block = new m_block();
-// 				temp->insert(std::pair<uint,m_block*>(ret.index>>bit_shift,new_block));
-// 				indexing = temp;
+// 		else
+// 		{
+// 			if (extent >= data.size() * chunk){
+// 				data.emplace_back();
+// 				valid.emplace_back();
 // 			}
-// 			++m_size;
+// 			id = extent;
+// 			++extent;
 // 		}
-// 		ret.d = indexing->at(ret.index>>bit_shift)[ret.index & block_mask];
-// 		ret.d->valid = false;
-// 		m.unlock();
-// 		ret.d->data.t();
-// 		return ret;
+// 		new (&get(id)) t{args...};
+// 		_getv(id) = true;
+// 		return id;
 // 	}
-// 	void _del(ref r){
-// 		if (r.a != this)
-// 			throw;
-// 		r.d->data.~t();
-// 		m.lock();
-// 		r.d->valid = false;
-// 		avail.emplace_front(r.index);
-// 		m.unlock();
+// 	void _delete(int id)
+// 	{
+// 		lock_guard lck(m);
+// 		get(id).~t();
+// 		avail.push_back(id);
+// 		_getv(id) = false;
 // 	}
 
-// 	~heap2(){
-// 		for(auto&i : *indexing){
-// 			delete i.second;
-// 		}
-// 	}
+// #undef chunk
+// #undef get
 // };
+
+#define STORAGE storage

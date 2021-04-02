@@ -20,12 +20,15 @@ uniform mat3 camInv;
 uniform mat4 projection;
 uniform float FC;
 uniform float aspectRatio;
+
+flat out uint id;
+
 out vec3 FragPos;
 out float logz;
-// out vec4 col;
+out vec2 uv;
 out vec2 offset;
 out float _life_;
-flat out uint id;
+
 
 
 layout (points) in;
@@ -34,7 +37,7 @@ layout (triangle_strip, max_vertices=4) out;
 in uint index_[];
 
 
-void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
+void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life, vec2 _uv){
         gl_Position = mvp * vec4(point,1);
         logz = 1.0 + gl_Position.w;
         gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
@@ -44,6 +47,7 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life){
         // col = prototypes[protoID(rp)].color;
         // col.a *= _life;
         _life_ = _life;
+        uv = _uv;
 
         // col.a = 1;
         // logz = log2(logz) * 0.5 * FC;
@@ -74,10 +78,10 @@ void main(){
     if(prototypes[proto_id].trail == 1)
         life1 = min(1.f, life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime);
 
-    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1);
-    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1);
-    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2);
-    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2);
+    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1, vec2(0,0));
+    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1, vec2(1,0));
+    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2, vec2(0,1));
+    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2, vec2(1,1));
 
     EndPrimitive();
 

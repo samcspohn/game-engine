@@ -33,13 +33,13 @@ void transform2::_init()
 	// parent = 0;
 	root2.adopt(*this);
 }
-void transform2::init(game_object *g)
+void transform2::init(int g)
 {
 	Transforms.meta[id].gameObject = g;
 	_init();
 }
 
-void transform2::init(transform2 other, game_object *go)
+void transform2::init(transform2 other, int go)
 {
 	Transforms.meta[id].gameObject = go;
 	other.getParent().adopt(*this);
@@ -171,15 +171,7 @@ void transform2::adopt(transform2 transform)
 	Transforms.meta[id].m.unlock();
 }
 
-game_object *transform2::gameObject()
-{
-	return Transforms.meta[id].gameObject;
-}
 
-void transform2::setGameObject(game_object *g)
-{
-	Transforms.meta[id].gameObject = g;
-}
 void transform2::_destroy()
 {
 	orphan();

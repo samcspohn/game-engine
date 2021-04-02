@@ -17,7 +17,7 @@ using namespace std;
 
 namespace textureManager
 {
-    map<string, TextureMeta *> textures;
+    map<string, shared_ptr<TextureMeta>> textures;
 
 } // namespace textureManager
 
@@ -26,21 +26,21 @@ void _texture::load(string path)
     auto tm = textureManager::textures.find(path);
     if (tm != textureManager::textures.end())
     {
-        this->t = tm->second;
+        this->t = tm->second.get();
     }
     else
     {
-        textureManager::textures.insert(std::pair<string, TextureMeta *>(path, new TextureMeta()));
+        textureManager::textures.emplace(path, make_shared<TextureMeta>());
         textureManager::textures.at(path)->load(path);
-        this->t = textureManager::textures.at(path);
+        this->t = textureManager::textures.at(path).get();
     }
 }
 
 void _texture::namedTexture(string name)
 {
     if (textureManager::textures.find(name) == textureManager::textures.end())
-        textureManager::textures.insert(std::pair<string, TextureMeta *>(name, new TextureMeta()));
-    this->t = textureManager::textures.at(name);
+        textureManager::textures.emplace(name, make_shared<TextureMeta>());
+    this->t = textureManager::textures.at(name).get();
 }
 
 void _texture::load(string path, string type)
@@ -48,12 +48,12 @@ void _texture::load(string path, string type)
     auto tm = textureManager::textures.find(path);
     if (tm != textureManager::textures.end())
     {
-        this->t = tm->second;
+        this->t = tm->second.get();
     }
     else
     {
-        textureManager::textures.insert(std::pair<string, TextureMeta *>(path, new TextureMeta(path, type)));
-        this->t = textureManager::textures.at(path);
+        textureManager::textures.emplace(path, make_shared<TextureMeta>(path, type));
+        this->t = textureManager::textures.at(path).get();
     }
 }
 
@@ -76,7 +76,7 @@ TextureMeta::TextureMeta(string path, string type)
 
     unsigned char *image = SOIL_load_image(path.c_str(), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA);
 
-    enqueRenderJob([=]() {
+    // enqueRenderJob([=]() {
         glGenTextures(1, &id);
         // Assign texture to ID
         glBindTexture(GL_TEXTURE_2D, id);
@@ -90,7 +90,7 @@ TextureMeta::TextureMeta(string path, string type)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glBindTexture(GL_TEXTURE_2D, 0);
         SOIL_free_image_data(image);
-    });
+    // });
 
     this->type = type;
     this->path = path;
@@ -100,7 +100,7 @@ void TextureMeta::load(string path)
 
     unsigned char *image = SOIL_load_image(path.c_str(), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA);
 
-enqueRenderJob([=]() {
+// enqueRenderJob([=]() {
     glGenTextures(1, &id);
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, id);
@@ -115,7 +115,7 @@ enqueRenderJob([=]() {
     glBindTexture(GL_TEXTURE_2D, 0);
     SOIL_free_image_data(image);
 
-});
+// });
 }
 
 void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float *data = 0)
@@ -137,7 +137,7 @@ void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float *
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void TextureMeta::write(float *data, GLenum format, GLenum type)
+void TextureMeta::write(void *data, GLenum format, GLenum type)
 {
     glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, (format == GL_RED ? GL_R32F : format), dims.x, dims.y, 0, format, type, data);
@@ -148,6 +148,11 @@ void TextureMeta::write(float *data, GLenum format, GLenum type)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+void TextureMeta::read(void* data, GLenum format, GLenum type){
+    glBindTexture(GL_TEXTURE_2D, id);
+    glGetTexImage( GL_TEXTURE_2D, 0,format, type, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

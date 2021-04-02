@@ -21,17 +21,21 @@ bool Model::ready()
 Model::Model(string path)
 {
     modelPath = path;
-    loadModel(modelPath);
+    waitForRenderJob([&](){
+        loadModel(modelPath);
+    });
 }
 Model::Model(const Model &M)
 {
     // enqueRenderJob([&](){
     this->directory = M.directory;
     // this->textures_loaded = M.textures_loaded;
-    for (auto &i : M.meshes)
-    {
-        this->meshes.push_back(new Mesh(*i));
-    }
+    waitForRenderJob([&](){
+        for (auto &i : M.meshes)
+        {
+            this->meshes.push_back(new Mesh(*i));
+        }
+    });
     // });
 }
 Model::Model()

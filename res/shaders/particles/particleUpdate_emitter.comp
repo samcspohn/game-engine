@@ -49,6 +49,7 @@ void initEmitters(uint id){
     e.emission = 1;//prototypes[e.emitter_prototype].emission_rate * deltaTime;
     e.last = -1;
     emitters[ei.id] = e;
+    emitters[ei.id].prevPos = transforms[e.transform].position;
 }
 
 
@@ -73,6 +74,10 @@ void emit(uint thread_id){
         vec2 id = vec2(thread_id % max_particles, thread_id / max_particles);
         rng generator;
         setSeed(generator,id,time);
+        vec3 pos = e.prevPos;
+        vec3 posEnd = transforms[e.transform].position;
+        vec3 posStep = (posEnd - pos) / float(emission + 1);
+        pos += posStep;
         for(int i = new_particles_start; i < end; ++i){
             // emitted[i].position = transforms[e.transform].position;
             // emitted[i].emitterID = int(thread_id);
@@ -85,7 +90,7 @@ void emit(uint thread_id){
 
             int x = int(dead[i]);
             particle p;
-            makeParticle(p,ep,generator,particle_count, transforms[e.transform].position,transforms[e.transform].rotation,transforms[e.transform].scale, e.emitter_prototype, dt, thread_id);
+            makeParticle(p,ep,generator,particle_count, pos,transforms[e.transform].rotation,transforms[e.transform].scale, e.emitter_prototype, dt, thread_id);
 
             if(ep.trail == 1){
                 if(e.frame > 0 && e.last != -1){
@@ -100,9 +105,11 @@ void emit(uint thread_id){
             particles[x] = p;
             particleLifes[x] = 1;
             // setParticleLive(x);
+            pos += posStep;
 
         }
         e.emission -= float(uint(e.emission));
+        e.prevPos = posEnd;
     }else{
         e.frame = 0;
         e.last = -1;

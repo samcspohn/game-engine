@@ -5,10 +5,10 @@
 const GLint WIDTH = 1920, HEIGHT = 1080;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
-void log(string log){
-    std::cout << log << std::endl;
+void log(string log)
+{
+	std::cout << log << std::endl;
 }
-
 
 Barrier::Barrier(std::size_t count) : m_count{count}, m_initial{count}, m_state{State::Down} {}
 
@@ -45,7 +45,6 @@ void Barrier::Wait()
 		}
 	}
 }
-
 
 rolling_buffer::rolling_buffer()
 {
@@ -120,7 +119,8 @@ unsigned long xorshf96(void)
 
 	return z;
 }
-void seedRand(glm::uvec3 s){
+void seedRand(glm::uvec3 s)
+{
 	x = s.x;
 	y = s.y;
 	z = s.z;
@@ -129,9 +129,9 @@ void seedRand(glm::uvec3 s){
 mutex randMutex;
 float randf()
 {
-	randMutex.lock();
+	// randMutex.lock();
 	float ret = (float)xorshf96() / (float)ULONG_MAX;
-	randMutex.unlock();
+	// randMutex.unlock();
 	return ret;
 }
 int _min(int a, int b)
@@ -180,36 +180,39 @@ vector<string> splitString(string s_, char delim)
 	return ret;
 }
 
-std::mutex renderLock;
-std::queue<renderJob *> renderWork = std::queue<renderJob *>();
+std::mutex rdr_lck;
+bool renderRunning = true;
+std::queue<std::shared_ptr<std::function<void()>>> renderJobs;
 
-void enqueRenderJob(std::function<void(void)> work)
+
+
+void _enqueRenderJob(std::function<void()> *work)
 {
-	renderJob *rj = new renderJob();
-	rj->type = renderNum::doFunc;
-	rj->work = [work]() { work(); };
-	rj->completed = -1;
-	renderLock.lock();
-	renderWork.push(rj);
-	renderLock.unlock();
+	// renderJob *rj = new renderJob();
+	// rj->type = renderNum::doFunc;
+	// rj->work = [work]() { work(); };
+	// rj->completed = -1;
+	auto job = std::shared_ptr<std::function<void()>>(work);
+	rdr_lck.lock();
+	renderJobs.push(job);
+	rdr_lck.unlock();
 }
 
-void waitForRenderJob(std::function<void(void)> work)
+void _waitForRenderJob(std::function<void()>* work)
 {
-	renderJob *rj = new renderJob();
-	rj->type = renderNum::doFunc;
-	rj->work = [work]() { work(); };
-	rj->completed = 0;
+	// renderJob *rj = new renderJob();
+	// rj->type = renderNum::doFunc;
+	// rj->work = [work]() { work(); };
+	// rj->completed = 0;
+	auto job = std::shared_ptr<std::function<void()>>(work);
+	rdr_lck.lock();
+	renderJobs.push(job);
+	rdr_lck.unlock();
 
-	renderLock.lock();
-	renderWork.push(rj);
-	renderLock.unlock();
-
-	while (rj->completed != 1)
+	while (!job.unique())
 	{
 		this_thread::sleep_for(1ns);
 	}
-	rj->completed = 2;
 }
 
 map<string, rolling_buffer> componentStats;
@@ -228,7 +231,6 @@ void appendStat(string name, float dtime)
 	}
 	statLock.unlock();
 }
-
 
 gpuTimer::gpuTimer()
 {
@@ -256,14 +258,14 @@ float gpuTimer::stop()
 	while (!stopTimerAvailable)
 	{
 		glGetQueryObjectiv(queryID[1],
-							GL_QUERY_RESULT_AVAILABLE,
-							&stopTimerAvailable);
+						   GL_QUERY_RESULT_AVAILABLE,
+						   &stopTimerAvailable);
 	}
 
 	// get query results
 	glGetQueryObjectui64v(queryID[0], GL_QUERY_RESULT, &startTime);
 	glGetQueryObjectui64v(queryID[1], GL_QUERY_RESULT, &stopTime);
-	glDeleteQueries(2,queryID);
+	glDeleteQueries(2, queryID);
 	return (float)(stopTime - startTime) / 1000000.0;
 }
 

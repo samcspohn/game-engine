@@ -1,8 +1,10 @@
+#pragma once
 #include <map>
 #include <string>
 #include "Model.h"
 #include "serialize.h"
 #include "editor.h"
+#include "Transform.h"
 // model data
 class _model;
 struct _modelMeta : public assets::asset
@@ -13,7 +15,7 @@ struct _modelMeta : public assets::asset
 	bool onEdit();
 	string type();
 	string file;
-	Model *model = 0;
+	unique_ptr<Model> model = 0;
 	glm::vec3 bounds;
 	float radius;
 	void getBounds();
@@ -28,8 +30,8 @@ struct _modelMeta : public assets::asset
 };
 namespace modelManager
 {
-	extern map<size_t, _modelMeta *> models;
-	extern map<int, _modelMeta *> models_id;
+	extern map<size_t, shared_ptr<_modelMeta>> models;
+	extern map<int, shared_ptr<_modelMeta>> models_id;
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
@@ -55,3 +57,5 @@ public:
 		ar &m;
 	}
 };
+
+transform2 renderRaycast(glm::vec3 p, glm::vec3 dir);

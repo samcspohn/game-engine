@@ -1,3 +1,5 @@
+
+#pragma once
 #include "_rendering/_model.h"
 #include "_rendering/_shader.h"
 #include "../fast_list.h"
@@ -10,7 +12,8 @@ struct renderingMeta
 {
 	// gpu_vector<__renderer>* __renderers;
 	// deque_heap<GLuint> ids;
-	fast_list_deque<GLuint> ids;
+	STORAGE<GLuint> ids;
+	// fast_list_deque<GLuint> ids;
 	// list<GLuint> ids;
 	// deque<GLuint> ids_cache;
 
@@ -30,7 +33,7 @@ namespace renderingManager
 {
 	extern mutex m;
 
-	extern map<int, map<int, renderingMeta *>> shader_model_vector;
+	extern map<int, map<int, unique_ptr<renderingMeta>>> shader_model_vector;
 	void destroy();
 	void lock();
 	void unlock();

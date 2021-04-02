@@ -132,11 +132,22 @@ glm::vec3 randomSphere();
 
 vector<string> splitString(string s_, char delim);
 
-extern std::mutex renderLock;
-extern std::queue<renderJob *> renderWork;
+extern std::mutex rdr_lck;
+extern bool renderRunning;
+extern std::queue<std::shared_ptr<std::function<void()>>> renderJobs;
 
-void enqueRenderJob(std::function<void(void)> work);
-void waitForRenderJob(std::function<void(void)> work);
+#define enqueRenderJob(work)                              \
+	{                                                     \
+		_enqueRenderJob(new std::function<void()>(work)); \
+	}
+
+#define waitForRenderJob(work)                              \
+	{                                                       \
+		_waitForRenderJob(new std::function<void()>(work)); \
+	}
+
+void _enqueRenderJob(std::function<void(void)> *work);
+void _waitForRenderJob(std::function<void(void)> *work);
 
 extern map<string, rolling_buffer> componentStats;
 
@@ -155,37 +166,46 @@ public:
 	float stop();
 };
 
-template <typename t, typename u>
-void _parallel_for(t &T, u U)
-{
-	int size = T.size();
-	int grain = size / concurrency::numThreads / concurrency::numThreads;
-	grain = glm::max(grain, 1);
-	tbb::parallel_for(
-		tbb::blocked_range<unsigned int>(0, size, grain),
-		[&](const tbb::blocked_range<unsigned int> &r) {
-			for (unsigned int i = r.begin(); i < r.end(); ++i)
-			{
-				U(i);
-			}
-		}
-		// ,
-		// update_ap
-	);
-}
+// template <typename t, typename u>
+// void _parallel_for(t &T, u U)
+// {
+// 	int size = T.size();
+// 	int grain = size / concurrency::numThreads / concurrency::numThreads;
+// 	grain = glm::max(grain, 1);
+// 	tbb::parallel_for(
+// 		tbb::blocked_range<unsigned int>(0, size, grain),
+// 		[&](const tbb::blocked_range<unsigned int> &r) {
+// 			for (unsigned int i = r.begin(); i < r.end(); ++i)
+// 			{
+// 				U(i);
+// 			}
+// 		}
+// 		// ,
+// 		// update_ap
+// 	);
+// }
 
-#define parralelfor(size, func)                                               \
+// #include <tbb/parallel_for.h>
+// #define parallelfor(size, func)                                               \
+// 	{                                                                         \
+// 		int grain = size / concurrency::numThreads / concurrency::numThreads; \
+// 		grain = glm::max(grain, 1);                                           \
+// 		tbb::parallel_for(                                                    \
+// 			tbb::blocked_range<unsigned int>(0, size, grain),                 \
+// 			[&](const tbb::blocked_range<unsigned int> &r) {                  \
+// 				for (unsigned int i = r.begin(); i < r.end(); ++i)            \
+// 				{                                                             \
+// 					func                                                      \
+// 				}                                                             \
+// 			});                                                               \
+// 	}
+
+#define parallelfor(size, func)                                               \
 	{                                                                         \
 		int grain = size / concurrency::numThreads / concurrency::numThreads; \
 		grain = glm::max(grain, 1);                                           \
-		tbb::parallel_for(                                                    \
-			tbb::blocked_range<unsigned int>(0, size, grain),                 \
-			[&](const tbb::blocked_range<unsigned int> &r) {                  \
-				for (unsigned int i = r.begin(); i < r.end(); ++i)            \
-				{                                                             \
-					func                                                      \
-				}                                                             \
-			});                                                               \
+		concurrency::_parallelfor.doWork(                                     \
+			size, [&](int i) { func }, grain);                                \
 	}
 
 #endif // !HELPER

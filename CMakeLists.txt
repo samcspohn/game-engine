@@ -20,15 +20,16 @@ add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW
  GLM_GTX_intersect #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
  #define GLM_FORCE_SIMD_AVX2
  )
-file(GLOB SOURCES "*.cpp"  "imgui/*.cpp" "imgui/guizmo/*.cpp" "_rendering/*.cpp")
+file(GLOB SOURCES "*.cpp"
+    "imgui/*.cpp"
+    "imgui/guizmo/*.cpp"
+    "_rendering/*.cpp" 
+    "components/*.cpp"
+    "physics/*.cpp"
+    "particles/*.cpp")
  
 add_executable(game ${SOURCES})
 
-# target_link_libraries(game imgui)
-# target_link_libraries(game imgui_glfw)
-# target_link_libraries(game imgui_opengl3)
-# target_link_libraries(game imgui_draw)
-# target_link_libraries(game imgui_widgets)
 target_link_libraries(game GL)
 target_link_libraries(game GLU)
 target_link_libraries(game GLEW)
@@ -57,6 +58,12 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/res
             ${CMAKE_CURRENT_BINARY_DIR}/res)
 
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(game OpenMP::OpenMP_CXX)
+endif()
+
+
 # specify the C++ standard
 add_definitions(-DGLM_FORCE_SWIZZLE)
 set(CMAKE_CXX_STANDARD 11)
@@ -65,5 +72,5 @@ option(BUILD_DEBUG "build un-optimized with debugger info" ON)
 if(BUILD_DEBUG)
     target_compile_options(game PUBLIC -fpermissive -Wreturn-type -g -std=c++17 -Wfatal-errors -ffast-math)
 else()
-    target_compile_options(game PUBLIC -fpermissive -Wreturn-type -g -O3 -std=c++17 -Wfatal-errors -ffast-math)
+    target_compile_options(game PUBLIC -fpermissive -Wreturn-type -g -O3 -std=c++17 -Wfatal-errors -ffast-math -fno-inline -fno-omit-frame-pointer)
 endif()

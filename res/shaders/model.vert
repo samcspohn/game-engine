@@ -21,7 +21,7 @@ out vec2 TexCoord2;
 out vec3 Normal;
 out vec3 FragPos;
 // out vec4 DirLightSpacePos;
-// out float logz;
+out float logz;
 // out vec4 col;
 uniform uint matrixOffset;
 
@@ -38,8 +38,8 @@ void main()
 	mat4 mvp = matrixes[id].mvp;
 
 	gl_Position = mvp * vec4(position,1);
-	// logz = 1.0 + gl_Position.w;
-	// gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
+	logz = 1.0 + gl_Position.w;
+	gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;
 
 //	DirLightSpacePos = dirLightTransform * model * vec4(position, 1.0);
 

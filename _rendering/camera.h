@@ -1,4 +1,5 @@
 
+#pragma once
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -41,7 +42,7 @@ struct camera{
 	glm::mat4 proj;
 	glm::vec2 screen;
 
-	glm::vec3 pos;
+	glm::vec3 pos = glm::vec3(0);
 	glm::vec3 dir;
 	glm::vec3 up;
 	glm::vec3 cullpos;
