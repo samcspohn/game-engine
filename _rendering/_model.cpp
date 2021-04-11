@@ -58,6 +58,23 @@ namespace modelManager
 			}
 		});
 	}
+	void _new(){
+		// std::hash<string> x;
+		// size_t key = x("fileName");
+		// auto mm = modelManager::models.find(key);
+		// if (mm != modelManager::models.end())
+		// {
+		// 	m = mm->second->id;
+		// }
+		// else
+		// {
+			auto _mm = make_shared<_modelMeta>();
+			// modelManager::models[key] = _mm;
+			modelManager::models_id[_mm->genID()] = _mm;
+			modelManager::models_id[_mm->id]->name = "model_" + to_string(_mm->id);
+		// 	m = _mm->id;
+		// }
+	}
 }; // namespace modelManager
 
 _model::_model(){
@@ -107,6 +124,9 @@ void _model::makeUnique()
 	modelManager::models_id[m] = make_shared<_modelMeta>();
 	modelManager::models_id[m]->name = idStr;
 	modelManager::models_id[m]->unique = true;
+	std::hash<string> x;
+	size_t key = x(idStr);
+	modelManager::models[key] = modelManager::models_id[m];
 }
 void _model::makeProcedural()
 {
@@ -115,6 +135,9 @@ void _model::makeProcedural()
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
 	modelManager::models_id[m] = make_shared<_modelMeta>();
 	modelManager::models_id[m]->name = idStr;
+	std::hash<string> x;
+	size_t key = x(idStr);
+	modelManager::models[key] = modelManager::models_id[m];
 }
 _modelMeta *_model::meta() const
 {
@@ -156,16 +179,17 @@ void _modelMeta::inspect()
 			string payload_n = string((const char *)payload->Data);
 			cout << "file payload:" << payload_n << endl;
 			this->model->modelPath = payload_n;
-			file = payload_n;
+			this->file = payload_n;
+			this->model->meshes.clear();
+			this->model->loadModel();
+			this->getBounds();
 		}
 		ImGui::EndDragDropTarget();
 	}
-	if (ImGui::Button("reload"))
-	{
-		this->model->meshes.clear();
-		this->model->loadModel();
-		// do something
-	}
+	// if (ImGui::Button("reload"))
+	// {
+	// 	// do something
+	// }
 }
 
 void _model::recalcBounds()

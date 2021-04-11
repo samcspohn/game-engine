@@ -13,6 +13,9 @@
 // #include "_rendering/_shader.h"
 #include "_rendering/renderTexture.h"
 #include "_rendering/_renderer.h"
+#include <map>
+#include <functional>
+
 
 extern _shader _quadShader;
 struct camera{
@@ -60,3 +63,5 @@ struct camera{
 		ar &fov &nearPlane &farPlane;
 	}
 };
+
+extern std::map<int,std::function<void(camera&)>> renderShit;

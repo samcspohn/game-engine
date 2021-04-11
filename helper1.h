@@ -28,6 +28,7 @@ using namespace chrono;
 
 extern const GLint WIDTH, HEIGHT;
 extern int SCREEN_WIDTH, SCREEN_HEIGHT;
+extern thread::id renderThreadID;
 
 void log(string log = "");
 template <class T>

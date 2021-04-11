@@ -2,6 +2,7 @@
 #include "particles/particles.h"
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
+std::map<int,std::function<void(camera&)>> renderShit;
 void renderQuad()
 {
 	if (quadVAO == 0)
@@ -354,6 +355,10 @@ void camera::render(GLFWwindow *window)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	renderOpaque(*this);
+
+	for(auto& x : renderShit){
+		x.second(*this);
+	}
 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

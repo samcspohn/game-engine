@@ -1,6 +1,5 @@
 #include "_shader.h"
 
-
 //shader data
 
 _shaderMeta::_shaderMeta() {}
@@ -34,6 +33,20 @@ namespace shaderManager
 {
 	map<size_t, shared_ptr<_shaderMeta>> shaders;
 	map<int, shared_ptr<_shaderMeta>> shaders_ids;
+	void _new()
+	{
+		// auto ms = shaderManager::shaders.find(key);
+		// if (ms == shaderManager::shaders.end())
+		// {
+		// auto sm = meta;
+		// shaderManager::shaders[key] = sm;
+		auto sm = make_shared<_shaderMeta>();
+		sm->shader = make_unique<Shader>();
+		shaderManager::shaders_ids[sm->genID()] = sm;
+		sm->name = "shader_" + to_string(sm->id);
+		// shaderManager::shaders.find(key);
+		// }
+	}
 	void destroy()
 	{
 		shaders.clear();
@@ -49,10 +62,10 @@ namespace shaderManager
 		shaders_ids.clear();
 		ia >> shaders >> shaders_ids;
 		// waitForRenderJob([&]() {
-			for (auto &i : shaders)
-			{
-				i.second->shader->_Shader();
-			}
+		for (auto &i : shaders)
+		{
+			i.second->shader->_Shader();
+		}
 		// });
 	}
 }; // namespace shaderManager
@@ -62,7 +75,7 @@ _shader::_shader() {}
 	auto ms = shaderManager::shaders.find(key);       \
 	if (ms == shaderManager::shaders.end())           \
 	{                                                 \
-		auto sm = meta;                           \
+		auto sm = meta;                               \
 		shaderManager::shaders[key] = sm;             \
 		shaderManager::shaders_ids[sm->genID()] = sm; \
 		ms = shaderManager::shaders.find(key);        \
@@ -121,6 +134,23 @@ void _shaderMeta::inspect()
 {
 	static const map<GLenum, string> types{{GL_FRAGMENT_SHADER, ".frag"}, {GL_VERTEX_SHADER, ".vert"}, {GL_GEOMETRY_SHADER, ".geom"}, {GL_TESS_EVALUATION_SHADER, ".tese"}, {GL_TESS_CONTROL_SHADER, ".tesc"}, {GL_COMPUTE_SHADER, ".comp"}};
 	static const map<GLenum, string> types2{{GL_FRAGMENT_SHADER, "fragment"}, {GL_VERTEX_SHADER, "vertex"}, {GL_GEOMETRY_SHADER, "geometry"}, {GL_TESS_EVALUATION_SHADER, "tesselation evaluation"}, {GL_TESS_CONTROL_SHADER, "tesselation control"}, {GL_COMPUTE_SHADER, "compute"}};
+
+	if (ImGui::Button("+"))
+	{
+		ImGui::OpenPopup("add_shader_file");
+	}
+	if (ImGui::BeginPopup("add_shader_file"))
+	{
+		ImGui::Separator();
+		for(auto& x : types2){
+			// this->shader->_shaders.find(x.first) == types2.end() && 
+			if (ImGui::Selectable(x.second.c_str()))
+			{
+				this->shader->_shaders.emplace(x.first,"");
+			}
+		}
+		ImGui::EndPopup();
+	}
 	for (auto &i : this->shader->_shaders)
 	{
 		// renderEdit("type",(int&)i.first);

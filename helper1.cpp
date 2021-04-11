@@ -4,6 +4,7 @@
 #include <climits>
 const GLint WIDTH = 1920, HEIGHT = 1080;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
+thread::id renderThreadID;
 
 void log(string log)
 {
@@ -184,8 +185,6 @@ std::mutex rdr_lck;
 bool renderRunning = true;
 std::queue<std::shared_ptr<std::function<void()>>> renderJobs;
 
-
-
 void _enqueRenderJob(std::function<void()> *work)
 {
 	// renderJob *rj = new renderJob();
@@ -198,20 +197,28 @@ void _enqueRenderJob(std::function<void()> *work)
 	rdr_lck.unlock();
 }
 
-void _waitForRenderJob(std::function<void()>* work)
+void _waitForRenderJob(std::function<void()> *work)
 {
 	// renderJob *rj = new renderJob();
 	// rj->type = renderNum::doFunc;
 	// rj->work = [work]() { work(); };
 	// rj->completed = 0;
-	auto job = std::shared_ptr<std::function<void()>>(work);
-	rdr_lck.lock();
-	renderJobs.push(job);
-	rdr_lck.unlock();
 
-	while (!job.unique())
+	if (renderThreadID == this_thread::get_id())
 	{
-		this_thread::sleep_for(1ns);
+		(*work)();
+	}
+	else
+	{
+		auto job = std::shared_ptr<std::function<void()>>(work);
+		rdr_lck.lock();
+		renderJobs.push(job);
+		rdr_lck.unlock();
+
+		while (!job.unique())
+		{
+			this_thread::sleep_for(1ns);
+		}
 	}
 }
 

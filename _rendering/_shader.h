@@ -33,6 +33,7 @@ namespace shaderManager
 
 	extern map<size_t, shared_ptr<_shaderMeta>> shaders;
 	extern map<int, shared_ptr<_shaderMeta>> shaders_ids;
+	void _new();
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);

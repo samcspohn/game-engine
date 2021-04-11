@@ -519,7 +519,7 @@ void initGL()
 // std::queue<std::unique_ptr<std::function<void()>>> renderJobs;
 void renderLoop()
 {
-
+    renderThreadID = this_thread::get_id();
     while (renderRunning)
     {
         if (renderJobs.size() > 0)

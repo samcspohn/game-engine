@@ -521,11 +521,11 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 				}
 				ImGui::PopID();
 			};
-			for (auto &s : shaderManager::shaders)
+			for (auto &s : shaderManager::shaders_ids)
 			{
 				renderAsset(s.second.get());
 			}
-			for (auto &m : modelManager::models)
+			for (auto &m : modelManager::models_id)
 			{
 				renderAsset(m.second.get());
 			}
@@ -569,6 +569,8 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 				if (ImGui::Selectable("new model"))
 				{
 					// new game_object();
+
+					modelManager::_new();
 				}
 				if (ImGui::Selectable("new emitter"))
 				{
@@ -577,6 +579,7 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 				}
 				if (ImGui::Selectable("new shader"))
 				{
+					shaderManager::_new();
 					// new game_object();
 				}
 				if (ImGui::Selectable("new prototype"))
@@ -750,7 +753,7 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 		{
 			ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
 			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
-			// ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
+			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
 			if (!isGameRunning() && ImGui::Button("play"))
 			{
 				start_game();

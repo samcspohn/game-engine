@@ -105,6 +105,7 @@ public:
             auto g = instantiate();
             g->addComponent<comp>();
             g->addComponent<_renderer>()->set(shader, cube);
+            g->addComponent<particle_emitter>();
             // g->addComponent<collider>()->setOBB();
             // g->getComponent<collider>()->setLayer(0);
             // g->getComponent<collider>()->dim = glm::vec3(1);
@@ -256,7 +257,8 @@ int main(int argc, char **argv)
     _model cube("res/models/cube/cube.obj");
     _shader shader("res/shaders/model.vert", "res/shaders/model.frag");
     _shader lamp("res/shaders/model.vert", "res/shaders/lamp.frag");
-
+    _shader terrainShader("res/shaders/terrain.vert", "res/shaders/model.frag");
+    terrainShader.meta()->name = "terrainShader";
     auto orbiter = _instantiate();
     orbiter->_addComponent<_renderer>()->set(lamp, cube);
     orbiter->_addComponent<orbit>();

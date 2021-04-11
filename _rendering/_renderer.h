@@ -55,10 +55,10 @@ public:
 		_model curr_m = model;
         SER(shader)
 		SER(model)
-		if (model.m != curr_m.m || shader.s != curr_s.s)
-		{
+		// if (model.m != curr_m.m || shader.s != curr_s.s)
+		// {
 			this->set(shader, model);
-		}
+		// }
     SER_END
 };
 

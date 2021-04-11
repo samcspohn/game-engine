@@ -35,6 +35,7 @@ namespace modelManager
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
+	void _new();
 }; // namespace modelManager
 
 class _model
@@ -58,4 +59,5 @@ public:
 	}
 };
 
+extern atomic<int> uniqueMeshIdGenerator;
 transform2 renderRaycast(glm::vec3 p, glm::vec3 dir);
