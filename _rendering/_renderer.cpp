@@ -206,8 +206,8 @@ bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float &
 		// if (glm::intersectLineTriangle(p, d, p1, p2, p3, q))
 		if(_intersectRayTriangle(p,d,p1,p2,p3,q))
 		{
-			dist = glm::length(p - q);
 			// float dist = t;
+			dist = glm::length(p - q);
 			if (dist < closest)
 			{
 				r = q;

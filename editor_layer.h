@@ -53,7 +53,10 @@ void load_level(const char *filename);
 // ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 // void renderTransform(transform2 t);
 extern string working_file;
-void dockspace(GLFWwindow* window, editor* m_editor);
+
+void editorLayer(GLFWwindow *window, editor *m_editor);
+void dockspaceBegin(GLFWwindow* window, editor* m_editor);
+void dockspaceEnd();
 extern tbb::concurrent_queue<glm::vec3> floating_origin;
 extern atomic<bool> transformsBuffered;
 void renderThreadFunc();

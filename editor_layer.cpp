@@ -348,62 +348,16 @@ void saveFile()
 }
 
 mutex transformLock;
-void dockspace(GLFWwindow *window, editor *m_editor)
+
+void editorLayer(GLFWwindow *window, editor *m_editor)
 {
-	static bool open = true;
-	static bool *p_open = &open;
-	static bool opt_fullscreen = true;
-	static bool opt_padding = false;
-	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	// if (opt_fullscreen)
-	// {
-	ImGuiViewport *viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(viewport->GetWorkPos());
-	ImGui::SetNextWindowSize(viewport->GetWorkSize());
-	ImGui::SetNextWindowViewport(viewport->ID);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	// }
-	// else
-	// {
-	// 	dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-	// }
-
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-	// and handle the pass-thru hole, so we ask Begin() to not render a background.
-	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-	if (!opt_padding)
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("DockSpace Demo", p_open, window_flags);
-	if (!opt_padding)
-		ImGui::PopStyleVar();
-
-	if (opt_fullscreen)
-		ImGui::PopStyleVar(2);
-
-	// DockSpace
-	ImGuiIO &io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+	static double nextFPS = 0;
+	static float fps;
+	if (nextFPS < Time.unscaledTime)
 	{
-		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-	}
-	else
-	{
-		// ShowDockingDisabledMessage();
+		nextFPS = Time.unscaledTime + 0.05;
+		fps = 1.f / Time.unscaledDeltaTime;
 	}
 
 	if ((ImGui::GetIO().KeysDown[GLFW_KEY_LEFT_CONTROL] && ImGui::IsKeyPressed(GLFW_KEY_O)))
@@ -529,7 +483,8 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 			{
 				renderAsset(m.second.get());
 			}
-			for(auto &p : emitter_proto_assets){
+			for (auto &p : emitter_proto_assets)
+			{
 				renderAsset(p.second);
 			}
 			bool open_rename = false;
@@ -705,7 +660,7 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 		if (ImGui::Begin("info"))
 		{
 			editor_hov |= ImGui::IsWindowHovered();
-			ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledSmoothDeltaTime)}.c_str());
+			ImGui::Text(string{"fps: " + to_string(fps)}.c_str());
 			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
 			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
 			if (!isGameRunning() && ImGui::Button("play"))
@@ -751,7 +706,7 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 	{
 		if (ImGui::Begin("info"))
 		{
-			ImGui::Text(string{"fps: " + to_string(1.f / Time.unscaledDeltaTime)}.c_str());
+			ImGui::Text(string{"fps: " + to_string(fps)}.c_str());
 			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
 			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
 			if (!isGameRunning() && ImGui::Button("play"))
@@ -765,5 +720,68 @@ void dockspace(GLFWwindow *window, editor *m_editor)
 			ImGui::End();
 		}
 	}
+}
+
+void dockspaceBegin(GLFWwindow *window, editor *m_editor)
+{
+	static bool open = true;
+	static bool *p_open = &open;
+	static bool opt_fullscreen = true;
+	static bool opt_padding = false;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+
+	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+	// because it would be confusing to have two docking targets within each others.
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	// if (opt_fullscreen)
+	// {
+	ImGuiViewport *viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetWorkPos());
+	ImGui::SetNextWindowSize(viewport->GetWorkSize());
+	ImGui::SetNextWindowViewport(viewport->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	// }
+	// else
+	// {
+	// 	dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+	// }
+
+	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+	// and handle the pass-thru hole, so we ask Begin() to not render a background.
+	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+		window_flags |= ImGuiWindowFlags_NoBackground;
+
+	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+	// all active windows docked into it will lose their parent and become undocked.
+	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+	if (!opt_padding)
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("DockSpace Demo", p_open, window_flags);
+	if (!opt_padding)
+		ImGui::PopStyleVar();
+
+	if (opt_fullscreen)
+		ImGui::PopStyleVar(2);
+
+	// DockSpace
+	ImGuiIO &io = ImGui::GetIO();
+	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+	{
+		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+	}
+	else
+	{
+		// ShowDockingDisabledMessage();
+	}
+}
+
+void dockspaceEnd()
+{
 	ImGui::End();
 }

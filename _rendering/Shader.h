@@ -274,7 +274,7 @@ public:
 		_Shader();
 	}
 
-	Shader(const string vertexPath, const string fragmentPath, bool shadowMap = true)
+	Shader(const string vertexPath, const string fragmentPath)
 	{
 		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
 		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
@@ -282,7 +282,7 @@ public:
 		// enqueRenderJob([&]() { _Shader(); });
 		_Shader();
 	}
-	Shader(const string vertexPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
+	Shader(const string vertexPath, const string geometryPath, const string fragmentPath)
 	{
 		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
 		_shaders.emplace(GL_GEOMETRY_SHADER, geometryPath);
@@ -291,7 +291,7 @@ public:
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
-	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath, bool shadowMap = true)
+	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string geometryPath, const string fragmentPath)
 	{
 		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
 		_shaders.emplace(GL_TESS_CONTROL_SHADER, tessControlPath);
@@ -302,7 +302,7 @@ public:
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
-	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath, bool shadowMap = true)
+	Shader(const string vertexPath, const string tessControlPath, const string tessEvalPath, const string fragmentPath)
 	{
 		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
 		_shaders.emplace(GL_TESS_CONTROL_SHADER, tessControlPath);

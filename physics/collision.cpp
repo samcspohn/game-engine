@@ -549,7 +549,7 @@ int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b,
     return 1;
 }
 
-int IntersectTriangleTriangle(vector<glm::vec3> &t1, vector<glm::vec3> &t2, glm::vec3 &result)
+int IntersectTriangleTriangle(array<glm::vec3,3> &t1, array<glm::vec3,3> &t2, glm::vec3 &result)
 {
     vec3 p1;
     vec3 p2;
@@ -614,8 +614,8 @@ bool testMeshMesh(mesh &m1, // longer tris
                   mesh &m2, // shorter tris
                   const mat4 &trans2, glm::vec3 &result)
 {
-    vector<glm::vec3> tri1(3);
-    vector<glm::vec3> tri2(3);
+    array<glm::vec3,3> tri1;
+    array<glm::vec3,3> tri2;
     for (int i = 0; i < m1.m->tris.size(); i += 3)
     {
         tri1[0] = trans1 * glm::vec4((m1.m->points)[(m1.m->tris)[i]], 1);

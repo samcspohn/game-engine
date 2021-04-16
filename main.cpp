@@ -31,6 +31,8 @@
 #include "components/game_object.h"
 #include "physics/physics.h"
 #include "particles/particles.h"
+#include "terrain.h"
+#include "lineRenderer.h"
 
 using namespace std;
 
@@ -84,10 +86,10 @@ public:
 transform2 comp::orbiter;
 
 void newObject(_model &m, _shader &s);
+_model cube;
+_shader shader;
 class orbit : public component
 {
-    _model cube;
-    _shader shader;
 
 public:
     void onStart()
@@ -99,19 +101,19 @@ public:
     {
         transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
 
-        int to_spawn = 1'0'000 - Transforms.active();
-        for (int i = 0; i < to_spawn; i++)
-        {
-            auto g = instantiate();
-            g->addComponent<comp>();
-            g->addComponent<_renderer>()->set(shader, cube);
-            g->addComponent<particle_emitter>();
-            // g->addComponent<collider>()->setOBB();
-            // g->getComponent<collider>()->setLayer(0);
-            // g->getComponent<collider>()->dim = glm::vec3(1);
-            // g->transform->setPosition(glm::vec3(randf(), 0, randf()) * 100.f);
-            g->transform->setPosition(randomSphere() * 500.f);
-        }
+        // int to_spawn = 1'0'000 - Transforms.active();
+        // for (int i = 0; i < to_spawn; i++)
+        // {
+        //     auto g = instantiate();
+        //     g->addComponent<comp>();
+        //     g->addComponent<_renderer>()->set(shader, cube);
+        //     g->addComponent<particle_emitter>();
+        //     // g->addComponent<collider>()->setOBB();
+        //     // g->getComponent<collider>()->setLayer(0);
+        //     // g->getComponent<collider>()->dim = glm::vec3(1);
+        //     // g->transform->setPosition(glm::vec3(randf(), 0, randf()) * 100.f);
+        //     g->transform->setPosition(randomSphere() * 500.f);
+        // }
         // newObject(cube,shader);
         // concurrency::_parallelfor.doWork(to_spawn,[&](int i){
         // parallelfor(to_spawn, newObject(cube, shader););
@@ -121,6 +123,41 @@ public:
     COPY(orbit);
 };
 
+class player : public component {
+    public:
+    static editor *m_editor;
+    void update(){
+        if(Input.Mouse.getButton(0)){
+            ImVec2 mp = ImGui::GetMousePos();
+			ImVec2 sz = {m_editor->c.width, m_editor->c.height};
+			cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
+			glm::vec2 sz_2 = {sz.x, sz.y};
+			sz_2 /= 2.f;
+
+			camera &c = m_editor->c;
+			glm::mat3 per = c.getProjection();
+
+			glm::vec3 p = m_editor->position;
+			glm::vec3 d = c.screenPosToRay({mp.x, mp.y});
+
+            glm::vec3 res;
+            if(terrain::IntersectRayTerrain(p,d,res)){
+
+                auto g = instantiate();
+                g->addComponent<_renderer>()->set(shader, cube);
+                g->transform->setPosition(res);
+            }
+
+
+        }
+    }
+    COPY(player)
+    SER_FUNC()
+    SER_END
+};
+editor *player::m_editor;
+
+REGISTER_COMPONENT(player);
 REGISTER_COMPONENT(orbit);
 REGISTER_COMPONENT(comp);
 REGISTER_COMPONENT(_renderer);
@@ -168,22 +205,29 @@ void renderFunc(editor *ed, rolling_buffer &fps)
     ed->c.prepRender(*matProgram.meta()->shader.get());
 
     updateParticles(vec3(0), emitterInitCount);
-    // glFlush();
-    renderFunc(ed->c, window);
+    
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
+    dockspaceBegin(window, ed);
 
+    renderFunc(ed->c, window);
+
+    lineRendererRender(ed->c);
+
+    editorLayer(window,ed);
+    dockspaceEnd();
     // ImGui::PushFont(font_default);
 
-    dockspace(window, ed);
 
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     ImGui::EndFrame();
+
+    LineRendererBeginFrame();
 
     glfwSwapBuffers(window);
 }
@@ -248,14 +292,15 @@ int main(int argc, char **argv)
     waitForRenderJob([&]() {
         initGL();
         initiliazeStuff();
+        initLineRenderer();
     });
     initParticles2();
     particle_renderer::init2();
     _quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
     matProgram = _shader("res/shaders/transform.comp");
 
-    _model cube("res/models/cube/cube.obj");
-    _shader shader("res/shaders/model.vert", "res/shaders/model.frag");
+    cube = _model("res/models/cube/cube.obj");
+    shader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
     _shader lamp("res/shaders/model.vert", "res/shaders/lamp.frag");
     _shader terrainShader("res/shaders/terrain.vert", "res/shaders/model.frag");
     terrainShader.meta()->name = "terrainShader";
@@ -269,15 +314,20 @@ int main(int argc, char **argv)
 
     comp::orbiter = orbiter->transform;
 
+    rootGameObject->_addComponent<terrain>()->shader = terrainShader;
+    rootGameObject->_addComponent<player>();
+
     rolling_buffer fps;
     timer time;
     editor *ed = new editor();
     ed->c.fov = glm::radians(80.f);
-    ed->c.nearPlane = 1;
+    ed->c.nearPlane = 0.0001;
     ed->c.farPlane = 100000;
     ed->c.width = 1920;
     ed->c.height = 1080;
     ed->position = glm::vec3(0, 0, -200);
+
+    player::m_editor = ed;
 
     toDestroyGameObjects.reserve(10'000);
 
