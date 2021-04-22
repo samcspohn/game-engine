@@ -127,6 +127,9 @@ class player : public component {
     public:
     static editor *m_editor;
     void update(){
+        playerPos = m_editor->position;
+        console::log("here");
+
         if(Input.Mouse.getButton(0)){
             ImVec2 mp = ImGui::GetMousePos();
 			ImVec2 sz = {m_editor->c.width, m_editor->c.height};
@@ -147,8 +150,6 @@ class player : public component {
                 g->addComponent<_renderer>()->set(shader, cube);
                 g->transform->setPosition(res);
             }
-
-
         }
     }
     COPY(player)

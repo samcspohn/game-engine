@@ -11,7 +11,7 @@
 using namespace std;
 
 #define quadrant array<array<terr::quad_node, 2>, 2>
-#define terrainSize 257
+#define terrainSize 17
 namespace terr
 {
     struct quad_node
@@ -27,11 +27,14 @@ struct chunk
     unique_ptr<Mesh> mesh;
     array<array<float, terrainSize>, terrainSize> h;
     terr::quad_node quadtree;
+    chunk();
+    ~chunk();
 };
 
+extern glm::vec3 playerPos;
 class terrain : public component
 {
-    map<int, map<int, chunk>> chunks;
+    map<int, map<int, shared_ptr<chunk>>> chunks;
 
 public:
     _shader shader;
@@ -42,11 +45,13 @@ public:
     float makeHeight(float x, float z);
 
     glm::vec3 makeVert(float x, float z);
-    void genHeight();
+    void onStart();
+    void update();
+    void genHeight(int x, int z);
     void init(int i);
     void deinit();
 
-    void IntersectRayQuadTree(terr::quad_node &node, ray &r, glm::vec3 &result, float& t);
+    void IntersectRayQuadTree(chunk* _chunk, terr::quad_node &node, ray &r, glm::vec3 &result, float& t);
     static bool IntersectRayTerrain(glm::vec3 p, glm::vec3 dir, glm::vec3 &result);
 
     SER_FUNC()

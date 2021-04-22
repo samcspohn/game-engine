@@ -13,6 +13,7 @@
 #include "Shaderinclude.h"
 #include "texture.h"
 #include "serialize.h"
+#include "../console.h"
 
 using namespace std;
 
@@ -330,6 +331,8 @@ public:
 		if (!success)
 		{
 			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
+			// console::log(file);
+			console::log(file + "\nERROR::SHADER::COMPILATION_FAILED\n" + string(infoLog));
 			cout << file << endl;
 			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n"
 					  << infoLog << std::endl;
@@ -352,6 +355,7 @@ public:
 		if (!success)
 		{
 			glGetShaderInfoLog(shader, 4096, NULL, infoLog);
+			console::log("ERROR::SHADER::COMPILATION_FAILED\n" + string(infoLog));
 			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n"
 					  << infoLog << std::endl;
 		}
@@ -374,6 +378,7 @@ public:
 		{
 			glGetProgramInfoLog(this->Program, 4096, NULL, infoLog);
 			// std::cout << this->vertexFile << ", " << this->tessCtrlFile << ", " << this->geometryFile << ", " << this->fragmentFile << ", " << this->computeFile << std::endl;
+			console::log("ERROR::SHADER::PROGRAM::LINKING_FAILEDn" + string(infoLog));
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
 					  << infoLog << std::endl;
 		}

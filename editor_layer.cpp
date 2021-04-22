@@ -2,6 +2,7 @@
 #include <filesystem>
 #include "Transform.h"
 #include "particles/particles.h"
+#include "console.h"
 
 game_object *rootGameObject;
 tbb::concurrent_queue<function<void()> *> mainThreadWork;
@@ -129,9 +130,11 @@ void start_game() // assumes only renderer and terrain are started.
 		{
 			StartComponents(i.second->getStorage());
 		}
+		ImGui::LoadIniSettingsFromDisk("play.ini");
 	}));
 	gameRunning = true;
 }
+
 
 void stop_game()
 {
@@ -157,10 +160,12 @@ void stop_game()
 			initComponents(i.second->getStorage());
 		}
 
+		ImGui::LoadIniSettingsFromDisk("default.ini");
 		stoppingGame = false;
 
 		// load_level(working_file.c_str());
 	}));
+	// ImGui::SaveIniSettingsToMemory();
 }
 
 void renderTransform(transform2 t, int &count)
@@ -669,7 +674,24 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			}
 			else if (isGameRunning() && ImGui::Button("stop"))
 			{
+				
 				stop_game();
+			}
+			ImGui::End();
+		}
+		if(ImGui::Begin("console")){
+			if(ImGui::Button("clear")){
+				console::logs.clear();
+			}
+			for(auto& i : console::logs){
+				ImGui::Text(i.first.c_str());
+				if(i.second > 0){
+					ImGui::SameLine();
+					ImGui::Spacing();
+					ImGui::SameLine();
+					ImGui::Text(to_string(i.second).c_str());
+				}
+				ImGui::Separator();
 			}
 			ImGui::End();
 		}
@@ -715,7 +737,24 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			}
 			else if (isGameRunning() && (ImGui::Button("stop") || ImGui::GetIO().KeysDown[GLFW_KEY_ESCAPE]))
 			{
+				ImGui::SaveIniSettingsToDisk("play.ini");
 				stop_game();
+			}
+			ImGui::End();
+		}
+		if(ImGui::Begin("console")){
+			if(ImGui::Button("clear")){
+				console::logs.clear();
+			}
+			for(auto& i : console::logs){
+				ImGui::Text(i.first.c_str());
+				if(i.second > 0){
+					ImGui::SameLine();
+					ImGui::Spacing();
+					ImGui::SameLine();
+					ImGui::Text(to_string(i.second).c_str());
+				}
+				ImGui::Separator();
 			}
 			ImGui::End();
 		}

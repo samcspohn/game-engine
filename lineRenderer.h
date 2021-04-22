@@ -8,5 +8,6 @@
 void initLineRenderer();
 
 void addLine(glm::vec3 p1, glm::vec3 p2, glm::vec4 color);
+void addBox(glm::vec3 p, glm::vec3 dims, glm::vec4 color);
 void LineRendererBeginFrame();
 void lineRendererRender(camera& c);
