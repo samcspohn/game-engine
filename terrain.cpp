@@ -189,6 +189,9 @@ void terrain::genHeight(int _x, int _z)
             h[x][z] = mesh->vertices[x * terrainSize + z].y;
         }
     }
+    auto _makeVert = [&](int x, int z){
+        return makeVert((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
+    };
     for (int x = 0; x < terrainSize; x++)
     {
         for (int z = 0; z < terrainSize; z++)
@@ -196,12 +199,12 @@ void terrain::genHeight(int _x, int _z)
             if (x == 0 || x == terrainSize - 1 || z == 0 || z == terrainSize - 1)
             {
                 glm::vec3 p = mesh->vertices[xz(x, z)];
-                glm::vec3 a1 = glm::cross(p - makeVert(x, z - 1), p - makeVert(x - 1, z - 1));
-                glm::vec3 a2 = glm::cross(p - makeVert(x - 1, z - 1), p - makeVert(x - 1, z));
-                glm::vec3 a3 = glm::cross(p - makeVert(x + 1, z), p - makeVert(x, z - 1));
-                glm::vec3 a4 = glm::cross(p - makeVert(x - 1, z), p - makeVert(x, z + 1));
-                glm::vec3 a5 = glm::cross(p - makeVert(x + 1, z + 1), p - makeVert(x + 1, z));
-                glm::vec3 a6 = glm::cross(p - makeVert(x + 1, z + 1), p - makeVert(x + 1, z + 1));
+                glm::vec3 a1 = glm::cross(p - _makeVert(x, z - 1), p - _makeVert(x - 1, z - 1));
+                glm::vec3 a2 = glm::cross(p - _makeVert(x - 1, z - 1), p - _makeVert(x - 1, z));
+                glm::vec3 a3 = glm::cross(p - _makeVert(x + 1, z), p - _makeVert(x, z - 1));
+                glm::vec3 a4 = glm::cross(p - _makeVert(x - 1, z), p - _makeVert(x, z + 1));
+                glm::vec3 a5 = glm::cross(p - _makeVert(x + 1, z + 1), p - _makeVert(x + 1, z));
+                glm::vec3 a6 = glm::cross(p - _makeVert(x + 1, z + 1), p - _makeVert(x + 1, z + 1));
                 mesh->normals[xz(x, z)] = glm::vec3(glm::normalize(a1 + a2 + a3 + a4 + a5 + a6));
             }
             else
@@ -302,7 +305,7 @@ void terrain::update()
                 if (chunks.find(x) == chunks.end() || chunks.at(x).find(z) == chunks.at(x).end() || chunks.at(x).at(z) == 0)
                 {
                     genHeight(x, z);
-                    generatedChunk = true;
+                    // generatedChunk = true;
                 }
             }
         }
