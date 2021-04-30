@@ -30,11 +30,11 @@ public:
 
 	struct _itr
 	{
-		bool operator==(const size_t &rhs)
+		bool operator==(const int &rhs)
 		{
 			return index == rhs;
 		}
-		bool operator!=(const size_t &rhs)
+		bool operator!=(const int &rhs)
 		{
 			return index != rhs;
 		}
@@ -59,7 +59,7 @@ public:
 		//	return data[ref];
 		//}
 		_itr(){};
-		_itr(size_t i, fast_list *_fl)
+		_itr(int i, fast_list *_fl)
 		{
 			index = i;
 			fl = _fl;
@@ -69,7 +69,7 @@ public:
 			index = other.index;
 			fl = other.fl;
 		};
-		size_t index;
+		int index;
 		fast_list *fl;
 		unsigned int it;
 		SER_HELPER()
@@ -90,11 +90,11 @@ public:
 		{
 			return itr == nullptr;
 		}
-		bool operator==(const size_t &rhs)
+		bool operator==(const int &rhs)
 		{
 			return *itr == rhs;
 		}
-		bool operator!=(const size_t &rhs)
+		bool operator!=(const int &rhs)
 		{
 			return *itr != rhs;
 		}
@@ -125,16 +125,16 @@ public:
 		}
 		//iterator(const _itr& other) {  };
 		_itr *itr = nullptr;
-		//size_t _Ptr;
+		//int _Ptr;
 	};
 
 	iterator back()
 	{
-		return iterator(iterators.back());
+		return iterator(iterators.back().get());
 	}
 	iterator begin()
 	{
-		return iterator(iterators.front());
+		return iterator(iterators.front().get());
 	}
 
 	//////////// end iterator
@@ -143,7 +143,7 @@ public:
 		//iteratorMap[0] = new _itr(0, this);
 	}
 
-	size_t size()
+	int size()
 	{
 		return data.size();
 	}
@@ -161,10 +161,11 @@ public:
 	iterator push_back(const t &element)
 	{
 		m.lock();
-		auto it = make_unique<_itr>(data.size(), this);
+		iterators.emplace_back(new _itr(data.size(), this));
+		_itr* it = iterators.back().get();
+		// auto it = make_unique<_itr>(data.size(), this);
 		data.push_back(element);
-		it->it = iterators.size();
-		iterators.push_back(it);
+		it->it = iterators.size() - 1;
 		m.unlock();
 		return iterator(it);
 	}
@@ -174,7 +175,7 @@ public:
 		if (itr.itr->fl != this)
 			throw;
 		m.lock();
-		size_t index = itr.itr->index;
+		int index = itr.itr->index;
 		std::swap(data[index],data.back());
 		iterators.back()->index = itr.itr->index;
 		iterators.back()->it = itr.itr->it;
@@ -229,11 +230,11 @@ public:
 	struct _itr
 	{
 	public:
-		bool operator==(const size_t &rhs)
+		bool operator==(const int &rhs)
 		{
 			return index == rhs;
 		}
-		bool operator!=(const size_t &rhs)
+		bool operator!=(const int &rhs)
 		{
 			return index != rhs;
 		}
@@ -258,7 +259,7 @@ public:
 		//	return data[ref];
 		//}
 		_itr(){};
-		_itr(size_t i, fast_list_deque *_fl)
+		_itr(int i, fast_list_deque *_fl)
 		{
 			index = i;
 			fl = _fl;
@@ -268,7 +269,7 @@ public:
 			index = other.index;
 			fl = other.fl;
 		};
-		size_t index;
+		int index;
 		fast_list_deque *fl;
 		unsigned int it;
 	};
@@ -280,11 +281,11 @@ public:
 		{
 			return itr == nullptr;
 		}
-		bool operator==(const size_t &rhs)
+		bool operator==(const int &rhs)
 		{
 			return *itr == rhs;
 		}
-		bool operator!=(const size_t &rhs)
+		bool operator!=(const int &rhs)
 		{
 			return *itr != rhs;
 		}
@@ -327,7 +328,7 @@ public:
 		//iteratorMap[0] = new _itr(0, this);
 	}
 
-	size_t size()
+	int size()
 	{
 		return data.size();
 	}
@@ -358,7 +359,7 @@ public:
 		if (itr.itr->fl != this)
 			throw;
 		m.lock();
-		size_t index = itr.itr->index;
+		int index = itr.itr->index;
 		data[index] = std::move(data.back());
 		iterators.back()->index = index;		   //itr->index
 		iterators.back()->it = itr.itr->it;		   // int

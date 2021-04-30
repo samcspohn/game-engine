@@ -1,8 +1,11 @@
 #include "_rendering/camera.h"
 #include "particles/particles.h"
+#include "batchManager.h"
+#include "lighting/lighting.h"
+
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
-std::map<int,std::function<void(camera&)>> renderShit;
+std::map<int, std::function<void(camera &)>> renderShit;
 void renderQuad()
 {
 	if (quadVAO == 0)
@@ -49,7 +52,7 @@ void renderQuad()
 camera::camera()
 {
 	inited = false;
-	waitForRenderJob([&]() {
+	enqueRenderJob([&]() {
 		// if (lv.vertices.size() == 0)
 		// {
 		// 	lightVolumeModel = _model("res/models/cube/cube.obj");
@@ -60,8 +63,8 @@ camera::camera()
 		// 	lv.setupMesh();
 		// }
 
-		gBuffer.scr_width = SCREEN_WIDTH;
-		gBuffer.scr_height = SCREEN_HEIGHT;
+		gBuffer.scr_width = this->width;
+		gBuffer.scr_height = this->height;
 		gBuffer.init();
 		gBuffer.addColorAttachment("gAlbedoSpec", renderTextureType::UNSIGNED_BYTE, 0);
 		gBuffer.addColorAttachment("gPosition", renderTextureType::FLOAT, 1);
@@ -84,8 +87,8 @@ camera::~camera()
 glm::vec3 camera::screenPosToRay(glm::vec2 mp)
 {
 
-	float mouseX = mp.x / (SCREEN_WIDTH * 0.5f) - 1.0f;
-	float mouseY = mp.y / (SCREEN_HEIGHT * 0.5f) - 1.0f;
+	float mouseX = mp.x / (this->width * 0.5f) - 1.0f;
+	float mouseY = mp.y / (this->height * 0.5f) - 1.0f;
 
 	glm::mat4 invVP = glm::inverse(this->getProjection() * this->getRotationMatrix());
 	glm::vec4 screenPos = glm::vec4(mouseX, -mouseY, 1.0f, 1.0f);
@@ -95,7 +98,7 @@ glm::vec3 camera::screenPosToRay(glm::vec2 mp)
 }
 glm::vec2 camera::getScreen()
 {
-	return glm::vec2(glm::tan(fov / 2) * SCREEN_WIDTH / SCREEN_HEIGHT, glm::tan(fov / 2));
+	return glm::vec2(glm::tan(fov / 2) * this->width / this->height, glm::tan(fov / 2));
 }
 
 void camera::update(glm::vec3 position, glm::quat rotation)
@@ -113,7 +116,7 @@ void camera::update(glm::vec3 position, glm::quat rotation)
 		this->cullpos = this->pos;
 	}
 }
-void camera::prepRender(Shader &matProgram)
+void camera::prepRender(Shader &matProgram, GLFWwindow *window)
 {
 	gpuTimer gt_;
 	timer cpuTimer;
@@ -172,72 +175,72 @@ void renderOpaque(camera &c)
 
 	int counter = 0;
 	GPU_MATRIXES->bindData(3);
-	// for (auto &i : batchManager::batches.front())
-	// {
-	for (auto &i : renderingManager::shader_model_vector)
+	for (auto &i : batchManager::batches.front())
 	{
-		Shader *currShader = shaderManager::shaders_ids[i.first]->shader.get();
+		// for (auto &i : renderingManager::shader_model_vector)
+		// {
+		Shader *currShader = i.first.meta()->shader.get();
 		currShader->use();
 		currShader->setFloat("FC", 2.0 / log2(c.farPlane + 1));
 		currShader->setVec3("viewPos", c.pos);
 		currShader->setVec3("viewDir", c.dir);
-		currShader->setFloat("screenHeight", (float)SCREEN_HEIGHT);
-		currShader->setFloat("screenWidth", (float)SCREEN_WIDTH);
+		currShader->setFloat("screenHeight", (float)c.height);
+		currShader->setFloat("screenWidth", (float)c.width);
 		glm::mat4 vp = c.proj * c.rot;
 		currShader->setMat4("vp", vp);
 
+		// for (auto &j : i.second)
+		// {
+		// 	Model *mod = modelManager::models_id[j.first]->model.get();
+		// 	if (counter >= c._rendererOffsets.size())
+		// 		return;6
+		// 	for (auto &mesh : mod->meshes)
+		// 	{
+		// 		texArray ta = mesh->textures;
+		// 		currShader->bindTextures(ta);
+		// 		int count = __renderer_offsets->storage->at(counter) - c._rendererOffsets[counter];
+		// 		if (count > 0)
+		// 		{
+		// 			currShader->setUint("matrixOffset", c._rendererOffsets[counter]);
+		// 			glBindVertexArray(mesh->VAO);
+		// 			glDrawElementsInstanced(currShader->primitiveType, mesh->indices.size(), GL_UNSIGNED_INT, 0, count);
+
+		// 			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// 			glBindVertexArray(0);
+		// 		}
+		// 		ta.unbind();
+		// 	}
+		// 	// todo remove with batching
+		// 	++counter;
+		// }
 		for (auto &j : i.second)
 		{
-			Model *mod = modelManager::models_id[j.first]->model.get();
-			for (auto &mesh : mod->meshes)
+			texArray ta = j.first;
+			currShader->bindTextures(ta);
+			for (auto &k : j.second)
 			{
-				if (counter >= c._rendererOffsets.size())
-					return;
-				texArray ta = mesh->textures;
-				currShader->bindTextures(ta);
 				int count = __renderer_offsets->storage->at(counter) - c._rendererOffsets[counter];
 				if (count > 0)
 				{
 					currShader->setUint("matrixOffset", c._rendererOffsets[counter]);
-					glBindVertexArray(mesh->VAO);
-					glDrawElementsInstanced(currShader->primitiveType, mesh->indices.size(), GL_UNSIGNED_INT, 0, count);
+					glBindVertexArray(k.second->VAO);
+					glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
 
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 					glBindVertexArray(0);
 				}
 				++counter;
-				ta.unbind();
 			}
+			ta.unbind();
 		}
-		// for (auto &j : i.second)
-		// {
-		// 	texArray ta = j.first;
-		// 	currShader->bindTextures(ta);
-		// 	for (auto &k : j.second)
-		// 	{
-		// 		int count = __renderer_offsets->storage->at(counter) - c._rendererOffsets[counter];
-		// 		if (count > 0)
-		// 		{
-		// 			currShader->setUint("matrixOffset", c._rendererOffsets[counter]);
-		// 			glBindVertexArray(k.second->VAO);
-		// 			glDrawElementsInstanced(currShader->primitiveType, k.second->indices.size(), GL_UNSIGNED_INT, 0, count);
-
-		// 			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		// 			glBindVertexArray(0);
-		// 		}
-		// 		++counter;
-		// 	}
-		// 	ta.unbind();
-		// }
-		// }
 	}
-	// batchManager::batches.pop();
+	batchManager::batches.pop();
 	// appendStat("render cam", t.stop());
 }
 void directionalLighting(camera &c)
 {
 
-	Shader &quadShader = *_quadShader.meta()->shader;
+	static Shader quadShader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
 	quadShader.use();
 	quadShader.setInt("gAlbedoSpec", 0);
 	quadShader.setInt("gPosition", 1);
@@ -270,9 +273,42 @@ void directionalLighting(camera &c)
 
 void defferedLighting(camera &c)
 {
-	gpuTimer t;
+	// gpuTimer t;
 
-	// t.start();
+	static lightVolume lv;
+	if (lv.VAO == 0)
+	{
+		// lv.indices = {
+		// 	0, 1, 2,
+		// 	0, 2, 3,
+		// 	4, 7, 6,
+		// 	4, 7, 5,
+		// 	0, 4, 5,
+		// 	0, 5, 1,
+		// 	1, 5, 6,
+		// 	1, 6, 2,
+		// 	2, 6, 7,
+		// 	2, 7, 3,
+		// 	4, 0, 3,
+		// 	4, 3, 7};
+		// lv.vertices = {
+		// 	vec3(1.f, -1.f, -1.f),
+		// 	vec3(1.f, -1.f, 1.f),
+		// 	vec3(-1.f, -1.f, 1.f),
+		// 	vec3(-1.f, -1.f, -1.f),
+		// 	vec3(1.f, 1.f, -1.f),
+		// 	vec3(1.f, 1.f, 1.f),
+		// 	vec3(-1.f, 1.f, 1.f),
+		// 	vec3(-1.f, 1.f, -1.f)};
+		// lv.setupMesh();
+
+		_model lightVolumeModel("res/models/cube/cube.obj");
+		modelManager::models_id[lightVolumeModel.m]->model->loadModel();
+		// lightVolumeModel.m->loadModel();
+		lv.indices = lightVolumeModel.mesh().indices;
+		lv.vertices = lightVolumeModel.mesh().vertices;
+		lv.setupMesh();
+	}
 
 	c.gBuffer.blitDepth(0, c.width, c.height);
 
@@ -286,40 +322,42 @@ void defferedLighting(camera &c)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
 
+	// _shaderLightingPass = _shader("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
+	// _quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
+	static Shader shaderLightingPass("res/shaders/defferedLighting.vert", "res/shaders/defferedLighting.frag");
 	// Shader &shaderLightingPass = *_shaderLightingPass.meta()->shader;
-	// shaderLightingPass.use();
-	// shaderLightingPass.setInt("gAlbedoSpec", 0);
-	// shaderLightingPass.setInt("gPosition", 1);
-	// shaderLightingPass.setInt("gNormal", 2);
-	// shaderLightingPass.setInt("gDepth", 3);
+	shaderLightingPass.use();
+	shaderLightingPass.setInt("gAlbedoSpec", 0);
+	shaderLightingPass.setInt("gPosition", 1);
+	shaderLightingPass.setInt("gNormal", 2);
+	shaderLightingPass.setInt("gDepth", 3);
 
-	// lightingManager::gpu_pointLights->bindData(1);
-	// GPU_TRANSFORMS->bindData(2);
-	// glActiveTexture(GL_TEXTURE0);
-	// glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gAlbedoSpec"));
-	// glActiveTexture(GL_TEXTURE1);
-	// glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gPosition"));
-	// glActiveTexture(GL_TEXTURE2);
-	// glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("gNormal"));
-	// glActiveTexture(GL_TEXTURE3);
-	// glBindTexture(GL_TEXTURE_2D, gBuffer.rboDepth);
-	// shaderLightingPass.setVec2("WindowSize", glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
+	lightingManager::gpu_pointLights->bindData(1);
+	GPU_TRANSFORMS->bindData(2);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, c.gBuffer.getTexture("gAlbedoSpec"));
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, c.gBuffer.getTexture("gPosition"));
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, c.gBuffer.getTexture("gNormal"));
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, c.gBuffer.rboDepth);
+	shaderLightingPass.setVec2("WindowSize", glm::vec2(c.width, c.height));
 
-	// shaderLightingPass.setMat4("view", c.view);
-	// shaderLightingPass.setMat4("proj", c.proj);
-	// shaderLightingPass.setFloat("FC", 2.0 / log2(c.farPlane + 1));
-	// shaderLightingPass.setVec3("viewPos", c.pos);
-	// shaderLightingPass.setVec3("floatingOrigin", c.pos);
-	// lv.Draw(lightingManager::pointLights.size());
+	shaderLightingPass.setMat4("view", c.rot);
+	shaderLightingPass.setMat4("proj", c.proj);
+	shaderLightingPass.setFloat("FC", 2.0 / log2(c.farPlane + 1));
+	shaderLightingPass.setVec3("viewPos", c.pos);
+	shaderLightingPass.setVec3("floatingOrigin", c.pos);
+	lv.Draw(lightingManager::pointLights.size());
 
-	// Always good practice to set everything back to defaults once configured.
 	for (GLuint i = 0; i < 4; i++)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	// appendStat("render lighting", gt_.stop());
-	appendStat("render lighting cpu", t.stop());
+	// appendStat("render lighting cpu", t.stop());
 }
 
 void renderParticles(camera &c)
@@ -336,7 +374,7 @@ void renderParticles(camera &c)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// glBlendEquation(GL_FUNC_ADD);
 
-	particle_renderer::drawParticles(c.view, c.rot, c.proj, c.pos,c.farPlane,c.height,c.width);
+	particle_renderer::drawParticles(c.view, c.rot, c.proj, c.pos, c.farPlane, c.height, c.width);
 	// appendStat("render particles", gt_.stop());
 	appendStat("render particles", t.stop());
 }
@@ -344,7 +382,7 @@ void camera::render(GLFWwindow *window)
 {
 	if (!inited)
 		return;
-	glfwGetFramebufferSize(window, &width, &height);
+
 	ratio = width / (float)height;
 
 	glViewport(0, 0, width, height);
@@ -356,10 +394,10 @@ void camera::render(GLFWwindow *window)
 
 	renderOpaque(*this);
 
-	for(auto& x : renderShit){
+	for (auto &x : renderShit)
+	{
 		x.second(*this);
 	}
-
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -367,7 +405,7 @@ void camera::render(GLFWwindow *window)
 	gBuffer.blitDepth(0, width, height);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// defferedLighting(*this);
+	defferedLighting(*this);
 	// glDepthMask(GL_TRUE);
 	renderParticles(*this);
 	glDepthMask(GL_TRUE);
@@ -382,7 +420,36 @@ glm::mat4 camera::GetViewMatrix()
 {
 	return glm::translate(-pos);
 }
+template <typename T>
+GLM_FUNC_QUALIFIER mat<4, 4, T, defaultp> _perspective(T fovy, T aspect, T zNear, T zFar)
+{
+	// assert(abs(aspect - std::numeric_limits<T>::epsilon()) > static_cast<T>(0));
+
+	T const tanHalfFovy = tan(fovy / static_cast<T>(2));
+
+	mat<4, 4, T, defaultp> Result(static_cast<T>(0));
+	Result[0][0] = static_cast<T>(1) / (aspect * tanHalfFovy);
+	Result[1][1] = static_cast<T>(1) / (tanHalfFovy);
+	Result[2][2] = -(zFar + zNear) / (zFar - zNear);
+	Result[2][3] = -static_cast<T>(1);
+	Result[3][2] = -(static_cast<T>(2) * zFar * zNear) / (zFar - zNear);
+	return Result;
+}
 glm::mat4 camera::getProjection()
 {
-	return glm::perspective(this->fov, (GLfloat)width / (GLfloat)height, nearPlane, farPlane);
+	// return _perspective(this->fov, (GLfloat)width / (GLfloat)height, nearPlane, farPlane);
+	float aspect = float(this->width) / float(this->height);
+	if (aspect > 0.f && aspect < 3.f)
+		return glm::perspective(this->fov, aspect, nearPlane, farPlane);
+	else
+		return glm::perspective(this->fov, 1920.f / 1080.f, nearPlane, farPlane);
+}
+
+_camera::_camera()
+{
+	c = make_unique<camera>();
+}
+_camera::_camera(const _camera &cam)
+{
+	c = make_unique<camera>();
 }

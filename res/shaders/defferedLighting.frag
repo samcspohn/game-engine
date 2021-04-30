@@ -56,12 +56,12 @@ void main()
 
     vec3 v = FragPos - lightPos;
     vec3 lightDir = normalize(lightPos - FragPos);
-    if(abs(v.x) > light.radius 
-    || abs(v.y) > light.radius 
-    || abs(v.z) > light.radius 
-    || length2(FragPos - lightPos) > light.radius * light.radius
-    || abs(dot(lightDir,Normal)) < 0.001)
-        discard;
+    // if(abs(v.x) > light.radius 
+    // || abs(v.y) > light.radius 
+    // || abs(v.z) > light.radius 
+    // || length2(FragPos - lightPos) > light.radius * light.radius
+    // || abs(dot(lightDir,Normal)) < 0.001)
+    //     discard;
 
 
 
@@ -93,7 +93,7 @@ void main()
     lighting *= intensity;
 
     
-    FragColor = vec4(lighting, 1.0);// + vec4(0.03,0,0,0);
+    FragColor = vec4(lighting, 1.0) + vec4(0.05,0,0,0);
     // if(d * 0.5 > depth)
     // FragColor = FragColor + vec4(0.03,0,0,0) * int(d > depth);
     // FragColor = vec4(1,0,0,1);

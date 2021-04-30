@@ -130,11 +130,10 @@ void start_game() // assumes only renderer and terrain are started.
 		{
 			StartComponents(i.second->getStorage());
 		}
-		ImGui::LoadIniSettingsFromDisk("play.ini");
+		// ImGui::LoadIniSettingsFromDisk("play.ini");
 	}));
 	gameRunning = true;
 }
-
 
 void stop_game()
 {
@@ -160,7 +159,7 @@ void stop_game()
 			initComponents(i.second->getStorage());
 		}
 
-		ImGui::LoadIniSettingsFromDisk("default.ini");
+		// ImGui::LoadIniSettingsFromDisk("default.ini");
 		stoppingGame = false;
 
 		// load_level(working_file.c_str());
@@ -601,6 +600,17 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			editor_hov |= ImGui::IsWindowHovered();
 			// if(transformLock.try_lock()){
 
+			if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
+				ImGui::OpenPopup("game_object_context");
+			if (ImGui::BeginPopup("game_object_context"))
+			{
+				if (ImGui::Selectable("new game object"))
+				{
+					_instantiate();
+				}
+				ImGui::EndPopup();
+			}
+
 			if (!stoppingGame)
 			{
 				transformLock.lock();
@@ -624,8 +634,8 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			ImGuizmo::SetRect(0.0f, 0.0f, ww, wy);
 			glm::mat4 view = m_editor->c.rot * m_editor->c.view;
 			// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
-			glm::mat4 proj = m_editor->c.proj;
-			// mat4 proj = glm::perspective(COMPONENT_LIST(_camera)->get(0)->fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.01f, 1e6f);
+			// glm::mat4 proj = m_editor->c.proj;
+			mat4 proj = glm::perspective(m_editor->c.fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, m_editor->c.nearPlane, m_editor->c.farPlane);
 			glm::mat4 trans = selected_transform.getModel();
 			static auto guizmo_mode = ImGuizmo::LOCAL;
 			static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
@@ -674,18 +684,22 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			}
 			else if (isGameRunning() && ImGui::Button("stop"))
 			{
-				
+
 				stop_game();
 			}
 			ImGui::End();
 		}
-		if(ImGui::Begin("console")){
-			if(ImGui::Button("clear")){
+		if (ImGui::Begin("console"))
+		{
+			if (ImGui::Button("clear"))
+			{
 				console::logs.clear();
 			}
-			for(auto& i : console::logs){
+			for (auto &i : console::logs)
+			{
 				ImGui::Text(i.first.c_str());
-				if(i.second > 0){
+				if (i.second > 0)
+				{
 					ImGui::SameLine();
 					ImGui::Spacing();
 					ImGui::SameLine();
@@ -742,13 +756,17 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			}
 			ImGui::End();
 		}
-		if(ImGui::Begin("console")){
-			if(ImGui::Button("clear")){
+		if (ImGui::Begin("console"))
+		{
+			if (ImGui::Button("clear"))
+			{
 				console::logs.clear();
 			}
-			for(auto& i : console::logs){
+			for (auto &i : console::logs)
+			{
 				ImGui::Text(i.first.c_str());
-				if(i.second > 0){
+				if (i.second > 0)
+				{
 					ImGui::SameLine();
 					ImGui::Spacing();
 					ImGui::SameLine();
@@ -823,4 +841,8 @@ void dockspaceBegin(GLFWwindow *window, editor *m_editor)
 void dockspaceEnd()
 {
 	ImGui::End();
+}
+
+void endEditor(){
+	inspector = 0;
 }

@@ -51,14 +51,15 @@ namespace lighting
     }
 } // namespace lighting
 
-void Light::init()
+void Light::init(int id)
 {
     pl->transfromId = transform.id;
 }
-void Light::deinit()
+void Light::deinit(int i)
 {
     lightingManager::pointLights.erase(pl);
 }
+
 Light::Light()
 {
     pl = lightingManager::pointLights.push_back(pointLight());

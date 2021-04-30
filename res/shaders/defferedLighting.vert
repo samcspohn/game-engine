@@ -49,7 +49,7 @@ void main()
 	
 	lightPos = t.position;
 	direction = vec3(rotate(t.rotation) * vec4(0,0,1,1));
-	gl_Position = proj * vec4(t.position + position * light.radius,1);
+	gl_Position = proj * view * vec4(t.position + position * light.radius,1);
 	
 	logz = 1.0 + gl_Position.w;
 	gl_Position.z = (log2(max(1e-6,logz))*FC - 1.0) * gl_Position.w;

@@ -50,4 +50,3 @@ void copyTransforms();
 void copyRenderers();
 void updateTransforms();
 void updateRenderers();
-void renderCameras();

@@ -270,6 +270,9 @@ public:
 				if (ImGui::Selectable(i.first.c_str()))
 				{
 					i.second->addComponent(t->gameObject());
+					// ImGui::EndPopup();
+					// ImGui::CloseCurrentPopup();
+					break;
 				}
 			}
 			ImGui::EndPopup();

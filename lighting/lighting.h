@@ -2,10 +2,10 @@
 #include <GLFW/glfw3.h>
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
-#include "Component.h"
+#include "components/Component.h"
 #include "fast_list.h"
 #include "editor.h"
-#include "game_object.h"
+#include "components/game_object.h"
 
 struct pointLight
 {
@@ -51,9 +51,10 @@ class Light : public component
 public:
     Light();
     void init();
-    Light(const Light& l);
+    Light(const Light &l);
     ~Light();
-    void deinit();
+    void deinit(int i);
+    void init(int i);
     void setColor(glm::vec3 col);
     void setlinear(float l);
     void setQuadratic(float q);
@@ -64,21 +65,30 @@ public:
     // void onDestroy();
     void onEdit();
     COPY(Light);
-    SER_HELPER(){
-        // SER_BASE(component)
-        // ar & pl.itr->it;
+    SER_FUNC()
+    switch (x)
+    {
+        // &color &constant &linear &quadratic &transfromId &radius &cutOff &outerCutOff;
+    case ser_mode::edit_mode:
+        renderEdit("color", pl->color);
+        renderEdit("constant", pl->constant);
+        renderEdit("linear", pl->linear);
+        renderEdit("quadratic", pl->quadratic);
+        renderEdit("cut off", pl->cutOff);
+        renderEdit("outer cut off", pl->outerCutOff);
+        pl->setRadius();
+        break;
+    case ser_mode::read_mode:
+        (*_iar) >> *pl;
+        break;
+    case ser_mode::write_mode:
+        (*_oar) << *pl;
+        break;
+    default:
+        cout << "no mode provided";
+        break;
     }
-    SER_OUT(){
-        ar << boost::serialization::base_object<component>(*this);
-        ar << (*pl);
-    }
-    SER_IN(){
-        // unsigned int id;
-        ar >> boost::serialization::base_object<component>(*this);;
-        ar >> (*pl);
-        // ar >> id;
-        // pl = lightingManager::pointLights.iterators[id];
-    }
-    // SER1(pl);
+
+    SER_END
 };
 // REGISTER_COMPONENT(Light)

@@ -1,0 +1,14 @@
+--add camera
+--add batching
+--add lights
+add sound
+
+
+editor
+add tool tips to assets (show files of model/shader)
+add model previewer
+add shader previewer
+
+
+terrain
+add nested parallelism

@@ -187,7 +187,7 @@ class storage
 {
 	mutex m;
 #define chunk 256
- 	vector<unique_ptr<t[]>> data;
+ 	vector<t*> data;
 	vector<t*> d1;
 	vector<t*> d2;
 	atomic<vector<t*>*> r;
@@ -227,15 +227,15 @@ public:
 				++extent;
                 if (valid.size() >= data.size() * chunk)
                 {
-                    data.emplace_back(new t[chunk]);
+                    data.emplace_back((t*)(new char[chunk * sizeof(t)]));
 					if(r == &d1){
-						d2.emplace_back(data.back().get());
+						d2.emplace_back(data.back());
 						r = &d2;
-						d1.emplace_back(data.back().get());
+						d1.emplace_back(data.back());
 					}else{
-						d1.emplace_back(data.back().get());
+						d1.emplace_back(data.back());
 						r = &d1;
-						d2.emplace_back(data.back().get());
+						d2.emplace_back(data.back());
 					}
                 }
             }
@@ -271,14 +271,17 @@ public:
                 _delete(i);
             }
         }
-        for (int i = 0; i < data.size(); i++)
-        {
-            for (int j = 0; j < chunk; j++)
-            {
-                memset(&data[i][j], 0, sizeof(t));
-            }
-        }
-        data.clear();
+        // for (int i = 0; i < data.size(); i++)
+        // {
+        //     for (int j = 0; j < chunk; j++)
+        //     {
+        //         memset(&data[i][j], 0, sizeof(t));
+        //     }
+        // }
+		for(auto d : data){
+			delete[] (char*)d;
+		}
+        // data.clear();
 		valid.clear();
 		avail.clear();
 	}

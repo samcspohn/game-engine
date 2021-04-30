@@ -127,29 +127,6 @@ bool testMeshMesh(mesh &m1, // longer tris
                   const glm::mat4 &trans1,
                   mesh &m2, // shorter tris
                   const glm::mat4 &trans2, glm::vec3 &result);
-// using namespace glm;
-// vector<glm::vec3> boxPoints{
-//     vec3(1.f, -1.f, -1.f),
-//     vec3(1.f, -1.f, 1.f),
-//     vec3(-1.f, -1.f, 1.f),
-//     vec3(-1.f, -1.f, -1.f),
-//     vec3(1.f, 1.f, -1.f),
-//     vec3(1.f, 1.f, 1.f),
-//     vec3(-1.f, 1.f, 1.f),
-//     vec3(-1.f, 1.f, -1.f)};
-// vector<uint> boxTris{
-//     0, 1, 2,
-//     0, 2, 3,
-//     4, 7, 6,
-//     4, 7, 5,
-//     0, 4, 5,
-//     0, 5, 1,
-//     1, 5, 6,
-//     1, 6, 2,
-//     2, 6, 7,
-//     2, 7, 3,
-//     4, 0, 3,
-//     4, 3, 7};
 
 extern MESH BOX_MESH;
 

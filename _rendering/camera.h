@@ -16,15 +16,14 @@
 #include <map>
 #include <functional>
 
-
-extern _shader _quadShader;
-struct camera{
+struct camera
+{
 	camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
 	camera();
 	~camera();
-	
-    float ratio;
-    int width, height;
+
+	float ratio;
+	int width, height;
 	GLfloat fov;
 	GLfloat nearPlane;
 	GLfloat farPlane;
@@ -52,16 +51,51 @@ struct camera{
 	glm::mat3 camInv;
 
 	glm::vec2 getScreen();
-	void prepRender(Shader &matProgram);
-	void render(GLFWwindow* window);
-	void update(glm::vec3 position,glm::quat rotation);
+	void prepRender(Shader &matProgram, GLFWwindow *window);
+	void render(GLFWwindow *window);
+	void update(glm::vec3 position, glm::quat rotation);
 	glm::mat4 getRotationMatrix();
 	glm::mat4 GetViewMatrix();
 	glm::mat4 getProjection();
 	glm::vec3 screenPosToRay(glm::vec2 mp);
-	SER_HELPER(){
+	SER_HELPER()
+	{
 		ar &fov &nearPlane &farPlane;
 	}
 };
 
-extern std::map<int,std::function<void(camera&)>> renderShit;
+class _camera : public component
+{
+public:
+	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
+	_camera();
+	_camera(const _camera& c);
+	unique_ptr<camera> c;
+	COPY(_camera);
+	SER_FUNC()
+	switch (x)
+	{
+	case ser_mode::edit_mode:
+		renderEdit("fov", c->fov);
+		renderEdit("near", c->nearPlane);
+		renderEdit("far", c->farPlane);
+		break;
+	case ser_mode::read_mode:
+		(*_iar) >> c->fov;
+		(*_iar) >> c->nearPlane;
+		(*_iar) >> c->farPlane;
+		break;
+	case ser_mode::write_mode:
+		(*_oar) << c->fov;
+		(*_oar) << c->nearPlane;
+		(*_oar) << c->farPlane;
+		break;
+	default:
+		cout << "no mode provided";
+		break;
+	}
+	SER_END
+private:
+};
+
+extern std::map<int, std::function<void(camera &)>> renderShit;

@@ -55,6 +55,7 @@ void load_level(const char *filename);
 extern string working_file;
 
 void editorLayer(GLFWwindow *window, editor *m_editor);
+void endEditor();
 void dockspaceBegin(GLFWwindow* window, editor* m_editor);
 void dockspaceEnd();
 extern tbb::concurrent_queue<glm::vec3> floating_origin;

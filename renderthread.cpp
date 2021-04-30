@@ -8,6 +8,9 @@
 #include "Input.h"
 #include "concurrency.h"
 #include "particles/particles.h"
+#include "batchManager.h"
+#include "lighting/lighting.h"
+
 void renderFunc(camera &c, GLFWwindow *window)
 {
     float ratio;
@@ -59,7 +62,6 @@ vector<vector<glm::quat>> rotationsToBuffer;
 vector<vector<glm::vec3>> scalesToBuffer;
 unordered_map<int, vector<vector<__renderer>>> rendererThreadCache;
 
-
 void initiliazeStuff()
 {
     transformIdThreadcache = vector<vector<vector<int>>>(concurrency::numThreads, vector<vector<int>>(3));
@@ -83,7 +85,7 @@ void initiliazeStuff()
 
     initParticles();
     particle_renderer::init();
-    // lighting::init();
+    lighting::init();
 
     // _atomics = new gpu_vector<uint>();
     _block_sums = new gpu_vector<GLuint>();
@@ -109,11 +111,9 @@ void copyT(int id, int rnumThreads)
     auto from = Transforms.updates.begin() + step * id;
     auto to = from + step;
 
-
     // transformIdThreadcache[id].reserve(step + 1);
     if (id == rnumThreads - 1)
         to = Transforms.updates.end();
-
 
     // int rsrv = std::ceil((float)Transforms.updates.size() / (float)rnumThreads);
     // transformIdThreadcache[id][0].reserve(rsrv); // pos
@@ -157,9 +157,8 @@ void copyTransforms()
     t.start();
     if (true) //dur.getAverageValue() > 1.f)
     {
-            parallelfor(rnumThreads,
-               copyT(i, rnumThreads); 
-            )
+        parallelfor(rnumThreads,
+                    copyT(i, rnumThreads);)
     }
     else
     {
@@ -217,47 +216,137 @@ void updateTransforms()
 
 void copyR(int id, int rnumThreads)
 {
-    int __rendererId = 0;
+
+    // int __rendererId = 0;
     // int __rendererOffset = 0;
     // typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
+    // for (auto &i : batchManager::batches.back())
+    // {
+    //     for (auto &j : i.second)
+    //     {
+    //         for (auto &k : j.second)
+    //         {
+    //             int step = k.first->ids.size() / concurrency::numThreads;
+    //             typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
+    //             typename deque<GLuint>::iterator to = from + step;
+    //             __r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
+    //             if (id == concurrency::numThreads - 1)
+    //             {
+    //                 to = k.first->ids.data.end();
+    //             }
+    //             while (from != to)
+    //             {
+    //                 __r->transform = *from;
+    //                 __r->id = __rendererId;
+    //                 ++from;
+    //                 ++__r;
+    //             }
+    //             ++__rendererId;
+    //             __rendererOffset += k.first->ids.size();
+    //         }
+    //     }
+    // }
 
+    int __rendererId = 0;
     int count = 0;
-    for (auto &i : renderingManager::shader_model_vector)
+    for (auto &i : batchManager::batches.back())
     {
         rendererThreadCache[count][id].clear();
         for (auto &j : i.second)
         {
-            int step = j.second->ids.size() / rnumThreads;
-            int itr = step * id;
-            // typename deque<GLuint>::iterator itr = j.second->ids.data.begin() + step * id;
-            // typename deque<bool>::iterator v = j.second->ids.valid.begin() + step * id;
-            int to = itr + step;
-            // typename deque<GLuint>::iterator to = itr + step;
-            // __r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
-            if (id == rnumThreads - 1)
+            for (auto &k : j.second)
             {
-                to = j.second->ids.size();
-                // to = j.second->ids.data.end();
-            }
-            while (itr != to)
-            {
-                // if (*v)
-                // {
-                // __r->transform = *itr;
-                if(j.second->ids.getv(itr)){
-                    rendererThreadCache[count][id].emplace_back(j.second->ids.get(itr),__rendererId);
+                int step = k.first->ids.size() / rnumThreads;
+                int itr = step * id;
+                int to = itr + step;
+                if (id == rnumThreads - 1)
+                {
+                    to = k.first->ids.size();
                 }
-                // }
-                ++itr;
-                // ++v;
+                while (itr != to)
+                {
+                    if (k.first->ids.getv(itr))
+                    {
+                        rendererThreadCache[count][id].emplace_back(k.first->ids.get(itr), __rendererId);
+                    }
+                    ++itr;
+                }
+                ++__rendererId;
             }
-            ++__rendererId;
-            // __rendererOffset += j.second->ids.size();
         }
         ++count;
-
     }
+
+    // int __rendererId = 0;
+    // // int __rendererOffset = 0;
+    // // typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
+
+    // int count = 0;
+    // for (auto &i : renderingManager::shader_model_vector)
+    // {
+    //     rendererThreadCache[count][id].clear();
+    //     for (auto &j : i.second)
+    //     {
+    //         int step = j.second->ids.size() / rnumThreads;
+    //         int itr = step * id;
+    //         // typename deque<GLuint>::iterator itr = j.second->ids.data.begin() + step * id;
+    //         // typename deque<bool>::iterator v = j.second->ids.valid.begin() + step * id;
+    //         int to = itr + step;
+    //         // typename deque<GLuint>::iterator to = itr + step;
+    //         // __r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
+    //         if (id == rnumThreads - 1)
+    //         {
+    //             to = j.second->ids.size();
+    //             // to = j.second->ids.data.end();
+    //         }
+    //         while (itr != to)
+    //         {
+    //             // if (*v)
+    //             // {
+    //             // __r->transform = *itr;
+    //             if (j.second->ids.getv(itr))
+    //             {
+    //                 rendererThreadCache[count][id].emplace_back(j.second->ids.get(itr), __rendererId);
+    //             }
+    //             // }
+    //             ++itr;
+    //             // ++v;
+    //         }
+    //         ++__rendererId;
+    //         // __rendererOffset += j.second->ids.size();
+    //     }
+    //     ++count;
+    // }
 }
+
+// void _updateBatches()
+// {
+//     int __renderersSize = 0;
+//     // int __rendererOffsetsSize = 0;
+//     __renderer_offsets->storage->clear();
+//     __rendererMetas->storage->clear();
+//     __renderMeta rm;
+//     // rm.min = 0;
+//     // rm.max = 1e32f;
+//     for (auto &i : batchManager::batches.back())
+//     {
+//         for (auto &j : i.second)
+//         {
+//             for (auto &k : j.second)
+//             {
+//                 __renderer_offsets->storage->push_back(__renderersSize);
+//                 rm.radius = k.first->m.meta()->radius;
+//                 rm.isBillboard = k.first->isBillboard;
+//                 rm.min = k.first->minRadius;
+//                 rm.max = k.first->maxRadius;
+//                 __rendererMetas->storage->push_back(rm);
+//                 __renderersSize += k.first->ids.size();
+//             }
+//         }
+//     }
+//     __RENDERERS_in->storage->resize(__renderersSize);
+// }
+
 void copyRenderers()
 {
     int __renderersSize = 0;
@@ -269,21 +358,41 @@ void copyRenderers()
     // rm.max = 1e32f;
 
     int count = 0;
-    for (auto &i : renderingManager::shader_model_vector)
+    // for (auto &i : renderingManager::shader_model_vector)
+    // {
+    //     rendererThreadCache[count].resize(concurrency::numThreads);
+    //     ++count;
+    //     for (auto &j : i.second)
+    //     {
+    //         __renderer_offsets->storage->push_back(__renderersSize);
+    //         rm.radius = j.second->m.meta()->radius;
+    //         rm.isBillboard = j.second->isBillboard;
+    //         rm.min = j.second->minRadius;
+    //         rm.max = j.second->maxRadius;
+    //         __rendererMetas->storage->push_back(rm);
+    //         __renderersSize += j.second->ids.active();
+    //     }
+    // }
+
+    for (auto &i : batchManager::batches.back())
     {
         rendererThreadCache[count].resize(concurrency::numThreads);
         ++count;
         for (auto &j : i.second)
         {
-            __renderer_offsets->storage->push_back(__renderersSize);
-            rm.radius = j.second->m.meta()->radius;
-            rm.isBillboard = j.second->isBillboard;
-            rm.min = j.second->minRadius;
-            rm.max = j.second->maxRadius;
-            __rendererMetas->storage->push_back(rm);
-            __renderersSize += j.second->ids.active();
+            for (auto &k : j.second)
+            {
+                __renderer_offsets->storage->push_back(__renderersSize);
+                rm.radius = k.first->m.meta()->radius;
+                rm.isBillboard = k.first->isBillboard;
+                rm.min = k.first->minRadius;
+                rm.max = k.first->maxRadius;
+                __rendererMetas->storage->push_back(rm);
+                __renderersSize += k.first->ids.size();
+            }
         }
     }
+
     __RENDERERS_in_size = __renderersSize;
     int rnumThreads = concurrency::numThreads;
     static rolling_buffer dur = 0;
@@ -295,9 +404,8 @@ void copyRenderers()
         //     tbb::blocked_range<unsigned int>(0, rnumThreads, 1), [&](auto &r) {
         //         for (int id = r.begin(); id < r.end(); ++id)
         // concurrency::_parallelfor.doWork(rnumThreads, [&](int id) {
-            parallelfor(rnumThreads,
-                copyR(i, rnumThreads);
-            );
+        parallelfor(rnumThreads,
+                    copyR(i, rnumThreads););
     }
     else
     {
@@ -315,15 +423,14 @@ void updateRenderers()
     // __RENDERERS_in->bufferData();
     __RENDERERS_in->resize(__RENDERERS_in_size);
     int offset = 0;
-    for(auto& i : rendererThreadCache){
-        for(auto& j : i.second){
-            __RENDERERS_in->bufferData(j,offset,j.size());
+    for (auto &i : rendererThreadCache)
+    {
+        for (auto &j : i.second)
+        {
+            __RENDERERS_in->bufferData(j, offset, j.size());
             offset += j.size();
         }
     }
-}
-void renderCameras()
-{
 }
 
 GLFWwindow *window;

@@ -33,7 +33,8 @@
 #include "particles/particles.h"
 #include "terrain.h"
 #include "lineRenderer.h"
-
+#include "batchManager.h"
+#include "lighting/lighting.h"
 using namespace std;
 
 // mutex toDestroym;
@@ -123,28 +124,32 @@ public:
     COPY(orbit);
 };
 
-class player : public component {
-    public:
+class player : public component
+{
+public:
     static editor *m_editor;
-    void update(){
+    void update()
+    {
         playerPos = m_editor->position;
         console::log("here");
 
-        if(Input.Mouse.getButton(0)){
+        if (Input.Mouse.getButton(0))
+        {
             ImVec2 mp = ImGui::GetMousePos();
-			ImVec2 sz = {m_editor->c.width, m_editor->c.height};
-			cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
-			glm::vec2 sz_2 = {sz.x, sz.y};
-			sz_2 /= 2.f;
+            ImVec2 sz = {m_editor->c.width, m_editor->c.height};
+            cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
+            glm::vec2 sz_2 = {sz.x, sz.y};
+            sz_2 /= 2.f;
 
-			camera &c = m_editor->c;
-			glm::mat3 per = c.getProjection();
+            camera &c = m_editor->c;
+            glm::mat3 per = c.getProjection();
 
-			glm::vec3 p = m_editor->position;
-			glm::vec3 d = c.screenPosToRay({mp.x, mp.y});
+            glm::vec3 p = m_editor->position;
+            glm::vec3 d = c.screenPosToRay({mp.x, mp.y});
 
             glm::vec3 res;
-            if(terrain::IntersectRayTerrain(p,d,res)){
+            if (terrain::IntersectRayTerrain(p, d, res))
+            {
 
                 auto g = instantiate();
                 g->addComponent<_renderer>()->set(shader, cube);
@@ -156,12 +161,55 @@ class player : public component {
     SER_FUNC()
     SER_END
 };
+class player2 : public component
+{
+public:
+    float speed = 2;
+    _camera *c;
+    void onStart()
+    {
+        c = transform.gameObject()->getComponent<_camera>();
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+    void update()
+    {
+        transform.translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+        transform.translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+        transform.translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+        // transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+
+        transform.rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c->c->fov / glm::radians(80.f) * -0.4f);
+        transform.rotate(glm::vec3(1, 0, 0), -Input.Mouse.getY() * Time.unscaledDeltaTime * c->c->fov / glm::radians(80.f) * -0.4f);
+
+        transform.setRotation(glm::quatLookAtLH(transform.getRotation() * glm::vec3(0, 0, 1), glm::vec3(0, 1, 0)));
+
+        c->c->fov -= Input.Mouse.getScroll() * glm::radians(1.f);
+        c->c->fov = glm::clamp(c->c->fov, glm::radians(5.f), glm::radians(80.f));
+
+        if (Input.getKeyDown(GLFW_KEY_R))
+        {
+            speed *= 2;
+        }
+        if (Input.getKeyDown(GLFW_KEY_F))
+        {
+            speed /= 2;
+        }
+
+        playerPos = transform.getPosition();
+    }
+    COPY(player)
+    SER_FUNC()
+    SER_END
+};
+
 editor *player::m_editor;
 
-REGISTER_COMPONENT(player);
+// REGISTER_COMPONENT(player);
+REGISTER_COMPONENT(player2);
 REGISTER_COMPONENT(orbit);
 REGISTER_COMPONENT(comp);
 REGISTER_COMPONENT(_renderer);
+REGISTER_COMPONENT(_camera);
 
 void doLoopIteration()
 {
@@ -193,6 +241,31 @@ void doLoopIteration()
 
 mutex renderLock;
 
+void renderCameras()
+{
+    auto cameras = COMPONENT_LIST(_camera);
+    for (int i = 0; i < cameras->size(); i++)
+    {
+        if (cameras->getv(i))
+        {
+            renderFunc(*cameras->get(i)->c, window);
+            lineRendererRender(*cameras->get(i)->c);
+        }
+    }
+}
+
+void prepCameras()
+{
+    auto cameras = COMPONENT_LIST(_camera);
+    for (int i = 0; i < cameras->size(); i++)
+    {
+        if (cameras->getv(i))
+        {
+            cameras->get(i)->c->prepRender(*matProgram.meta()->shader.get(), window);
+        }
+    }
+}
+
 void renderFunc(editor *ed, rolling_buffer &fps)
 {
     // lock_guard<mutex> lk(transformLock);
@@ -202,11 +275,9 @@ void renderFunc(editor *ed, rolling_buffer &fps)
 
     uint emitterInitCount = emitterInits.size();
     prepParticles();
-
-    ed->c.prepRender(*matProgram.meta()->shader.get());
-
     updateParticles(vec3(0), emitterInitCount);
-    
+    lightingManager::gpu_pointLights->bufferData();
+
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -214,14 +285,22 @@ void renderFunc(editor *ed, rolling_buffer &fps)
     ImGuizmo::BeginFrame();
     dockspaceBegin(window, ed);
 
-    renderFunc(ed->c, window);
+    if (isGameRunning())
+    {
+        prepCameras();
+        renderCameras();
+    }
+    else
+    {
+        ed->c.prepRender(*matProgram.meta()->shader.get(), window);
+        renderFunc(ed->c, window);
+        lineRendererRender(ed->c);
+    }
 
-    lineRendererRender(ed->c);
 
-    editorLayer(window,ed);
+    editorLayer(window, ed);
     dockspaceEnd();
     // ImGui::PushFont(font_default);
-
 
     // Rendering
     ImGui::Render();
@@ -232,6 +311,7 @@ void renderFunc(editor *ed, rolling_buffer &fps)
 
     glfwSwapBuffers(window);
 }
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -279,8 +359,26 @@ void physicsUpdate(float dt)
     }
 }
 
+void updateCameras()
+{
+    auto cameras = COMPONENT_LIST(_camera);
+    for (int i = 0; i < cameras->size(); i++)
+    {
+        if (cameras->getv(i))
+        {
+            _camera *c = cameras->get(i);
+            int w,h;
+            glfwGetFramebufferSize(window, &w,&h);
+            c->c->width = float(w);
+            c->c->height = float(h);
+            c->c->update(c->transform.getPosition(), c->transform.getRotation());
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
+
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
     // physics_manager::collisionGraph[1] = {0, 1};
@@ -294,13 +392,16 @@ int main(int argc, char **argv)
         initGL();
         initiliazeStuff();
         initLineRenderer();
+        ImGui::LoadIniSettingsFromDisk("default.ini");
     });
     initParticles2();
     particle_renderer::init2();
-    _quadShader = _shader("res/shaders/defLighting.vert", "res/shaders/defLighting.frag");
     matProgram = _shader("res/shaders/transform.comp");
 
     cube = _model("res/models/cube/cube.obj");
+    _model nano = _model("res/models/nanosuit/nanosuit.obj");
+    nano.meta()->name = "nanosuit";
+
     shader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
     _shader lamp("res/shaders/model.vert", "res/shaders/lamp.frag");
     _shader terrainShader("res/shaders/terrain.vert", "res/shaders/model.frag");
@@ -316,7 +417,7 @@ int main(int argc, char **argv)
     comp::orbiter = orbiter->transform;
 
     rootGameObject->_addComponent<terrain>()->shader = terrainShader;
-    rootGameObject->_addComponent<player>();
+    // rootGameObject->_addComponent<player>();
 
     rolling_buffer fps;
     timer time;
@@ -334,16 +435,6 @@ int main(int argc, char **argv)
 
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
-    // while (true)
-    // struct termios t;
-    // tcgetattr(0, &t);
-    // t.c_lflag &= ~ICANON;
-    // tcsetattr(0, TCSANOW, &t);
-
-    // fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
-
-    // char c = 0;
-    // while (!c)
     {
 
         function<void()> *f;
@@ -362,15 +453,18 @@ int main(int argc, char **argv)
             {
                 doLoopIteration();
                 physicsUpdate(Time.time);
+                updateCameras();
             }
             parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
             toDestroyGameObjects.clear();
         }
 
         waitForRenderJob([&]() {
+            batchManager::updateBatches();
             updateTiming();
         });
-        ed->update();
+        if (!isGameRunning())
+            ed->update();
         copyTransforms();
         copyRenderers();
         // ############################################################
@@ -384,6 +478,8 @@ int main(int argc, char **argv)
 
         fps.add(time.stop());
     }
+    endEditor();
+    rootGameObject->_destroy();
     delete ed;
     renderingManager::destroy();
     shaderManager::destroy();
