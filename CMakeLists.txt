@@ -27,6 +27,7 @@ file(GLOB SOURCES "*.cpp"
     "components/*.cpp"
     "physics/*.cpp"
     "lighting/*.cpp"
+    "test_project/*.cpp"
     "particles/*.cpp")
  
 add_executable(game ${SOURCES})

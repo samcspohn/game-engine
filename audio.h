@@ -1,5 +1,5 @@
-#include "Component.h"
-#include "game_object.h"
+#include "components/Component.h"
+#include "components/game_object.h"
 #include <glm/glm.hpp>
 #include <string>
 #include <map>
@@ -130,7 +130,9 @@ public:
     void set(audio &_a);
     void onStart();
     void onDestroy();
-    SER1(a);
+    SER_FUNC()
+        SER(a)
+    SER_END
 };
 // BOOST_CLASS_EXPORT(componentStorage<audiosource>)
 // REGISTER_COMPONENT(audiosource)

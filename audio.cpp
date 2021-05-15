@@ -323,7 +323,7 @@ void audiosource::onDestroy()
 }
 
 // BOOST_CLASS_EXPORT(componentStorage<audiosource>)
-REGISTER_COMPONENT(audiosource)
+
 
 void audio::play(glm::vec3 pos, float pitch, float gain)
 {
