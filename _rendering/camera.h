@@ -24,9 +24,9 @@ struct camera
 
 	float ratio;
 	int width, height;
-	GLfloat fov;
-	GLfloat nearPlane;
-	GLfloat farPlane;
+	GLfloat fov = glm::radians(80.f);
+	GLfloat nearPlane = 0.1f;
+	GLfloat farPlane = 1e4f;
 	bool lockFrustum = false;
 	bool inited = false;
 	// _frustum f;

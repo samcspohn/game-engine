@@ -186,28 +186,28 @@ public:
 // 	);
 // }
 
-// #include <tbb/parallel_for.h>
-// #define parallelfor(size, func)                                               \
-// 	{                                                                         \
-// 		int grain = size / concurrency::numThreads / concurrency::numThreads; \
-// 		grain = glm::max(grain, 1);                                           \
-// 		tbb::parallel_for(                                                    \
-// 			tbb::blocked_range<unsigned int>(0, size, grain),                 \
-// 			[&](const tbb::blocked_range<unsigned int> &r) {                  \
-// 				for (unsigned int i = r.begin(); i < r.end(); ++i)            \
-// 				{                                                             \
-// 					func                                                      \
-// 				}                                                             \
-// 			});                                                               \
-// 	}
-
+#include <tbb/parallel_for.h>
 #define parallelfor(size, func)                                               \
 	{                                                                         \
 		int grain = size / concurrency::numThreads / concurrency::numThreads; \
 		grain = glm::max(grain, 1);                                           \
-		concurrency::_parallelfor.doWork(                                     \
-			size, [&](int i) { func }, grain);                                \
+		tbb::parallel_for(                                                    \
+			tbb::blocked_range<unsigned int>(0, size, grain),                 \
+			[&](const tbb::blocked_range<unsigned int> &r) {                  \
+				for (unsigned int i = r.begin(); i < r.end(); ++i)            \
+				{                                                             \
+					func                                                      \
+				}                                                             \
+			});                                                               \
 	}
+
+// #define parallelfor(size, func)                                               \
+// 	{                                                                         \
+// 		int grain = size / concurrency::numThreads / concurrency::numThreads; \
+// 		grain = glm::max(grain, 1);                                           \
+// 		concurrency::_parallelfor.doWork(                                     \
+// 			size, [&](int i) { func }, grain);                                \
+// 	}
 
 #endif // !HELPER
 

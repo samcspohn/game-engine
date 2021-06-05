@@ -37,6 +37,7 @@ namespace shaderManager
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
+	void init();
 }; // namespace shaderManager
 
 class _shader

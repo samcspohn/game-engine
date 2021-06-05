@@ -36,6 +36,7 @@ namespace modelManager
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
 	void _new();
+	void init();
 }; // namespace modelManager
 
 class _model

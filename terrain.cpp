@@ -73,9 +73,6 @@ void terrain::render(camera &c)
     glm::mat4 normalMat = model;
     glm::mat4 mvp = vp * model;
 
-    if (shader.s == 0)
-        return;
-
     auto currShader = shader.meta()->shader.get();
     currShader->use();
     currShader->setFloat("FC", 2.0 / log2(c.farPlane + 1));
@@ -171,9 +168,13 @@ glm::vec3 terrain::makeVert(float x, float z)
 {
     return glm::vec3(x - terrainSize / 2, makeHeight(x + 0, z + 0), z - terrainSize / 2) * 10.f;
 }
+mutex chunk_lock;
 void terrain::genHeight(int _x, int _z)
 {
-    chunks[_x][_z] = make_shared<chunk>();
+    {
+        lock_guard lck(chunk_lock);
+        chunks[_x][_z] = make_shared<chunk>();
+    }
     array<array<float, terrainSize>, terrainSize> &h = chunks[_x][_z]->h;
     // chunks[_x][_z].mesh = make_unique<Mesh>();
     Mesh *mesh = chunks[_x][_z]->mesh.get();
@@ -294,7 +295,7 @@ void terrain::update()
         }
     }();
     // }));
-
+    vector<pair<int,int>> chunks_to_gen;
     bool generatedChunk = false;
     for (int x = playerPosScaled.x - radius; x <= playerPosScaled.x + radius && !generatedChunk; x++)
     {
@@ -304,12 +305,19 @@ void terrain::update()
             {
                 if (chunks.find(x) == chunks.end() || chunks.at(x).find(z) == chunks.at(x).end() || chunks.at(x).at(z) == 0)
                 {
-                    genHeight(x, z);
+                    // genHeight(x, z);
+                    chunks_to_gen.emplace_back(x,z);
                     // generatedChunk = true;
                 }
             }
         }
     }
+    parallelfor(chunks_to_gen.size(),{
+        
+        int x = chunks_to_gen[i].first;
+        int z = chunks_to_gen[i].second;
+        genHeight(x,z);
+    });
 }
 
 void terrain::deinit()

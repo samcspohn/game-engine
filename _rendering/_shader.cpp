@@ -68,6 +68,25 @@ namespace shaderManager
 		}
 		// });
 	}
+
+	void init()
+	{
+		// default shader
+		std::hash<string> x;
+		string vertex, fragment;
+		vertex = "res/shaders/model.vert";
+		fragment = "res/shaders/model.frag";
+		size_t key = 0;
+		auto ms = shaderManager::shaders.find(key);
+		if (ms == shaderManager::shaders.end())
+		{
+			auto sm = make_shared<_shaderMeta>(vertex, fragment);
+			shaderManager::shaders[key] = sm;
+			sm->id = 0;
+			shaderManager::shaders_ids[0] = sm;
+			sm->name = "default shader";
+		}
+	}
 }; // namespace shaderManager
 
 _shader::_shader() {}
@@ -142,11 +161,12 @@ void _shaderMeta::inspect()
 	if (ImGui::BeginPopup("add_shader_file"))
 	{
 		ImGui::Separator();
-		for(auto& x : types2){
-			// this->shader->_shaders.find(x.first) == types2.end() && 
+		for (auto &x : types2)
+		{
+			// this->shader->_shaders.find(x.first) == types2.end() &&
 			if (ImGui::Selectable(x.second.c_str()))
 			{
-				this->shader->_shaders.emplace(x.first,"");
+				this->shader->_shaders.emplace(x.first, "");
 			}
 		}
 		ImGui::EndPopup();

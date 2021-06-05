@@ -91,6 +91,10 @@ void renderFunc(editor *ed, rolling_buffer &fps)
     }
     else
     {
+        int w,h;
+        glfwGetFramebufferSize(window, &w,&h);
+        ed->c.width = float(w);
+        ed->c.height = float(h);
         ed->c.prepRender(*matProgram.meta()->shader.get(), window);
         renderFunc(ed->c, window);
         lineRendererRender(ed->c);
@@ -192,6 +196,8 @@ int main(int argc, char **argv)
         initiliazeStuff();
         initLineRenderer();
         ImGui::LoadIniSettingsFromDisk("default.ini");
+        modelManager::init();
+        shaderManager::init();
     });
     initParticles2();
     particle_renderer::init2();
@@ -208,7 +214,7 @@ int main(int argc, char **argv)
     ed->c.farPlane = 100000;
     ed->c.width = 1920;
     ed->c.height = 1080;
-    ed->position = glm::vec3(0, 0, -200);
+    ed->position = glm::vec3(0, 0, -10);
     // player::m_editor = ed;
 
 

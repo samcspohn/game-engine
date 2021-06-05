@@ -75,6 +75,23 @@ namespace modelManager
 		// 	m = _mm->id;
 		// }
 	}
+
+	void init(){
+		{
+			auto _mm = make_shared<_modelMeta>("res/models/cube/cube.obj");
+			_mm->id = 0;
+			modelManager::models_id[_mm->id] = _mm;
+			_mm->name = "cube";
+		}
+		{
+		auto _mm = make_shared<_modelMeta>("res/models/sphere/sphere.obj");
+		_mm->id = 1;
+		modelManager::models_id[_mm->id] = _mm;
+		_mm->name = "sphere";
+		}
+
+
+	}
 }; // namespace modelManager
 
 _model::_model(){

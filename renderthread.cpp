@@ -388,7 +388,7 @@ void copyRenderers()
                 rm.min = k.first->minRadius;
                 rm.max = k.first->maxRadius;
                 __rendererMetas->storage->push_back(rm);
-                __renderersSize += k.first->ids.size();
+                __renderersSize += k.first->ids.active();
             }
         }
     }

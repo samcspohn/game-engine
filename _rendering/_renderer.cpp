@@ -31,8 +31,6 @@ void _renderer::setCullSizes(float min, float max)
 }
 void _renderer::init(int id)
 {
-	if (shader.s == 0 || model.m == 0)
-		return;
 	if (meta != 0)
 		set(meta);
 	else
@@ -46,12 +44,6 @@ void _renderer::set(_shader s, _model m)
 	model = m;
 	if(transformIdRef != -1)
 		meta->ids._delete(transformIdRef);
-	// if (!transformIdRef.isNull())
-	// {
-	// 	meta->ids.erase(transformIdRef);
-	// }
-	if (s.s == 0 || m.m == 0)
-		return;
 	renderingManager::lock();
 	auto r = renderingManager::shader_model_vector.find(s.s);
 	if (r == renderingManager::shader_model_vector.end())
@@ -132,9 +124,9 @@ void _renderer::deinit(int id)
 void renderEdit(const char *name, _model &m)
 {
 	// ImGui::DragInt(name,&i);
-	if (m.m == 0) // uninitialized
-		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
-	else
+	// if (m.m == 0) // uninitialized
+	// 	ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	// else
 		ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -151,9 +143,9 @@ void renderEdit(const char *name, _model &m)
 void renderEdit(const char *name, _shader &s)
 {
 	// ImGui::DragInt(name,&i);
-	if (s.s == 0) // uninitialized
-		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
-	else
+	// if (s.s == 0) // uninitialized
+	// 	ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	// else
 		ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::BeginDragDropTarget())
 	{

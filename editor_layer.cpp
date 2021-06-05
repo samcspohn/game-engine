@@ -629,13 +629,15 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
-			float ww = ImGui::GetWindowWidth();
-			float wy = ImGui::GetWindowHeight();
+			// float ww = ImGui::GetWindowWidth();
+			// float wy = ImGui::GetWindowHeight();
+			float wy = m_editor->c.height;
+			float ww = m_editor->c.width;
 			ImGuizmo::SetRect(0.0f, 0.0f, ww, wy);
 			glm::mat4 view = m_editor->c.rot * m_editor->c.view;
 			// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
 			// glm::mat4 proj = m_editor->c.proj;
-			mat4 proj = glm::perspective(m_editor->c.fov, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, m_editor->c.nearPlane, m_editor->c.farPlane);
+			mat4 proj = glm::perspective(m_editor->c.fov, ww / wy, m_editor->c.nearPlane, m_editor->c.farPlane);
 			glm::mat4 trans = selected_transform.getModel();
 			static auto guizmo_mode = ImGuizmo::LOCAL;
 			static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;

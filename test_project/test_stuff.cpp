@@ -49,6 +49,7 @@ transform2 comp::orbiter;
 void newObject(_model &m, _shader &s);
 _model cube;
 _shader shader;
+int num_to_spawn = 10;
 class orbit : public component
 {
 
@@ -57,29 +58,31 @@ public:
     {
         cube = _model("res/models/cube/cube.obj");
         shader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
+        comp::orbiter = transform;
     }
     void update()
     {
         transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
 
-        // int to_spawn = 1'0'000 - Transforms.active();
-        // for (int i = 0; i < to_spawn; i++)
-        // {
-        //     auto g = instantiate();
-        //     g->addComponent<comp>();
-        //     g->addComponent<_renderer>()->set(shader, cube);
-        //     g->addComponent<particle_emitter>();
-        //     // g->addComponent<collider>()->setOBB();
-        //     // g->getComponent<collider>()->setLayer(0);
-        //     // g->getComponent<collider>()->dim = glm::vec3(1);
-        //     // g->transform->setPosition(glm::vec3(randf(), 0, randf()) * 100.f);
-        //     g->transform->setPosition(randomSphere() * 500.f);
-        // }
+        int to_spawn = num_to_spawn - Transforms.active();
+        for (int i = 0; i < to_spawn; i++)
+        {
+            auto g = instantiate();
+            g->addComponent<comp>();
+            g->addComponent<_renderer>()->set(shader, cube);
+            // g->addComponent<particle_emitter>();
+            // g->addComponent<collider>()->setOBB();
+            // g->getComponent<collider>()->setLayer(0);
+            // g->getComponent<collider>()->dim = glm::vec3(1);
+            // g->transform->setPosition(glm::vec3(randf(), 0, randf()) * 100.f);
+            g->transform->setPosition(randomSphere() * 500.f);
+        }
         // newObject(cube,shader);
         // concurrency::_parallelfor.doWork(to_spawn,[&](int i){
         // parallelfor(to_spawn, newObject(cube, shader););
     }
     SER_FUNC()
+    SER(num_to_spawn)
     SER_END
     COPY(orbit);
 };
