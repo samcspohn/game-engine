@@ -138,3 +138,20 @@ public:
 // REGISTER_COMPONENT(audiosource)
 
 // void audio::play(glm::vec3 pos, float pitch, float gain);
+
+namespace YAML {
+
+template<>
+struct convert<audio> {
+  static Node encode(const audio& rhs) {
+    Node node;
+	node["id"] = rhs.a;
+    return node;
+  }
+
+  static bool decode(const Node& node, audio& rhs) {
+	rhs.a = node["id"].as<int>();
+    return true;
+  }
+};
+}

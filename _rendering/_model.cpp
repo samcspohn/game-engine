@@ -52,7 +52,7 @@ namespace modelManager
 	{
 		ia >> models >> models_id;
 		waitForRenderJob([&]() {
-			for (auto &m : models)
+			for (auto &m : models_id)
 			{
 				m.second->model->loadModel();
 			}

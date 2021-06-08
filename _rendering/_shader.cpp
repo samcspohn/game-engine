@@ -62,7 +62,7 @@ namespace shaderManager
 		shaders_ids.clear();
 		ia >> shaders >> shaders_ids;
 		// waitForRenderJob([&]() {
-		for (auto &i : shaders)
+		for (auto &i : shaders_ids)
 		{
 			i.second->shader->_Shader();
 		}

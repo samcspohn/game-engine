@@ -60,3 +60,23 @@ public:
 };
 
 bool operator<(const _shader &l, const _shader &r);
+
+namespace YAML
+{
+	template <>
+	struct convert<_shader>
+	{
+		static Node encode(const _shader &rhs)
+		{
+			Node node;
+			node["id"] = rhs.s;
+			return node;
+		}
+
+		static bool decode(const Node &node, _shader &rhs)
+		{
+			rhs.s = node["id"].as<int>();
+			return true;
+		}
+	};
+}

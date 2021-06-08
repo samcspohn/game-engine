@@ -46,7 +46,7 @@ void DestroyComponents(componentStorageBase *cl)
 void save_level(const char *filename)
 {
 	// make an archive
-	std::ofstream ofs(filename);
+	// std::ofstream ofs(filename);
 	std::ofstream assets("assets.ass");
 	// std::ofstream oproto("proto.lvl");
 	{
@@ -61,11 +61,14 @@ void save_level(const char *filename)
 		assets::save(oa);
 	}
 	{
-		OARCHIVE oa(ofs);
-		game_object::serialize(oa, rootGameObject);
+		YAML::Node root_game_object_node;
+		game_object::encode(root_game_object_node,rootGameObject);
+		std::ofstream(filename) << root_game_object_node;
+		// OARCHIVE oa(ofs);
+		// game_object::serialize(oa, rootGameObject);
 	}
 	assets.close();
-	ofs.close();
+	// ofs.close();
 }
 void rebuildGameObject(componentStorageBase *base, int i);
 
@@ -78,7 +81,7 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	rootGameObject->_destroy();
 
 	// open the archive
-	std::ifstream ifs(filename);
+	// std::ifstream ifs(filename);
 	std::ifstream assets("assets.ass");
 	// std::ifstream ifsp("proto.lvl");
 	if (assets::assets.size() == 0)
@@ -95,9 +98,11 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	}
 	if (string(filename) != "")
 	{
-		IARCHIVE ia(ifs);
-		map<int, int> transform_map;
-		game_object::deserialize(ia, transform_map);
+		YAML::Node root_game_object_node = YAML::LoadFile(filename);
+		game_object::decode(root_game_object_node, -1);
+		// IARCHIVE ia(ifs);
+		// map<int, int> transform_map;
+		// game_object::deserialize(ia, transform_map);
 	}
 	rootGameObject = transform2(0)->gameObject();
 	for (auto &i : ComponentRegistry.meta_types)
@@ -118,13 +123,17 @@ bool isGameRunning()
 void start_game() // assumes only renderer and terrain are started.
 {
 	mainThreadWork.push(new function<void()>([&]() {
-		ofstream f(".temp");
+		// ofstream f(".temp");
 		{
 			// boost::archive::binary_oarchive oa(ss);
-			OARCHIVE oa(f);
-			game_object::serialize(oa, rootGameObject);
+			// OARCHIVE oa(f);
+			// game_object::serialize(oa, rootGameObject);
+			YAML::Node root_game_object_node;
+			game_object::encode(root_game_object_node,rootGameObject);
+			std::ofstream(".temp") << root_game_object_node;
+
 		}
-		f.close();
+		// f.close();
 
 		for (auto &i : ComponentRegistry.meta_types)
 		{
@@ -144,14 +153,18 @@ void stop_game()
 		lock_guard<mutex> lk(transformLock);
 
 		rootGameObject->_destroy();
-		ifstream f(".temp");
+		// ifstream f(".temp");
+		// {
+		// 	// boost::archive::binary_iarchive ia(ss);
+		// 	IARCHIVE ia(f);
+		// 	map<int, int> transform_map;
+		// 	game_object::deserialize(ia, transform_map);
+		// }
+		// f.close();
 		{
-			// boost::archive::binary_iarchive ia(ss);
-			IARCHIVE ia(f);
-			map<int, int> transform_map;
-			game_object::deserialize(ia, transform_map);
+			YAML::Node root_game_object_node = YAML::LoadFile(".temp");
+			game_object::decode(root_game_object_node, -1);
 		}
-		f.close();
 
 		rootGameObject = transform2(0)->gameObject();
 		for (auto &i : ComponentRegistry.meta_types)
@@ -309,7 +322,7 @@ void openFile()
 {
 	inspector = 0;
 	char file[1024] = {};
-	FILE *f = popen("zenity --file-selection --file-filter=*.lvl", "r");
+	FILE *f = popen("zenity --file-selection --file-filter=*.yaml", "r");
 	fgets(file, 1024, f);
 	string fi(file);
 	fi = fi.substr(0, fi.size() - 1);
@@ -327,7 +340,7 @@ void openFile()
 void saveAsFile()
 {
 	char file[1024];
-	FILE *f = popen("zenity --file-selection --save  --file-filter=*.lvl", "r");
+	FILE *f = popen("zenity --file-selection --save  --file-filter=*.yaml", "r");
 	fgets(file, 1024, f);
 	string fi(file);
 	fi = fi.substr(0, fi.size() - 1);

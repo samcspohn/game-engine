@@ -28,25 +28,10 @@ namespace assets
     }
     void save(OARCHIVE &oa)
     {
-        // oa << assets.size();
-        // for(auto& i : assets){
-        //     oa << i.first;
-        //     oa << i.second;
-        //     // i.second->serialize(oa,0);
-        // }
         oa << assets << assetIdGenerator;
     }
     void load(IARCHIVE &ia)
     {
-        // size_t size;
-        // ia >> size;
-        // for(int i = 0; i < size; ++i){
-        //     int id;
-        //     asset* a;
-        //     ia >> id;
-        //     ia >> a;
-        //     assets.emplace(pair<int,asset*>(id,a));
-        // }
         ia >> assets >> assetIdGenerator;
     }
 } // namespace assets

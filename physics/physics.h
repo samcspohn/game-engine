@@ -48,17 +48,16 @@ public:
 	void accelerate(glm::vec3 acc);
 	glm::vec3 getVelocity();
 	static void collide(collider &a, collider &b, int &colCount);
-
-private:
-	glm::vec3 vel = glm::vec3(0);
-	glm::quat axis;
-	float rotVel;
-	SER_FUNC()
+		SER_FUNC()
 		SER(gravity)
 		SER(bounciness)
 		SER(mass)
 		SER(damping)
 	SER_END
+private:
+	glm::vec3 vel = glm::vec3(0);
+	glm::quat axis;
+	float rotVel;
 };
 
 enum colType
@@ -68,6 +67,27 @@ enum colType
 	meshType,
 	pointType
 };
+
+
+namespace YAML
+{
+	template <>
+	struct convert<colType>
+	{
+		static Node encode(const colType &rhs)
+		{
+			Node node;
+			node["type"] = static_cast<int>(rhs);
+			return node;
+		}
+
+		static bool decode(const Node &node, colType &rhs)
+		{
+			rhs = static_cast<colType>(node["type"].as<int>());
+			return true;
+		}
+	};
+}
 
 class collider : public component
 {
@@ -104,7 +124,7 @@ public:
 	// void lateUpdate();
 	void _lateUpdate();
 	void update_data();
-	void ser_edit(ser_mode x);
+	void ser_edit(ser_mode x, YAML::Node&);
 	COPY(collider);
 
 	// SER_HELPER(){

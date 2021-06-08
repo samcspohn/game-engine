@@ -81,14 +81,20 @@ public:
 		renderEdit("far", c->farPlane);
 		break;
 	case ser_mode::read_mode:
-		(*_iar) >> c->fov;
-		(*_iar) >> c->nearPlane;
-		(*_iar) >> c->farPlane;
+		c->fov = node_9738469372465["fov"].as<float>();
+		c->nearPlane = node_9738469372465["near"].as<float>();
+		c->farPlane = node_9738469372465["far"].as<float>();
+		// (*_iar) >> c->fov;
+		// (*_iar) >> c->nearPlane;
+		// (*_iar) >> c->farPlane;
 		break;
 	case ser_mode::write_mode:
-		(*_oar) << c->fov;
-		(*_oar) << c->nearPlane;
-		(*_oar) << c->farPlane;
+		node_9738469372465["fov"] = c->fov;
+		node_9738469372465["near"] = c->nearPlane;
+		node_9738469372465["far"] = c->farPlane;
+		// (*_oar) << c->fov;
+		// (*_oar) << c->nearPlane;
+		// (*_oar) << c->farPlane;
 		break;
 	default:
 		cout << "no mode provided";

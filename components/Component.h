@@ -43,7 +43,8 @@ public:
 
 	// virtual void onEdit() = 0;
 	// template<class Archive>
-	virtual void ser_edit(ser_mode x) = 0;
+	virtual void ser_edit(ser_mode x, YAML::Node& n) = 0;
+	// virtual void ser_edit(ser_mode x) = 0;
 	virtual void _copy(game_object *go) = 0;
 	transform2 transform;
 	int getThreadID();
@@ -80,6 +81,8 @@ public:
 	virtual unsigned int active() { return 0; };
 	virtual void serialize(OARCHIVE &ar, int i) = 0;
 	virtual int deserialize(IARCHIVE &ar) = 0;
+	virtual void encode(YAML::Node& node, int i) = 0;
+	virtual int decode(YAML::Node& node) = 0;
 	virtual void sort(){};
 	virtual void clear() {}
 	// virtual string ser(){};
@@ -212,6 +215,17 @@ public:
 	{
 		int i = data._new();
 		ar >> data.get(i);
+		return i;
+	}
+
+	void encode(YAML::Node& node, int i)
+	{
+		data.get(i).ser_edit(ser_mode::write_mode, node);
+	}
+	int decode(YAML::Node& node)
+	{
+		int i = data._new();
+		data.get(i).ser_edit(ser_mode::read_mode, node);
 		return i;
 	}
 	// string ser(){

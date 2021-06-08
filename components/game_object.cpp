@@ -50,7 +50,7 @@ void game_object::deserialize(IARCHIVE &ar, map<int, int> &transform_map)
 	ar >> parentID;
 
 	Transforms.meta[g->transform.id].gameObject = ref;
-	if(parentID != -1)
+	if (parentID != -1)
 		transform2(transform_map[parentID]).adopt(g->transform);
 
 	ar >> size;
@@ -66,6 +66,71 @@ void game_object::deserialize(IARCHIVE &ar, map<int, int> &transform_map)
 	for (int i = 0; i < size; i++)
 	{
 		deserialize(ar, transform_map);
+	}
+}
+
+void game_object::encode(YAML::Node &game_object_node, game_object *g)
+{
+	// transform
+	YAML::Node transform_node;
+	transform_node["position"] = g->transform->getPosition();
+	transform_node["rotation"] = g->transform->getRotation();
+	transform_node["scale"] = g->transform->getScale();
+	game_object_node["transform"] = transform_node;
+
+	// components
+	YAML::Node components_node;
+	for (auto &i : g->components)
+	{
+		YAML::Node component_node;
+		component_node["id"] = i.first;
+		YAML::Node component_val_node;
+		ComponentRegistry.registry(i.first)->encode(component_val_node, i.second);
+		component_node["value"] = component_val_node;
+		components_node.push_back(component_node);
+	}
+	game_object_node["components"] = components_node;
+
+	// children
+	YAML::Node transform_children;
+	transform_node["children"] = transform_children;
+	for (auto &i : g->transform->getChildren())
+	{
+		YAML::Node child_game_object_node;
+		game_object::encode(child_game_object_node, i->gameObject());
+		transform_children.push_back(child_game_object_node);
+	}
+}
+void game_object::decode(YAML::Node &game_object_node, int parent_id)
+{
+	int ref = game_object_cache._new();
+	game_object *g = &game_object_cache.get(ref);
+
+	g->transform = Transforms._new();
+	g->transform->setPosition(game_object_node["transform"]["position"].as<glm::vec3>());
+	g->transform->setRotation(game_object_node["transform"]["rotation"].as<glm::quat>());
+	g->transform->setScale(game_object_node["transform"]["scale"].as<glm::vec3>());
+
+	Transforms.meta[g->transform.id].gameObject = ref;
+	if (parent_id != -1)
+		transform2(parent_id).adopt(g->transform);
+
+	YAML::Node components_node = game_object_node["components"];
+	for (int i = 0; i < components_node.size(); i++)
+	{
+		YAML::Node component_node = components_node[i];
+		size_t hash = component_node["id"].as<size_t>();
+		YAML::Node component_val_node = component_node["value"];
+		int id = ComponentRegistry.registry(hash)->decode(component_val_node);
+		g->components.emplace(hash, id);
+		_getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
+	}
+
+	YAML::Node transform_children = game_object_node["transform"]["children"];
+	for (int i = 0; i < transform_children.size(); i++)
+	{
+		YAML::Node child_game_object_node = transform_children[i];
+		game_object::decode(child_game_object_node, ref);
 	}
 }
 

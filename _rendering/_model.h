@@ -62,3 +62,21 @@ public:
 
 extern atomic<int> uniqueMeshIdGenerator;
 transform2 renderRaycast(glm::vec3 p, glm::vec3 dir);
+
+
+namespace YAML {
+
+template<>
+struct convert<_model> {
+  static Node encode(const _model& rhs) {
+    Node node;
+	node["id"] = rhs.m;
+    return node;
+  }
+
+  static bool decode(const Node& node, _model& rhs) {
+	rhs.m = node["id"].as<int>();
+    return true;
+  }
+};
+}

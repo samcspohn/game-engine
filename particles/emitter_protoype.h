@@ -163,6 +163,7 @@ public:
     {
         ar &emitterPrototype;
     }
+    friend struct YAML::convert<emitter_prototype_>;
 };
 
 void renderEdit(string name, emitter_prototype_ &ep);
@@ -170,3 +171,20 @@ emitter_prototype_ createEmitter(string name);
 
 
 void init_prototypes();
+
+namespace YAML {
+
+template<>
+struct convert<emitter_prototype_> {
+  static Node encode(const emitter_prototype_& rhs) {
+    Node node;
+	node["id"] = rhs.emitterPrototype;
+    return node;
+  }
+
+  static bool decode(const Node& node, emitter_prototype_& rhs) {
+	rhs.emitterPrototype = node["id"].as<int>();
+    return true;
+  }
+};
+}

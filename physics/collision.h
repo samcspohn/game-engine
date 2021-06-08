@@ -134,3 +134,84 @@ bool testOBBMesh(OBB &o, const glm::mat4 o_trans, mesh &m, const glm::mat4 m_tra
 
 bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, glm::vec3 &result);
 bool testPointOBB(point &p, OBB &o, glm::vec3 &result);
+
+
+namespace YAML
+{
+	template <>
+	struct convert<AABB2>
+	{
+		static Node encode(const AABB2 &rhs)
+		{
+			Node node;
+			node["min"] = rhs.min;
+            node["max"] = rhs.max;
+			return node;
+		}
+
+		static bool decode(const Node &node, AABB2 &rhs)
+		{
+			rhs.min = node["min"].as<glm::vec3>();
+            rhs.max = node["max"].as<glm::vec3>();
+			return true;
+		}
+	};
+
+    template <>
+	struct convert<OBB>
+	{
+		static Node encode(const OBB &rhs)
+		{
+			Node node;
+			node["c"] = rhs.c;
+            node["u"] = rhs.u;
+            node["e"] = rhs.e;
+			return node;
+		}
+
+		static bool decode(const Node &node, OBB &rhs)
+		{
+			rhs.c = node["c"].as<glm::vec3>();
+            rhs.u = node["u"].as<glm::vec3>();
+            rhs.e = node["e"].as<glm::vec3>();
+			return true;
+		}
+	};
+
+        template <>
+	struct convert<point>
+	{
+		static Node encode(const point &rhs)
+		{
+			Node node;
+			node.push_back(rhs.pos1);
+            node.push_back(rhs.pos2);
+			return node;
+		}
+
+		static bool decode(const Node &node, point &rhs)
+		{
+			rhs.pos1 = node[0].as<glm::vec3>();
+            rhs.pos2 = node[1].as<glm::vec3>();
+			return true;
+		}
+	};
+
+        template <>
+	struct convert<mesh>
+	{
+		static Node encode(const mesh &rhs)
+		{
+			Node node;
+			// node["m"] = rhs.m;
+			return node;
+		}
+
+		static bool decode(const Node &node, mesh &rhs)
+		{
+			// rhs.m = node["m"].as<MESH*>();
+			return true;
+		}
+	};
+
+}

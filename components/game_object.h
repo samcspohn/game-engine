@@ -205,6 +205,9 @@ public:
 	static void serialize(OARCHIVE& ar, game_object* g);
 	static void deserialize(IARCHIVE& ar, map<int,int>& transform_map);
 
+	static void encode(YAML::Node& node, game_object* g);
+	static void decode(YAML::Node& node, int);
+
 	void inspect()
 	{
 		transform2 t = this->transform;
@@ -239,10 +242,9 @@ public:
 			Transforms.updates[t.id].scl = true;
 		}
 
+		YAML::Node none;
 		int n{0};
-		for (auto i = t.gameObject()->components.begin();
-			 i != t.gameObject()->components.end();
-			 i++)
+		for (auto i = t.gameObject()->components.begin(); i != t.gameObject()->components.end(); i++)
 		{
 			ImGui::PushID(n);
 			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
@@ -254,7 +256,7 @@ public:
 					this->_removeComponent(_getComponent(*i));
 				}
 				else
-					_getComponent(*i)->ser_edit(ser_mode::edit_mode);
+					_getComponent(*i)->ser_edit(ser_mode::edit_mode, none);
 				ImGui::TreePop();
 			}
 			ImGui::PopID();
@@ -362,16 +364,8 @@ public:
 	template <class t>
 	t *addComponent(const t &c)
 	{
-		// size_t hash = typeid(t).hash_code();
-		// int i = addComponentToRegistry(c);
-		// components.emplace(hash, i);
-		// t* ci = ComponentRegistry.registry(hash)->get(i);
-		// ci->transform = this->transform;
-		// ci->init(i);
 		t* ci = _addComponent(c);
 		ci->onStart();
-		// gameLock.unlock();
-
 		return ci;
 	}
 

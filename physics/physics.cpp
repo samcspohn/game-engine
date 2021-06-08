@@ -82,7 +82,8 @@ void rigidBody::collide(collider &a, collider &b, int &colCount)
 	// 	return;
 	glm::vec3 res;
 	if (&a < &b && a.valid && b.valid && testAABB(a.a, b.a) &&
-		[&] {
+		[&]
+		{
 			if (!a.collider_shape_updated)
 			{
 				a.update_data();
@@ -617,7 +618,7 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 	return false;
 }
 
-void collider::ser_edit(ser_mode x)
+void collider::ser_edit(ser_mode x, YAML::Node &node)
 {
 	switch (x)
 	{
@@ -658,42 +659,60 @@ void collider::ser_edit(ser_mode x)
 		RENDER(dim);
 		break;
 	case ser_mode::read_mode:
-		(*_iar) >> boost::serialization::base_object<component>(*this);
-		(*_iar) >> layer >> type >> r >> dim;
+		// (*_iar) >> boost::serialization::base_object<component>(*this);
+		// (*_iar) >> layer >> type >> r >> dim;
+		type = node["type"].as<decltype(type)>();
+		layer = node["layer"].as<int>();
+		r = node["r"].as<glm::vec3>();
+		dim = node["dim"].as<glm::vec3>();
+
 		switch (this->type)
 		{
 		case aabbType:
-			(*_iar) >> this->a;
+			a = node["a"].as<AABB2>();
+			// (*_iar) >> this->a;
 			break;
 		case obbType:
-			(*_iar) >> this->o;
+			o = node["o"].as<OBB>();
+			// (*_iar) >> this->o;
 			break;
 		case meshType:
-			(*_iar) >> this->m;
+			m = node["m"].as<mesh>();
+			// (*_iar) >> this->m;
 			break;
 		case pointType:
-			(*_iar) >> this->p;
+			p = node["p"].as<point>();
+			// (*_iar) >> this->p;
 			break;
 		default:
 			break;
 		}
 		break;
 	case ser_mode::write_mode:
-		(*_oar) << boost::serialization::base_object<component>(*this);
-		(*_oar) << layer << type << r << dim;
+		// (*_iar) >> boost::serialization::base_object<component>(*this);
+		// (*_iar) >> layer >> type >> r >> dim;
+		node["type"] = type;
+		node["layer"] = layer;
+		node["r"] = r;
+		node["dim"] = dim;
+
 		switch (this->type)
 		{
 		case aabbType:
-			(*_oar) << this->a;
+			node["a"] = a;
+			// (*_iar) >> this->a;
 			break;
 		case obbType:
-			(*_oar) << this->o;
+			node["o"] = o;
+			// (*_iar) >> this->o;
 			break;
 		case meshType:
-			(*_oar) << this->m;
+			node["m"] = m;
+			// (*_iar) >> this->m;
 			break;
 		case pointType:
-			(*_oar) << this->p;
+			node["p"] = p;
+			// (*_iar) >> this->p;
 			break;
 		default:
 			break;
@@ -713,18 +732,19 @@ bool raycast(glm::vec3 p, glm::vec3 dir)
 	auto colliders = COMPONENT_LIST(collider);
 	cout << "p: " + to_string(p) + " dir: " + to_string(dir) + '\n';
 	ray ray(p, dir);
-	parallelfor(colliders->size(), {
-		float min;
-		glm::vec3 q;
-		if (colliders->getv(i) && IntersectRayAABB3(ray, colliders->get(i)->a))
-		{
-			// cout << string(to_string(glm::length(colliders->get(i)->a.min - colliders->get(i)->a.max)) + '\n');
-			string name = colliders->get(i)->transform->name();
-			if (name == "")
-			{
-				name = "game object " + to_string(colliders->get(i)->transform.id);
-			}
-			cout << name + '\n'; // + " inters: " + to_string(IntersectRayAABB(p,dir,colliders->get(i)->a,min,q)) + "tmin: " + to_string(min) + '\n';
-		}
-	})
+	parallelfor(colliders->size(),
+				{
+					float min;
+					glm::vec3 q;
+					if (colliders->getv(i) && IntersectRayAABB3(ray, colliders->get(i)->a))
+					{
+						// cout << string(to_string(glm::length(colliders->get(i)->a.min - colliders->get(i)->a.max)) + '\n');
+						string name = colliders->get(i)->transform->name();
+						if (name == "")
+						{
+							name = "game object " + to_string(colliders->get(i)->transform.id);
+						}
+						cout << name + '\n'; // + " inters: " + to_string(IntersectRayAABB(p,dir,colliders->get(i)->a,min,q)) + "tmin: " + to_string(min) + '\n';
+					}
+				})
 }
