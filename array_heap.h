@@ -9,6 +9,7 @@
 #include <atomic>
 #include "concurrency.h"
 #include "serialize.h"
+#include <iostream>
 using namespace std;
 
 template <typename t>
@@ -175,11 +176,74 @@ public:
 		data.shrink_to_fit();
 	}
 
+	array_heap<t>() = default;
+	array_heap<t>(const array_heap<t>& rhs) : m() {
+		this->avail = rhs.avail;
+		this->valid = rhs.valid;
+		this->data = rhs.data;
+	};
+
+	array_heap<t> operator=(const array_heap<t>& rhs) {
+		array_heap<t> lhs;
+		lhs.data = rhs.data;
+		lhs.valid = rhs.valid;
+		lhs.avail = rhs.avail;
+		return lhs;
+	}
+
+	friend struct YAML::convert<array_heap<t>>;
 	vector<t> data;
 	deque<bool> valid;
 private:
 	deque<uint> avail;
 };
+
+
+namespace YAML
+{
+	template <typename T>
+	struct convert<array_heap<T>>
+	{
+		static Node encode(const array_heap<T> &rhs)
+		{
+			Node node;
+			node["avail"] = rhs.avail;
+			node["valid"] = rhs.valid;
+			node["data"] = rhs.data;
+			return node;
+		}
+
+		static bool decode(const Node &node, array_heap<T> &rhs)
+		{
+			rhs.avail = node["avail"].as<deque<uint>>();
+			rhs.valid = node["valid"].as<deque<bool>>();
+			rhs.data = node["data"].as<vector<T>>();
+
+			return true;
+		}
+	};
+
+	template <typename T>
+	struct convert<std::deque<T>>
+	{
+		static YAML::Node encode(const std::deque<T> &rhs)
+		{
+			YAML::Node node;
+			for(auto& i: rhs){
+				node.push_back(i);
+			}
+			return node;
+		}
+
+		static bool decode(const YAML::Node &node, std::deque<T> &rhs)
+		{
+			for(size_t i = 0; i < node.size(); ++i){
+				rhs.push_back(node[i].as<T>());
+			}
+			return true;
+		}
+	};
+}
 
 
 template <typename t>

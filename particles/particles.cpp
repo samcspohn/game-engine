@@ -78,6 +78,23 @@ void loadEmitters(IARCHIVE &ia)
     ia >> emitter_prototypes_ >> emitter_proto_assets >> colorGradients;
 }
 
+
+void encodeEmitters(YAML::Node &node){
+    node["emitter_prototpes_"] = emitter_prototypes_;
+    // node["emitter_proto_assets"] = emitter_proto_assets;
+    for(auto& i : emitter_proto_assets){
+        node["emitter_proto_assets"].force_insert(i.first,*i.second);
+        // node["emitter_proto_assets"][i.first] = *i.second;
+    }
+}
+void decodeEmitters(YAML::Node &node){
+    emitter_prototypes_ = node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>();
+    // emitter_proto_assets = node["emitter_proto_assets"].as<decltype(emitter_proto_assets)>();
+    for(YAML::const_iterator i = node["emitter_proto_assets"].begin(); i != node["emitter_proto_assets"].end(); ++i){
+        emitter_proto_assets[i->first.as<int>()] = make_shared<emitter_proto_asset>(i->second.as<emitter_proto_asset>());
+    }
+}
+
 unique_ptr<Shader> particleSortProgram;
 unique_ptr<Shader> particleSortProgram2;
 unique_ptr<Shader> particleProgram;
@@ -120,7 +137,7 @@ void initParticles2()
 
     // emitter_prototype_ default_emitter = createNamedEmitter("default");
 
-     emitter_proto_asset *ep = new emitter_proto_asset();
+    auto ep = make_shared<emitter_proto_asset>();
     ep->id  = 0;
     ep->ref = emitter_prototypes_._new();
     emitter_proto_assets[ep->id] = ep;

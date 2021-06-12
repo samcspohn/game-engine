@@ -39,11 +39,37 @@ namespace assets{
             ar & id & name;
         }
     };
-    extern map<int, asset*> assets;
-    void registerAsset(asset*);
+    // extern map<int, asset*> assets;
+    // void registerAsset(asset*);
+    extern int assetIdGenerator;
     void save(OARCHIVE& oa);
     void load(IARCHIVE& ia);
 }
+
+#define YAML_ENCODE_ASSET() node["id"] = rhs.id; node["name"] = rhs.name;
+#define YAML_DECODE_ASSET() rhs.id = node["id"].as<int>(); rhs.name = node["name"].as<string>();
+
+// namespace YAML
+// {
+// 	template <>
+// 	struct convert<assets::asset>
+// 	{
+// 		static Node encode(const assets::asset &rhs)
+// 		{
+// 			Node node;
+// 			node["id"] = rhs.id;
+//             node["name"] = rhs.name;
+// 			return node;
+// 		}
+
+// 		static bool decode(const Node &node, assets::asset &rhs)
+// 		{
+// 			rhs.id = node["id"].as<int>();
+//             rhs.name = node["name"].as<string>();
+// 			return true;
+// 		}
+// 	};
+// }
 
 
 #define RENDER(name)\

@@ -4,8 +4,25 @@ std::mutex toDestroym;
 // std::deque<game_object *> toDestroyGameObjects;
 std::vector<game_object *> toDestroyGameObjects;
 // tbb::concurrent_vector<game_object *> toDestroyGameObjects;
-std::unordered_map<int, game_object_proto_ *> prototypeRegistry;
+std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
 STORAGE<game_object> game_object_cache;
+
+
+void encodePrototypes(YAML::Node& node){
+	YAML::Node prototypeRegistry_node;
+	for(auto& i : prototypeRegistry){
+		prototypeRegistry_node[i.first] = *i.second;
+	}
+	node["prototype_registry"] = prototypeRegistry_node;
+}
+
+
+void decodePrototypes(YAML::Node& node){
+	YAML::Node prototypeRegistry_node = node["prototype_registry"];
+	for(YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i){
+		prototypeRegistry[i->first.as<int>()] = make_shared<game_object_proto_>(i->second.as<game_object_proto_>());
+	}
+}
 
 void game_object::serialize(OARCHIVE &ar, game_object *g)
 {
@@ -154,7 +171,7 @@ void registerProto(game_object_proto_ *p)
 	p->genID();
 	prototypeRegistry.emplace(pair<int, game_object_proto_ *>(p->id, p));
 	// p->ref = prototypeRegistry.end();
-	assets::registerAsset(p);
+	// assets::registerAsset(p);
 	// --p->ref;
 }
 void deleteProtoRef(int id)

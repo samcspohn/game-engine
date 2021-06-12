@@ -17,6 +17,9 @@ void saveEmitters(OARCHIVE &oa);
 void loadEmitters(IARCHIVE &ia);
 
 
+void encodeEmitters(YAML::Node &node);
+void decodeEmitters(YAML::Node &node);
+
 
 extern int particleCount;
 extern int actualParticles;

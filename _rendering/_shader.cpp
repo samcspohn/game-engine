@@ -31,7 +31,7 @@ REGISTER_ASSET(_shaderMeta);
 
 namespace shaderManager
 {
-	map<size_t, shared_ptr<_shaderMeta>> shaders;
+	map<size_t, int> shaders;
 	map<int, shared_ptr<_shaderMeta>> shaders_ids;
 	void _new()
 	{
@@ -69,6 +69,25 @@ namespace shaderManager
 		// });
 	}
 
+	void encode(YAML::Node &node)
+	{
+		node["shaders"] = shaders;
+		YAML::Node shaders_ids_node;
+		for(auto& i : shaders_ids){
+			shaders_ids_node[i.first] = *i.second;
+		}
+		node["shader_ids"] = shaders_ids_node;
+	}
+
+	void decode(YAML::Node &node)
+	{
+		shaders = node["shaders"].as<map<size_t,int>>();
+
+		for(YAML::const_iterator i = node["shaders_ids"].begin(); i != node["shaders_ids"].end(); ++i){
+			shaders_ids[i->first.as<int>()] = make_shared<_shaderMeta>(i->second.as<_shaderMeta>());
+		}
+	}
+
 	void init()
 	{
 		// default shader
@@ -81,9 +100,9 @@ namespace shaderManager
 		if (ms == shaderManager::shaders.end())
 		{
 			auto sm = make_shared<_shaderMeta>(vertex, fragment);
-			shaderManager::shaders[key] = sm;
 			sm->id = 0;
-			shaderManager::shaders_ids[0] = sm;
+			shaderManager::shaders[key] = sm->id;
+			shaderManager::shaders_ids[sm->id] = sm;
 			sm->name = "default shader";
 		}
 	}
@@ -95,11 +114,11 @@ _shader::_shader() {}
 	if (ms == shaderManager::shaders.end())           \
 	{                                                 \
 		auto sm = meta;                               \
-		shaderManager::shaders[key] = sm;             \
 		shaderManager::shaders_ids[sm->genID()] = sm; \
+		shaderManager::shaders[key] = sm->id;         \
 		ms = shaderManager::shaders.find(key);        \
 	}                                                 \
-	s = ms->second->id;
+	s = shaderManager::shaders_ids[ms->second]->id;
 
 _shader::_shader(string compute)
 {

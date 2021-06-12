@@ -1,5 +1,4 @@
-#ifndef SHADER_H
-#define SHADER_H
+#pragma once
 
 #include <string>
 #include <fstream>
@@ -174,12 +173,11 @@ public:
 
 	map<GLenum, string> _shaders;
 	GLenum primitiveType = GL_TRIANGLES;
-	bool shadowMap;
 	unordered_map<std::string, GLuint> vars;
 
 	SER_HELPER()
 	{
-		ar &_shaders &primitiveType &shadowMap;
+		ar &_shaders &primitiveType;
 	}
 
 	GLuint getVar(const string &name)
@@ -279,7 +277,6 @@ public:
 	{
 		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
 		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
-		this->shadowMap = shadowMap;
 		// enqueRenderJob([&]() { _Shader(); });
 		_Shader();
 	}
@@ -288,7 +285,6 @@ public:
 		_shaders.emplace(GL_VERTEX_SHADER, vertexPath);
 		_shaders.emplace(GL_GEOMETRY_SHADER, geometryPath);
 		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
-		this->shadowMap = shadowMap;
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
@@ -299,7 +295,6 @@ public:
 		_shaders.emplace(GL_TESS_EVALUATION_SHADER, tessEvalPath);
 		_shaders.emplace(GL_GEOMETRY_SHADER, geometryPath);
 		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
-		this->shadowMap = shadowMap;
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
@@ -309,7 +304,6 @@ public:
 		_shaders.emplace(GL_TESS_CONTROL_SHADER, tessControlPath);
 		_shaders.emplace(GL_TESS_EVALUATION_SHADER, tessEvalPath);
 		_shaders.emplace(GL_FRAGMENT_SHADER, fragmentPath);
-		this->shadowMap = shadowMap;
 		_Shader();
 		// enqueRenderJob([&]() { _Shader(); });
 	}
@@ -411,4 +405,23 @@ public:
 	}
 };
 
-#endif
+namespace YAML {
+
+template<>
+struct convert<Shader> {
+  static Node encode(const Shader& rhs) {
+    Node node;
+	node["shaders"] = rhs._shaders;
+	node["primitive_type"] = rhs.primitiveType;
+    return node;
+  }
+
+  static bool decode(const Node& node, Shader& rhs) {
+	rhs._shaders = node["id"].as<map<GLenum,string>>();
+	rhs.primitiveType = node["primitive_type"].as<GLenum>();
+    return true;
+  }
+};
+}
+
+

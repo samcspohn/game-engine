@@ -60,3 +60,22 @@ private:
     // The required info is returned as a Texture struct.
     vector<_texture> loadMaterialTextures( aiMaterial *mat, aiTextureType type, string typeName );
 };
+namespace YAML
+{
+	template <>
+	struct convert<Model>
+	{
+		static Node encode(const Model &rhs)
+		{
+			Node node;
+			node["file"] = rhs.modelPath;
+			return node;
+		}
+
+		static bool decode(const Node &node, Model &rhs)
+		{
+			rhs.modelPath = node["file"].as<string>();
+			return true;
+		}
+	};
+}

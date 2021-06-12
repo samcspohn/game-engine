@@ -42,9 +42,10 @@ struct emitter_prototype
     float radius{0};
     int p2;
     int trail{0};
-    array<glm::vec4,100> colorLife;
-    array<float,100> sizeLife{1.f};
-    emitter_prototype(){
+    array<glm::vec4, 100> colorLife;
+    array<float, 100> sizeLife{1.f};
+    emitter_prototype()
+    {
         colorLife.fill(glm::vec4(1));
         sizeLife.fill(1.f);
     }
@@ -54,7 +55,7 @@ struct emitter_prototype
             &maxSpeed &lifetime2 &live &scale &billboard &velAlign
                 &radius &trail &colorLife &sizeLife;
     }
-    void edit(colorArray& ca)
+    void edit(colorArray &ca)
     {
         RENDER(emission_rate);
         RENDER(lifetime);
@@ -84,7 +85,8 @@ struct emitter_prototype
 
             ImGui::Begin("color over life", &col_p_open);
 
-            if(colorArrayEdit(ca,&col_p_open)){
+            if (colorArrayEdit(ca, &col_p_open))
+            {
                 ca.setColorArray(colorLife.data());
             }
 
@@ -130,7 +132,7 @@ public:
 };
 extern gpu_vector<emitter_prototype> *gpu_emitter_prototypes;
 extern array_heap<emitter_prototype> emitter_prototypes_;
-extern map<int, emitter_proto_asset *> emitter_proto_assets;
+extern map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
 extern gpu_vector<_burst> *gpu_particle_bursts;
 
 class emitter_prototype_
@@ -145,7 +147,7 @@ class emitter_prototype_
 
 public:
     void color(glm::vec4 c);
-    void color(colorArray& c);
+    void color(colorArray &c);
     void color(glm::vec4 c1, glm::vec4 c2);
     void size(float c);
     void size(float c1, float c2);
@@ -169,22 +171,101 @@ public:
 void renderEdit(string name, emitter_prototype_ &ep);
 emitter_prototype_ createEmitter(string name);
 
-
 void init_prototypes();
 
-namespace YAML {
+namespace YAML
+{
+    template <>
+    struct convert<emitter_prototype_>
+    {
+        static Node encode(const emitter_prototype_ &rhs)
+        {
+            Node node;
+            node["id"] = rhs.emitterPrototype;
+            return node;
+        }
 
-template<>
-struct convert<emitter_prototype_> {
-  static Node encode(const emitter_prototype_& rhs) {
-    Node node;
-	node["id"] = rhs.emitterPrototype;
-    return node;
-  }
+        static bool decode(const Node &node, emitter_prototype_ &rhs)
+        {
+            rhs.emitterPrototype = node["id"].as<int>();
+            return true;
+        }
+    };
 
-  static bool decode(const Node& node, emitter_prototype_& rhs) {
-	rhs.emitterPrototype = node["id"].as<int>();
-    return true;
-  }
-};
+    template <>
+    struct convert<emitter_proto_asset>
+    {
+        static Node encode(const emitter_proto_asset &rhs)
+        {
+            Node node;
+            YAML_ENCODE_ASSET();
+            return node;
+        }
+
+        static bool decode(const Node &node, emitter_proto_asset &rhs)
+        {
+            YAML_DECODE_ASSET();
+            return true;
+        }
+    };
+
+    template <>
+    struct convert<emitter_prototype>
+    {
+        static Node encode(const emitter_prototype &rhs)
+        {
+#define ENCODE_PROTO(arg) node[#arg] = rhs.arg;
+            Node node;
+            //  ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
+            // &maxSpeed &lifetime2 &live &scale &billboard &velAlign
+            //     &radius &trail &colorLife &sizeLife;
+            // node["id"] = rhs.emitterPrototype;
+            ENCODE_PROTO(emission_rate);
+            ENCODE_PROTO(lifetime);
+            ENCODE_PROTO(rotation_rate);
+            ENCODE_PROTO(dispersion);
+            ENCODE_PROTO(minSpeed);
+            ENCODE_PROTO(maxSpeed);
+            ENCODE_PROTO(lifetime2);
+            ENCODE_PROTO(live);
+            ENCODE_PROTO(scale);
+            ENCODE_PROTO(billboard);
+            ENCODE_PROTO(velAlign);
+            ENCODE_PROTO(radius);
+            ENCODE_PROTO(trail);
+            ENCODE_PROTO(colorLife);
+            ENCODE_PROTO(sizeLife);
+        #undef ENCODE_PROTO
+            return node;
+        }
+
+        static bool decode(const Node &node, emitter_prototype &rhs)
+        {
+            // rhs.emitterPrototype = node["id"].as<int>();
+
+            #define DECODE_PROTO(arg) rhs.arg = node[#arg].as<decltype(rhs.arg)>();
+            //  ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
+            // &maxSpeed &lifetime2 &live &scale &billboard &velAlign
+            //     &radius &trail &colorLife &sizeLife;
+            // node["id"] = rhs.emitterPrototype;
+            DECODE_PROTO(emission_rate);
+            DECODE_PROTO(lifetime);
+            DECODE_PROTO(rotation_rate);
+            DECODE_PROTO(dispersion);
+            DECODE_PROTO(minSpeed);
+            DECODE_PROTO(maxSpeed);
+            DECODE_PROTO(lifetime2);
+            DECODE_PROTO(live);
+            DECODE_PROTO(scale);
+            DECODE_PROTO(billboard);
+            DECODE_PROTO(velAlign);
+            DECODE_PROTO(radius);
+            DECODE_PROTO(trail);
+            DECODE_PROTO(colorLife);
+            DECODE_PROTO(sizeLife);
+        #undef DECODE_PROTO
+            return true;
+        }
+    };
+
 }

@@ -83,6 +83,7 @@ public:
 	virtual int deserialize(IARCHIVE &ar) = 0;
 	virtual void encode(YAML::Node& node, int i) = 0;
 	virtual int decode(YAML::Node& node) = 0;
+	virtual component* _decode(YAML::Node& node) = 0;
 	virtual void sort(){};
 	virtual void clear() {}
 	// virtual string ser(){};
@@ -227,6 +228,11 @@ public:
 		int i = data._new();
 		data.get(i).ser_edit(ser_mode::read_mode, node);
 		return i;
+	}
+	virtual component* _decode(YAML::Node& node){
+		t* c = new t();
+		c->ser_edit(ser_mode::read_mode, node);
+		return c;
 	}
 	// string ser(){
 	// 	stringstream ss;

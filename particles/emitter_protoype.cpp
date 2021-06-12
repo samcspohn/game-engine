@@ -5,7 +5,7 @@
 
 array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
-map<int, emitter_proto_asset *> emitter_proto_assets;
+map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
 gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
 vector<_burst> particle_bursts;
 
@@ -108,25 +108,11 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, ui
 }
 
 REGISTER_ASSET(emitter_proto_asset);
-// emitter_prototype_ createNamedEmitter(string name)
-// {
-//     emitter_proto_asset *ep = new emitter_proto_asset();
-//     ep->genID();
-//     ep->ref = emitter_prototypes_._new();
-//     emitter_proto_assets[ep->id] = ep;
-//     emitter_prototypes.insert(std::pair<string, int>(name, ep->id));
-//     // ret.emitterPrototype = emitter_prototypes.at(name);
-//     emitter_proto_names[ep->id] = name;
-//     ep->name = name;
-//     emitter_prototype_ ret;
-//     ret.emitterPrototype = ep->id;
-//     // ret.genID();
-//     return ret;
-// }
+
 
 emitter_prototype_ createEmitter(string name)
 {
-    emitter_proto_asset *ep = new emitter_proto_asset();
+    shared_ptr<emitter_proto_asset> ep = make_shared<emitter_proto_asset>();
     ep->genID();
     ep->ref = emitter_prototypes_._new();
     emitter_proto_assets[ep->id] = ep;
@@ -144,7 +130,7 @@ emitter_prototype_ createEmitter(string name)
 // }
 emitter_proto_asset *emitter_prototype_::meta()
 {
-    return emitter_proto_assets[emitterPrototype];
+    return emitter_proto_assets[emitterPrototype].get();
 }
 bool emitter_proto_asset::onEdit()
 {
@@ -170,7 +156,7 @@ void emitter_proto_asset::copy()
 {
     emitter_prototype_ cp = createEmitter(this->name + " copy");
     // cp.meta()->name = cp.meta()->name;
-    assets::registerAsset(cp.meta());
+    // assets::registerAsset(cp.meta());
     cp.meta()->gradient = this->gradient;
     emitter_prototypes_.get(cp.meta()->ref) = emitter_prototypes_.get(this->ref);
     // *(cp.meta()->ref) = *(this->ref);

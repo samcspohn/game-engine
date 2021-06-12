@@ -31,6 +31,9 @@ extern std::vector<game_object *> toDestroyGameObjects;
 // extern tbb::concurrent_unordered_set<component *> toDestroyComponents;
 // extern tbb::concurrent_unordered_set<compItr *> componentCleanUp;
 
+
+void encodePrototypes(YAML::Node& node);
+void decodePrototypes(YAML::Node& node);
 void registerProto(game_object_proto_ *p);
 void deleteProtoRef(int id);
 class game_object_proto_ : public assets::asset
@@ -161,7 +164,48 @@ public:
 	}
 };
 
-extern unordered_map<int, game_object_proto_ *> prototypeRegistry;
+namespace YAML
+{
+	template <>
+	struct convert<game_object_proto_>
+	{
+		static Node encode(const game_object_proto_ &rhs)
+		{
+			Node node;
+			YAML_ENCODE_ASSET();
+			// components
+			YAML::Node components_node;
+			for (auto &i : rhs.components)
+			{
+				YAML::Node component_node;
+				component_node["id"] = i.second;
+				YAML::Node component_val_node;
+				i.first->ser_edit(ser_mode::write_mode,component_node);
+				component_node["value"] = component_val_node;
+				components_node.push_back(component_node);
+			}
+			node["components"] = components_node;
+			return node;
+		}
+
+		static bool decode(const Node &node, game_object_proto_ &rhs)
+		{
+			YAML_DECODE_ASSET();
+			YAML::Node components_node = node["components"];
+			for (int i = 0; i < components_node.size(); i++)
+			{
+				YAML::Node component_node = components_node[i];
+				size_t hash = component_node["id"].as<size_t>();
+				YAML::Node component_val_node = component_node["value"];
+				component* c = ComponentRegistry.registry(hash)->_decode(component_val_node);
+				rhs.components.emplace(c, hash);
+			}
+			return true;
+		}
+	};
+}
+
+extern unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
 
 struct game_object_prototype
 {
@@ -202,11 +246,11 @@ class game_object : public inspectable
 public:
 	// ~game_object() { destroyed = false; };
 
-	static void serialize(OARCHIVE& ar, game_object* g);
-	static void deserialize(IARCHIVE& ar, map<int,int>& transform_map);
+	static void serialize(OARCHIVE &ar, game_object *g);
+	static void deserialize(IARCHIVE &ar, map<int, int> &transform_map);
 
-	static void encode(YAML::Node& node, game_object* g);
-	static void decode(YAML::Node& node, int);
+	static void encode(YAML::Node &node, game_object *g);
+	static void decode(YAML::Node &node, int);
 
 	void inspect()
 	{
@@ -326,7 +370,7 @@ public:
 		// if(this->destroyed){
 		// 	this->destroy();
 		// }
-		// lock.unlock(); 
+		// lock.unlock();
 	}
 
 	template <class t>
@@ -343,7 +387,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry<t>();
 		components.emplace(hash, i);
-		t* ci = ComponentRegistry.registry(hash)->get(i);
+		t *ci = ComponentRegistry.registry(hash)->get(i);
 		ci->transform = this->transform;
 		ci->init(i);
 		return &(*ci);
@@ -355,7 +399,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry(c);
 		components.emplace(hash, i);
-		t* ci = ComponentRegistry.registry(hash)->get(i);
+		t *ci = ComponentRegistry.registry(hash)->get(i);
 		ci->transform = this->transform;
 		ci->init(i);
 		return ci;
@@ -364,7 +408,7 @@ public:
 	template <class t>
 	t *addComponent(const t &c)
 	{
-		t* ci = _addComponent(c);
+		t *ci = _addComponent(c);
 		ci->onStart();
 		return ci;
 	}
@@ -375,7 +419,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry(c);
 		components.emplace(hash, i);
-		t* ci = ComponentRegistry.registry(hash)->get(i);
+		t *ci = ComponentRegistry.registry(hash)->get(i);
 		ci->transform = this->transform;
 		return &(*ci);
 	}

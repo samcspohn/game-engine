@@ -19,7 +19,7 @@ struct _shaderMeta : public assets::asset
 	bool onEdit();
 	void inspect();
 	string type();
-	unique_ptr<Shader> shader = 0;
+	shared_ptr<Shader> shader = 0;
 	friend struct _shader;
 	SER_HELPER()
 	{
@@ -31,12 +31,14 @@ struct _shaderMeta : public assets::asset
 namespace shaderManager
 {
 
-	extern map<size_t, shared_ptr<_shaderMeta>> shaders;
+	extern map<size_t, int> shaders;
 	extern map<int, shared_ptr<_shaderMeta>> shaders_ids;
 	void _new();
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
+	void encode(YAML::Node &node);
+	void decode(YAML::Node &node);
 	void init();
 }; // namespace shaderManager
 
@@ -76,6 +78,32 @@ namespace YAML
 		static bool decode(const Node &node, _shader &rhs)
 		{
 			rhs.s = node["id"].as<int>();
+			return true;
+		}
+	};
+
+	template<>
+	struct convert<_shaderMeta>
+	{
+		static Node encode(const _shaderMeta &rhs)
+		{
+			Node node;
+			// node["asset"] = *(assets::asset*)&rhs;
+			node["id"] = rhs.id;
+            node["name"] = rhs.name;
+			if(rhs.shader)
+			{
+				node["shader"] = *rhs.shader;
+			}else{
+			}
+				return node;
+		}
+
+		static bool decode(const Node &node, _shaderMeta &rhs)
+		{
+			rhs.id = node["id"].as<int>();
+            rhs.name = node["name"].as<string>();
+			rhs.shader = make_unique<Shader>(node["shader"].as<Shader>());
 			return true;
 		}
 	};

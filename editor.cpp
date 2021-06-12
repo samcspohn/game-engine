@@ -8,7 +8,6 @@
 #include <iostream>
 namespace assets
 {
-
     int assetIdGenerator{1};
     // bool asset::onEdit(){return false;}
     // string asset::type(){return "asset";}
@@ -21,18 +20,18 @@ namespace assets
     void asset::copy()
     {
     }
-    map<int, asset *> assets;
-    void registerAsset(asset *ass)
-    {
-        assets[ass->id] = ass;
-    }
+    // map<int, asset *> assets;
+    // void registerAsset(asset *ass)
+    // {
+    //     assets[ass->id] = ass;
+    // }
     void save(OARCHIVE &oa)
     {
-        oa << assets << assetIdGenerator;
+        oa << assetIdGenerator;
     }
     void load(IARCHIVE &ia)
     {
-        ia >> assets >> assetIdGenerator;
+        ia >> assetIdGenerator;
     }
 } // namespace assets
 REGISTER_BASE(inspectable);

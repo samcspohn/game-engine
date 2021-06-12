@@ -29,6 +29,7 @@ Model::Model(const Model &M)
 {
     // enqueRenderJob([&](){
     this->directory = M.directory;
+    this->modelPath = M.modelPath;
     // this->textures_loaded = M.textures_loaded;
     waitForRenderJob([&](){
         for (auto &i : M.meshes)

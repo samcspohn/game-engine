@@ -46,3 +46,43 @@ struct floatArray
     floatArray &addKey(float v, float position);
     void setFloatArray(float *floats);
 };
+
+
+namespace YAML
+{
+    template <>
+    struct convert<colorArray::key>
+    {
+        static Node encode(const colorArray::key &rhs)
+        {
+            Node node;
+            node["id"] = rhs.id;
+            node["value"] = rhs.value;
+            return node;
+        }
+
+        static bool decode(const Node &node, colorArray::key &rhs)
+        {
+            rhs.id = node["id"].as<decltype(rhs.id)>();
+            rhs.value = node["value"].as<decltype(rhs.value)>();
+            return true;
+        }
+    };
+
+    template <>
+    struct convert<colorArray>
+    {
+        static Node encode(const colorArray &rhs)
+        {
+            Node node;
+            node["keys"] = rhs.keys;
+            return node;
+        }
+
+        static bool decode(const Node &node, colorArray &rhs)
+        {
+            rhs.keys = node["keys"].as<decltype(rhs.keys)>();
+            return true;
+        }
+    };
+}

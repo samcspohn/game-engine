@@ -45,21 +45,17 @@ void DestroyComponents(componentStorageBase *cl)
 
 void save_level(const char *filename)
 {
-	// make an archive
-	// std::ofstream ofs(filename);
-	std::ofstream assets("assets.ass");
-	// std::ofstream oproto("proto.lvl");
 	{
-		OARCHIVE oa(assets);
-		// OARCHIVE op(oproto);
-		oa << working_file;
-		// audioManager::save(oa);
-		shaderManager::save(oa);
-		modelManager::save(oa);
-		saveEmitters(oa);
-		oa << prototypeRegistry;
-		assets::save(oa);
+		YAML::Node assets_node;
+		assets_node["workingFile"] = working_file;
+		shaderManager::encode(assets_node);
+		modelManager::encode(assets_node);
+		encodeEmitters(assets_node);
+		encodePrototypes(assets_node);
+		assets_node["assetIdGenerator"] = assets::assetIdGenerator;
+		ofstream("assets.yaml") << assets_node;
 	}
+
 	{
 		YAML::Node root_game_object_node;
 		game_object::encode(root_game_object_node,rootGameObject);
@@ -67,7 +63,7 @@ void save_level(const char *filename)
 		// OARCHIVE oa(ofs);
 		// game_object::serialize(oa, rootGameObject);
 	}
-	assets.close();
+	// assets.close();
 	// ofs.close();
 }
 void rebuildGameObject(componentStorageBase *base, int i);
@@ -79,22 +75,15 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	stoppingGame = true;
 	lock_guard<mutex> lk(transformLock);
 	rootGameObject->_destroy();
-
-	// open the archive
-	// std::ifstream ifs(filename);
-	std::ifstream assets("assets.ass");
-	// std::ifstream ifsp("proto.lvl");
-	if (assets::assets.size() == 0)
 	{
-		IARCHIVE ia(assets);
-		// IARCHIVE ip(ifsp);
-		ia >> working_file;
-		// audioManager::load(ia);
-		shaderManager::load(ia);
-		modelManager::load(ia);
-		loadEmitters(ia);
-		ia >> prototypeRegistry;
-		assets::load(ia);
+		YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+		// ifstream("assets.yaml") >> assets_node;
+		 working_file = assets_node["workingFile"].as<string>();
+		shaderManager::decode(assets_node);
+		modelManager::decode(assets_node);
+		decodeEmitters(assets_node);
+		decodePrototypes(assets_node);
+		assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
 	}
 	if (string(filename) != "")
 	{
@@ -123,11 +112,7 @@ bool isGameRunning()
 void start_game() // assumes only renderer and terrain are started.
 {
 	mainThreadWork.push(new function<void()>([&]() {
-		// ofstream f(".temp");
 		{
-			// boost::archive::binary_oarchive oa(ss);
-			// OARCHIVE oa(f);
-			// game_object::serialize(oa, rootGameObject);
 			YAML::Node root_game_object_node;
 			game_object::encode(root_game_object_node,rootGameObject);
 			std::ofstream(".temp") << root_game_object_node;
@@ -139,7 +124,6 @@ void start_game() // assumes only renderer and terrain are started.
 		{
 			StartComponents(i.second->getStorage());
 		}
-		// ImGui::LoadIniSettingsFromDisk("play.ini");
 	}));
 	gameRunning = true;
 }
@@ -153,14 +137,6 @@ void stop_game()
 		lock_guard<mutex> lk(transformLock);
 
 		rootGameObject->_destroy();
-		// ifstream f(".temp");
-		// {
-		// 	// boost::archive::binary_iarchive ia(ss);
-		// 	IARCHIVE ia(f);
-		// 	map<int, int> transform_map;
-		// 	game_object::deserialize(ia, transform_map);
-		// }
-		// f.close();
 		{
 			YAML::Node root_game_object_node = YAML::LoadFile(".temp");
 			game_object::decode(root_game_object_node, -1);
@@ -502,7 +478,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			}
 			for (auto &p : emitter_proto_assets)
 			{
-				renderAsset(p.second);
+				renderAsset(p.second.get());
 			}
 			bool open_rename = false;
 			if (open_asset)

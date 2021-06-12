@@ -2,6 +2,46 @@
 #include <imgui/imgui.h>
 atomic<int> uniqueMeshIdGenerator{1};
 
+namespace YAML
+{
+	Node convert<_model>::encode(const _model &rhs)
+	{
+		Node node;
+		node["id"] = rhs.m;
+		return node;
+	}
+
+	bool convert<_model>::decode(const Node &node, _model &rhs)
+	{
+		rhs.m = node["id"].as<int>();
+		return true;
+	}
+
+	Node convert<_modelMeta>::encode(const _modelMeta &rhs)
+	{
+		// model &bounds &radius &unique;
+		Node node;
+		YAML_ENCODE_ASSET();
+		node["model"] = *rhs.model;
+		node["file"] = rhs.file;
+		node["bounds"] = rhs.bounds;
+		node["radius"] = rhs.radius;
+		node["unique"] = rhs.unique;
+		return node;
+	}
+
+	bool convert<_modelMeta>::decode(const Node &node, _modelMeta &rhs)
+	{
+		YAML_DECODE_ASSET();
+		rhs.model = make_unique<Model>(node["model"].as<Model>());
+		rhs.file = node["file"].as<string>();
+		rhs.bounds = node["bounds"].as<glm::vec3>();
+		rhs.radius = node["radius"].as<float>();
+		rhs.unique = node["unique"].as<bool>();
+		return true;
+	}
+}
+
 _modelMeta::_modelMeta()
 {
 	model = make_unique<Model>();
@@ -17,6 +57,7 @@ _modelMeta::~_modelMeta()
 {
 	// delete model;
 }
+
 bool _modelMeta::onEdit()
 {
 	// if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
@@ -35,7 +76,7 @@ REGISTER_ASSET(_modelMeta);
 
 namespace modelManager
 {
-	map<size_t, shared_ptr<_modelMeta>> models;
+	map<size_t, int> models;
 	map<int, shared_ptr<_modelMeta>> models_id;
 	// map<int, _modelMeta *> unique_models;
 	void destroy()
@@ -51,14 +92,46 @@ namespace modelManager
 	void load(IARCHIVE &ia)
 	{
 		ia >> models >> models_id;
-		waitForRenderJob([&]() {
+		waitForRenderJob([&]()
+		{
 			for (auto &m : models_id)
 			{
 				m.second->model->loadModel();
 			}
 		});
 	}
-	void _new(){
+	void encode(YAML::Node &node)
+	{
+		YAML::Node models_ids_node;
+		// YAML::Node models_node;
+		for (auto &i : models_id)
+		{
+			models_ids_node[i.first] = *i.second;
+		}
+		node["models_id"] = models_ids_node;
+		node["models"] = models;
+	}
+
+	void decode(YAML::Node &node)
+	{
+
+		// models_id = node["models_id"].as<map<int, shared_ptr<_modelMeta>>>();
+		for (YAML::const_iterator i = node["models_id"].begin(); i != node["models_id"].end(); ++i)
+		{
+			models_id[i->first.as<int>()] = make_shared<_modelMeta>(i->second.as<_modelMeta>());
+		}
+		models = node["models"].as<map<size_t, int>>();
+
+		waitForRenderJob([&]()
+		{
+			for (auto &m : models_id)
+			{
+				m.second->model->loadModel();
+			}
+		});
+	}
+	void _new()
+	{
 		// std::hash<string> x;
 		// size_t key = x("fileName");
 		// auto mm = modelManager::models.find(key);
@@ -68,15 +141,16 @@ namespace modelManager
 		// }
 		// else
 		// {
-			auto _mm = make_shared<_modelMeta>();
-			// modelManager::models[key] = _mm;
-			modelManager::models_id[_mm->genID()] = _mm;
-			modelManager::models_id[_mm->id]->name = "model_" + to_string(_mm->id);
+		auto _mm = make_shared<_modelMeta>();
+		// modelManager::models[key] = _mm;
+		modelManager::models_id[_mm->genID()] = _mm;
+		modelManager::models_id[_mm->id]->name = "model_" + to_string(_mm->id);
 		// 	m = _mm->id;
 		// }
 	}
 
-	void init(){
+	void init()
+	{
 		{
 			auto _mm = make_shared<_modelMeta>("res/models/cube/cube.obj");
 			_mm->id = 0;
@@ -84,13 +158,11 @@ namespace modelManager
 			_mm->name = "cube";
 		}
 		{
-		auto _mm = make_shared<_modelMeta>("res/models/sphere/sphere.obj");
-		_mm->id = 1;
-		modelManager::models_id[_mm->id] = _mm;
-		_mm->name = "sphere";
+			auto _mm = make_shared<_modelMeta>("res/models/sphere/sphere.obj");
+			_mm->id = 1;
+			modelManager::models_id[_mm->id] = _mm;
+			_mm->name = "sphere";
 		}
-
-
 	}
 }; // namespace modelManager
 
@@ -99,33 +171,37 @@ _model::_model(){
 };
 
 set<int> toDestroy_models;
-_model::~_model(){
+_model::~_model()
+{
 }
 
-void _model::destroy(){
-	if(this->meta() && this->meta()->unique){
+void _model::destroy()
+{
+	if (this->meta() && this->meta()->unique)
+	{
 		toDestroy_models.emplace(this->m);
 	}
 }
 _model::_model(string fileName)
 {
+	using namespace modelManager;
 	std::hash<string> x;
 	size_t key = x(fileName);
 	auto mm = modelManager::models.find(key);
 	if (mm != modelManager::models.end())
 	{
-		m = mm->second->id;
+		m = models_id[mm->second]->id;
 	}
 	else
 	{
 		auto _mm = make_shared<_modelMeta>(fileName);
-		modelManager::models[key] = _mm;
 		modelManager::models_id[_mm->genID()] = _mm;
+		modelManager::models[key] = _mm->id;
 		m = _mm->id;
 	}
 }
 
-vector<Mesh*> &_model::meshes()
+vector<Mesh *> &_model::meshes()
 {
 	return modelManager::models_id[m]->model->meshes;
 }
@@ -143,7 +219,6 @@ void _model::makeUnique()
 	modelManager::models_id[m]->unique = true;
 	std::hash<string> x;
 	size_t key = x(idStr);
-	modelManager::models[key] = modelManager::models_id[m];
 }
 void _model::makeProcedural()
 {
@@ -154,7 +229,6 @@ void _model::makeProcedural()
 	modelManager::models_id[m]->name = idStr;
 	std::hash<string> x;
 	size_t key = x(idStr);
-	modelManager::models[key] = modelManager::models_id[m];
 }
 _modelMeta *_model::meta() const
 {
@@ -182,7 +256,8 @@ void _modelMeta::getBounds()
 	}
 	else
 	{
-		enqueRenderJob([&]() { getBounds(); });
+		enqueRenderJob([&]()
+					   { getBounds(); });
 	}
 }
 void _modelMeta::inspect()

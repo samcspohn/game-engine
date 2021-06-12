@@ -14,13 +14,15 @@ struct _modelMeta : public assets::asset
 	~_modelMeta();
 	bool onEdit();
 	string type();
-	string file;
-	unique_ptr<Model> model = 0;
-	glm::vec3 bounds;
-	float radius;
 	void getBounds();
 	void inspect();
+
+	string file;
+	shared_ptr<Model> model = 0;
+	glm::vec3 bounds;
+	float radius;
 	bool unique = false;
+
 	friend class _model;
 	SER_HELPER()
 	{
@@ -30,11 +32,13 @@ struct _modelMeta : public assets::asset
 };
 namespace modelManager
 {
-	extern map<size_t, shared_ptr<_modelMeta>> models;
+	extern map<size_t, int> models;
 	extern map<int, shared_ptr<_modelMeta>> models_id;
 	void destroy();
 	void save(OARCHIVE &oa);
 	void load(IARCHIVE &ia);
+	void encode(YAML::Node &node);
+	void decode(YAML::Node &node);
 	void _new();
 	void init();
 }; // namespace modelManager
@@ -46,7 +50,7 @@ public:
 	_model(string fileName);
 	~_model();
 	void destroy();
-	vector<Mesh*> &meshes();
+	vector<Mesh *> &meshes();
 	Mesh &mesh();
 	void makeUnique();
 	void makeProcedural();
@@ -63,20 +67,21 @@ public:
 extern atomic<int> uniqueMeshIdGenerator;
 transform2 renderRaycast(glm::vec3 p, glm::vec3 dir);
 
+namespace YAML
+{
+	template <>
+	struct convert<_model>
+	{
+		static Node encode(const _model &rhs);
 
-namespace YAML {
+		static bool decode(const Node &node, _model &rhs);
+	};
 
-template<>
-struct convert<_model> {
-  static Node encode(const _model& rhs) {
-    Node node;
-	node["id"] = rhs.m;
-    return node;
-  }
+	template <>
+	struct convert<_modelMeta>
+	{
+		static Node encode(const _modelMeta &rhs);
 
-  static bool decode(const Node& node, _model& rhs) {
-	rhs.m = node["id"].as<int>();
-    return true;
-  }
-};
+		static bool decode(const Node &node, _modelMeta &rhs);
+	};
 }
