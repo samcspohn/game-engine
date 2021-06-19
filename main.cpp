@@ -287,6 +287,10 @@ int main(int argc, char **argv)
         glfwTerminate();
     });
 
+    while(shaders.size() > 0) {
+        (*shaders.begin())->~Shader();
+    }
+
     renderRunning = false;
     renderthread.join();
 

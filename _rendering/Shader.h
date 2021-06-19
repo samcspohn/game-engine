@@ -13,6 +13,7 @@
 #include "texture.h"
 #include "serialize.h"
 #include "../console.h"
+#include <set>
 
 using namespace std;
 
@@ -166,6 +167,8 @@ struct texArray
 // 	map<string, shaderVariable> variables;
 // };
 
+class Shader;
+extern std::set<Shader *> shaders;
 class Shader
 {
 public:
@@ -382,46 +385,56 @@ public:
 	}
 	void _Shader()
 	{
-		waitForRenderJob([&]() {
-			if (this->Program != 0)
-			{
-				glDeleteProgram(this->Program);
-				this->Program = 0;
-			}
-			vector<GLuint> shaders;
-			for (auto &i : _shaders)
-			{
-				shaders.push_back(loadFile(i.second, i.first));
-			}
-			compileShader(shaders);
-		});
+		shaders.emplace(this);
+		waitForRenderJob([&]()
+						 {
+							 if (this->Program != 0)
+							 {
+								 glDeleteProgram(this->Program);
+								 this->Program = 0;
+							 }
+							 vector<GLuint> shaders;
+							 for (auto &i : _shaders)
+							 {
+								 shaders.push_back(loadFile(i.second, i.first));
+							 }
+							 compileShader(shaders);
+						 });
 	}
 	~Shader()
 	{
-		waitForRenderJob([&]() {
-			glDeleteProgram(this->Program);
-			_shaders.clear();
-		})
+		shaders.erase(this);
+		if (this->Program != -1)
+		{
+			waitForRenderJob([&]()
+							 {
+								 glDeleteProgram(this->Program);
+								 this->Program = -1;
+								 _shaders.clear();
+							 })
+		}
 	}
 };
 
-namespace YAML {
+namespace YAML
+{
 
-template<>
-struct convert<Shader> {
-  static Node encode(const Shader& rhs) {
-    Node node;
-	node["shaders"] = rhs._shaders;
-	node["primitive_type"] = rhs.primitiveType;
-    return node;
-  }
+	template <>
+	struct convert<Shader>
+	{
+		static Node encode(const Shader &rhs)
+		{
+			Node node;
+			node["shaders"] = rhs._shaders;
+			node["primitive_type"] = rhs.primitiveType;
+			return node;
+		}
 
-  static bool decode(const Node& node, Shader& rhs) {
-	rhs._shaders = node["id"].as<map<GLenum,string>>();
-	rhs.primitiveType = node["primitive_type"].as<GLenum>();
-    return true;
-  }
-};
+		static bool decode(const Node &node, Shader &rhs)
+		{
+			rhs._shaders = node["id"].as<map<GLenum, string>>();
+			rhs.primitiveType = node["primitive_type"].as<GLenum>();
+			return true;
+		}
+	};
 }
-
-
