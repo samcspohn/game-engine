@@ -604,7 +604,10 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			{
 				transformLock.lock();
 				int count = 0;
-				renderTransform(root2, count);
+				// renderTransform(root2, count);
+				for(auto &c : root2.getChildren()){
+					renderTransform(c, count);
+				}
 				transformLock.unlock();
 			}
 			// }

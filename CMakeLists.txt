@@ -61,10 +61,6 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/res
             ${CMAKE_CURRENT_BINARY_DIR}/res)
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(game OpenMP::OpenMP_CXX)
-endif()
 
 
 # specify the C++ standard

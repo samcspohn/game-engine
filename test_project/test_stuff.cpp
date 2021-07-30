@@ -49,22 +49,34 @@ transform2 comp::orbiter;
 void newObject(_model &m, _shader &s);
 _model cube;
 _shader shader;
-int num_to_spawn = 10;
+
 class orbit : public component
 {
 
 public:
+    int num_to_spawn = 1'000'000;
     void onStart()
     {
         cube = _model("res/models/cube/cube.obj");
         shader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
         comp::orbiter = transform;
+         transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
+
+        // int to_spawn = num_to_spawn - Transforms.active();
+        // for (int i = 0; i < to_spawn; i++)
+        // {
+        //     auto g = instantiate();
+        //     g->addComponent<comp>();
+        //     g->addComponent<_renderer>()->set(shader, cube);
+        //     g->transform->setPosition(randomSphere() * 500.f);
+        // }
     }
     void update()
     {
         transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
 
         int to_spawn = num_to_spawn - Transforms.active();
+        console::log("to_spawn: " + to_string(to_spawn));
         for (int i = 0; i < to_spawn; i++)
         {
             auto g = instantiate();

@@ -29,6 +29,9 @@ transform:
           - 1
         children: ~
       components:
+        - id: 7578320930438095478
+          value:
+            num_to_spawn: 1000000
         - id: 9328246355543747823
           value:
             shader:
@@ -40,38 +43,6 @@ transform:
           - 0
           - 0
           - 0
-        rotation:
-          - 0
-          - 0
-          - 0
-          - 1
-        scale:
-          - 1
-          - 1
-          - 1
-        children: ~
-      components: ~
-    - transform:
-        position:
-          - 0
-          - 0
-          - 0
-        rotation:
-          - 0
-          - 0
-          - 0
-          - 1
-        scale:
-          - 1
-          - 1
-          - 1
-        children: ~
-      components: ~
-    - transform:
-        position:
-          - 0
-          - 0.434077978
-          - -3.47351408
         rotation:
           - 0
           - 0

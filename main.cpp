@@ -5,7 +5,6 @@ using namespace std;
 // mutex toDestroym;
 // std::deque<transform2> toDestroy;
 
-
 REGISTER_COMPONENT(_renderer);
 REGISTER_COMPONENT(_camera);
 REGISTER_COMPONENT(audiosource)
@@ -77,7 +76,6 @@ void renderFunc(editor *ed, rolling_buffer &fps)
     updateParticles(vec3(0), emitterInitCount);
     lightingManager::gpu_pointLights->bufferData();
 
-
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -91,15 +89,14 @@ void renderFunc(editor *ed, rolling_buffer &fps)
     }
     else
     {
-        int w,h;
-        glfwGetFramebufferSize(window, &w,&h);
+        int w, h;
+        glfwGetFramebufferSize(window, &w, &h);
         ed->c.width = float(w);
         ed->c.height = float(h);
         ed->c.prepRender(*matProgram.meta()->shader.get(), window);
         renderFunc(ed->c, window);
         lineRendererRender(ed->c);
     }
-
 
     editorLayer(window, ed);
     dockspaceEnd();
@@ -170,13 +167,38 @@ void updateCameras()
         if (cameras->getv(i))
         {
             _camera *c = cameras->get(i);
-            int w,h;
-            glfwGetFramebufferSize(window, &w,&h);
+            int w, h;
+            glfwGetFramebufferSize(window, &w, &h);
             c->c->width = float(w);
             c->c->height = float(h);
             c->c->update(c->transform.getPosition(), c->transform.getRotation());
         }
     }
+}
+
+struct logger
+{
+    string name;
+    timer t;
+    logger(string name) : name(name)
+    {
+        t.start();
+    }
+    ~logger()
+    {
+        appendStat(name, t.stop());
+    }
+};
+
+void printStats()
+{
+    componentStats.erase("");
+    for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
+    {
+        cout << i->first << " -- avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << endl;
+    }
+    // cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
+    // cout << "entities : " << entities << endl;
 }
 
 int main(int argc, char **argv)
@@ -191,18 +213,18 @@ int main(int argc, char **argv)
     rootGameObject = root2->gameObject();
 
     thread renderthread(renderLoop);
-    waitForRenderJob([&]() {
-        initGL();
-        initiliazeStuff();
-        initLineRenderer();
-        ImGui::LoadIniSettingsFromDisk("default.ini");
-        modelManager::init();
-        shaderManager::init();
-    });
+    waitForRenderJob([&]()
+                     {
+                         initGL();
+                         initiliazeStuff();
+                         initLineRenderer();
+                         ImGui::LoadIniSettingsFromDisk("default.ini");
+                         modelManager::init();
+                         shaderManager::init();
+                     });
     initParticles2();
     particle_renderer::init2();
     matProgram = _shader("res/shaders/transform.comp");
-
 
     // rootGameObject->_addComponent<player>();
 
@@ -217,19 +239,21 @@ int main(int argc, char **argv)
     ed->position = glm::vec3(0, 0, -10);
     // player::m_editor = ed;
 
-
     toDestroyGameObjects.reserve(10'000);
 
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
     {
 
-        function<void()> *f;
-        while (mainThreadWork.try_pop(f))
         {
-            (*f)();
-            delete f;
-            /* code */
+            logger("main thread work");
+            function<void()> *f;
+            while (mainThreadWork.try_pop(f))
+            {
+                (*f)();
+                delete f;
+                /* code */
+            }
         }
 
         // ngetc(c);
@@ -238,33 +262,57 @@ int main(int argc, char **argv)
             lock_guard<mutex> lck(transformLock);
             if (isGameRunning())
             {
-                doLoopIteration();
-                physicsUpdate(Time.time);
-                updateCameras();
+                {
+                    logger("main loop");
+                    doLoopIteration();
+                }
+                {
+                    logger("physics");
+                    physicsUpdate(Time.time);
+                }
+                {
+                    logger("update cameras");
+                    updateCameras();
+                }
             }
             parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
             toDestroyGameObjects.clear();
         }
 
-        waitForRenderJob([&]() {
-            batchManager::updateBatches();
-            updateTiming();
-        });
         if (!isGameRunning())
             ed->update();
-        copyTransforms();
-        copyRenderers();
+        {
+            logger("wait for render");
+            waitForRenderJob([&]()
+                             {
+                                 {
+                                     logger("update batches");
+                                     batchManager::updateBatches();
+                                 }
+                                 updateTiming();
+                             });
+        }
+        {
+            logger("copy transforms");
+            copyTransforms();
+        }
+        {
+            logger("copy renderers");
+            copyRenderers();
+        }
         // ############################################################
-        enqueRenderJob([&]() {
-            emitterInits.clear();
-            for (auto &i : emitter_inits)
-                emitterInits.push_back(i.second);
-            emitter_inits.clear();
-            renderFunc(ed, fps);
-        });
+        enqueRenderJob([&]()
+                       {
+                           emitterInits.clear();
+                           for (auto &i : emitter_inits)
+                               emitterInits.push_back(i.second);
+                           emitter_inits.clear();
+                           renderFunc(ed, fps);
+                       });
 
         fps.add(time.stop());
     }
+    printStats();
     endEditor();
     rootGameObject->_destroy();
     delete ed;
@@ -273,21 +321,23 @@ int main(int argc, char **argv)
     modelManager::destroy();
     particle_renderer::end();
 
-    waitForRenderJob([&]() {
-        while (gpu_buffers.size() > 0)
-        {
-            (gpu_buffers.begin()->second)->deleteBuffer();
-        }
-        // Cleanup gui
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
+    waitForRenderJob([&]()
+                     {
+                         while (gpu_buffers.size() > 0)
+                         {
+                             (gpu_buffers.begin()->second)->deleteBuffer();
+                         }
+                         // Cleanup gui
+                         ImGui_ImplOpenGL3_Shutdown();
+                         ImGui_ImplGlfw_Shutdown();
+                         ImGui::DestroyContext();
 
-        glFlush();
-        glfwTerminate();
-    });
+                         glFlush();
+                         glfwTerminate();
+                     });
 
-    while(shaders.size() > 0) {
+    while (shaders.size() > 0)
+    {
         (*shaders.begin())->~Shader();
     }
 

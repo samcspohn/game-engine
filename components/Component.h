@@ -170,7 +170,7 @@ public:
 				}
 			}
 		}
-		_lateupdate_t.add(update_timer.stop());
+		_update_t.add(update_timer.stop());
 	}
 	rolling_buffer _lateupdate_t;
 	void lateUpdate()
