@@ -49,7 +49,6 @@ public:
 	void set(renderingMeta *_meta);
 	_renderer(const _renderer &other);
 	void deinit(int id);
-	COPY(_renderer);
 	SER_FUNC()
 
 	switch (x)

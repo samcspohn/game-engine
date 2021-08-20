@@ -151,6 +151,7 @@ bool emitter_proto_asset::onEdit()
     // return ret;
 
     // emitterPrototype->edit();
+    return false;
 }
 void emitter_proto_asset::copy()
 {

@@ -42,7 +42,6 @@ public:
     SER_FUNC()
     SER(vel);
     SER_END
-    COPY(comp);
 };
 transform2 comp::orbiter;
 
@@ -60,7 +59,7 @@ public:
         cube = _model("res/models/cube/cube.obj");
         shader = _shader("res/shaders/model.vert", "res/shaders/model.frag");
         comp::orbiter = transform;
-         transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
+        transform->setPosition(glm::vec3(glm::cos(Time.time / 3.f), 0, glm::sin(Time.time / 3.f)) * 80.f);
 
         // int to_spawn = num_to_spawn - Transforms.active();
         // for (int i = 0; i < to_spawn; i++)
@@ -96,7 +95,6 @@ public:
     SER_FUNC()
     SER(num_to_spawn)
     SER_END
-    COPY(orbit);
 };
 
 class player : public component
@@ -108,7 +106,7 @@ public:
         playerPos = m_editor->position;
         console::log("here");
 
-        if (Input.Mouse.getButton(0))
+        if (Input.Mouse.getButtonDown(0))
         {
             ImVec2 mp = ImGui::GetMousePos();
             ImVec2 sz = {m_editor->c.width, m_editor->c.height};
@@ -132,10 +130,45 @@ public:
             }
         }
     }
-    COPY(player)
     SER_FUNC()
     SER_END
 };
+
+class bomb : public component
+{
+public:
+    int hit = -1;
+    glm::vec3 pos;
+    void onCollision(collision& col)
+    {
+        
+        if(!col.g_o->getComponent<bomb>()){
+            if(!hit)
+                pos = transform.getPosition();
+                col.this_collider->dim = glm::vec3(10.f);
+            hit = 0;
+            if(auto k = col.g_o->getComponent<kinematicBody>()){
+                k->velocity += glm::vec3(0,100.f,0);// 100.f / (glm::length2(pos - k->transform.getPosition()) / 10.f) * (glm::normalize(pos - k->transform.getPosition()) + glm::vec3(0,5.f,0));
+            }
+        }
+        // transform.gameObject()->destroy();
+    }
+    void update()
+    {
+        if (hit >= 0)
+        {
+            // transform.setPosition(pos);
+            // transform.gameObject()->getComponent<kinematicBody>()->velocity = glm::vec3(0);
+            if (hit > 0)
+                transform.gameObject()->destroy();
+            hit++;
+        }
+    }
+    SER_FUNC()
+    SER_END
+};
+REGISTER_COMPONENT(bomb)
+
 class player2 : public component
 {
 public:
@@ -145,6 +178,21 @@ public:
     {
         c = transform.gameObject()->getComponent<_camera>();
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+        // float h = 0.f;
+        // for (int x = -50; x < 50; x++)
+        // {
+        //     for (int z = -50; z < 50; z++)
+        //     {
+        //         auto box = instantiate();
+        //         box->transform.setPosition(glm::vec3(x * 10, 100 + h, z * 10) + glm::vec3(4.f));
+        //         box->addComponent<_renderer>();
+        //         box->addComponent<collider>();
+        //         box->addComponent<kinematicBody>();
+        //         box->addComponent<bomb>();
+        //         h += 0.02f;
+        //     }
+        // }
     }
     void update()
     {
@@ -171,22 +219,48 @@ public:
         }
 
         playerPos = transform.getPosition();
+
+        if (Input.Mouse.getButtonDown(0))
+        {
+            // glm::vec3 r;
+            // // transform.gameObject()->getComponent<_camera>()->c->screenPosToRay();
+            // if(raycast(transform.getPosition(),transform.forward(),r)){
+            //     auto box =  instantiate();
+            //     box->transform.setPosition(r);
+            //     box->addComponent<_renderer>();
+            // }
+            auto box = instantiate();
+            box->transform.setPosition(transform.getPosition());
+            box->addComponent<_renderer>();
+            box->addComponent<collider>();
+            box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
+            // box->addComponent<bomb>();
+        }
+        if (Input.Mouse.getButtonClicked(1))
+        {
+
+            auto box = instantiate();
+            box->transform.setPosition(transform.getPosition());
+            box->addComponent<_renderer>();
+            box->addComponent<collider>();
+            box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
+            box->addComponent<bomb>();
+        }
     }
-    COPY(player)
     SER_FUNC()
     SER_END
 };
 
 editor *player::m_editor;
 
-
 // REGISTER_COMPONENT(player);
 REGISTER_COMPONENT(player2);
 REGISTER_COMPONENT(orbit);
 REGISTER_COMPONENT(comp);
 
-void init_my_project(){
-        cube = _model("res/models/cube/cube.obj");
+void init_my_project()
+{
+    cube = _model("res/models/cube/cube.obj");
     _model nano = _model("res/models/nanosuit/nanosuit.obj");
     nano.meta()->name = "nanosuit";
 

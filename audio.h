@@ -119,7 +119,6 @@ public:
     ALfloat pitch = 1;
     ALfloat gain = 1;
     void onEdit();
-    COPY(audiosource);
     audiosource();
     audiosource(const audiosource &as);
     void setPitch(float p);

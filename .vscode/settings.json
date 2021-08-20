@@ -99,6 +99,12 @@
         "filesystem": "cpp",
         "stack": "cpp",
         "version": "cpp",
-        "collisioncpp": "cpp"
+        "collisioncpp": "cpp",
+        "barrier": "cpp",
+        "coroutine": "cpp",
+        "source_location": "cpp",
+        "latch": "cpp",
+        "semaphore": "cpp",
+        "syncstream": "cpp"
     }
 }

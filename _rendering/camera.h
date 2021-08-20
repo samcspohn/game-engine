@@ -49,6 +49,7 @@ struct camera
 	glm::vec3 up;
 	glm::vec3 cullpos;
 	glm::mat3 camInv;
+	glm::vec3 clearColor;
 
 	glm::vec2 getScreen();
 	void prepRender(Shader &matProgram, GLFWwindow *window);
@@ -71,7 +72,6 @@ public:
 	_camera();
 	_camera(const _camera& c);
 	unique_ptr<camera> c;
-	COPY(_camera);
 	SER_FUNC()
 	switch (x)
 	{
@@ -79,11 +79,13 @@ public:
 		renderEdit("fov", c->fov);
 		renderEdit("near", c->nearPlane);
 		renderEdit("far", c->farPlane);
+		renderEdit("clear color", c->clearColor);
 		break;
 	case ser_mode::read_mode:
 		c->fov = node_9738469372465["fov"].as<float>();
 		c->nearPlane = node_9738469372465["near"].as<float>();
 		c->farPlane = node_9738469372465["far"].as<float>();
+		c->clearColor = node_9738469372465["clearColor"].as<glm::vec3>();
 		// (*_iar) >> c->fov;
 		// (*_iar) >> c->nearPlane;
 		// (*_iar) >> c->farPlane;
@@ -92,6 +94,7 @@ public:
 		node_9738469372465["fov"] = c->fov;
 		node_9738469372465["near"] = c->nearPlane;
 		node_9738469372465["far"] = c->farPlane;
+		node_9738469372465["clearColor"] = c->clearColor;
 		// (*_oar) << c->fov;
 		// (*_oar) << c->nearPlane;
 		// (*_oar) << c->farPlane;

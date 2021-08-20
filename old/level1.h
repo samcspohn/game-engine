@@ -162,7 +162,6 @@ public:
 		// 	ImGui::TreePop();
 		// }
 	}
-	COPY(gun);
 	SER5(rof, speed, dispersion, barrels, ammo);
 };
 REGISTER_COMPONENT(gun)

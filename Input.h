@@ -13,7 +13,8 @@ class _Mouse {
 	public:
 		float getX();
 		float getY();
-		bool getButton(unsigned int button);
+		bool getButtonClicked(unsigned int button);
+		bool getButtonDown(unsigned int button);
 		float  getScroll();
 		friend void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 

@@ -30,6 +30,13 @@ struct chunk
     chunk();
     ~chunk();
 };
+struct terrainHit
+{
+    glm::vec3 normal;
+    float height;
+    terrainHit() {}
+    terrainHit(glm::vec3 n, float h) : normal(n), height(h) {}
+};
 
 extern glm::vec3 playerPos;
 class terrain : public component
@@ -41,13 +48,14 @@ public:
     terrain();
     terrain(const terrain &t);
     void render(camera &c);
-    int xz(int x, int z);
+    static int xz(int x, int z);
     float makeHeight(float x, float z);
 
     glm::vec3 makeVert(float x, float z);
     void onStart();
     void update();
     void genHeight(int x, int z);
+    static terrainHit terrain::getHeight(float x, float z);
     void init(int i);
     void deinit();
 
@@ -57,6 +65,4 @@ public:
     SER_FUNC()
     SER(shader)
     SER_END;
-
-    COPY(terrain);
 };

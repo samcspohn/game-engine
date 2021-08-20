@@ -33,26 +33,27 @@ void main()
     float depth = texture(gDepth,TexCoords).r;
     
     // then calculate lighting as usual
-    vec3 lighting=Diffuse*.8;// hard-coded ambient component
+    vec3 lighting=Diffuse*.1;// hard-coded ambient component
     vec3 viewDir=normalize(viewPos-FragPos);
     float Linear=1.f;
     float Quadratic=1.f;
-    // vec3 Color=vec3(1,1,1);
+    vec3 Color=vec3(1,1,1);
+    vec3 light = normalize(vec3(1));
     // for(int i = 0; i < 100; ++i)
     // {
-        // // diffuse
-        // vec3 lightDir = normalize(lights[i].xyz - FragPos);
-        // vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * Color;
-        // // specular
-        // vec3 halfwayDir = normalize(lightDir + viewDir);
-        // float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-        // vec3 specular = Color * spec * Specular;
-        // // attenuation
-        // float distance = length(lights[i].xyz - FragPos);
-        // float attenuation = 1.0 / (1.0 + Linear * distance + Quadratic * distance * distance);
-        // diffuse *= attenuation;
-        // specular *= attenuation;
-        // lighting += diffuse + specular;
+        // diffuse
+        vec3 lightDir = light;//normalize(light.xyz - FragPos);
+        vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * Color;
+        // specular
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+        vec3 specular = Color * spec * Specular;
+        // attenuation
+        float distance = 1;//length(light.xyz - FragPos);
+        float attenuation = 1;//1.0 / (1.0 + Linear * distance + Quadratic * distance * distance);
+        diffuse *= attenuation;
+        specular *= attenuation;
+        lighting = diffuse;// + specular;
     // }
     // if(FragPos==vec3(0)){
     //     discard;

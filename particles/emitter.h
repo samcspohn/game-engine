@@ -42,7 +42,6 @@ public:
     int id;
     // typename array_heap<GLint>::ref emitter_last_particle;
     void onEdit();
-    COPY(particle_emitter);
     void setPrototype(emitter_prototype_ ep);
     void protoSetPrototype(emitter_prototype_ ep);
     void init(int id);

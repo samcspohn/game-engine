@@ -656,7 +656,7 @@ void editor::rotate(glm::vec3 axis, float radians)
 void editor::update()
 {
 
-    if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_2))
+    if (Input.Mouse.getButtonDown(GLFW_MOUSE_BUTTON_2))
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 

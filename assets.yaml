@@ -1,17 +1,20 @@
-workingFile: /home/samuel/Documents/game-engine/empty
+workingFile: /home/samuel/Documents/game-engine/terraintest.yaml
 shaders:
   0: 0
   6932657030676596669: 1
   12380649406595052558: 2
+  13899109332880895388: 816754076
 shader_ids:
-  - id: 0
+  0:
+    id: 0
     name: default shader
     shader:
       shaders:
         35632: res/shaders/model.frag
         35633: res/shaders/model.vert
       primitive_type: 4
-  - id: 1
+  1:
+    id: 1
     name: ""
     shader:
       shaders:
@@ -19,11 +22,20 @@ shader_ids:
         35633: res/shaders/particles/particles.vert
         36313: res/shaders/particles/particles.geom
       primitive_type: 4
-  - id: 2
+  2:
+    id: 2
     name: ""
     shader:
       shaders:
         37305: res/shaders/transform.comp
+      primitive_type: 4
+  816754076:
+    id: 816754076
+    name: no_inst shader
+    shader:
+      shaders:
+        35632: res/shaders/model.frag
+        35633: res/shaders/terrain.vert
       primitive_type: 4
 models_id:
   0:
@@ -76,7 +88,7 @@ emitter_prototpes_:
       minSpeed: 2
       maxSpeed: 3
       lifetime2: 3
-      live: 1067539225
+      live: -1078875911
       scale:
         - 1
         - 1

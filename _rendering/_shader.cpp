@@ -100,10 +100,22 @@ namespace shaderManager
 		if (ms == shaderManager::shaders.end())
 		{
 			auto sm = make_shared<_shaderMeta>(vertex, fragment);
-			sm->id = 0;
+			sm->id = key;
 			shaderManager::shaders[key] = sm->id;
 			shaderManager::shaders_ids[sm->id] = sm;
 			sm->name = "default shader";
+		}
+
+		vertex = "res/shaders/terrain.vert";
+		key = x(vertex + fragment);
+		ms = shaderManager::shaders.find(key);
+		if (ms == shaderManager::shaders.end())
+		{
+			auto sm = make_shared<_shaderMeta>(vertex, fragment);
+			sm->id = key;
+			shaderManager::shaders[key] = sm->id;
+			shaderManager::shaders_ids[sm->id] = sm;
+			sm->name = "no_inst shader";
 		}
 	}
 }; // namespace shaderManager
@@ -167,6 +179,7 @@ bool _shaderMeta::onEdit()
 	// 	ImGui::EndDragDropSource();
 	// }
 	// return ret;
+	return false;
 }
 void _shaderMeta::inspect()
 {

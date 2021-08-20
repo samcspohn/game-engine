@@ -27,9 +27,13 @@ float _Mouse::getY()
 	return ImGui::GetIO().MouseDelta.y;
 	// return yOffset;
 }
-bool _Mouse::getButton(unsigned int button)
+bool _Mouse::getButtonClicked(unsigned int button)
 {
-	return mouseButtons[button];
+	return ImGui::GetIO().MouseClicked[button];
+}
+bool _Mouse::getButtonDown(unsigned int button)
+{
+	return ImGui::GetIO().MouseDown[button];
 }
 float _Mouse::getScroll()
 {

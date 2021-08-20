@@ -2,6 +2,8 @@
 #include <glm/glm.hpp>
 #include "serialize.h"
 #include <vector>
+
+
 struct AABB
 {
     glm::vec3 c;
@@ -24,7 +26,7 @@ struct AABB2
     AABB2(float x);
     bool fits(const AABB2 &a) const;
 
-    bool sits(const glm::vec3 &v)  const;
+    bool sits(const glm::vec3 &v) const;
     glm::vec3 getCenter() const;
     void setPosition(glm::vec3 t);
 };
@@ -74,7 +76,6 @@ struct point
     }
 };
 
-
 struct octDat
 {
     AABB2 a;
@@ -101,7 +102,8 @@ struct ray
     int sign[3];
 };
 
-struct sphere{
+struct sphere
+{
     glm::vec3 c;
     float r;
     sphere(glm::vec3 _c, float _r);
@@ -113,7 +115,7 @@ bool IntersectRayAABB3(const ray &r, AABB2 a);
 // bool IntersectRayAABB4(AABB2 b, Ray r);
 
 // int TestAABBOBB(AABB2& a, OBB& b);
-bool _intersectRayTriangle(glm::vec3& p, glm::vec3& d, glm::vec3& p0, glm::vec3& p1, glm::vec3& p2, glm::vec3& q);
+bool _intersectRayTriangle(glm::vec3 &p, glm::vec3 &d, glm::vec3 &p0, glm::vec3 &p1, glm::vec3 &p2, glm::vec3 &q);
 float ScalarTriple(glm::vec3 &a, glm::vec3 &b, glm::vec3 &c);
 float testPlane(glm::vec3 p, glm::vec4 plane);
 int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, glm::vec3 c,
@@ -135,83 +137,82 @@ bool testOBBMesh(OBB &o, const glm::mat4 o_trans, mesh &m, const glm::mat4 m_tra
 bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, glm::vec3 &result);
 bool testPointOBB(point &p, OBB &o, glm::vec3 &result);
 
-
 namespace YAML
 {
-	template <>
-	struct convert<AABB2>
-	{
-		static Node encode(const AABB2 &rhs)
-		{
-			Node node;
-			node["min"] = rhs.min;
+    template <>
+    struct convert<AABB2>
+    {
+        static Node encode(const AABB2 &rhs)
+        {
+            Node node;
+            node["min"] = rhs.min;
             node["max"] = rhs.max;
-			return node;
-		}
+            return node;
+        }
 
-		static bool decode(const Node &node, AABB2 &rhs)
-		{
-			rhs.min = node["min"].as<glm::vec3>();
+        static bool decode(const Node &node, AABB2 &rhs)
+        {
+            rhs.min = node["min"].as<glm::vec3>();
             rhs.max = node["max"].as<glm::vec3>();
-			return true;
-		}
-	};
+            return true;
+        }
+    };
 
     template <>
-	struct convert<OBB>
-	{
-		static Node encode(const OBB &rhs)
-		{
-			Node node;
-			node["c"] = rhs.c;
+    struct convert<OBB>
+    {
+        static Node encode(const OBB &rhs)
+        {
+            Node node;
+            node["c"] = rhs.c;
             node["u"] = rhs.u;
             node["e"] = rhs.e;
-			return node;
-		}
+            return node;
+        }
 
-		static bool decode(const Node &node, OBB &rhs)
-		{
-			rhs.c = node["c"].as<glm::vec3>();
+        static bool decode(const Node &node, OBB &rhs)
+        {
+            rhs.c = node["c"].as<glm::vec3>();
             rhs.u = node["u"].as<glm::vec3>();
             rhs.e = node["e"].as<glm::vec3>();
-			return true;
-		}
-	};
+            return true;
+        }
+    };
 
-        template <>
-	struct convert<point>
-	{
-		static Node encode(const point &rhs)
-		{
-			Node node;
-			node.push_back(rhs.pos1);
+    template <>
+    struct convert<point>
+    {
+        static Node encode(const point &rhs)
+        {
+            Node node;
+            node.push_back(rhs.pos1);
             node.push_back(rhs.pos2);
-			return node;
-		}
+            return node;
+        }
 
-		static bool decode(const Node &node, point &rhs)
-		{
-			rhs.pos1 = node[0].as<glm::vec3>();
+        static bool decode(const Node &node, point &rhs)
+        {
+            rhs.pos1 = node[0].as<glm::vec3>();
             rhs.pos2 = node[1].as<glm::vec3>();
-			return true;
-		}
-	};
+            return true;
+        }
+    };
 
-        template <>
-	struct convert<mesh>
-	{
-		static Node encode(const mesh &rhs)
-		{
-			Node node;
-			// node["m"] = rhs.m;
-			return node;
-		}
+    template <>
+    struct convert<mesh>
+    {
+        static Node encode(const mesh &rhs)
+        {
+            Node node;
+            // node["m"] = rhs.m;
+            return node;
+        }
 
-		static bool decode(const Node &node, mesh &rhs)
-		{
-			// rhs.m = node["m"].as<MESH*>();
-			return true;
-		}
-	};
+        static bool decode(const Node &node, mesh &rhs)
+        {
+            // rhs.m = node["m"].as<MESH*>();
+            return true;
+        }
+    };
 
 }

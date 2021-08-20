@@ -24,68 +24,6 @@ void decodePrototypes(YAML::Node& node){
 	}
 }
 
-void game_object::serialize(OARCHIVE &ar, game_object *g)
-{
-	ar << g->transform.id;
-	ar << g->transform->getPosition();
-	ar << g->transform->getRotation();
-	ar << g->transform->getScale();
-	ar << g->transform->getParent().id;
-
-	ar << g->components.size();
-	for (auto &i : g->components)
-	{
-		ar << i.first;
-		ComponentRegistry.registry(i.first)->serialize(ar, i.second);
-	}
-	ar << g->transform->getChildren().size();
-	for (auto &i : g->transform->getChildren())
-	{
-		serialize(ar, i->gameObject());
-	}
-}
-void game_object::deserialize(IARCHIVE &ar, map<int, int> &transform_map)
-{
-
-	int ref = game_object_cache._new();
-	game_object *g = &game_object_cache.get(ref);
-	int transformID;
-	glm::vec3 p;
-	glm::quat r;
-	int parentID;
-	int size;
-
-	ar >> transformID;
-	g->transform = Transforms._new();
-	transform_map[transformID] = g->transform.id;
-	ar >> p;
-	g->transform->setPosition(p);
-	ar >> r;
-	g->transform->setRotation(r);
-	ar >> p;
-	g->transform->setScale(p);
-	ar >> parentID;
-
-	Transforms.meta[g->transform.id].gameObject = ref;
-	if (parentID != -1)
-		transform2(transform_map[parentID]).adopt(g->transform);
-
-	ar >> size;
-	for (int i = 0; i < size; i++)
-	{
-		size_t hash;
-		ar >> hash;
-		int id = ComponentRegistry.registry(hash)->deserialize(ar);
-		g->components.emplace(hash, id);
-		_getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
-	}
-	ar >> size;
-	for (int i = 0; i < size; i++)
-	{
-		deserialize(ar, transform_map);
-	}
-}
-
 void game_object::encode(YAML::Node &game_object_node, game_object *g)
 {
 	// transform
@@ -218,7 +156,8 @@ void _child_instatiate(game_object &g, transform2 parent)
 
 	for (auto &i : g.components)
 	{
-		game_object::_getComponent(i)->_copy(ret);
+		// game_object::_getComponent(i)->_copy(ret);
+		ret->components.emplace(i.first,ComponentRegistry.getByType(i.first)->copy(i.second));
 	}
 	for (auto &i : ret->components)
 	{
@@ -246,7 +185,7 @@ game_object *_instantiate(game_object &g)
 
 	for (auto &i : g.components)
 	{
-		game_object::_getComponent(i)->_copy(ret);
+		ret->components.emplace(i.first,ComponentRegistry.getByType(i.first)->copy(i.second));
 	}
 	for (auto &i : ret->components)
 	{
@@ -289,7 +228,8 @@ game_object *_instantiate(game_object_prototype &g)
 	// gameLock.unlock();
 	for (auto &i : _g.components)
 	{
-		i.first->_copy(ret);
+		// i.first->_copy(ret);
+		ret->components.emplace(i.second,ComponentRegistry.getByType(i.second)->copy(i.first));
 	}
 	for (auto &i : ret->components)
 	{

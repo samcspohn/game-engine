@@ -233,7 +233,6 @@ public:
 	void set(renderingMeta *_meta);
 	_renderer(const _renderer &other);
 	void onDestroy();
-	COPY(_renderer);
 	SER2(shader, model);
 };
 

@@ -46,6 +46,7 @@ public:
 	}
 	bool onEdit()
 	{
+		return false;
 	}
 	string type()
 	{
@@ -350,7 +351,7 @@ public:
 		return ret;
 	}
 
-	void collide(game_object *go, glm::vec3 point, glm::vec3 normal)
+	void collide(collision& _collision)
 	{
 		// lock.lock();
 		// colLock.lock();
@@ -362,7 +363,7 @@ public:
 		}
 		for (auto &i : components)
 		{
-			_getComponent(i)->onCollision(go, point, normal);
+			_getComponent(i)->onCollision(_collision);
 			// i.first->onCollision(go, point, normal);
 		}
 		colliding = false;
@@ -413,16 +414,16 @@ public:
 		return ci;
 	}
 
-	template <class t>
-	t *dupComponent(const t &c)
-	{
-		size_t hash = typeid(t).hash_code();
-		int i = addComponentToRegistry(c);
-		components.emplace(hash, i);
-		t *ci = ComponentRegistry.registry(hash)->get(i);
-		ci->transform = this->transform;
-		return &(*ci);
-	}
+	// template <class t>
+	// t *dupComponent(const t &c)
+	// {
+	// 	size_t hash = typeid(t).hash_code();
+	// 	int i = addComponentToRegistry(c);
+	// 	components.emplace(hash, i);
+	// 	t *ci = ComponentRegistry.registry(hash)->get(i);
+	// 	ci->transform = this->transform;
+	// 	return &(*ci);
+	// }
 	template <class t>
 	void removeComponent(t *c)
 	{

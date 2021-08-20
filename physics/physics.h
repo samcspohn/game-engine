@@ -18,8 +18,8 @@
 // #include "terrain.h"
 #include "collision.h"
 #include "_rendering/Mesh.h"
+#include "terrain.h"
 using namespace std;
-
 
 bool testCollision(collider &c1, collider &c2, glm::vec3 &result);
 
@@ -39,7 +39,6 @@ public:
 	void update();
 	void onEdit();
 	//UPDATE(rigidBody, update);
-	COPY(rigidBody);
 
 	int id;
 	float mass = 1;
@@ -47,12 +46,11 @@ public:
 	void setVelocity(glm::vec3 _vel);
 	void accelerate(glm::vec3 acc);
 	glm::vec3 getVelocity();
-	static void collide(collider &a, collider &b, int &colCount);
-		SER_FUNC()
-		SER(gravity)
-		SER(bounciness)
-		SER(mass)
-		SER(damping)
+	SER_FUNC()
+	SER(gravity)
+	SER(bounciness)
+	SER(mass)
+	SER(damping)
 	SER_END
 private:
 	glm::vec3 vel = glm::vec3(0);
@@ -68,6 +66,17 @@ enum colType
 	pointType
 };
 
+class kinematicBody : public component
+{
+
+public:
+	static glm::vec3 gravity;
+	glm::vec3 velocity;
+	void update();
+	void onCollision(collision&);
+	SER_FUNC()
+	SER_END
+};
 
 namespace YAML
 {
@@ -100,7 +109,7 @@ public:
 	glm::vec3 dim = glm::vec3(1);
 	AABB2 a;
 	union
-	{ 
+	{
 		OBB o;
 		mesh m;
 		point p;
@@ -109,6 +118,8 @@ public:
 	bool collider_shape_updated;
 
 	rigidBody *rb = 0;
+	static void collide(collider &a, collider &b, int &colCount);
+
 	bool _registerEngineComponent();
 	void setLayer(int l);
 	void onStart();
@@ -124,30 +135,7 @@ public:
 	// void lateUpdate();
 	void _lateUpdate();
 	void update_data();
-	void ser_edit(ser_mode x, YAML::Node&);
-	COPY(collider);
-
-	// SER_HELPER(){
-	// 	ar &boost::serialization::base_object<component>(*this);
-	// 	ar &layer &type &r &dim;
-	// 	switch (this->type)
-	// 	{
-	// 	case aabbType:
-	// 		ar & this->a;
-	// 		break;
-	// 	case obbType:
-	// 		ar & this->o;
-	// 		break;
-	// 	case meshType:
-	// 		ar & this->m;
-	// 		break;
-	// 	case pointType:
-	// 		ar & this->p;
-	// 		break;
-	// 	default:
-	// 		break;
-	// 	}
-	// }
+	void ser_edit(ser_mode x, YAML::Node &);
 };
 
 struct treenode
@@ -185,13 +173,13 @@ struct octree
 	void insert(AABB2 &a, collider &colliderData, int depth);
 };
 
-namespace physics_manager{
+namespace physics_manager
+{
 	extern map<int, octree> collisionLayers;
 	extern map<int, set<int>> collisionGraph;
-	extern tbb::concurrent_unordered_map<Mesh*,MESH> meshes;
+	extern tbb::concurrent_unordered_map<Mesh *, MESH> meshes;
 }
 // octree* Octree = new octree();
-
 
 // float size(glm::vec3 a)
 // {
@@ -202,4 +190,4 @@ void assignRigidBody(collider *c, rigidBody *rb);
 
 bool testCollision(collider &c1, collider &c2, glm::vec3 &result);
 
-bool raycast(glm::vec3 p, glm::vec3 dir);
+bool raycast(glm::vec3 p, glm::vec3 dir, glm::vec3 &result);

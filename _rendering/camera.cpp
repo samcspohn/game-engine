@@ -386,7 +386,7 @@ void camera::render(GLFWwindow *window)
 	ratio = width / (float)height;
 
 	glViewport(0, 0, width, height);
-	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClearColor(clearColor.r,clearColor.r,clearColor.b, 1.f);
 	// glClearColor(1.0f, 0.7f, 0.5f, 1.0f);
 	gBuffer.use();
 	gBuffer.resize(width, height);

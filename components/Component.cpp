@@ -6,7 +6,7 @@ void component::onDestroy() {}
 void component::deinit(int id) {}
 void component::init(int id) {}
 bool component::_registerEngineComponent() { return false; };
-void component::onCollision(game_object *go, glm::vec3 point,  glm::vec3 normal){};
+void component::onCollision(collision& c){};
 // void component::_update(int index, unsigned int _start, unsigned int _end){};
 void component::update(){};
 void component::lateUpdate(){};

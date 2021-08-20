@@ -30,7 +30,7 @@ void main()
 //	color.rgb = vec3(texture(directionalShadowMap,DirLightSpacePos.xy * 0.5 + 0.5).rgb);
 //	color.rgb = vec3(DirLightSpacePos.z*.5 + 0.5,0,0);
 //	color.rgb = vec3(gl_FragCoord.z);
-	color.rgb = (normalize(Normal) + vec3(1)) / 2;
+	// color.rgb = (normalize(Normal) + vec3(1)) / 2;
 	vec4 diffuseColor = texture(material.texture_diffuse0,TexCoord);
     vec4 specColor = texture(material.texture_specular0,TexCoord);
 	if(diffuseColor.a == 0 && specColor == vec4(0,0,0,1))
@@ -38,7 +38,7 @@ void main()
 	if(diffuseColor == vec4(0,0,0,1)){
 		 diffuseColor = vec4(1,1,1,1);
 	}
-	// color.rgb = diffuseColor.rgb;
+	color.rgb = diffuseColor.rgb;
 
     gPosition = vec4(FragPos,1);
     gNormal = vec4(normalize(Normal),1);

@@ -203,7 +203,10 @@ void printStats()
 
 int main(int argc, char **argv)
 {
-
+    cout << float(-3.523f) << endl;
+    cout << int(float(-3.523f)) << endl;
+    float x = -3.523f;
+    cout << x - int(x) << endl;
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
     // physics_manager::collisionGraph[1] = {0, 1};

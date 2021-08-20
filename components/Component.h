@@ -26,6 +26,22 @@ class game_object_proto_;
 
 // bool compareTransform(Transform *t1, Transform *t2);
 // class Transform2;
+class collider;
+
+struct collision
+{
+	glm::vec3 point;
+	glm::vec3 normal;
+	collider *this_collider;
+	collider *other_collider;
+	game_object *g_o;
+	collision(glm::vec3 _point,
+			  glm::vec3 _normal,
+			  collider *_this_collider,
+			  collider *_other_collider,
+			  game_object *_g_o) : point(_point), normal(_normal), this_collider(_this_collider), other_collider(_other_collider), g_o(_g_o) {}
+};
+
 class component
 {
 	friend game_object;
@@ -35,7 +51,7 @@ public:
 	virtual void onDestroy();
 
 	static bool _registerEngineComponent();
-	virtual void onCollision(game_object *go, glm::vec3 point, glm::vec3 normal);
+	virtual void onCollision(collision &);
 	virtual void update();
 	virtual void lateUpdate();
 	virtual void init(int id);
@@ -43,9 +59,8 @@ public:
 
 	// virtual void onEdit() = 0;
 	// template<class Archive>
-	virtual void ser_edit(ser_mode x, YAML::Node& n) = 0;
+	virtual void ser_edit(ser_mode x, YAML::Node &n) = 0;
 	// virtual void ser_edit(ser_mode x) = 0;
-	virtual void _copy(game_object *go) = 0;
 	transform2 transform;
 	int getThreadID();
 	size_t getHash();
@@ -79,21 +94,13 @@ public:
 	virtual void erase(int i) {}
 	virtual int size() { return 0; };
 	virtual unsigned int active() { return 0; };
-	virtual void serialize(OARCHIVE &ar, int i) = 0;
-	virtual int deserialize(IARCHIVE &ar) = 0;
-	virtual void encode(YAML::Node& node, int i) = 0;
-	virtual int decode(YAML::Node& node) = 0;
-	virtual component* _decode(YAML::Node& node) = 0;
+	virtual void encode(YAML::Node &node, int i) = 0;
+	virtual int decode(YAML::Node &node) = 0;
+	virtual component *_decode(YAML::Node &node) = 0;
 	virtual void sort(){};
 	virtual void clear() {}
+	virtual int copy(int id) = 0;
 	// virtual string ser(){};
-
-	friend class boost::serialization::access;
-	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
-		ar &name &h_update &h_lateUpdate;
-	}
 };
 
 // std::ostream & operator<<(std::ostream &os, const componentStorageBase &base)
@@ -144,7 +151,10 @@ public:
 	{
 		return name;
 	}
-
+	int copy(int id)
+	{
+		return data._new(data.get(id));
+	}
 	rolling_buffer _update_t;
 	void update()
 	{
@@ -204,33 +214,31 @@ public:
 		data.clear();
 	}
 
-	friend class boost::serialization::access;
-
-	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */) {}
-	void serialize(OARCHIVE &ar, int i)
+	void encode(YAML::Node &node, int i)
 	{
-		ar << data.get(i);
+		try
+		{
+			data.get(i).ser_edit(ser_mode::write_mode, node);
+		}
+		catch (...)
+		{
+		}
 	}
-	int deserialize(IARCHIVE &ar)
-	{
-		int i = data._new();
-		ar >> data.get(i);
-		return i;
-	}
-
-	void encode(YAML::Node& node, int i)
-	{
-		data.get(i).ser_edit(ser_mode::write_mode, node);
-	}
-	int decode(YAML::Node& node)
+	int decode(YAML::Node &node)
 	{
 		int i = data._new();
-		data.get(i).ser_edit(ser_mode::read_mode, node);
+		try
+		{
+			data.get(i).ser_edit(ser_mode::read_mode, node);
+		}
+		catch (...)
+		{
+		}
 		return i;
 	}
-	virtual component* _decode(YAML::Node& node){
-		t* c = new t();
+	virtual component *_decode(YAML::Node &node)
+	{
+		t *c = new t();
 		c->ser_edit(ser_mode::read_mode, node);
 		return c;
 	}
@@ -248,6 +256,8 @@ struct componentMetaBase
 	// virtual void removeComponent(game_object *g);
 	// virtual void removeComponentProto(game_object_proto_ *g);
 	virtual void floatingComponent(component *) = 0;
+	virtual int copy(int id) = 0;
+	virtual int copy(component *c) = 0;
 	virtual componentStorageBase *getStorage() = 0;
 };
 template <typename t>
@@ -274,14 +284,6 @@ public:
 		// components.clear();
 		// gameEngineComponents.clear();
 		// gameComponents.clear();
-	}
-
-	friend class boost::serialization::access;
-
-	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
-		// ar &components; // &gameEngineComponents &gameComponents;
 	}
 	template <typename t>
 	inline componentStorage<t> *registry()
@@ -352,37 +354,37 @@ int addComponentToRegistry()
 void destroyAllComponents();
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(ComponentRegistry.registry<x>())
 
-#define COPY(component_type)     \
-	void _copy(game_object *go)  \
-	{                            \
-		go->dupComponent(*this); \
-	}
-
-#define REGISTER_COMPONENT(comp)                          \
-	BOOST_CLASS_EXPORT(comp)                              \
-	BOOST_CLASS_EXPORT(componentStorage<comp>)            \
-	template <>                                           \
-	struct componentMeta<comp> : public componentMetaBase \
-	{                                                     \
-		static componentMeta<comp> const *c;              \
-		void addComponent(game_object *g)                 \
-		{                                                 \
-			g->_addComponent<comp>();                     \
-		}                                                 \
-		void addComponentProto(game_object_proto_ *g)     \
-		{                                                 \
-			g->addComponent<comp>();                      \
-		}                                                 \
-		void floatingComponent(component *c)              \
-		{                                                 \
-			new (c) comp();                               \
-		}                                                 \
-		componentStorageBase *getStorage()                \
-		{                                                 \
-			return &storage;                              \
-		}                                                 \
-		componentStorage<comp> storage;                   \
-	};                                                    \
+#define REGISTER_COMPONENT(comp)                               \
+	template <>                                                \
+	struct componentMeta<comp> : public componentMetaBase      \
+	{                                                          \
+		static componentMeta<comp> const *c;                   \
+		void addComponent(game_object *g)                      \
+		{                                                      \
+			g->_addComponent<comp>();                          \
+		}                                                      \
+		void addComponentProto(game_object_proto_ *g)          \
+		{                                                      \
+			g->addComponent<comp>();                           \
+		}                                                      \
+		void floatingComponent(component *c)                   \
+		{                                                      \
+			new (c) comp();                                    \
+		}                                                      \
+		componentStorageBase *getStorage()                     \
+		{                                                      \
+			return &storage;                                   \
+		}                                                      \
+		int copy(int id)                                       \
+		{                                                      \
+			return storage.copy(id);                           \
+		}                                                      \
+		int copy(component *c)                                 \
+		{                                                      \
+			return storage.data._new(*static_cast<comp *>(c)); \
+		}                                                      \
+		componentStorage<comp> storage;                        \
+	};                                                         \
 	componentMeta<comp> const *componentMeta<comp>::c = registerComponent<comp>();
 // template<>
 // componentMeta<comp>::g = registerComponent<comp>();

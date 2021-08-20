@@ -9,6 +9,8 @@ REGISTER_COMPONENT(rigidBody)
 
 REGISTER_COMPONENT(collider)
 
+REGISTER_COMPONENT(kinematicBody)
+
 atomic<int> rbId;
 
 bool vecIsNan(glm::vec3 v)
@@ -75,7 +77,7 @@ glm::vec3 rigidBody::getVelocity()
 	return vel;
 }
 
-void rigidBody::collide(collider &a, collider &b, int &colCount)
+void collider::collide(collider &a, collider &b, int &colCount)
 {
 
 	// if (a.c >= b.c)
@@ -99,10 +101,42 @@ void rigidBody::collide(collider &a, collider &b, int &colCount)
 			return testCollision(a, b, res);
 		}())
 	{
-		a.transform->gameObject()->collide(b.transform->gameObject(), res, glm::vec3(0));
-		a.transform->gameObject()->collide(b.transform->gameObject(), res, glm::vec3(0));
+		collision c{res, glm::vec3(0), &a, &b, b.transform->gameObject()};
+		a.transform->gameObject()->collide(c);
+		c = collision{res, glm::vec3(0), &b, &a, a.transform->gameObject()};
+		b.transform->gameObject()->collide(c);
 	}
 }
+
+void kinematicBody::update()
+{
+	velocity += gravity * Time.deltaTime;
+	transform.move(velocity * Time.deltaTime);
+}
+void kinematicBody::onCollision(collision& col)
+{
+	if(col.other_collider){
+		transform.move((col.this_collider->a.getCenter() - col.other_collider->a.getCenter()) / 4.f);
+		auto k = col.g_o->getComponent<kinematicBody>();
+		if(k != 0){
+			std::swap(k->velocity,this->velocity);
+		}
+		this->velocity *= 0.99f;
+		return;
+	}
+
+	if (col.normal == glm::vec3(0))
+	{
+		velocity = glm::reflect(velocity, randomSphere());
+	}
+	else
+	{
+		velocity = glm::reflect(velocity, col.normal) * 0.8f;
+	}
+	// transform->setPosition(glm::vec3(transform.getPosition().x, point.y , transform.getPosition().z));
+}
+
+glm::vec3 kinematicBody::gravity = glm::vec3(0, -9.81, 0);
 
 void treenode::clear()
 {
@@ -148,13 +182,13 @@ void octree::query(collider &myCol, int &colCount, treenode &curr)
 			for (int i = 0; i < curr.objs.size(); i++)
 			{
 				if (myCol.a.min[curr.axis] < curr.objs[i].a.max[curr.axis])
-					rigidBody::collide(myCol, *curr.objs[i].d, colCount);
+					collider::collide(myCol, *curr.objs[i].d, colCount);
 			}
 		else
 			for (int i = 0; i < curr.objs.size(); i++)
 			{
 				if (myCol.a.max[curr.axis] > curr.objs[i].a.min[curr.axis])
-					rigidBody::collide(myCol, *curr.objs[i].d, colCount);
+					collider::collide(myCol, *curr.objs[i].d, colCount);
 			}
 	}
 
@@ -472,25 +506,26 @@ void collider::_lateUpdate()
 		collisionLayers[i].query(*this, colCount);
 	}
 
-	// glm::vec3 center = a.getCenter();
-	// terrain *t = getTerrain(center.x, center.z);
+	glm::vec3 center = a.getCenter();
+	terrainHit h = terrain::getHeight(center.x, center.z);
 	// if (t != 0)
 	// {
 	// 	if (a.min.y > t->max_height * t->transform->getScale().y + t->transform->getPosition().y)
 	// 		return;
-	// 	terrainHit h = t->getHeight(center.x, center.z);
-	// 	if (a.min.y < h.height)
-	// 	{
-	// 		glm::vec3 p = transform->getPosition();
-	// 		if (rb != 0)
-	// 		{
-	// 			rb->vel = glm::reflect(rb->vel, h.normal) * rb->bounciness;
-	// 			// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
-	// 			transform->setPosition(glm::vec3(p.x, h.height + a.min.y + 0.1f, p.z));
-	// 		}
-	// 		// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
-	// 		transform->gameObject()->collide(t->transform->gameObject(), glm::vec3(p.x, h.height, p.z), h.normal);
-	// 	}
+	if (a.min.y < h.height)
+	{
+		glm::vec3 p = transform->getPosition();
+		if (rb != 0)
+		{
+			rb->vel = glm::reflect(rb->vel, h.normal) * rb->bounciness;
+			// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
+		}
+		transform->setPosition(glm::vec3(p.x, h.height + (a.max.y - a.min.y) / 2.f, p.z));
+		// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
+		auto g = COMPONENT_LIST(terrain)->get(0)->transform.gameObject();
+		collision c{glm::vec3(p.x, h.height, p.z), h.normal, this, 0, g};
+		transform->gameObject()->collide(c);
+	}
 	// }
 }
 
@@ -726,14 +761,20 @@ void onEdit()
 	// RENDER(type);
 }
 
-bool raycast(glm::vec3 p, glm::vec3 dir)
+bool raycast(glm::vec3 p, glm::vec3 dir, glm::vec3 &result)
 {
 
+	bool hit = false;
 	auto colliders = COMPONENT_LIST(collider);
 	cout << "p: " + to_string(p) + " dir: " + to_string(dir) + '\n';
 	ray ray(p, dir);
-	parallelfor(colliders->size(),
+	mutex m;
+	result = glm::vec3(numeric_limits<float>::max());
+	int size = colliders->size();
+	cout << "colliders size: " << size << endl;
+	parallelfor(size,
 				{
+					cout << i << endl;
 					float min;
 					glm::vec3 q;
 					if (colliders->getv(i) && IntersectRayAABB3(ray, colliders->get(i)->a))
@@ -745,6 +786,30 @@ bool raycast(glm::vec3 p, glm::vec3 dir)
 							name = "game object " + to_string(colliders->get(i)->transform.id);
 						}
 						cout << name + '\n'; // + " inters: " + to_string(IntersectRayAABB(p,dir,colliders->get(i)->a,min,q)) + "tmin: " + to_string(min) + '\n';
+						glm::vec3 v = colliders->get(i)->a.getCenter();
+						float d = glm::length2(v);
+						float closest = glm::length2(result);
+						if (closest > d)
+						{
+							auto _m = lock_guard(m);
+							closest = glm::length2(result);
+							if (closest > d)
+							{
+								result = v;
+								hit = true;
+							}
+						}
 					}
-				})
+				});
+
+	glm::vec3 v;
+	if (terrain::IntersectRayTerrain(p, dir, v))
+	{
+		if (glm::length2(v) < glm::length2(result))
+		{
+			result = v;
+			hit = true;
+		}
+	}
+	return hit;
 }

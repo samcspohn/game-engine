@@ -64,7 +64,6 @@ public:
     // void onStart();
     // void onDestroy();
     void onEdit();
-    COPY(Light);
     SER_FUNC()
     switch (x)
     {
