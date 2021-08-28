@@ -1,7 +1,31 @@
---add camera
---add batching
---add lights
+
+
 add sound
+
+add lighting
+
+add procedural mesh
+
+let particles emit particles
+add orientation to emitters
+add previous position and rotation to emitter -- interpolate particle emissions
+
+add textures to particles
+
+
+add shadows
+
+continue work on terrain.
+add texture mapping
+add tesselation
+add procedural textures
+
+
+remake collision engine
+
+add animations
+
+improve sound
 
 
 editor
@@ -9,6 +33,35 @@ add tool tips to assets (show files of model/shader)
 add model previewer
 add shader previewer
 
+///////////////////////// in progress //////////////////////////
+
+add lights/lighting
+
+add ui
+
+add color/size/velocity over life
+
+improve low activity performance
+
+//////////////////////////// done //////////////////////////////
 
 terrain
 add nested parallelism
+--add camera
+--add batching
+--add lights
+send 'wake' to activate new emitters. -- new stage to particle update.
+localize most emitter data on gpu.
+
+polish physics
+add collision layers
+add obb/sphere/point
+
+add camera component
+
+add 'force emit' to particle emitter
+
+
+make emitter array dynamic. currently max 4mil
+
+

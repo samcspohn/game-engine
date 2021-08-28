@@ -58,7 +58,7 @@ void save_level(const char *filename)
 
 	{
 		YAML::Node root_game_object_node;
-		game_object::encode(root_game_object_node,rootGameObject);
+		game_object::encode(root_game_object_node, rootGameObject);
 		std::ofstream(filename) << root_game_object_node;
 		// OARCHIVE oa(ofs);
 		// game_object::serialize(oa, rootGameObject);
@@ -78,7 +78,7 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	{
 		YAML::Node assets_node = YAML::LoadFile("assets.yaml");
 		// ifstream("assets.yaml") >> assets_node;
-		 working_file = assets_node["workingFile"].as<string>();
+		working_file = assets_node["workingFile"].as<string>();
 		shaderManager::decode(assets_node);
 		modelManager::decode(assets_node);
 		decodeEmitters(assets_node);
@@ -111,20 +111,20 @@ bool isGameRunning()
 // #define OAR boost::archive::binary_oarchive
 void start_game() // assumes only renderer and terrain are started.
 {
-	mainThreadWork.push(new function<void()>([&]() {
-		{
-			YAML::Node root_game_object_node;
-			game_object::encode(root_game_object_node,rootGameObject);
-			std::ofstream(".temp") << root_game_object_node;
+	mainThreadWork.push(new function<void()>([&]()
+											 {
+												 {
+													 YAML::Node root_game_object_node;
+													 game_object::encode(root_game_object_node, rootGameObject);
+													 std::ofstream(".temp") << root_game_object_node;
+												 }
+												 // f.close();
 
-		}
-		// f.close();
-
-		for (auto &i : ComponentRegistry.meta_types)
-		{
-			StartComponents(i.second->getStorage());
-		}
-	}));
+												 for (auto &i : ComponentRegistry.meta_types)
+												 {
+													 StartComponents(i.second->getStorage());
+												 }
+											 }));
 	gameRunning = true;
 }
 
@@ -133,26 +133,27 @@ void stop_game()
 	gameRunning = false;
 	inspector = 0;
 	stoppingGame = true;
-	mainThreadWork.push(new function<void()>([&]() {
-		lock_guard<mutex> lk(transformLock);
+	mainThreadWork.push(new function<void()>([&]()
+											 {
+												 lock_guard<mutex> lk(transformLock);
 
-		rootGameObject->_destroy();
-		{
-			YAML::Node root_game_object_node = YAML::LoadFile(".temp");
-			game_object::decode(root_game_object_node, -1);
-		}
+												 rootGameObject->_destroy();
+												 {
+													 YAML::Node root_game_object_node = YAML::LoadFile(".temp");
+													 game_object::decode(root_game_object_node, -1);
+												 }
 
-		rootGameObject = transform2(0)->gameObject();
-		for (auto &i : ComponentRegistry.meta_types)
-		{
-			initComponents(i.second->getStorage());
-		}
+												 rootGameObject = transform2(0)->gameObject();
+												 for (auto &i : ComponentRegistry.meta_types)
+												 {
+													 initComponents(i.second->getStorage());
+												 }
 
-		// ImGui::LoadIniSettingsFromDisk("default.ini");
-		stoppingGame = false;
+												 // ImGui::LoadIniSettingsFromDisk("default.ini");
+												 stoppingGame = false;
 
-		// load_level(working_file.c_str());
-	}));
+												 // load_level(working_file.c_str());
+											 }));
 	// ImGui::SaveIniSettingsToMemory();
 }
 
@@ -178,6 +179,17 @@ void renderTransform(transform2 t, int &count)
 	{
 		ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
 		ImGui::EndDragDropSource();
+	}
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			int id = payload_n;
+			t.adopt(transform2(id));
+		}
+		ImGui::EndDragDropTarget();
 	}
 
 	if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered()) // mouseUp(clicked, t.id)) // mouse up
@@ -307,9 +319,8 @@ void openFile()
 		cout << "cancelled load" << endl;
 	else
 	{
-		mainThreadWork.push(new function<void()>([=]() {
-			load_level(fi.c_str());
-		}));
+		mainThreadWork.push(new function<void()>([=]()
+												 { load_level(fi.c_str()); }));
 		cout << "loaded: " << file << endl;
 	}
 }
@@ -324,9 +335,8 @@ void saveAsFile()
 		cout << "cancelled save" << endl;
 	else
 	{
-		mainThreadWork.push(new function<void()>([=]() {
-			save_level(fi.c_str());
-		}));
+		mainThreadWork.push(new function<void()>([=]()
+												 { save_level(fi.c_str()); }));
 
 		working_file = fi;
 		cout << "saved: " << file << endl;
@@ -334,9 +344,8 @@ void saveAsFile()
 }
 void saveFile()
 {
-	mainThreadWork.push(new function<void()>([=]() {
-		save_level(working_file.c_str());
-	}));
+	mainThreadWork.push(new function<void()>([=]()
+											 { save_level(working_file.c_str()); }));
 	cout << "saved: " << working_file << endl;
 }
 
@@ -404,65 +413,21 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 
 			int kjj = 0;
 			bool open_asset = false;
-			// for (auto &i : assets::assets)
-			// {
-			// 	ImGui::BeginGroup();
-			// 	ImGui::PushItemWidth(50);
-			// 	ImGui::PushID(i.second->id);
-
-			// 	char input[1024];
-			// 	sprintf(input, i.second->name.c_str());
-			// 	if (ImGui::InputText("", input, 1024, ImGuiInputTextFlags_None))
-			// 		i.second->name = {input};
-			// 	// ImVec2 sz{50,50};
-			// 	// ImGui::Image(0,sz);
-			// 	if (ImGui::Button(i.second->name.c_str(), {50, 50}))
-			// 	{
-			// 		// if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)){
-			// 		inspector = i.second;
-			// 	}
-			// 	if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
-			// 	{
-			// 		// cout << "right clicked button" << endl;
-			// 		as = i.second;
-			// 		open_asset = true;
-			// 	}
-
-			// 	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-			// 	{
-			// 		// Set payload to carry the index of our item (could be anything)
-			// 		ImGui::SetDragDropPayload(i.second->type().c_str(), &i.second->id, sizeof(int));
-			// 		ImGui::EndDragDropSource();
-			// 	}
-
-			// 	ImGui::PopID();
-			// 	ImGui::PopItemWidth();
-
-			// 	float last_button_x2 = ImGui::GetItemRectMax().x;
-			// 	float next_button_x2 = last_button_x2 + style.ItemSpacing.x + 50; // Expected position if next button was on same line
-			// 	ImGui::EndGroup();
-			// 	if (kjj++ + 1 < assets::assets.size() && next_button_x2 < window_visible_x2)
-			// 		ImGui::SameLine();
-			// }
-			static auto renderAsset = [&](assets::asset *a) {
+			static auto renderAsset = [&](assets::asset *a)
+			{
 				ImGui::PushID(a->id);
-				// ImGui::Text(s.second.get()->shader->vertexFile.c_str());
 				ImGui::Button(a->name.c_str());
-				// ImGui::InvisibleButton((s.second.get()->shader->vertexFile + "_inv").c_str(),{ImGui::GetFont()->FontSize,ImGui::GetFont()->FontSize * s.second.get()->shader->vertexFile.length()});
 				if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(0))
 				{
 					inspector = a;
 				}
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
 				{
-					// cout << "right clicked button" << endl;
 					as = a;
 					open_asset = true;
 				}
-
 				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 				{
-					// Set payload to carry the index of our item (could be anything)
 					ImGui::SetDragDropPayload(a->type().c_str(), &a->id, sizeof(int));
 					ImGui::EndDragDropSource();
 				}
@@ -586,6 +551,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 		}
 		if (ImGui::Begin("Hierarchy"))
 		{
+			ImGui::BeginChild("Hierarchy_child");
 			editor_hov |= ImGui::IsWindowHovered();
 			// if(transformLock.try_lock()){
 
@@ -605,10 +571,24 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				transformLock.lock();
 				int count = 0;
 				// renderTransform(root2, count);
-				for(auto &c : root2.getChildren()){
+				for (auto &c : root2.getChildren())
+				{
 					renderTransform(c, count);
 				}
+
 				transformLock.unlock();
+			}
+			ImGui::EndChild();
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
+				{
+					IM_ASSERT(payload->DataSize == sizeof(int));
+					int payload_n = *(const int *)payload->Data;
+					int id = payload_n;
+					root2.adopt(transform2(id));
+				}
+				ImGui::EndDragDropTarget();
 			}
 			// }
 			ImGui::End();
@@ -718,18 +698,19 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			glm::vec3 p = m_editor->position;
 			glm::vec3 d = c.screenPosToRay({mp.x, mp.y});
 
-			mainThreadWork.push(new function<void()>([=]() {
-				transformLock.lock();
-				transform2 r = renderRaycast(p, d);
-				if (r.id != -1)
-				{
-					inspector = r->gameObject();
-					selected_transform = r;
-					selected_transforms.clear();
-					selected_transforms[r.id] = true;
-				}
-				transformLock.unlock();
-			}));
+			mainThreadWork.push(new function<void()>([=]()
+													 {
+														 transformLock.lock();
+														 transform2 r = renderRaycast(p, d);
+														 if (r.id != -1)
+														 {
+															 inspector = r->gameObject();
+															 selected_transform = r;
+															 selected_transforms.clear();
+															 selected_transforms[r.id] = true;
+														 }
+														 transformLock.unlock();
+													 }));
 		}
 	}
 	else
@@ -837,6 +818,7 @@ void dockspaceEnd()
 	ImGui::End();
 }
 
-void endEditor(){
+void endEditor()
+{
 	inspector = 0;
 }
