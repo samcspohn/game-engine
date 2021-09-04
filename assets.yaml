@@ -1,4 +1,4 @@
-workingFile: /home/samuel/Documents/game-engine/terraintest.yaml
+workingFile: /home/samuel/Documents/game-engine/heirarchytest.yaml
 shaders:
   0: 0
   6932657030676596669: 1
@@ -88,7 +88,7 @@ emitter_prototpes_:
       minSpeed: 2
       maxSpeed: 3
       lifetime2: 3
-      live: -1078875911
+      live: -1083469177
       scale:
         - 1
         - 1

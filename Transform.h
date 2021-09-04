@@ -163,7 +163,7 @@ struct _Transforms
 	// deque<transform_meta> meta;
 	// deque<trans_update> transform_updates;
 	// tbb::concurrent_priority_queue<int> avail2;
-	std::priority_queue<int,vector<int>,std::greater<int>> avail;
+	std::priority_queue<int,deque<int>,std::greater<int>> avail;
 	// tbb::concurrent_priority_queue<int,std::greater<int>> avail;
 	// std::queue<int> avail;
 	// tbb::spin_mutex m;

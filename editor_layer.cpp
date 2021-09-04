@@ -75,6 +75,8 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	stoppingGame = true;
 	lock_guard<mutex> lk(transformLock);
 	rootGameObject->_destroy();
+	Transforms.clear();
+	// ComponentRegistry.clear();
 	{
 		YAML::Node assets_node = YAML::LoadFile("assets.yaml");
 		// ifstream("assets.yaml") >> assets_node;
@@ -180,6 +182,7 @@ void renderTransform(transform2 t, int &count)
 		ImGui::SetDragDropPayload("TRANSFORM_DRAG_AND_DROP", &t.id, sizeof(int));
 		ImGui::EndDragDropSource();
 	}
+
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
@@ -187,11 +190,11 @@ void renderTransform(transform2 t, int &count)
 			IM_ASSERT(payload->DataSize == sizeof(int));
 			int payload_n = *(const int *)payload->Data;
 			int id = payload_n;
-			t.adopt(transform2(id));
+			if (id != t.id)
+				t.adopt(transform2(id));
 		}
 		ImGui::EndDragDropTarget();
 	}
-
 	if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered()) // mouseUp(clicked, t.id)) // mouse up
 	{
 		if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
@@ -227,6 +230,37 @@ void renderTransform(transform2 t, int &count)
 		}
 		ImGui::EndPopup();
 	}
+
+	static ImDrawList *draw_list = ImGui::GetWindowDrawList();
+	ImVec2 cursorPos = ImGui::GetCursorPos();
+	ImVec2 windowPos = ImGui::GetWindowPos();
+	ImVec2 windowSize = ImGui::GetWindowSize();
+
+	ImGui::SetCursorPos({cursorPos.x,cursorPos.y - 2.f});
+	string separatorId = std::to_string(t.id) + "_sperator_line";
+	ImGui::InvisibleButton(separatorId.c_str(), {windowSize.x - cursorPos.x, 2.f});
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TRANSFORM_DRAG_AND_DROP"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			int id = payload_n;
+			if (id != t.id)
+			{
+				t.getParent().adopt(transform2(id));
+				t.getParent().getChildren().erase(Transforms.meta[id].childId);
+				auto itr = Transforms.meta[t.id].childId;
+				itr++;
+				Transforms.meta[id].childId = t.getParent().getChildren().insert(itr, transform2(id));
+
+				// t.adopt(transform2(id));
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+	ImGui::SetCursorPos(cursorPos);
 
 	if (open)
 	{
@@ -575,6 +609,12 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				{
 					renderTransform(c, count);
 				}
+				// for(int i = 0; i < Transforms.size(); i++){
+				// 	transform2 t = transform2(i);
+				// 	// if(t.getParent().id == 0){
+				// 		renderTransform(t,count);
+				// 	// }
+				// }
 
 				transformLock.unlock();
 			}

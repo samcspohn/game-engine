@@ -33,6 +33,8 @@ add tool tips to assets (show files of model/shader)
 add model previewer
 add shader previewer
 
+automatic asset scanning
+
 ///////////////////////// in progress //////////////////////////
 
 add lights/lighting

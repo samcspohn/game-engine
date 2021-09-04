@@ -85,7 +85,7 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id)
 	for (int i = 0; i < transform_children.size(); i++)
 	{
 		YAML::Node child_game_object_node = transform_children[i];
-		game_object::decode(child_game_object_node, ref);
+		game_object::decode(child_game_object_node, g->transform.id);
 	}
 }
 
@@ -157,7 +157,10 @@ void _child_instatiate(game_object &g, transform2 parent)
 	for (auto &i : g.components)
 	{
 		// game_object::_getComponent(i)->_copy(ret);
-		ret->components.emplace(i.first,ComponentRegistry.getByType(i.first)->copy(i.second));
+		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
+		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
+		ret->components.emplace(i.first,comp_ref);
+
 	}
 	for (auto &i : ret->components)
 	{
@@ -185,7 +188,9 @@ game_object *_instantiate(game_object &g)
 
 	for (auto &i : g.components)
 	{
-		ret->components.emplace(i.first,ComponentRegistry.getByType(i.first)->copy(i.second));
+		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
+		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
+		ret->components.emplace(i.first,comp_ref);
 	}
 	for (auto &i : ret->components)
 	{
