@@ -1,4 +1,4 @@
-workingFile: /home/samuel/Documents/game-engine/heirarchytest.yaml
+workingFile: /home/samuel/Documents/game-engine/test3.yaml
 shaders:
   0: 0
   6932657030676596669: 1
@@ -74,8 +74,73 @@ models_id:
       - 1.00000095
     radius: 1.73205078
     unique: false
+  4:
+    id: 4
+    name: ship.obj
+    model:
+      file: ./test_project/models/ship1/ship.obj
+    file: ./test_project/models/ship1/ship.obj
+    bounds:
+      - 5.07851601
+      - 3.24485302
+      - 18.8469696
+    radius: 18.8676186
+    unique: false
+  5:
+    id: 5
+    name: 3guns.obj
+    model:
+      file: ./test_project/models/ship1/3guns.obj
+    file: ./test_project/models/ship1/3guns.obj
+    bounds:
+      - 0.651072979
+      - 0.216571003
+      - 2.32968593
+    radius: 2.4194634
+    unique: false
+  6:
+    id: 6
+    name: maingun.obj
+    model:
+      file: ./test_project/models/ship1/maingun.obj
+    file: ./test_project/models/ship1/maingun.obj
+    bounds:
+      - 1.07368803
+      - 0.294458985
+      - 1.083938
+    radius: 1.39560807
+    unique: false
+  7:
+    id: 7
+    name: nanosuit.obj
+    model:
+      file: ./test_project/models/nanosuit/nanosuit.obj
+    file: ./test_project/models/nanosuit/nanosuit.obj
+    bounds:
+      - 3.99446201
+      - 15.4122248
+      - 1.71993804
+    radius: 15.414094
+    unique: false
+  8:
+    id: 8
+    name: Spruce.obj
+    model:
+      file: ./test_project/models/Spruce_obj/Spruce.obj
+    file: ./test_project/models/Spruce_obj/Spruce.obj
+    bounds:
+      - 3.11780691
+      - 3.3235271
+      - 11.1648397
+    radius: 11.1648397
+    unique: false
 models:
+  810883320359240584: 6
+  1462235389574206337: 4
+  2906789789975983016: 5
+  3007588896687430601: 8
   7191102090878137582: 3
+  12656898630161774516: 7
 emitter_prototpes_:
   avail: ~
   valid:
@@ -88,7 +153,7 @@ emitter_prototpes_:
       minSpeed: 2
       maxSpeed: 3
       lifetime2: 3
-      live: -1083469177
+      live: -1084829512
       scale:
         - 1
         - 1
@@ -699,4 +764,93 @@ emitter_prototpes_:
         - 1
         - 1
 prototype_registry: ~
-assetIdGenerator: 4
+assetIdGenerator: 9
+file_meta:
+  - path: ./test_project/models/nanosuit/arm_dif.png
+    time: -4818466201764381931
+  - path: ./test_project/models/Crate/Crate1.3ds
+    time: -4818466201774381931
+  - path: ./test_project/models/nanosuit/LICENSE.txt
+    time: -4818466201764381931
+  - path: ./test_project/models/nanosuit/nanosuit.blend
+    time: -4818466201724381932
+  - path: ./test_project/file.txt
+    time: -4805853737879419514
+  - path: ./test_project/models/nanosuit
+    time: -4818466201724381932
+  - path: ./test_project/models/nanosuit/body_dif.png
+    time: -4818466201754381932
+  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
+    time: -4818466201734381932
+  - path: ./test_project/models/Crate/Crate1.mtl
+    time: -4818466201764381931
+  - path: ./test_project/models/ship1/ship.obj
+    time: -4818466201714381932
+  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
+    time: -4818466201724381932
+  - path: ./test_project/models/Spruce_obj/Spruce trunk.jpeg
+    time: -4813280556754753001
+  - path: ./test_project/models/nanosuit/arm_showroom_spec.png
+    time: -4818466201754381932
+  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
+    time: -4818466201744381932
+  - path: ./test_project/models/nanosuit/glass_dif.png
+    time: -4818466201754381932
+  - path: ./test_project/models/ship1/maingun.mtl
+    time: -4818466201714381932
+  - path: ./test_project/models/ship1/ship.mtl
+    time: -4818466201714381932
+  - path: ./test_project/test_stuff.cpp
+    time: -4805760429119345917
+  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
+    time: -4818466201764381931
+  - path: ./test_project/models/Crate/CrateImage2.JPG
+    time: -4818466201764381931
+  - path: ./test_project/models/nanosuit/nanosuit.obj
+    time: -4818466201714381932
+  - path: ./test_project/models/nanosuit/helmet_diff.png
+    time: -4818466201744381932
+  - path: ./test_project/models/nanosuit/leg_showroom_ddn.png
+    time: -4818466201734381932
+  - path: ./test_project/models/Crate/crate_1.jpg
+    time: -4818466201764381931
+  - path: ./test_project/models/ship1/3guns.obj
+    time: -4818466201714381932
+  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
+    time: -4818466201744381932
+  - path: ./test_project/models/nanosuit/hand_dif.png
+    time: -4818466201754381932
+  - path: ./test_project/models/Spruce_obj/Spruce branches.png
+    time: -4813280556754753001
+  - path: ./test_project/models/Crate/Crate1.blend
+    time: -4818466201764381931
+  - path: ./test_project/models/ship1/maingun.obj
+    time: -4818466201714381932
+  - path: ./test_project/models/nanosuit/glass_ddn.png
+    time: -4818466201754381932
+  - path: ./test_project/models/Spruce_obj/Spruce.mtl
+    time: -4813280556754753001
+  - path: ./test_project/models/ship1
+    time: -4818466201714381932
+  - path: ./test_project/models/ship1/3guns.mtl
+    time: -4818466201714381932
+  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
+    time: -4818466201744381932
+  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
+    time: -4818466201754381932
+  - path: ./test_project/models/Crate/CrateImage1.JPG
+    time: -4818466201764381931
+  - path: ./test_project/models/Spruce_obj/Spruce.obj
+    time: -4813280556754753001
+  - path: ./test_project/models/nanosuit/body_showroom_spec.png
+    time: -4818466201754381932
+  - path: ./test_project/models
+    time: -4806116148500000593
+  - path: ./test_project/models/Crate
+    time: -4818466201764381931
+  - path: ./test_project/models/nanosuit/nanosuit.mtl
+    time: -4818466201724381932
+  - path: ./test_project/models/Spruce_obj
+    time: -4813280556754753001
+  - path: ./test_project/models/nanosuit/leg_dif.png
+    time: -4818466201734381932

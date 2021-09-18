@@ -65,29 +65,29 @@ public:
     // void onDestroy();
     void onEdit();
     SER_FUNC()
-    switch (x)
     {
-        // &color &constant &linear &quadratic &transfromId &radius &cutOff &outerCutOff;
-    case ser_mode::edit_mode:
-        renderEdit("color", pl->color);
-        renderEdit("constant", pl->constant);
-        renderEdit("linear", pl->linear);
-        renderEdit("quadratic", pl->quadratic);
-        renderEdit("cut off", pl->cutOff);
-        renderEdit("outer cut off", pl->outerCutOff);
-        pl->setRadius();
-        break;
-    case ser_mode::read_mode:
-        (*_iar) >> *pl;
-        break;
-    case ser_mode::write_mode:
-        (*_oar) << *pl;
-        break;
-    default:
-        cout << "no mode provided";
-        break;
+        switch (x)
+        {
+            // &color &constant &linear &quadratic &transfromId &radius &cutOff &outerCutOff;
+        case ser_mode::edit_mode:
+            renderEdit("color", pl->color);
+            renderEdit("constant", pl->constant);
+            renderEdit("linear", pl->linear);
+            renderEdit("quadratic", pl->quadratic);
+            renderEdit("cut off", pl->cutOff);
+            renderEdit("outer cut off", pl->outerCutOff);
+            pl->setRadius();
+            break;
+        case ser_mode::read_mode:
+            (*_iar) >> *pl;
+            break;
+        case ser_mode::write_mode:
+            (*_oar) << *pl;
+            break;
+        default:
+            cout << "no mode provided";
+            break;
+        }
     }
-
-    SER_END
 };
 // REGISTER_COMPONENT(Light)

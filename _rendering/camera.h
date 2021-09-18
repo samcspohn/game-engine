@@ -70,40 +70,42 @@ class _camera : public component
 public:
 	_camera(GLfloat fov, GLfloat nearPlane, GLfloat farPlane);
 	_camera();
-	_camera(const _camera& c);
+	_camera(const _camera &c);
 	unique_ptr<camera> c;
 	SER_FUNC()
-	switch (x)
 	{
-	case ser_mode::edit_mode:
-		renderEdit("fov", c->fov);
-		renderEdit("near", c->nearPlane);
-		renderEdit("far", c->farPlane);
-		renderEdit("clear color", c->clearColor);
-		break;
-	case ser_mode::read_mode:
-		c->fov = node_9738469372465["fov"].as<float>();
-		c->nearPlane = node_9738469372465["near"].as<float>();
-		c->farPlane = node_9738469372465["far"].as<float>();
-		c->clearColor = node_9738469372465["clearColor"].as<glm::vec3>();
-		// (*_iar) >> c->fov;
-		// (*_iar) >> c->nearPlane;
-		// (*_iar) >> c->farPlane;
-		break;
-	case ser_mode::write_mode:
-		node_9738469372465["fov"] = c->fov;
-		node_9738469372465["near"] = c->nearPlane;
-		node_9738469372465["far"] = c->farPlane;
-		node_9738469372465["clearColor"] = c->clearColor;
-		// (*_oar) << c->fov;
-		// (*_oar) << c->nearPlane;
-		// (*_oar) << c->farPlane;
-		break;
-	default:
-		cout << "no mode provided";
-		break;
+		switch (x)
+		{
+		case ser_mode::edit_mode:
+			renderEdit("fov", c->fov);
+			renderEdit("near", c->nearPlane);
+			renderEdit("far", c->farPlane);
+			renderEdit("clear color", c->clearColor);
+			break;
+		case ser_mode::read_mode:
+			c->fov = node_9738469372465["fov"].as<float>();
+			c->nearPlane = node_9738469372465["near"].as<float>();
+			c->farPlane = node_9738469372465["far"].as<float>();
+			c->clearColor = node_9738469372465["clearColor"].as<glm::vec3>();
+			// (*_iar) >> c->fov;
+			// (*_iar) >> c->nearPlane;
+			// (*_iar) >> c->farPlane;
+			break;
+		case ser_mode::write_mode:
+			node_9738469372465["fov"] = c->fov;
+			node_9738469372465["near"] = c->nearPlane;
+			node_9738469372465["far"] = c->farPlane;
+			node_9738469372465["clearColor"] = c->clearColor;
+			// (*_oar) << c->fov;
+			// (*_oar) << c->nearPlane;
+			// (*_oar) << c->farPlane;
+			break;
+		default:
+			cout << "no mode provided";
+			break;
+		}
 	}
-	SER_END
+
 private:
 };
 

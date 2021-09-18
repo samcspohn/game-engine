@@ -50,36 +50,35 @@ public:
 	_renderer(const _renderer &other);
 	void deinit(int id);
 	SER_FUNC()
-
-	switch (x)
 	{
-	case ser_mode::edit_mode:
-	{
-		_shader curr_s = shader;
-		_model curr_m = model;
-		renderEdit("shader", shader);
-		renderEdit("model", model);
-		if (model.m != curr_m.m || shader.s != curr_s.s)
+		switch (x)
 		{
-			this->set(shader, model);
+		case ser_mode::edit_mode:
+		{
+			_shader curr_s = shader;
+			_model curr_m = model;
+			renderEdit("shader", shader);
+			renderEdit("model", model);
+			if (model.m != curr_m.m || shader.s != curr_s.s)
+			{
+				this->set(shader, model);
+			}
+		}
+		break;
+		case ser_mode::read_mode:
+			shader = node_9738469372465["shader"].as<decltype(shader)>();
+			model = node_9738469372465["model"].as<decltype(model)>();
+			// this->set(shader, model);
+			break;
+		case ser_mode::write_mode:
+			node_9738469372465["shader"] = shader;
+			node_9738469372465["model"] = model;
+			break;
+		default:
+			cout << "no mode provided";
+			break;
 		}
 	}
-	break;
-	case ser_mode::read_mode:
-		shader = node_9738469372465["shader"].as<decltype(shader)>();
-		model = node_9738469372465["model"].as<decltype(model)>();
-		// this->set(shader, model);
-		break;
-	case ser_mode::write_mode:
-		node_9738469372465["shader"] = shader;
-		node_9738469372465["model"] = model;
-		break;
-	default:
-		cout << "no mode provided";
-		break;
-	}
-
-	SER_END
 };
 
 extern gpu_vector_proxy<matrix> *GPU_MATRIXES;

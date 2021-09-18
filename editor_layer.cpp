@@ -216,7 +216,11 @@ void renderTransform(transform2 t, int &count)
 		ImGui::Separator();
 		if (ImGui::Selectable("copy"))
 		{
-			_instantiate(*t->gameObject());
+			game_object *g = _instantiate(*t->gameObject());
+			inspector = g;
+			selected_transform = g->transform;
+			selected_transforms.clear();
+			selected_transforms[g->transform.id] = true;
 		}
 		if (ImGui::Selectable("delete"))
 		{
@@ -226,7 +230,11 @@ void renderTransform(transform2 t, int &count)
 		}
 		if (ImGui::Selectable("new game object"))
 		{
-			_instantiate();
+			game_object *g = _instantiate();
+			inspector = g;
+			selected_transform = g->transform;
+			selected_transforms.clear();
+			selected_transforms[g->transform.id] = true;
 		}
 		ImGui::EndPopup();
 	}
@@ -236,7 +244,7 @@ void renderTransform(transform2 t, int &count)
 	ImVec2 windowPos = ImGui::GetWindowPos();
 	ImVec2 windowSize = ImGui::GetWindowSize();
 
-	ImGui::SetCursorPos({cursorPos.x,cursorPos.y - 2.f});
+	ImGui::SetCursorPos({cursorPos.x, cursorPos.y - 2.f});
 	string separatorId = std::to_string(t.id) + "_sperator_line";
 	ImGui::InvisibleButton(separatorId.c_str(), {windowSize.x - cursorPos.x, 2.f});
 	if (ImGui::BeginDragDropTarget())
@@ -595,7 +603,11 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			{
 				if (ImGui::Selectable("new game object"))
 				{
-					_instantiate();
+					game_object *g = _instantiate();
+					inspector = g;
+					selected_transform = g->transform;
+					selected_transforms.clear();
+					selected_transforms[g->transform.id] = true;
 				}
 				ImGui::EndPopup();
 			}

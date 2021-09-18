@@ -47,11 +47,13 @@ public:
 	void accelerate(glm::vec3 acc);
 	glm::vec3 getVelocity();
 	SER_FUNC()
-	SER(gravity)
-	SER(bounciness)
-	SER(mass)
-	SER(damping)
-	SER_END
+	{
+		SER(gravity)
+		SER(bounciness)
+		SER(mass)
+		SER(damping)
+	}
+
 private:
 	glm::vec3 vel = glm::vec3(0);
 	glm::quat axis;
@@ -73,9 +75,8 @@ public:
 	static glm::vec3 gravity;
 	glm::vec3 velocity;
 	void update();
-	void onCollision(collision&);
-	SER_FUNC()
-	SER_END
+	void onCollision(collision &);
+	SER_FUNC(){}
 };
 
 namespace YAML

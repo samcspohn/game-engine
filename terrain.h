@@ -62,7 +62,7 @@ public:
     void IntersectRayQuadTree(chunk* _chunk, terr::quad_node &node, ray &r, glm::vec3 &result, float& t);
     static bool IntersectRayTerrain(glm::vec3 p, glm::vec3 dir, glm::vec3 &result);
 
-    SER_FUNC()
-    SER(shader)
-    SER_END;
+    SER_FUNC(){
+        SER(shader)
+    }
 };

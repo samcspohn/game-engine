@@ -49,12 +49,13 @@ public:
     // void onStart();
     // void onDestroy();
     // SER1(prototype);
-    SER_FUNC()
+    SER_FUNC(){
+
         int proto_id = prototype.emitterPrototype;
         SER(prototype);
         if (this->transform.id != -1 && prototype.emitterPrototype != proto_id)
                 this->setPrototype(prototype);
-    SER_END
+    }
 };
 
 extern gpu_vector_proxy<emitter> *gpu_emitters;

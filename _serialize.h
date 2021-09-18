@@ -12,40 +12,16 @@ enum ser_mode
     write_mode
 };
 
-#define SER_FUNC()                                            \
-    void ser_edit(ser_mode x, YAML::Node &node_9738469372465) \
-    {
-
-#define SER_END                                                                  \
-    }                                                                            \
-                                                                                 \
-    friend class boost::serialization::access;                                   \
-                                                                                 \
-    inline void serialize(IARCHIVE &ar, const unsigned int /* file_version */)   \
-    {                                                                            \
-        YAML::Node none;                                                         \
-        ar >> boost::serialization::base_object<component>(*this);               \
-        _iar = &ar;                                                              \
-        ser_edit(ser_mode::read_mode, none);                                     \
-    }                                                                            \
-    inline void serialize(OARCHIVE &ar, const unsigned int /* file_version */)   \
-    {                                                                            \
-                                                                                 \
-        YAML::Node none;                                                         \
-        ar << boost::serialization::base_object<component>(*this);               \
-        _oar = &ar;                                                              \
-        ser_edit(ser_mode::write_mode, none);                                    \
-    }                                                                            \
-    template <class Archive>                                                     \
-    inline void serialize(Archive &ar, const unsigned int /* file_version */) {} \
-    inline void encode(YAML::Node &node)                                         \
-    {                                                                            \
-        ser_edit(ser_mode::write_mode, node);                                    \
-    }                                                                            \
-    inline void decode(YAML::Node &node)                                         \
-    {                                                                            \
-        ser_edit(ser_mode::read_mode, node);                                     \
-    }
+#define SER_FUNC()                            \
+    inline void encode(YAML::Node &node)      \
+    {                                         \
+        ser_edit(ser_mode::write_mode, node); \
+    }                                         \
+    inline void decode(YAML::Node &node)      \
+    {                                         \
+        ser_edit(ser_mode::read_mode, node);  \
+    }                                         \
+    void ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 
 // void decode(YAML::Node &node, const char *name, float &value)
 // {

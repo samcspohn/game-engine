@@ -129,9 +129,10 @@ public:
     void set(audio &_a);
     void onStart();
     void onDestroy();
-    SER_FUNC()
+    SER_FUNC(){
+
         SER(a)
-    SER_END
+    }
 };
 // BOOST_CLASS_EXPORT(componentStorage<audiosource>)
 // REGISTER_COMPONENT(audiosource)

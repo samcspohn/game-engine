@@ -112,15 +112,15 @@ void renderFunc(editor *ed, rolling_buffer &fps)
     glfwSwapBuffers(window);
 }
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <termios.h>
+// #include <unistd.h>
+// #include <fcntl.h>
+// #include <stdlib.h>
+// #include <termios.h>
 
-ssize_t ngetc(char &c)
-{
-    return read(0, &c, 1);
-}
+// ssize_t ngetc(char &c)
+// {
+//     return read(0, &c, 1);
+// }
 
 void physicsUpdate(float dt)
 {
@@ -200,13 +200,13 @@ void printStats()
     // cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
     // cout << "entities : " << entities << endl;
 }
-
+#include "fileWatcher.h"
 int main(int argc, char **argv)
 {
-    cout << float(-3.523f) << endl;
-    cout << int(float(-3.523f)) << endl;
-    float x = -3.523f;
-    cout << x - int(x) << endl;
+
+    FileWatcher fw{"./test_project", std::chrono::milliseconds(500)};
+    
+
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
     // physics_manager::collisionGraph[1] = {0, 1};
@@ -228,6 +228,57 @@ int main(int argc, char **argv)
     initParticles2();
     particle_renderer::init2();
     matProgram = _shader("res/shaders/transform.comp");
+
+    {
+		YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+		// ifstream("assets.yaml") >> assets_node;
+		working_file = assets_node["workingFile"].as<string>();
+		shaderManager::decode(assets_node);
+		modelManager::decode(assets_node);
+		decodeEmitters(assets_node);
+		decodePrototypes(assets_node);
+		assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
+        fw.getFileData(assets_node["file_meta"]);
+    }
+
+    // Start monitoring a folder for changes and (in case of changes)
+    // run a user provided lambda function
+    thread fileWatcherThread([&]()
+                             {
+                                 fw.start([&](std::string path_to_watch, FileStatus status) -> void
+                                          {
+                                              // Process only regular files, all other file types are ignored
+                                              if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != FileStatus::erased)
+                                              {
+                                                  return;
+                                              }
+
+                                              switch (status)
+                                              {
+                                              case FileStatus::created:
+                                                  std::cout << "File created: " << path_to_watch << '\n';
+                                                  break;
+                                              case FileStatus::modified:
+                                                  std::cout << "File modified: " << path_to_watch << '\n';
+                                                  break;
+                                              case FileStatus::erased:
+                                                  std::cout << "File erased: " << path_to_watch << '\n';
+                                                  break;
+                                              default:
+                                                  std::cout << "Error! Unknown file status.\n";
+                                              }
+                                              if(path_to_watch.find(".obj") != -1){
+                                                  _model m(path_to_watch);
+                                                  m.meta()->name = path_to_watch.substr(path_to_watch.find_last_of('/') + 1);
+                                              }
+                                              if (path_to_watch != "assets.yaml")
+                                              {
+                                                  YAML::Node assets = YAML::LoadFile("assets.yaml");
+                                                  assets["file_meta"] = fw.getFileData();
+                                                  ofstream("assets.yaml") << assets;
+                                              }
+                                          });
+                             });
 
     // rootGameObject->_addComponent<player>();
 
@@ -315,6 +366,19 @@ int main(int argc, char **argv)
 
         fps.add(time.stop());
     }
+    fw.stop();
+    {
+		YAML::Node assets_node;
+		assets_node["workingFile"] = working_file;
+		shaderManager::encode(assets_node);
+		modelManager::encode(assets_node);
+		encodeEmitters(assets_node);
+		encodePrototypes(assets_node);
+		assets_node["assetIdGenerator"] = assets::assetIdGenerator;
+        assets_node["file_meta"] = fw.getFileData();
+		ofstream("assets.yaml") << assets_node;
+    }
+    fileWatcherThread.join();
     printStats();
     endEditor();
     rootGameObject->_destroy();
