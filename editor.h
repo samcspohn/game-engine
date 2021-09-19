@@ -119,5 +119,20 @@ void renderEdit(const char *name, vector<t> &v)
     }
 }
 
+template<typename t, size_t u>
+void renderEdit(const char* name, t (&v)[u]){
+      bool open = ImGui::TreeNode(name);
+    if (open)
+    {
+        for (int i{0}; i < u; ++i)
+        {
+            ImGui::PushID(i);
+            renderEdit(to_string(i).c_str(), v[i]);
+            ImGui::SameLine();
 
+            ImGui::PopID();
+        }
+        ImGui::TreePop();
+    }
+}
 // void renderEdit(const char* name, bool& b);

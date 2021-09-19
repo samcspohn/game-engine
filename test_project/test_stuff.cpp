@@ -626,21 +626,21 @@ public:
     }
     //UPDATE(_turret,update);
     SER_FUNC(){
-        // SER(target);
+        SER(target);
         SER(gun_speed)
         SER(turret_speed)
         SER(muzzelFlash)
-        // SER(guns)
+        SER(guns)
         // SER(t_angles)
         // SER(g_angles)
         SER(turret_angle)
         SER(guns_angle)
     }
-    SER_HELPER()
-    {
-        SER_BASE(component);
-        ar &target &gun_speed &turret_speed &muzzelFlash &guns &t_angles &g_angles &turret_angle &guns_angle; // & forward & under;
-    }
+    // SER_HELPER()
+    // {
+    //     SER_BASE(component);
+    //     ar &target &gun_speed &turret_speed &muzzelFlash &guns &t_angles &g_angles &turret_angle &guns_angle; // & forward & under;
+    // }
 };
 REGISTER_COMPONENT(_turret)
 
@@ -852,7 +852,7 @@ public:
     }
     //UPDATE(_boom,update);
     SER_FUNC(){
-        // SER(t)
+        SER(t)
     }
 };
 REGISTER_COMPONENT(_boom)

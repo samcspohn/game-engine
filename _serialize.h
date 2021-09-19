@@ -46,3 +46,28 @@ enum ser_mode
         cout << "no mode provided";                         \
         break;                                              \
     }
+
+
+
+// namespace YAML
+// {
+
+// 	template <>
+// 	struct convert<Shader>
+// 	{
+// 		static Node encode(const Shader &rhs)
+// 		{
+// 			Node node;
+// 			node["shaders"] = rhs._shaders;
+// 			node["primitive_type"] = rhs.primitiveType;
+// 			return node;
+// 		}
+
+// 		static bool decode(const Node &node, Shader &rhs)
+// 		{
+// 			rhs._shaders = node["id"].as<map<GLenum, string>>();
+// 			rhs.primitiveType = node["primitive_type"].as<GLenum>();
+// 			return true;
+// 		}
+// 	};
+// }

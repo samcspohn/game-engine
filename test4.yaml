@@ -1,0 +1,54 @@
+transform:
+  position:
+    - 0
+    - 0
+    - 0
+  rotation:
+    - 0
+    - 0
+    - 0
+    - 1
+  scale:
+    - 1
+    - 1
+    - 1
+  id: 0
+  children:
+    - transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 2
+        children:
+          - transform:
+              position:
+                - 0
+                - 0
+                - 0
+              rotation:
+                - 0
+                - 0
+                - 0
+                - 1
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 3
+              children: ~
+            components:
+              - id: 6272315744329371300
+                value:
+                  t: 2
+      components: ~
+components: ~

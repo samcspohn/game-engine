@@ -12,6 +12,7 @@
 #include "gpu_vector.h"
 #include "serialize.h"
 // #include "editor.h"
+#include <imgui/imgui.h>
 // ~-1 = 0
 
 using namespace std;
@@ -283,10 +284,34 @@ void initTransform();
 
 int switchAH(int index);
 extern unsigned int transforms_enabled;
-// void renderEdit(const char* name, transform2& t);
+void renderEdit(const char* name, transform2& t);
 // void saveTransforms(OARCHIVE &oa);
 // void loadTransforms(IARCHIVE &ia);
 
 extern transform2 root2;
 bool operator<(const transform2 &l, const transform2 &r);
 bool operator==(const transform2 &l, const transform2 &r);
+
+extern unordered_map<int,int> transform_map;
+
+namespace YAML
+{
+
+	template <>
+	struct convert<transform2>
+	{
+		static Node encode(const transform2 &rhs)
+		{
+			Node node;
+			node = rhs.id;
+			return node;
+		}
+
+		static bool decode(const Node &node, transform2 &rhs)
+		{
+			int id = node.as<int>();
+			rhs.id = transform_map.at(id);
+			return true;
+		}
+	};
+}

@@ -7,19 +7,21 @@ std::vector<game_object *> toDestroyGameObjects;
 std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
 STORAGE<game_object> game_object_cache;
 
-
-void encodePrototypes(YAML::Node& node){
+void encodePrototypes(YAML::Node &node)
+{
 	YAML::Node prototypeRegistry_node;
-	for(auto& i : prototypeRegistry){
+	for (auto &i : prototypeRegistry)
+	{
 		prototypeRegistry_node[i.first] = *i.second;
 	}
 	node["prototype_registry"] = prototypeRegistry_node;
 }
 
-
-void decodePrototypes(YAML::Node& node){
+void decodePrototypes(YAML::Node &node)
+{
 	YAML::Node prototypeRegistry_node = node["prototype_registry"];
-	for(YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i){
+	for (YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i)
+	{
 		prototypeRegistry[i->first.as<int>()] = make_shared<game_object_proto_>(i->second.as<game_object_proto_>());
 	}
 }
@@ -31,6 +33,7 @@ void game_object::encode(YAML::Node &game_object_node, game_object *g)
 	transform_node["position"] = g->transform->getPosition();
 	transform_node["rotation"] = g->transform->getRotation();
 	transform_node["scale"] = g->transform->getScale();
+	transform_node["id"] = g->transform.id;
 	game_object_node["transform"] = transform_node;
 
 	// components
@@ -56,8 +59,14 @@ void game_object::encode(YAML::Node &game_object_node, game_object *g)
 		transform_children.push_back(child_game_object_node);
 	}
 }
-void game_object::decode(YAML::Node &game_object_node, int parent_id)
+void game_object::decode(YAML::Node &game_object_node, int parent_id, list<function<void()>> *defered_component_init)
 {
+	bool root_decode = false;
+	if (defered_component_init == 0)
+	{
+		root_decode = true;
+		defered_component_init = new list<function<void()>>();
+	}
 	int ref = game_object_cache._new();
 	game_object *g = &game_object_cache.get(ref);
 
@@ -66,26 +75,41 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id)
 	g->transform->setRotation(game_object_node["transform"]["rotation"].as<glm::quat>());
 	g->transform->setScale(game_object_node["transform"]["scale"].as<glm::vec3>());
 
+	transform_map[game_object_node["transform"]["id"].as<int>()] = g->transform;
+
 	Transforms.meta[g->transform.id].gameObject = ref;
 	if (parent_id != -1)
 		transform2(parent_id).adopt(g->transform);
 
 	YAML::Node components_node = game_object_node["components"];
-	for (int i = 0; i < components_node.size(); i++)
-	{
-		YAML::Node component_node = components_node[i];
-		size_t hash = component_node["id"].as<size_t>();
-		YAML::Node component_val_node = component_node["value"];
-		int id = ComponentRegistry.registry(hash)->decode(component_val_node);
-		g->components.emplace(hash, id);
-		_getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
-	}
+
+	defered_component_init->push_back([=]()
+									  {
+										  for (int i = 0; i < components_node.size(); i++)
+										  {
+											  YAML::Node component_node = components_node[i];
+											  size_t hash = component_node["id"].as<size_t>();
+											  YAML::Node component_val_node = component_node["value"];
+											  int id = ComponentRegistry.registry(hash)->decode(component_val_node);
+											  g->components.emplace(hash, id);
+											  _getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
+										  }
+									  });
 
 	YAML::Node transform_children = game_object_node["transform"]["children"];
 	for (int i = 0; i < transform_children.size(); i++)
 	{
 		YAML::Node child_game_object_node = transform_children[i];
 		game_object::decode(child_game_object_node, g->transform.id);
+	}
+
+	if (root_decode)
+	{
+		for (auto &i : *defered_component_init)
+		{
+			i();
+		}
+		delete defered_component_init;
 	}
 }
 
@@ -159,8 +183,7 @@ void _child_instatiate(game_object &g, transform2 parent)
 		// game_object::_getComponent(i)->_copy(ret);
 		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
-		ret->components.emplace(i.first,comp_ref);
-
+		ret->components.emplace(i.first, comp_ref);
 	}
 	for (auto &i : ret->components)
 	{
@@ -190,7 +213,7 @@ game_object *_instantiate(game_object &g)
 	{
 		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
-		ret->components.emplace(i.first,comp_ref);
+		ret->components.emplace(i.first, comp_ref);
 	}
 	for (auto &i : ret->components)
 	{
@@ -234,7 +257,7 @@ game_object *_instantiate(game_object_prototype &g)
 	for (auto &i : _g.components)
 	{
 		// i.first->_copy(ret);
-		ret->components.emplace(i.second,ComponentRegistry.getByType(i.second)->copy(i.first));
+		ret->components.emplace(i.second, ComponentRegistry.getByType(i.second)->copy(i.first));
 	}
 	for (auto &i : ret->components)
 	{

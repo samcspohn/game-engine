@@ -115,54 +115,6 @@ public:
 			delete i.first;
 		deleteProtoRef(id);
 	}
-	friend class boost::serialization::access;
-
-	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
-		ar &boost::serialization::base_object<assets::asset>(*this) & components;
-	}
-
-	void serialize(OARCHIVE &ar, const unsigned int)
-	{
-		ar << boost::serialization::base_object<assets::asset>(*this);
-		// ar << name;
-		vector<string> archives;
-		for (auto &c : components)
-		{
-			stringstream ss;
-			OARCHIVE _ar(ss);
-			_ar << c.second;
-			_ar << c.first;
-			archives.push_back(ss.str());
-		}
-		ar << archives;
-	}
-	void serialize(IARCHIVE &ar, const unsigned int)
-	{
-		ar >> boost::serialization::base_object<assets::asset>(*this);
-		// ar >> name;
-		vector<string> archives;
-		ar >> archives;
-		for (auto &s : archives)
-		{
-			size_t type;
-			component *c;
-			stringstream ss{s};
-			IARCHIVE _ar(ss);
-			_ar >> type;
-			try
-			{
-				_ar >> c;
-			}
-			catch (exception e)
-			{
-				// ComponentRegistry.getByType(type)->floatingComponent(c);
-				cout << e.what() << endl;
-			}
-			components.emplace(c, type);
-		}
-	}
 };
 
 namespace YAML
@@ -251,7 +203,7 @@ public:
 	static void deserialize(IARCHIVE &ar, map<int, int> &transform_map);
 
 	static void encode(YAML::Node &node, game_object *g);
-	static void decode(YAML::Node &node, int);
+	static void decode(YAML::Node &node, int, list<function<void()>>* = 0);
 
 	void inspect()
 	{
