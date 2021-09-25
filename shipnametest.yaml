@@ -55,7 +55,7 @@ transform:
         id: 2
         children: ~
       components: ~
-    - name: ship container
+    - name: ""
       transform:
         position:
           - 0
@@ -72,7 +72,7 @@ transform:
           - 1
         id: 3
         children:
-          - name: ship
+          - name: ""
             transform:
               position:
                 - 0
@@ -89,7 +89,7 @@ transform:
                 - 1
               id: 4
               children:
-                - name: turret
+                - name: ""
                   transform:
                     position:
                       - 0
@@ -106,7 +106,7 @@ transform:
                       - 1
                     id: 5
                     children:
-                      - name: guns
+                      - name: ""
                         transform:
                           position:
                             - 0
@@ -437,180 +437,6 @@ transform:
                           -
                             - -1.396263
                             - 0.3490658
-                - name: turret
-                  transform:
-                    position:
-                      - 4.87084e-08
-                      - 26.85064
-                      - 6.146109
-                    rotation:
-                      - 0
-                      - 0
-                      - 1
-                      - 6.158884e-08
-                    scale:
-                      - 1
-                      - 1
-                      - 1
-                    id: 16
-                    children:
-                      - name: guns
-                        transform:
-                          position:
-                            - 4.020581e-08
-                            - 26.98285
-                            - 6.836045
-                          rotation:
-                            - 0
-                            - 0
-                            - 1
-                            - 6.158884e-08
-                          scale:
-                            - 1
-                            - 1
-                            - 1
-                          id: 17
-                          children: ~
-                        components:
-                          - id: 9328246355543747823
-                            value:
-                              shader:
-                                id: 0
-                              model:
-                                id: 5
-                          - id: 14876483986192322348
-                            value:
-                              rof: 0.25
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                  components:
-                    - id: 9328246355543747823
-                      value:
-                        shader:
-                          id: 0
-                        model:
-                          id: 6
-                    - id: 12031868808377879742
-                      value:
-                        target: 15
-                        gun_speed: 1.745329
-                        turret_speed: 1.745329
-                        muzzelFlash:
-                          id: 0
-                        t_angles:
-                          - -2.356194
-                          - 0
-                          - 2.356194
-                        g_angles:
-                          -
-                            - -1.396263
-                            - 0.3490658
-                          -
-                            - -1.396263
-                            - 0.05235988
-                          -
-                            - -1.396263
-                            - 0.3490658
-                - name: turret
-                  transform:
-                    position:
-                      - -3.247468e-08
-                      - 26.19157
-                      - 3.082726
-                    rotation:
-                      - 0
-                      - 0
-                      - 1
-                      - 6.158884e-08
-                    scale:
-                      - 1
-                      - 1
-                      - 1
-                    id: 18
-                    children:
-                      - name: guns
-                        transform:
-                          position:
-                            - -4.097727e-08
-                            - 26.32378
-                            - 3.772663
-                          rotation:
-                            - 0
-                            - 0
-                            - 1
-                            - 6.158884e-08
-                          scale:
-                            - 1
-                            - 1
-                            - 1
-                          id: 19
-                          children: ~
-                        components:
-                          - id: 9328246355543747823
-                            value:
-                              shader:
-                                id: 0
-                              model:
-                                id: 5
-                          - id: 14876483986192322348
-                            value:
-                              rof: 0.25
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                  components:
-                    - id: 9328246355543747823
-                      value:
-                        shader:
-                          id: 0
-                        model:
-                          id: 6
-                    - id: 12031868808377879742
-                      value:
-                        target: 15
-                        gun_speed: 1.745329
-                        turret_speed: 1.745329
-                        muzzelFlash:
-                          id: 0
-                        t_angles:
-                          - -2.356194
-                          - 0
-                          - 2.356194
-                        g_angles:
-                          -
-                            - -1.396263
-                            - 0.3490658
-                          -
-                            - -1.396263
-                            - 0.05235988
-                          -
-                            - -1.396263
-                            - 0.3490658
             components:
               - id: 1602829304412528585
                 value: ~
@@ -626,7 +452,7 @@ transform:
                     id: 0
                   model:
                     id: 4
-          - name: boom
+          - name: ""
             transform:
               position:
                 - 0
@@ -643,7 +469,7 @@ transform:
                 - 1
               id: 13
               children:
-                - name: camera
+                - name: ""
                   transform:
                     position:
                       - 0
@@ -660,7 +486,7 @@ transform:
                       - 1
                     id: 14
                     children:
-                      - name: target
+                      - name: ""
                         transform:
                           position:
                             - 0

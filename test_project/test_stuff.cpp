@@ -1,5 +1,5 @@
 #include "../game_engine.h"
-
+#include <array>
 class comp : public component
 {
 public:
@@ -39,10 +39,10 @@ public:
             transform->move((v) / 2.f);
         // vel += v / 2.f;
     }
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(vel);
     }
-    
 };
 transform2 comp::orbiter;
 
@@ -93,10 +93,10 @@ public:
         // concurrency::_parallelfor.doWork(to_spawn,[&](int i){
         // parallelfor(to_spawn, newObject(cube, shader););
     }
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(num_to_spawn)
     }
-    
 };
 
 class player : public component
@@ -111,7 +111,7 @@ public:
         if (Input.Mouse.getButtonDown(0))
         {
             ImVec2 mp = ImGui::GetMousePos();
-            ImVec2 sz = {m_editor->c.width, m_editor->c.height};
+            ImVec2 sz = {float(m_editor->c.width), float(m_editor->c.height)};
             cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
             glm::vec2 sz_2 = {sz.x, sz.y};
             sz_2 /= 2.f;
@@ -132,7 +132,7 @@ public:
             }
         }
     }
-    SER_FUNC(){}
+    SER_FUNC() {}
 };
 
 class bomb : public component
@@ -167,7 +167,7 @@ public:
             hit++;
         }
     }
-    SER_FUNC(){}
+    SER_FUNC() {}
 };
 REGISTER_COMPONENT(bomb)
 
@@ -179,7 +179,7 @@ public:
     void onStart()
     {
         c = transform.gameObject()->getComponent<_camera>();
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         // float h = 0.f;
         // for (int x = -50; x < 50; x++)
@@ -222,34 +222,34 @@ public:
 
         playerPos = transform.getPosition();
 
-        if (Input.Mouse.getButtonDown(0))
-        {
-            // glm::vec3 r;
-            // // transform.gameObject()->getComponent<_camera>()->c->screenPosToRay();
-            // if(raycast(transform.getPosition(),transform.forward(),r)){
-            //     auto box =  instantiate();
-            //     box->transform.setPosition(r);
-            //     box->addComponent<_renderer>();
-            // }
-            auto box = instantiate();
-            box->transform.setPosition(transform.getPosition());
-            box->addComponent<_renderer>();
-            box->addComponent<collider>();
-            box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
-            // box->addComponent<bomb>();
-        }
-        if (Input.Mouse.getButtonClicked(1))
-        {
+        // if (Input.Mouse.getButtonDown(0))
+        // {
+        //     // glm::vec3 r;
+        //     // // transform.gameObject()->getComponent<_camera>()->c->screenPosToRay();
+        //     // if(raycast(transform.getPosition(),transform.forward(),r)){
+        //     //     auto box =  instantiate();
+        //     //     box->transform.setPosition(r);
+        //     //     box->addComponent<_renderer>();
+        //     // }
+        //     auto box = instantiate();
+        //     box->transform.setPosition(transform.getPosition());
+        //     box->addComponent<_renderer>();
+        //     box->addComponent<collider>();
+        //     box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
+        //     // box->addComponent<bomb>();
+        // }
+        // if (Input.Mouse.getButtonClicked(1))
+        // {
 
-            auto box = instantiate();
-            box->transform.setPosition(transform.getPosition());
-            box->addComponent<_renderer>();
-            box->addComponent<collider>();
-            box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
-            box->addComponent<bomb>();
-        }
+        //     auto box = instantiate();
+        //     box->transform.setPosition(transform.getPosition());
+        //     box->addComponent<_renderer>();
+        //     box->addComponent<collider>();
+        //     box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
+        //     box->addComponent<bomb>();
+        // }
     }
-    SER_FUNC(){}
+    SER_FUNC() {}
 };
 
 editor *player::m_editor;
@@ -329,7 +329,8 @@ public:
         // hit = true;
         // }
     }
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(vel);
         SER(exp);
         SER(explosionSound)
@@ -393,22 +394,8 @@ public:
         }
         return false;
     }
-    // //UPDATE(gun, update);
-    void onEdit(){
-        RENDER(rof)
-            RENDER(speed)
-                RENDER(dispersion)
-                    RENDER(barrels)
-        // if (ImGui::TreeNode("barrels"))
-        // {
-        // 	for (int i{0}; i < barrels.size(); ++i)
-        // 	{
-        // 		renderEdit(to_string(i).c_str(), barrels[i]);
-        // 	}
-        // 	ImGui::TreePop();
-        // }
-    }
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(rof)
         SER(speed)
         SER(dispersion)
@@ -474,7 +461,8 @@ public:
         RENDER(speed);
     }
     //UPDATE(spinner,update);
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(speed)
         SER(axis)
     }
@@ -497,8 +485,10 @@ public:
     emitter_prototype_ muzzelFlash;
     float turret_speed = radians(30.f);
     float gun_speed = radians(30.f);
-    float t_angles[3];
-    float g_angles[3][2];
+    // float t_angles[3];
+    // float g_angles[3][2];
+    array<float, 3> t_angles;
+    array<array<float, 2>, 3> g_angles;
     // bool forward;
     // bool under;
     void setTarget(transform2 t)
@@ -625,16 +615,43 @@ public:
         return false;
     }
     //UPDATE(_turret,update);
-    SER_FUNC(){
+    SER_FUNC()
+    {
+        if (x == ser_mode::edit_mode && ImGui::Button("init"))
+        {
+            vector<vec3> barrels = {vec3(-.56, 0, 2.3), vec3(0, 0, 2.3), vec3(0.56, 0, 2.3)};
+
+            auto g = transform.getChildren().front().gameObject()->getComponent<gun>();
+            g->setBarrels(barrels);
+            // g->ammo = ammo_proto; //bullets["bomb"].proto;
+            g->rof = 1.f / 4.f;
+            g->dispersion = 0.01f;
+            g->speed = 500;
+
+            
+            setTarget(target);
+            t_angles[0] = radians(-135.f);
+            t_angles[1] = radians(0.f);
+            t_angles[2] = radians(135.f);
+
+            g_angles[0][0] = radians(-80.f);
+            g_angles[0][1] = radians(20.f);
+            g_angles[1][0] = radians(-80.f);
+            g_angles[1][1] = radians(3.f);
+            g_angles[2][0] = radians(-80.f);
+            g_angles[2][1] = radians(20.f);
+            turret_speed = glm::radians(100.f);
+            gun_speed = glm::radians(100.f);
+        }
         SER(target);
         SER(gun_speed)
         SER(turret_speed)
         SER(muzzelFlash)
-        SER(guns)
-        // SER(t_angles)
-        // SER(g_angles)
-        SER(turret_angle)
-        SER(guns_angle)
+        // SER(guns)
+        SER(t_angles)
+        SER(g_angles)
+        // SER(turret_angle)
+        // SER(guns_angle)
     }
     // SER_HELPER()
     // {
@@ -696,9 +713,9 @@ public:
         }
     }
     //UPDATE(gunManager,update);
-    
-    SER_FUNC(){
 
+    SER_FUNC()
+    {
     }
 };
 REGISTER_COMPONENT(gunManager)
@@ -723,7 +740,8 @@ public:
     }
     void onEdit() {}
     //UPDATE(autoShooter, update);
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(shouldFire)
     }
 };
@@ -814,7 +832,7 @@ public:
         // 	//  + (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * transform->forward());
     }
 
-    void onCollision(collision& col)
+    void onCollision(collision &col)
     {
 
         // getNamedEmitterProto("shockWave").burst(point, transform->forward(), vec3(0.5), 25);
@@ -828,13 +846,13 @@ public:
         RENDER(rotationSpeed);
     }
     //UPDATE(_ship,update);
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(maxReverse);
         SER(maxForward);
         SER(thrust);
         SER(rotationSpeed);
     }
-    
 };
 REGISTER_COMPONENT(_ship)
 
@@ -851,7 +869,8 @@ public:
         RENDER(t.id);
     }
     //UPDATE(_boom,update);
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(t)
     }
 };
@@ -868,7 +887,7 @@ class player_sc : public component
     vec3 ownSpeed = vec3(0);
     // bullet bomb;
     // bullet laser;
-    vector<gun *> guns;
+    // vector<gun *> guns;
     float rotationSpeed = 10.f;
     float rotX;
     float rotY;
@@ -889,6 +908,7 @@ class player_sc : public component
     // gui::image *crosshair;
     // _texture crosshairtex;
     game_object_prototype ammo_proto;
+    transform2 ship_t;
 
 public:
     terrain *t;
@@ -904,30 +924,30 @@ public:
 
     void onStart()
     {
-        list<transform2> vt = transform->getParent()->getParent()->getChildren();
-        transform2 ship_t;
-        for (auto &i : vt)
-        {
-            if (i->name() == "ship")
-                ship_t = i;
-        }
+        // list<transform2> vt = transform->getParent()->getParent()->getChildren();
+        // transform2 ship_t;
+        // for (auto &i : vt)
+        // {
+        //     if (i->name() == "ship")
+        //         ship_t = i;
+        // }
 
         ship = ship_t->gameObject()->getComponent<_ship>();
         gm = ship_t->gameObject()->getComponent<gunManager>();
         // rb = transform->gameObject()->getComponent<rigidBody>();
-        guns = transform->gameObject()->getComponents<gun>();
+        // guns = transform->gameObject()->getComponents<gun>();
         // bomb = bullets["bomb"];
-        guns[0]->ammo = ammo_proto;
-        guns[0]->rof = 3'000 / 60;
-        guns[0]->dispersion = 0.3f;
-        guns[0]->speed = 200;
-        // laser = bullets["laser"];
-        // guns[1]->ammo = bullets["laser"].proto;
-        guns[1]->rof = 1000 / 60;
-        guns[1]->dispersion = 0;
-        guns[1]->speed = 30000;
-        guns[1]->size = 20;
-        guns[0]->setBarrels({vec3(0.f, -10.f, 45.f)});
+        // guns[0]->ammo = ammo_proto;
+        // guns[0]->rof = 3'000 / 60;
+        // guns[0]->dispersion = 0.3f;
+        // guns[0]->speed = 200;
+        // // laser = bullets["laser"];
+        // // guns[1]->ammo = bullets["laser"].proto;
+        // guns[1]->rof = 1000 / 60;
+        // guns[1]->dispersion = 0;
+        // guns[1]->speed = 30000;
+        // guns[1]->size = 20;
+        // guns[0]->setBarrels({vec3(0.f, -10.f, 45.f)});
 
         // info = new gui::window();
         // fps = new gui::text();
@@ -964,7 +984,7 @@ public:
         // waitForRenderJob([&]() { crosshairtex.load("res/images/crosshair.png"); });
         // crosshair->img = crosshairtex;
         // reticule->adopt(crosshair);
-        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         cam = transform->gameObject()->getComponent<_camera>();
         fov = cam->c->fov;
     }
@@ -974,7 +994,7 @@ public:
         // rb->gravity = false;
         float _80 = radians(80.f);
         transform->getParent()->rotate(inverse(transform->getParent()->getRotation()) * vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * rotationSpeed * fov / _80 * -0.01f);
-        transform->getParent()->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * fov / _80 * -0.01f);
+        transform->getParent()->rotate(vec3(1, 0, 0), Input.Mouse.getY() * Time.unscaledDeltaTime * rotationSpeed * fov / _80 * 0.01f);
 
         // transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
         fov -= Input.Mouse.getScroll() * 0.5;
@@ -1037,7 +1057,8 @@ public:
             // 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
             // 	}
             // guns[0]->fire();
-            gm->fire();
+            // gm->fire();
+            cout << "FIRE" << endl;
         }
         // if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
         // {
@@ -1058,8 +1079,10 @@ public:
         ship->accelerate(Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F));
     }
     //UPDATE(player_sc, update);
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(speed)
+        SER(ship_t)
     }
 };
 REGISTER_COMPONENT(player_sc)
@@ -1141,7 +1164,8 @@ public:
         }
     }
     void onEdit() {}
-    SER_FUNC(){
+    SER_FUNC()
+    {
         SER(speed);
         SER(cursorReleased);
         SER(fov);

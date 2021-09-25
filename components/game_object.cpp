@@ -28,6 +28,7 @@ void decodePrototypes(YAML::Node &node)
 
 void game_object::encode(YAML::Node &game_object_node, game_object *g)
 {
+	game_object_node["name"] = string(g->transform->name());
 	// transform
 	YAML::Node transform_node;
 	transform_node["position"] = g->transform->getPosition();
@@ -66,11 +67,17 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 	{
 		root_decode = true;
 		defered_component_init = new list<function<void()>>();
+		transform_map.clear();
 	}
 	int ref = game_object_cache._new();
 	game_object *g = &game_object_cache.get(ref);
 
+
 	g->transform = Transforms._new();
+
+	try{
+		g->transform->name() = game_object_node["name"].as<string>();
+	}catch(...){ }
 	g->transform->setPosition(game_object_node["transform"]["position"].as<glm::vec3>());
 	g->transform->setRotation(game_object_node["transform"]["rotation"].as<glm::quat>());
 	g->transform->setScale(game_object_node["transform"]["scale"].as<glm::vec3>());
@@ -100,7 +107,7 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 	for (int i = 0; i < transform_children.size(); i++)
 	{
 		YAML::Node child_game_object_node = transform_children[i];
-		game_object::decode(child_game_object_node, g->transform.id);
+		game_object::decode(child_game_object_node, g->transform.id, defered_component_init);
 	}
 
 	if (root_decode)
@@ -110,6 +117,7 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 			i();
 		}
 		delete defered_component_init;
+		transform_map.clear();
 	}
 }
 

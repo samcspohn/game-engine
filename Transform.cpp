@@ -42,6 +42,7 @@ void transform2::init(int g)
 void transform2::init(transform2 other, int go)
 {
 	Transforms.meta[id].gameObject = go;
+	Transforms.meta[id].name = Transforms.meta[other.id].name;
 	other.getParent().adopt(*this);
 	Transforms.positions[id] = other.getPosition();
 	Transforms.rotations[id] = other.getRotation();

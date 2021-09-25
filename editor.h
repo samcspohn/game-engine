@@ -1,5 +1,4 @@
 #pragma once
-#define IMGUI_IMPL_OPENGL_LOADER_GLEW
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -128,8 +127,21 @@ void renderEdit(const char* name, t (&v)[u]){
         {
             ImGui::PushID(i);
             renderEdit(to_string(i).c_str(), v[i]);
-            ImGui::SameLine();
+            ImGui::PopID();
+        }
+        ImGui::TreePop();
+    }
+}
 
+template<typename t, size_t u>
+void renderEdit(const char* name, array<t,u>& v){
+      bool open = ImGui::TreeNode(name);
+    if (open)
+    {
+        for (int i{0}; i < u; ++i)
+        {
+            ImGui::PushID(i);
+            renderEdit(to_string(i).c_str(), v[i]);
             ImGui::PopID();
         }
         ImGui::TreePop();

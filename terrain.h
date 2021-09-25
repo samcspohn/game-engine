@@ -55,7 +55,7 @@ public:
     void onStart();
     void update();
     void genHeight(int x, int z);
-    static terrainHit terrain::getHeight(float x, float z);
+    static terrainHit getHeight(float x, float z);
     void init(int i);
     void deinit();
 

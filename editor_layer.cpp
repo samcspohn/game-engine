@@ -172,10 +172,12 @@ void renderTransform(transform2 t, int &count)
 		flags |= ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Leaf;
 	bool open;
 	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+	ImGui::PushID(t.id);
 	if (t.name() == "")
 		open = ImGui::TreeNodeEx(("game object " + to_string(t.id)).c_str(), flags);
 	else
 		open = ImGui::TreeNodeEx(t.name().c_str(), flags);
+	ImGui::PopID();
 
 	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 	{
@@ -217,24 +219,27 @@ void renderTransform(transform2 t, int &count)
 		if (ImGui::Selectable("copy"))
 		{
 			game_object *g = _instantiate(*t->gameObject());
-			inspector = g;
-			selected_transform = g->transform;
-			selected_transforms.clear();
-			selected_transforms[g->transform.id] = true;
+			// inspector = g;
+			// selected_transform = g->transform;
+			// selected_transforms.clear();
+			// selected_transforms[g->transform.id] = true;
 		}
 		if (ImGui::Selectable("delete"))
 		{
-			if (inspector == t->gameObject())
+			if (inspector == t->gameObject()){
 				inspector = 0;
+				selected_transform = -1;
+				selected_transforms.clear();
+			}
 			t->gameObject()->destroy();
 		}
 		if (ImGui::Selectable("new game object"))
 		{
 			game_object *g = _instantiate();
-			inspector = g;
-			selected_transform = g->transform;
-			selected_transforms.clear();
-			selected_transforms[g->transform.id] = true;
+			// inspector = g;
+			// selected_transform = g->transform;
+			// selected_transforms.clear();
+			// selected_transforms[g->transform.id] = true;
 		}
 		ImGui::EndPopup();
 	}
@@ -377,10 +382,10 @@ void saveAsFile()
 		cout << "cancelled save" << endl;
 	else
 	{
-		mainThreadWork.push(new function<void()>([=]()
-												 { save_level(fi.c_str()); }));
-
 		working_file = fi;
+		mainThreadWork.push(new function<void()>([=]()
+												 { save_level(working_file.c_str()); }));
+
 		cout << "saved: " << file << endl;
 	}
 }

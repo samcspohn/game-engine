@@ -74,7 +74,7 @@ struct emitter_prototype
         ImVec4 bg_col = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);   // Black background
         ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // No tint
         static bool col_p_open = false;
-        if (ImGui::ImageButton((void *)ca.t.t->id, size, uv0, uv1, frame_padding, bg_col, tint_col))
+        if (ImGui::ImageButton(ca.t.t->id, size, uv0, uv1, frame_padding, bg_col, tint_col))
         {
             col_p_open = true;
         }

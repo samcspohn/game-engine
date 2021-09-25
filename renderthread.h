@@ -2,9 +2,7 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#define GLM_FORCE_SWIZZLE
 #include <glm/glm.hpp>
-// #include <glm/gtc/swizzle.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -13,8 +11,6 @@
 #include <assimp/postprocess.h>
 #include <chrono>
 #include <functional>
-
-#define IMGUI_IMPL_OPENGL_LOADER_GLEW
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"

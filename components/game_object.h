@@ -207,6 +207,15 @@ public:
 
 	void inspect()
 	{
+
+		 vector<char> text(transform.name().length() + 200,0);
+		// cout << "s: " << s.size() << ": " << s.length() << endl;
+		sprintf(text.data(), transform.name().c_str());
+		if (ImGui::InputText("name", text.data(), text.size()))
+		{
+			transform.name() = string{text.data()};
+		}
+
 		transform2 t = this->transform;
 
 		// position
@@ -285,7 +294,7 @@ public:
 		for (auto &i : components)
 			if (i.first == hash)
 			{
-				return (t *)ComponentRegistry.registry(hash)->get(i.second);
+				return static_cast<t*>(ComponentRegistry.registry(hash)->get(i.second));
 				// return (t *)i.first;
 			}
 		return 0;
@@ -298,7 +307,7 @@ public:
 		for (auto &i : components)
 			if (i.first == hash)
 			{
-				ret.push_back((t *)ComponentRegistry.registry(hash)->get(i.second));
+				ret.push_back(static_cast<t*>(ComponentRegistry.registry(hash)->get(i.second)));
 			}
 		return ret;
 	}
@@ -340,7 +349,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry<t>();
 		components.emplace(hash, i);
-		t *ci = ComponentRegistry.registry(hash)->get(i);
+		t *ci = static_cast<t*>(ComponentRegistry.registry(hash)->get(i));
 		ci->transform = this->transform;
 		ci->init(i);
 		return &(*ci);
@@ -352,7 +361,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry(c);
 		components.emplace(hash, i);
-		t *ci = ComponentRegistry.registry(hash)->get(i);
+		t *ci = static_cast<t*>(ComponentRegistry.registry(hash)->get(i));
 		ci->transform = this->transform;
 		ci->init(i);
 		return ci;

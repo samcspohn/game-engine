@@ -1,5 +1,5 @@
 
-#pragma once;
+#pragma once
 #include <glm/glm.hpp>
 #include "gpu_vector.h"
 #include "_rendering/Shader.h"

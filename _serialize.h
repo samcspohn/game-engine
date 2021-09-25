@@ -28,26 +28,26 @@ enum ser_mode
 //     value = node[name].as<float>();
 // }
 
-#define SER(var)                                            \
-    switch (x)                                              \
-    {                                                       \
-    case ser_mode::edit_mode:                               \
-        renderEdit(#var, var);                              \
-        break;                                              \
-    case ser_mode::read_mode:                               \
-        /*(*_iar) >> var;*/                                 \
-        var = node_9738469372465[#var].as<decltype(var)>(); \
-        break;                                              \
-    case ser_mode::write_mode:                              \
-        /*(*_oar) << var;*/                                 \
-        node_9738469372465[#var] = var;                     \
-        break;                                              \
-    default:                                                \
-        cout << "no mode provided";                         \
-        break;                                              \
+#define SER(var)                                                \
+    switch (x)                                                  \
+    {                                                           \
+    case ser_mode::edit_mode:                                   \
+        renderEdit(#var, var);                                  \
+        break;                                                  \
+    case ser_mode::read_mode:                                   \
+        /*(*_iar) >> var;*/                                     \
+        /*var = node_9738469372465[#var].as<decltype(var)>();*/ \
+        YAML_decode(node_9738469372465[#var], var);             \
+        break;                                                  \
+    case ser_mode::write_mode:                                  \
+        /*(*_oar) << var;*/                                     \
+        /*node_9738469372465[#var] = var;*/                     \
+        node_9738469372465[#var] = YAML_encode(var);            \
+        break;                                                  \
+    default:                                                    \
+        cout << "no mode provided";                             \
+        break;                                                  \
     }
-
-
 
 // namespace YAML
 // {

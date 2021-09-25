@@ -331,7 +331,7 @@ componentMeta<t> *registerComponent()
 	// 	ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
 	// else
 	// ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
-	return ComponentRegistry.meta_types.at(hash).get();
+	return static_cast<componentMeta<t>*>(ComponentRegistry.meta_types.at(hash).get());
 }
 template <typename t>
 int addComponentToRegistry(const t &c)
