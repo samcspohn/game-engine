@@ -226,7 +226,8 @@ void renderTransform(transform2 t, int &count)
 		}
 		if (ImGui::Selectable("delete"))
 		{
-			if (inspector == t->gameObject()){
+			if (inspector == t->gameObject())
+			{
 				inspector = 0;
 				selected_transform = -1;
 				selected_transforms.clear();
@@ -492,6 +493,10 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			{
 				renderAsset(p.second.get());
 			}
+			for (auto &gp : prototypeRegistry)
+			{
+				renderAsset(gp.second.get());
+			}
 			bool open_rename = false;
 			if (open_asset)
 				ImGui::OpenPopup("asset_context");
@@ -528,22 +533,21 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				ImGui::Separator();
 				if (ImGui::Selectable("new model"))
 				{
-					// new game_object();
-
 					modelManager::_new();
 				}
 				if (ImGui::Selectable("new emitter"))
 				{
 					emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_proto_assets.size()));
-					// new game_object();
 				}
 				if (ImGui::Selectable("new shader"))
 				{
 					shaderManager::_new();
-					// new game_object();
 				}
 				if (ImGui::Selectable("new prototype"))
 				{
+					auto gp = new game_object_proto_();
+					gp->id = gpID++;
+					prototypeRegistry.emplace(gp->id, gp);
 					// new game_object();
 				}
 				ImGui::EndPopup();

@@ -238,6 +238,7 @@ public:
 	}
 	virtual component *_decode(YAML::Node &node)
 	{
+		cout << node;
 		t *c = new t();
 		c->ser_edit(ser_mode::read_mode, node);
 		return c;

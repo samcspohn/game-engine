@@ -290,15 +290,8 @@ public:
     // bullet b;
     audio explosionSound;
     emitter_prototype_ exp;
-    float explosion_size;
+    float explosion_size = 1.f;
     bool playSound = false;
-    void onEdit()
-    {
-        RENDER(exp);
-        RENDER(explosion_size);
-        RENDER(explosionSound);
-        RENDER(playSound);
-    }
     missile() {}
 
     // void setBullet(const bullet &_b)
@@ -400,7 +393,7 @@ public:
         SER(speed)
         SER(dispersion)
         SER(barrels)
-        // SER(ammo)
+        SER(ammo)
     }
 };
 REGISTER_COMPONENT(gun)
@@ -1057,7 +1050,7 @@ public:
             // 		physObj->getComponent<physicsObject>()->init(r.x,r.y,r.z, transform->forward() * 30.f + randomSphere()*10.f);
             // 	}
             // guns[0]->fire();
-            // gm->fire();
+            gm->fire();
             cout << "FIRE" << endl;
         }
         // if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))

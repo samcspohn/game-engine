@@ -5,6 +5,8 @@ std::mutex toDestroym;
 std::vector<game_object *> toDestroyGameObjects;
 // tbb::concurrent_vector<game_object *> toDestroyGameObjects;
 std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
+int gpID = 1;
+
 STORAGE<game_object> game_object_cache;
 
 void encodePrototypes(YAML::Node &node)
@@ -19,6 +21,12 @@ void encodePrototypes(YAML::Node &node)
 
 void decodePrototypes(YAML::Node &node)
 {
+	for(auto &p : prototypeRegistry){
+		for (auto &i : p.second->components)
+			delete i.first;
+	}
+	prototypeRegistry.clear();
+
 	YAML::Node prototypeRegistry_node = node["prototype_registry"];
 	for (YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i)
 	{
@@ -269,6 +277,7 @@ game_object *_instantiate(game_object_prototype &g)
 	}
 	for (auto &i : ret->components)
 	{
+		game_object::_getComponent(i)->transform = ret->transform; // todo // better?
 		game_object::_getComponent(i)->init(i.second);
 		// toStart.emplace(i.first);
 		// i.first->onStart();
@@ -320,4 +329,26 @@ void game_object::_destroy()
 	}
 	game_object_cache._delete(Transforms.meta[transform].gameObject);
 	transform->_destroy();
+}
+
+game_object_proto_* game_object_prototype::meta(){
+	return prototypeRegistry.at(id).get();
+}
+
+void renderEdit(const char *name, game_object_prototype &g)
+{
+	if (g.id < 1) // uninitialized
+		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	else
+		ImGui::InputText(name, (char *)g.meta()->name.c_str(), g.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("GAME_OBJECT_PROTO_TYPE"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(int));
+			int payload_n = *(const int *)payload->Data;
+			g.id = payload_n;
+		}
+		ImGui::EndDragDropTarget();
+	}
 }

@@ -25,15 +25,16 @@ class game_object;
 extern std::mutex toDestroym;
 // extern std::deque<game_object *> toDestroyGameObjects;
 extern std::vector<game_object *> toDestroyGameObjects;
+extern std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
+extern int gpID;
 // extern tbb::concurrent_vector<game_object *> toDestroyGameObjects;
 
 // extern tbb::concurrent_unordered_set<component *> toStart;
 // extern tbb::concurrent_unordered_set<component *> toDestroyComponents;
 // extern tbb::concurrent_unordered_set<compItr *> componentCleanUp;
 
-
-void encodePrototypes(YAML::Node& node);
-void decodePrototypes(YAML::Node& node);
+void encodePrototypes(YAML::Node &node);
+void decodePrototypes(YAML::Node &node);
 void registerProto(game_object_proto_ *p);
 void deleteProtoRef(int id);
 class game_object_proto_ : public assets::asset
@@ -50,40 +51,47 @@ public:
 	}
 	string type()
 	{
-		return "GAME_OBJECT_TYPE";
+		return "GAME_OBJECT_PROTO_TYPE";
 	}
-	// void inspect()
-	// {
-	// 	int n{0};
-	// 	for (auto i = components.begin();
-	// 		 i != components.end();
-	// 		 i++)
-	// 	{
-	// 		ImGui::PushID(n);
-	// 		ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-	// 		if (ImGui::TreeNode((to_string(n) + ComponentRegistry.components[i->second]->getName()).c_str()))
-	// 		{
-	// 			i->first->onEdit();
-	// 			ImGui::TreePop();
-	// 		}
-	// 		ImGui::PopID();
-	// 		n++;
-	// 	}
+	void inspect()
+	{
+		int n{0};
+		for (auto i = components.begin(); i != components.end();)
+		{
+			ImGui::PushID(n);
+			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			YAML::Node none;
+			if (ImGui::TreeNode((to_string(n) +  ComponentRegistry.registry(i->second)->getName()).c_str()))
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("x"))
+				{
+					i = components.erase(i);
+				}
+				else{
+					i->first->ser_edit(ser_mode::edit_mode, none);
+					i++;
+				}
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+			n++;
+		}
 
-	// 	if (ImGui::Button("add component"))
-	// 		ImGui::OpenPopup("add_component_context");
-	// 	if (ImGui::BeginPopup("add_component_context"))
-	// 	{
-	// 		for (auto &i : ComponentRegistry.meta)
-	// 		{
-	// 			if (ImGui::Selectable(i.first.c_str()))
-	// 			{
-	// 				i.second->addComponentProto(this);
-	// 			}
-	// 		}
-	// 		ImGui::EndPopup();
-	// 	}
-	// }
+		if (ImGui::Button("add component"))
+			ImGui::OpenPopup("add_component_context");
+		if (ImGui::BeginPopup("add_component_context"))
+		{
+			for (auto &i : ComponentRegistry.meta)
+			{
+				if (ImGui::Selectable(i.first.c_str()))
+				{
+					i.second->addComponentProto(this);
+				}
+			}
+			ImGui::EndPopup();
+		}
+	}
 	map<component *, size_t> components;
 	// protoListRef ref;
 
@@ -111,9 +119,9 @@ public:
 	}
 	~game_object_proto_()
 	{
-		for (auto &i : components)
-			delete i.first;
-		deleteProtoRef(id);
+		// for (auto &i : components)
+		// 	delete i.first;
+		// deleteProtoRef(id);
 	}
 };
 
@@ -133,7 +141,7 @@ namespace YAML
 				YAML::Node component_node;
 				component_node["id"] = i.second;
 				YAML::Node component_val_node;
-				i.first->ser_edit(ser_mode::write_mode,component_node);
+				i.first->ser_edit(ser_mode::write_mode, component_val_node);
 				component_node["value"] = component_val_node;
 				components_node.push_back(component_node);
 			}
@@ -150,7 +158,7 @@ namespace YAML
 				YAML::Node component_node = components_node[i];
 				size_t hash = component_node["id"].as<size_t>();
 				YAML::Node component_val_node = component_node["value"];
-				component* c = ComponentRegistry.registry(hash)->_decode(component_val_node);
+				component *c = ComponentRegistry.registry(hash)->_decode(component_val_node);
 				rhs.components.emplace(c, hash);
 			}
 			return true;
@@ -158,21 +166,39 @@ namespace YAML
 	};
 }
 
-extern unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
-
 struct game_object_prototype
 {
 	int id;
 	game_object_prototype();
 	game_object_prototype(game_object_proto_ *p);
+	game_object_proto_* meta();
 	SER_HELPER()
 	{
 		ar &id;
 	}
 };
+void renderEdit(const char *name, game_object_prototype &g);
 
-void saveProto(OARCHIVE &oa);
-void loadProto(IARCHIVE &ia);
+namespace YAML
+{
+
+	template <>
+	struct convert<game_object_prototype>
+	{
+		static Node encode(const game_object_prototype &rhs)
+		{
+			Node node;
+			node = rhs.id;
+			return node;
+		}
+
+		static bool decode(const Node &node, game_object_prototype &rhs)
+		{
+			rhs.id = node.as<int>();
+			return true;
+		}
+	};
+}
 
 class game_object : public inspectable
 {
@@ -203,12 +229,12 @@ public:
 	static void deserialize(IARCHIVE &ar, map<int, int> &transform_map);
 
 	static void encode(YAML::Node &node, game_object *g);
-	static void decode(YAML::Node &node, int, list<function<void()>>* = 0);
+	static void decode(YAML::Node &node, int, list<function<void()>> * = 0);
 
 	void inspect()
 	{
 
-		 vector<char> text(transform.name().length() + 200,0);
+		vector<char> text(transform.name().length() + 200, 0);
 		// cout << "s: " << s.size() << ": " << s.length() << endl;
 		sprintf(text.data(), transform.name().c_str());
 		if (ImGui::InputText("name", text.data(), text.size()))
@@ -294,7 +320,7 @@ public:
 		for (auto &i : components)
 			if (i.first == hash)
 			{
-				return static_cast<t*>(ComponentRegistry.registry(hash)->get(i.second));
+				return static_cast<t *>(ComponentRegistry.registry(hash)->get(i.second));
 				// return (t *)i.first;
 			}
 		return 0;
@@ -307,12 +333,12 @@ public:
 		for (auto &i : components)
 			if (i.first == hash)
 			{
-				ret.push_back(static_cast<t*>(ComponentRegistry.registry(hash)->get(i.second)));
+				ret.push_back(static_cast<t *>(ComponentRegistry.registry(hash)->get(i.second)));
 			}
 		return ret;
 	}
 
-	void collide(collision& _collision)
+	void collide(collision &_collision)
 	{
 		// lock.lock();
 		// colLock.lock();
@@ -349,7 +375,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry<t>();
 		components.emplace(hash, i);
-		t *ci = static_cast<t*>(ComponentRegistry.registry(hash)->get(i));
+		t *ci = static_cast<t *>(ComponentRegistry.registry(hash)->get(i));
 		ci->transform = this->transform;
 		ci->init(i);
 		return &(*ci);
@@ -361,7 +387,7 @@ public:
 		size_t hash = typeid(t).hash_code();
 		int i = addComponentToRegistry(c);
 		components.emplace(hash, i);
-		t *ci = static_cast<t*>(ComponentRegistry.registry(hash)->get(i));
+		t *ci = static_cast<t *>(ComponentRegistry.registry(hash)->get(i));
 		ci->transform = this->transform;
 		ci->init(i);
 		return ci;
