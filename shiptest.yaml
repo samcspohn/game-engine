@@ -132,7 +132,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 0.25
+                              rof: 22
                               speed: 500
                               dispersion: 0.01
                               barrels:
@@ -148,7 +148,7 @@ transform:
                                   - 0.56
                                   - 0
                                   - 2.3
-                              ammo: 1
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -220,7 +220,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 0.25
+                              rof: 22
                               speed: 500
                               dispersion: 0.01
                               barrels:
@@ -236,7 +236,7 @@ transform:
                                   - 0.56
                                   - 0
                                   - 2.3
-                              ammo: 1
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -308,7 +308,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 0.25
+                              rof: 22
                               speed: 500
                               dispersion: 0.01
                               barrels:
@@ -324,7 +324,7 @@ transform:
                                   - 0.56
                                   - 0
                                   - 2.3
-                              ammo: 1
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -396,7 +396,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 0.25
+                              rof: 22
                               speed: 500
                               dispersion: 0.01
                               barrels:
@@ -412,7 +412,7 @@ transform:
                                   - 0.56
                                   - 0
                                   - 2.3
-                              ammo: 1
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -484,7 +484,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 0.25
+                              rof: 22
                               speed: 500
                               dispersion: 0.01
                               barrels:
@@ -500,7 +500,7 @@ transform:
                                   - 0.56
                                   - 0
                                   - 2.3
-                              ammo: 1
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -572,7 +572,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 0.25
+                              rof: 22
                               speed: 500
                               dispersion: 0.01
                               barrels:
@@ -588,7 +588,95 @@ transform:
                                   - 0.56
                                   - 0
                                   - 2.3
-                              ammo: 1
+                              ammo: 9
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 6
+                    - id: 12031868808377879742
+                      value:
+                        target: 19
+                        gun_speed: 1.745329
+                        turret_speed: 1.745329
+                        muzzelFlash:
+                          id: 0
+                        t_angles:
+                          - -2.356194
+                          - 0
+                          - 2.356194
+                        g_angles:
+                          -
+                            - -1.396263
+                            - 0.3490658
+                          -
+                            - -1.396263
+                            - 0.05235988
+                          -
+                            - -1.396263
+                            - 0.3490658
+                - name: turret
+                  transform:
+                    position:
+                      - -3.247468e-08
+                      - 26.19157
+                      - -4.540699
+                    rotation:
+                      - -1
+                      - -4.371139e-08
+                      - -4.371139e-08
+                      - 1.910685e-15
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 20
+                    children:
+                      - name: guns
+                        transform:
+                          position:
+                            - 6.231764e-07
+                            - 26.32378
+                            - -5.230636
+                          rotation:
+                            - -1.000004
+                            - -4.371149e-08
+                            - -3.874302e-07
+                            - 4.440892e-14
+                          scale:
+                            - 1
+                            - 1
+                            - 1
+                          id: 21
+                          children: ~
+                        components:
+                          - id: 9328246355543747823
+                            value:
+                              shader:
+                                id: 0
+                              model:
+                                id: 5
+                          - id: 14876483986192322348
+                            value:
+                              rof: 22
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:

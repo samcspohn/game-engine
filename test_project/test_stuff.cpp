@@ -304,12 +304,12 @@ public:
         transform->move(vel * Time.deltaTime);
         vel += vec3(0, -9.81, 0) * Time.deltaTime;
     }
-    void onCollision(game_object *go, vec3 point, vec3 normal)
+    void onCollision(collision& col)
     {
-
+        glm::vec3 normal = col.normal;
         if (length(normal) == 0)
             normal = randomSphere();
-        exp.burst(point, normal, transform->getScale() * explosion_size, 5);
+        exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 50);
         transform->gameObject()->destroy();
         // }
         // numCubes.fetch_add(-1);
@@ -788,6 +788,7 @@ public:
     }
     void update()
     {
+        playerPos = transform.getPosition();
         vel -= vel * 0.4f * Time.deltaTime;
         vel += transform->forward() * accel * 0.4f * Time.deltaTime;
         accel = glm::clamp(accel, -maxReverse, maxForward);

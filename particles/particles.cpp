@@ -69,28 +69,22 @@ gpu_vector<GLuint> *atomicCounters = new gpu_vector<GLuint>();
 gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
 gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
 
-void saveEmitters(OARCHIVE &oa)
-{
-    oa << emitter_prototypes_ << emitter_proto_assets << colorGradients;
-}
-void loadEmitters(IARCHIVE &ia)
-{
-    ia >> emitter_prototypes_ >> emitter_proto_assets >> colorGradients;
-}
-
 
 void encodeEmitters(YAML::Node &node){
     node["emitter_prototpes_"] = emitter_prototypes_;
     // node["emitter_proto_assets"] = emitter_proto_assets;
+    YAML::Node epa;
     for(auto& i : emitter_proto_assets){
-        node["emitter_proto_assets"].force_insert(i.first,*i.second);
+        epa.force_insert(i.first,*i.second);
         // node["emitter_proto_assets"][i.first] = *i.second;
     }
+    node["emitter_proto_assets"] = epa;
 }
 void decodeEmitters(YAML::Node &node){
-    emitter_prototypes_ = node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>();
+    new (&emitter_prototypes_) array_heap<emitter_prototype>{node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>()};
     // emitter_proto_assets = node["emitter_proto_assets"].as<decltype(emitter_proto_assets)>();
-    for(YAML::const_iterator i = node["emitter_proto_assets"].begin(); i != node["emitter_proto_assets"].end(); ++i){
+    YAML::Node epa = node["emitter_proto_assets"];
+    for(YAML::const_iterator i = epa.begin(); i != epa.end(); ++i){
         emitter_proto_assets[i->first.as<int>()] = make_shared<emitter_proto_asset>(i->second.as<emitter_proto_asset>());
     }
 }
@@ -144,7 +138,7 @@ void initParticles2()
     // emitter_prototypes.insert(std::pair<string, int>("default", ep->id));
     // // ret.emitterPrototype = emitter_prototypes.at(name);
     // emitter_proto_names[ep->id] = "default";
-    ep->name = "default";
+    ep->name = "default_emitter";
 }
 int particleCount;
 int actualParticles;

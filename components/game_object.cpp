@@ -5,7 +5,6 @@ std::mutex toDestroym;
 std::vector<game_object *> toDestroyGameObjects;
 // tbb::concurrent_vector<game_object *> toDestroyGameObjects;
 std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
-int gpID = 1;
 
 STORAGE<game_object> game_object_cache;
 
@@ -14,7 +13,7 @@ void encodePrototypes(YAML::Node &node)
 	YAML::Node prototypeRegistry_node;
 	for (auto &i : prototypeRegistry)
 	{
-		prototypeRegistry_node[i.first] = *i.second;
+		prototypeRegistry_node.force_insert(i.first, *i.second);
 	}
 	node["prototype_registry"] = prototypeRegistry_node;
 }

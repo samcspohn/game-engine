@@ -13,10 +13,6 @@
 using namespace std;
 using namespace glm;
 
-void saveEmitters(OARCHIVE &oa);
-void loadEmitters(IARCHIVE &ia);
-
-
 void encodeEmitters(YAML::Node &node);
 void decodeEmitters(YAML::Node &node);
 

@@ -72,6 +72,8 @@ void renderEdit(const char *name, glm::vec4 &v)
 {
     ImGui::DragFloat4(name, &v.x);
 }
+
+unordered_map<glm::quat *, glm::vec3> quat_euler_angles;
 void renderEdit(const char *name, glm::quat &q)
 {
 
@@ -87,19 +89,57 @@ void renderEdit(const char *name, glm::quat &q)
     // forw = glm::rotate(forw,angles.y,glm::vec3{0,1,0});
     // angles.x = glm::acos(glm::dot(glm::normalize(forw),glm::vec3{0,0,1}));
 
-    glm::vec3 angles = glm::eulerAngles(q);
-    glm::vec3 offset = angles;
-    angles = glm::degrees(angles);
-    if (ImGui::DragFloat3(name, &angles.x))
+    if (quat_euler_angles.find(&q) == quat_euler_angles.end())
     {
-        angles = glm::radians(angles);
-        // q = angles;
+        glm::vec3 angles = glm::eulerAngles(q);
+        quat_euler_angles.emplace(&q, glm::degrees(angles));
+    }
+    if (ImGui::DragFloat3(name, &quat_euler_angles.at(&q).x))
+    {
+        // glm::quat _q;
+        glm::vec3 angles = glm::radians(quat_euler_angles.at(&q));
+        q = angles;
 
-        q = glm::rotate(q, angles.x - offset.x, glm::vec3(1, 0, 0));
-        q = glm::rotate(q, angles.y - offset.y, glm::vec3(0, 1, 0));
-        q = glm::rotate(q, angles.z - offset.z, glm::vec3(0, 0, 1));
+        // q = glm::rotate(q, angles.x - offset.x, glm::vec3(1, 0, 0));
+        // q = glm::rotate(q, angles.y - offset.y, glm::vec3(0, 1, 0));
+        // q = glm::rotate(q, angles.z - offset.z, glm::vec3(0, 0, 1));
         // q = angles;
     }
+
+    // glm::vec3 angles = glm::eulerAngles(q);
+    // glm::vec3 offset = angles;
+    // angles = glm::degrees(angles);
+
+    // ImGui::PushID(2384762184762 + 0);
+    // if (ImGui::DragFloat(0, &angles.x))
+    // {
+    //     q = glm::rotate(q, glm::radians(angles.x) - offset.x, glm::vec3{1, 0, 0});
+    // }
+    // ImGui::PopID();
+    // ImGui::SameLine();
+    // ImGui::PushID(2384762184762 + 1);
+    // if (ImGui::DragFloat(0, &angles.y))
+    // {
+    //     q = glm::rotate(q, glm::radians(angles.y) - offset.y, glm::vec3{0, 1, 0});
+    // }
+    // ImGui::PopID();
+    // ImGui::PushID(2384762184762 + 2);
+    // if (ImGui::DragFloat(0, &angles.z))
+    // {
+    //     q = glm::rotate(q, glm::radians(angles.z) - offset.z, glm::vec3{0, 0, 1});
+    // }
+    // ImGui::PopID();
+    // ImGui::Text(name);
+    // if (ImGui::DragFloat3(name, &angles.x))
+    // {
+    //     angles = glm::radians(angles);
+    //     // q = angles;
+
+    //     q = glm::rotate(q, angles.x - offset.x, glm::vec3(1, 0, 0));
+    //     q = glm::rotate(q, angles.y - offset.y, glm::vec3(0, 1, 0));
+    //     q = glm::rotate(q, angles.z - offset.z, glm::vec3(0, 0, 1));
+    //     // q = angles;
+    // }
 
     // glm::vec3 euler{glm::eulerAngles(q)};
     // if(ImGui::DragFloat3(name,&euler.x,0.01)){

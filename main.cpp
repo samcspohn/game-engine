@@ -339,6 +339,11 @@ int main(int argc, char **argv)
                                      logger("update batches");
                                      batchManager::updateBatches();
                                  }
+                                 emitterInits.clear();
+                                 for (auto &i : emitter_inits)
+                                     emitterInits.push_back(i.second);
+                                 emitter_inits.clear();
+                                 swapBurstBuffer();
                                  updateTiming();
                              });
         }
@@ -357,13 +362,7 @@ int main(int argc, char **argv)
         }
         // ############################################################
         enqueRenderJob([&]()
-                       {
-                           emitterInits.clear();
-                           for (auto &i : emitter_inits)
-                               emitterInits.push_back(i.second);
-                           emitter_inits.clear();
-                           renderFunc(ed, fps);
-                       });
+                       { renderFunc(ed, fps); });
 
         fps.add(time.stop());
     }

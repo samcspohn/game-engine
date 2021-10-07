@@ -1,4 +1,4 @@
-workingFile: "�\x16���"
+workingFile: /home/samuel/Documents/game-engine/shiptest.yaml
 shaders:
   0: 0
   6932657030676596669: 1
@@ -144,6 +144,8 @@ models:
 emitter_prototpes_:
   avail: ~
   valid:
+    - true
+    - true
     - true
   data:
     - emission_rate: 10
@@ -763,23 +765,1313 @@ emitter_prototpes_:
         - 1
         - 1
         - 1
+    - emission_rate: 10
+      lifetime: 2
+      rotation_rate: 0
+      dispersion: 3.14159
+      minSpeed: 0.5
+      maxSpeed: 1
+      lifetime2: 3
+      live: 1063813120
+      scale:
+        - 1
+        - 1
+      billboard: 1
+      velAlign: 0
+      radius: 0
+      trail: 0
+      colorLife:
+        -
+          - 1
+          - 1
+          - 1
+          - 1
+        -
+          - 1
+          - 0.9831349
+          - 0.8333333
+          - 1
+        -
+          - 1
+          - 0.9662699
+          - 0.6666666
+          - 1
+        -
+          - 1
+          - 0.9494047
+          - 0.5
+          - 1
+        -
+          - 1
+          - 0.9325396
+          - 0.3333333
+          - 1
+        -
+          - 1
+          - 0.9156746
+          - 0.1666666
+          - 1
+        -
+          - 1
+          - 0.8988095
+          - 0
+          - 1
+        -
+          - 0.9803572
+          - 0.7864583
+          - 0
+          - 1
+        -
+          - 0.9607143
+          - 0.6741071
+          - 0
+          - 1
+        -
+          - 0.9410714
+          - 0.5617559
+          - 0
+          - 1
+        -
+          - 0.9214286
+          - 0.4494047
+          - 0
+          - 1
+        -
+          - 0.9017857
+          - 0.3370535
+          - 0
+          - 1
+        -
+          - 0.8821428
+          - 0.2247024
+          - 0
+          - 1
+        -
+          - 0.8625
+          - 0.1123512
+          - 0
+          - 1
+        -
+          - 0.8428571
+          - 0
+          - 0
+          - 1
+        -
+          - 0.7826531
+          - 0
+          - 0
+          - 1
+        -
+          - 0.7224491
+          - 0
+          - 0
+          - 1
+        -
+          - 0.6622451
+          - 0
+          - 0
+          - 1
+        -
+          - 0.6020411
+          - 0
+          - 0
+          - 1
+        -
+          - 0.5418371
+          - 0
+          - 0
+          - 1
+        -
+          - 0.4816331
+          - 0
+          - 0
+          - 1
+        -
+          - 0.4214291
+          - 0
+          - 0
+          - 1
+        -
+          - 0.3612251
+          - 0
+          - 0
+          - 1
+        -
+          - 0.301021
+          - 0
+          - 0
+          - 1
+        -
+          - 0.2408171
+          - 0
+          - 0
+          - 1
+        -
+          - 0.180613
+          - 0
+          - 0
+          - 1
+        -
+          - 0.120409
+          - 0
+          - 0
+          - 1
+        -
+          - 0.06020504
+          - 0
+          - 0
+          - 1
+        -
+          - 1e-06
+          - 0
+          - 0
+          - 1
+        -
+          - 9.859154e-07
+          - 0
+          - 0
+          - 0.9859155
+        -
+          - 9.71831e-07
+          - 0
+          - 0
+          - 0.971831
+        -
+          - 9.577465e-07
+          - 0
+          - 0
+          - 0.9577465
+        -
+          - 9.43662e-07
+          - 0
+          - 0
+          - 0.943662
+        -
+          - 9.295775e-07
+          - 0
+          - 0
+          - 0.9295775
+        -
+          - 9.154929e-07
+          - 0
+          - 0
+          - 0.915493
+        -
+          - 9.014084e-07
+          - 0
+          - 0
+          - 0.9014084
+        -
+          - 8.873239e-07
+          - 0
+          - 0
+          - 0.887324
+        -
+          - 8.732394e-07
+          - 0
+          - 0
+          - 0.8732395
+        -
+          - 8.591549e-07
+          - 0
+          - 0
+          - 0.8591549
+        -
+          - 8.450704e-07
+          - 0
+          - 0
+          - 0.8450704
+        -
+          - 8.309859e-07
+          - 0
+          - 0
+          - 0.8309859
+        -
+          - 8.169014e-07
+          - 0
+          - 0
+          - 0.8169014
+        -
+          - 8.028169e-07
+          - 0
+          - 0
+          - 0.8028169
+        -
+          - 7.887324e-07
+          - 0
+          - 0
+          - 0.7887324
+        -
+          - 7.746479e-07
+          - 0
+          - 0
+          - 0.7746479
+        -
+          - 7.605634e-07
+          - 0
+          - 0
+          - 0.7605634
+        -
+          - 7.464789e-07
+          - 0
+          - 0
+          - 0.7464789
+        -
+          - 7.323944e-07
+          - 0
+          - 0
+          - 0.7323943
+        -
+          - 7.183098e-07
+          - 0
+          - 0
+          - 0.7183099
+        -
+          - 7.042254e-07
+          - 0
+          - 0
+          - 0.7042254
+        -
+          - 6.901408e-07
+          - 0
+          - 0
+          - 0.6901408
+        -
+          - 6.760563e-07
+          - 0
+          - 0
+          - 0.6760564
+        -
+          - 6.619719e-07
+          - 0
+          - 0
+          - 0.6619718
+        -
+          - 6.478873e-07
+          - 0
+          - 0
+          - 0.6478873
+        -
+          - 6.338028e-07
+          - 0
+          - 0
+          - 0.6338028
+        -
+          - 6.197183e-07
+          - 0
+          - 0
+          - 0.6197183
+        -
+          - 6.056338e-07
+          - 0
+          - 0
+          - 0.6056338
+        -
+          - 5.915493e-07
+          - 0
+          - 0
+          - 0.5915493
+        -
+          - 5.774648e-07
+          - 0
+          - 0
+          - 0.5774648
+        -
+          - 5.633803e-07
+          - 0
+          - 0
+          - 0.5633803
+        -
+          - 5.492958e-07
+          - 0
+          - 0
+          - 0.5492958
+        -
+          - 5.352113e-07
+          - 0
+          - 0
+          - 0.5352113
+        -
+          - 5.211268e-07
+          - 0
+          - 0
+          - 0.5211267
+        -
+          - 5.070423e-07
+          - 0
+          - 0
+          - 0.5070423
+        -
+          - 4.929577e-07
+          - 0
+          - 0
+          - 0.4929578
+        -
+          - 4.788732e-07
+          - 0
+          - 0
+          - 0.4788733
+        -
+          - 4.647887e-07
+          - 0
+          - 0
+          - 0.4647887
+        -
+          - 4.507042e-07
+          - 0
+          - 0
+          - 0.4507042
+        -
+          - 4.366197e-07
+          - 0
+          - 0
+          - 0.4366198
+        -
+          - 4.225352e-07
+          - 0
+          - 0
+          - 0.4225352
+        -
+          - 4.084507e-07
+          - 0
+          - 0
+          - 0.4084507
+        -
+          - 3.943662e-07
+          - 0
+          - 0
+          - 0.3943662
+        -
+          - 3.802817e-07
+          - 0
+          - 0
+          - 0.3802817
+        -
+          - 3.661972e-07
+          - 0
+          - 0
+          - 0.3661972
+        -
+          - 3.521127e-07
+          - 0
+          - 0
+          - 0.3521127
+        -
+          - 3.380282e-07
+          - 0
+          - 0
+          - 0.3380282
+        -
+          - 3.239437e-07
+          - 0
+          - 0
+          - 0.3239437
+        -
+          - 3.098592e-07
+          - 0
+          - 0
+          - 0.3098592
+        -
+          - 2.957747e-07
+          - 0
+          - 0
+          - 0.2957746
+        -
+          - 2.816901e-07
+          - 0
+          - 0
+          - 0.2816902
+        -
+          - 2.676056e-07
+          - 0
+          - 0
+          - 0.2676057
+        -
+          - 2.535211e-07
+          - 0
+          - 0
+          - 0.2535211
+        -
+          - 2.394366e-07
+          - 0
+          - 0
+          - 0.2394366
+        -
+          - 2.253521e-07
+          - 0
+          - 0
+          - 0.2253521
+        -
+          - 2.112676e-07
+          - 0
+          - 0
+          - 0.2112676
+        -
+          - 1.971831e-07
+          - 0
+          - 0
+          - 0.1971831
+        -
+          - 1.830986e-07
+          - 0
+          - 0
+          - 0.1830986
+        -
+          - 1.690141e-07
+          - 0
+          - 0
+          - 0.1690141
+        -
+          - 1.549296e-07
+          - 0
+          - 0
+          - 0.1549296
+        -
+          - 1.408451e-07
+          - 0
+          - 0
+          - 0.1408451
+        -
+          - 1.267606e-07
+          - 0
+          - 0
+          - 0.1267606
+        -
+          - 1.12676e-07
+          - 0
+          - 0
+          - 0.1126761
+        -
+          - 9.859156e-08
+          - 0
+          - 0
+          - 0.09859157
+        -
+          - 8.450706e-08
+          - 0
+          - 0
+          - 0.08450705
+        -
+          - 7.042252e-08
+          - 0
+          - 0
+          - 0.07042253
+        -
+          - 5.633802e-08
+          - 0
+          - 0
+          - 0.05633807
+        -
+          - 4.225353e-08
+          - 0
+          - 0
+          - 0.04225355
+        -
+          - 2.816898e-08
+          - 0
+          - 0
+          - 0.02816904
+        -
+          - 1.408455e-08
+          - 0
+          - 0
+          - 0.01408452
+        -
+          - 0
+          - 0
+          - 0
+          - 0
+      sizeLife:
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+    - emission_rate: 10
+      lifetime: 2
+      rotation_rate: 0
+      dispersion: 3.14159
+      minSpeed: 2
+      maxSpeed: 3
+      lifetime2: 3
+      live: 1136230400
+      scale:
+        - 1
+        - 1
+      billboard: 1
+      velAlign: 0
+      radius: 0
+      trail: 1
+      colorLife:
+        -
+          - 1
+          - 1
+          - 1
+          - 1
+        -
+          - 1
+          - 1
+          - 1
+          - 0.989899
+        -
+          - 1
+          - 1
+          - 1
+          - 0.979798
+        -
+          - 1
+          - 1
+          - 1
+          - 0.969697
+        -
+          - 1
+          - 1
+          - 1
+          - 0.959596
+        -
+          - 1
+          - 1
+          - 1
+          - 0.949495
+        -
+          - 1
+          - 1
+          - 1
+          - 0.9393939
+        -
+          - 1
+          - 1
+          - 1
+          - 0.9292929
+        -
+          - 1
+          - 1
+          - 1
+          - 0.9191919
+        -
+          - 1
+          - 1
+          - 1
+          - 0.9090909
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8989899
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8888889
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8787879
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8686869
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8585858
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8484849
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8383839
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8282828
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8181818
+        -
+          - 1
+          - 1
+          - 1
+          - 0.8080808
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7979798
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7878788
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7777778
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7676768
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7575758
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7474748
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7373737
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7272727
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7171717
+        -
+          - 1
+          - 1
+          - 1
+          - 0.7070707
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6969697
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6868687
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6767677
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6666666
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6565657
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6464646
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6363636
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6262627
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6161616
+        -
+          - 1
+          - 1
+          - 1
+          - 0.6060606
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5959596
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5858586
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5757576
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5656565
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5555556
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5454545
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5353535
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5252525
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5151515
+        -
+          - 1
+          - 1
+          - 1
+          - 0.5050505
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4949495
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4848485
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4747475
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4646465
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4545454
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4444444
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4343435
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4242424
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4141414
+        -
+          - 1
+          - 1
+          - 1
+          - 0.4040404
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3939394
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3838384
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3737374
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3636364
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3535354
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3434343
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3333333
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3232324
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3131313
+        -
+          - 1
+          - 1
+          - 1
+          - 0.3030303
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2929293
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2828283
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2727273
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2626263
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2525253
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2424242
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2323232
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2222222
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2121212
+        -
+          - 1
+          - 1
+          - 1
+          - 0.2020202
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1919192
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1818182
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1717172
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1616161
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1515151
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1414142
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1313131
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1212121
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1111111
+        -
+          - 1
+          - 1
+          - 1
+          - 0.1010101
+        -
+          - 1
+          - 1
+          - 1
+          - 0.09090906
+        -
+          - 1
+          - 1
+          - 1
+          - 0.0808081
+        -
+          - 1
+          - 1
+          - 1
+          - 0.07070708
+        -
+          - 1
+          - 1
+          - 1
+          - 0.06060606
+        -
+          - 1
+          - 1
+          - 1
+          - 0.05050504
+        -
+          - 1
+          - 1
+          - 1
+          - 0.04040402
+        -
+          - 1
+          - 1
+          - 1
+          - 0.030303
+        -
+          - 1
+          - 1
+          - 1
+          - 0.02020204
+        -
+          - 1
+          - 1
+          - 1
+          - 0.01010102
+        -
+          - 1
+          - 1
+          - 1
+          - 0
+      sizeLife:
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+emitter_proto_assets:
+  0:
+    id: 0
+    name: default_emitter
+    gradient:
+      keys:
+        0:
+          id: 28613
+          value:
+            - 1
+            - 1
+            - 1
+            - 1
+    ref: 0
+  12:
+    id: 12
+    name: emitter 1
+    gradient:
+      keys:
+        0:
+          id: 28614
+          value:
+            - 1
+            - 1
+            - 1
+            - 1
+        0.06026786:
+          id: 16813
+          value:
+            - 1
+            - 0.8988095
+            - 0
+            - 1
+        0.1450893:
+          id: 38248
+          value:
+            - 0.8428571
+            - 0
+            - 0
+            - 1
+        0.28125:
+          id: 74957
+          value:
+            - 1e-06
+            - 0
+            - 0
+            - 1
+        0.9977679:
+          id: 102699
+          value:
+            - 0
+            - 0
+            - 0
+            - 0
+    ref: 1
+  13:
+    id: 13
+    name: emitter 2
+    gradient:
+      keys:
+        0:
+          id: 28615
+          value:
+            - 1
+            - 1
+            - 1
+            - 1
+    ref: 2
 prototype_registry:
-  1:
-    id: 1
+  9:
+    id: 9
     name: missile_proto
     components:
-      - id: 15330709117420109069
-        value:
-          vel:
-            - 0
-            - 1.050564e-38
-            - 1.008007e+27
-          exp:
-            id: 0
-          explosionSound:
-            id: -1
-          explosion_size: 1
-          playSound: false
       - id: 226969208628627968
         value:
           type:
@@ -802,6 +2094,18 @@ prototype_registry:
               - 0
               - 0
               - 0
+      - id: 15330709117420109069
+        value:
+          vel:
+            - 0
+            - 1.050564e-38
+            - 1.008007e+27
+          exp:
+            id: 12
+          explosionSound:
+            id: -1
+          explosion_size: 10
+          playSound: false
       - id: 9328246355543747823
         value:
           shader:
@@ -812,56 +2116,76 @@ prototype_registry:
         value:
           prototype:
             id: 0
-assetIdGenerator: 9
+assetIdGenerator: 14
 file_meta:
+  - path: ./test_project/models/nanosuit/nanosuit.mtl
+    time: -4805553740615357894
+  - path: ./test_project/models/Spruce_obj/Spruce.mtl
+    time: -4805553740655358033
+  - path: ./test_project/models/Spruce_obj/Spruce.obj
+    time: -4805553740655358033
+  - path: ./test_project/models/Crate/CrateImage1.JPG
+    time: -4805553740655358033
+  - path: ./test_project/models/nanosuit
+    time: -4805553740615357894
+  - path: ./test_project/models/nanosuit/body_dif.png
+    time: -4805553740647358006
+  - path: ./test_project/models/Crate/Crate1.mtl
+    time: -4805553740655358033
+  - path: ./test_project/models/ship1/ship.obj
+    time: -4805553740607357867
+  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
+    time: -4805553740623357922
+  - path: ./test_project/models/nanosuit/body_showroom_spec.png
+    time: -4805553740639357977
   - path: ./test_project/models
     time: -4805553740607357867
   - path: ./test_project/models/Crate
     time: -4805553740655358033
-  - path: ./test_project/models/nanosuit/body_showroom_spec.png
-    time: -4805553740639357977
-  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
-    time: -4805553740631357950
-  - path: ./test_project/models/ship1/3guns.obj
-    time: -4805553740607357867
-  - path: ./test_project/models/nanosuit/hand_dif.png
-    time: -4805553740639357977
-  - path: ./test_project/models/Crate/crate_1.jpg
+  - path: ./test_project/models/Crate/CrateImage2.JPG
     time: -4805553740655358033
-  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
-    time: -4805553740615357894
+  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
+    time: -4805553740651358019
+  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
+    time: -4805553740635357964
+  - path: ./test_project/models/nanosuit/glass_dif.png
+    time: -4805553740639357977
   - path: ./test_project/models/nanosuit/nanosuit.obj
     time: -4805553740607357867
   - path: ./test_project/models/nanosuit/helmet_diff.png
     time: -4805553740631357950
-  - path: ./test_project/models/nanosuit/nanosuit.mtl
+  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
     time: -4805553740615357894
-  - path: ./test_project/models/nanosuit/arm_dif.png
-    time: -4805553740651358019
-  - path: ./test_project/models/Crate/Crate1.3ds
-    time: -4805553740663358060
-  - path: ./test_project/models/nanosuit/leg_dif.png
-    time: -4805553740623357922
-  - path: ./test_project/models/Spruce_obj
-    time: -4805553740655358033
-  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
-    time: -4805553740643357991
-  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
-    time: -4805553740631357950
   - path: ./test_project/file.txt
     time: -4805553740663358060
+  - path: ./test_project/models/ship1/3guns.obj
+    time: -4805553740607357867
+  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
+    time: -4805553740631357950
+  - path: ./test_project/models/nanosuit/hand_dif.png
+    time: -4805553740639357977
+  - path: ./test_project/models/Crate/crate_1.jpg
+    time: -4805553740655358033
+  - path: ./test_project/models/Crate/Crate1.3ds
+    time: -4805553740663358060
+  - path: ./test_project/models/nanosuit/arm_dif.png
+    time: -4805553740651358019
   - path: ./test_project/models/nanosuit/LICENSE.txt
     time: -4805553740655358033
   - path: ./test_project/models/nanosuit/nanosuit.blend
     time: -4805553740615357894
+  - path: ./test_project/models/ship1/maingun.obj
+    time: -4805553740607357867
+  - path: ./test_project/models/Spruce_obj/Spruce branches.png
+    time: -4805553740655358033
   - path: ./test_project/models/Crate/Crate1.blend
     time: -4805553740655358033
   - path: ./test_project/models/nanosuit/glass_ddn.png
     time: -4805553740639357977
-  - path: ./test_project/models/Spruce_obj/Spruce branches.png
+  - path: ./test_project/models/nanosuit/leg_dif.png
+    time: -4805553740623357922
+  - path: ./test_project/models/Spruce_obj
     time: -4805553740655358033
-  - path: ./test_project/models/ship1/maingun.obj
-    time: -4805553740607357867
   - path: ./test_project/models/nanosuit/arm_showroom_spec.png
     time: -4805553740647358006
   - path: ./test_project/models/Spruce_obj/Spruce trunk.jpeg
@@ -872,33 +2196,13 @@ file_meta:
     time: -4805553740607357867
   - path: ./test_project/models/ship1/3guns.mtl
     time: -4805553740607357867
-  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
-    time: -4805553740635357964
-  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
-    time: -4805553740623357922
-  - path: ./test_project/models/ship1/ship.obj
-    time: -4805553740607357867
-  - path: ./test_project/models/Crate/Crate1.mtl
-    time: -4805553740655358033
-  - path: ./test_project/models/nanosuit
-    time: -4805553740615357894
-  - path: ./test_project/models/nanosuit/body_dif.png
-    time: -4805553740647358006
-  - path: ./test_project/models/Crate/CrateImage1.JPG
-    time: -4805553740655358033
-  - path: ./test_project/models/Spruce_obj/Spruce.obj
-    time: -4805553740655358033
-  - path: ./test_project/models/Crate/CrateImage2.JPG
-    time: -4805553740655358033
-  - path: ./test_project/models/Spruce_obj/Spruce.mtl
-    time: -4805553740655358033
-  - path: ./test_project/models/ship1/ship.mtl
-    time: -4805553740607357867
+  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
+    time: -4805553740643357991
+  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
+    time: -4805553740631357950
+  - path: ./test_project/test_stuff.cpp
+    time: -4804435363871057948
   - path: ./test_project/models/ship1/maingun.mtl
     time: -4805553740607357867
-  - path: ./test_project/test_stuff.cpp
-    time: -4804688352969659222
-  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
-    time: -4805553740651358019
-  - path: ./test_project/models/nanosuit/glass_dif.png
-    time: -4805553740639357977
+  - path: ./test_project/models/ship1/ship.mtl
+    time: -4805553740607357867

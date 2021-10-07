@@ -49,12 +49,6 @@ struct emitter_prototype
         colorLife.fill(glm::vec4(1));
         sizeLife.fill(1.f);
     }
-    SER_HELPER()
-    {
-        ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
-            &maxSpeed &lifetime2 &live &scale &billboard &velAlign
-                &radius &trail &colorLife &sizeLife;
-    }
     void edit(colorArray &ca)
     {
         RENDER(emission_rate);
@@ -109,6 +103,9 @@ struct emitter_prototype
         b = velAlign;
         if (ImGui::Checkbox("align to velocity", &b))
             velAlign = b;
+        b = trail;
+        if (ImGui::Checkbox("trail", &b))
+            trail = b;
         // RENDER(velAlign);
 
         RENDER(radius);
@@ -161,10 +158,6 @@ public:
     // friend emitter_prototype_ createNamedEmitter(string name);
     // friend emitter_prototype_ getNamedEmitterProto(string name);
     friend emitter_prototype_ createEmitter(string name);
-    SER_HELPER()
-    {
-        ar &emitterPrototype;
-    }
     friend struct YAML::convert<emitter_prototype_>;
 };
 
@@ -199,12 +192,20 @@ namespace YAML
         {
             Node node;
             YAML_ENCODE_ASSET();
+            node["gradient"] = rhs.gradient;
+            node["ref"] = rhs.ref;
             return node;
         }
 
         static bool decode(const Node &node, emitter_proto_asset &rhs)
         {
             YAML_DECODE_ASSET();
+            try{
+                rhs.ref = node["ref"].as<int>();
+            }catch(...){}
+            try{
+                rhs.gradient = node["gradient"].as<colorArray>();
+            }catch(...){}
             return true;
         }
     };
@@ -216,10 +217,6 @@ namespace YAML
         {
 #define ENCODE_PROTO(arg) node[#arg] = rhs.arg;
             Node node;
-            //  ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
-            // &maxSpeed &lifetime2 &live &scale &billboard &velAlign
-            //     &radius &trail &colorLife &sizeLife;
-            // node["id"] = rhs.emitterPrototype;
             ENCODE_PROTO(emission_rate);
             ENCODE_PROTO(lifetime);
             ENCODE_PROTO(rotation_rate);
@@ -244,10 +241,6 @@ namespace YAML
             // rhs.emitterPrototype = node["id"].as<int>();
 
             #define DECODE_PROTO(arg) rhs.arg = node[#arg].as<decltype(rhs.arg)>();
-            //  ar &emission_rate &lifetime &rotation_rate &dispersion &minSpeed
-            // &maxSpeed &lifetime2 &live &scale &billboard &velAlign
-            //     &radius &trail &colorLife &sizeLife;
-            // node["id"] = rhs.emitterPrototype;
             DECODE_PROTO(emission_rate);
             DECODE_PROTO(lifetime);
             DECODE_PROTO(rotation_rate);

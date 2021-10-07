@@ -219,10 +219,10 @@ void renderTransform(transform2 t, int &count)
 		if (ImGui::Selectable("copy"))
 		{
 			game_object *g = _instantiate(*t->gameObject());
-			// inspector = g;
-			// selected_transform = g->transform;
-			// selected_transforms.clear();
-			// selected_transforms[g->transform.id] = true;
+			inspector = g;
+			selected_transform = g->transform;
+			selected_transforms.clear();
+			selected_transforms[g->transform.id] = true;
 		}
 		if (ImGui::Selectable("delete"))
 		{
@@ -237,10 +237,10 @@ void renderTransform(transform2 t, int &count)
 		if (ImGui::Selectable("new game object"))
 		{
 			game_object *g = _instantiate();
-			// inspector = g;
-			// selected_transform = g->transform;
-			// selected_transforms.clear();
-			// selected_transforms[g->transform.id] = true;
+			inspector = g;
+			selected_transform = g->transform;
+			selected_transforms.clear();
+			selected_transforms[g->transform.id] = true;
 		}
 		ImGui::EndPopup();
 	}
@@ -546,7 +546,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				if (ImGui::Selectable("new prototype"))
 				{
 					auto gp = new game_object_proto_();
-					gp->id = gpID++;
+					gp->id = assets::assetIdGenerator++;
 					prototypeRegistry.emplace(gp->id, gp);
 					// new game_object();
 				}

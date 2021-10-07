@@ -176,20 +176,20 @@ public:
 		data.shrink_to_fit();
 	}
 
-	array_heap<t>() = default;
+	array_heap<t>() : m(){};
 	array_heap<t>(const array_heap<t>& rhs) : m() {
 		this->avail = rhs.avail;
 		this->valid = rhs.valid;
 		this->data = rhs.data;
 	};
 
-	array_heap<t> operator=(const array_heap<t>& rhs) {
-		array_heap<t> lhs;
-		lhs.data = rhs.data;
-		lhs.valid = rhs.valid;
-		lhs.avail = rhs.avail;
-		return lhs;
-	}
+	// array_heap<t> operator=(const array_heap<t>& rhs) {
+	// 	array_heap<t> lhs;
+	// 	lhs.data = rhs.data;
+	// 	lhs.valid = rhs.valid;
+	// 	lhs.avail = rhs.avail;
+	// 	return lhs;
+	// }
 
 	friend struct YAML::convert<array_heap<t>>;
 	vector<t> data;

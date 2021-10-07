@@ -78,10 +78,11 @@ void main(){
     if(prototypes[proto_id].trail == 1)
         life1 = min(1.f, life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime);
 
-    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1, vec2(0,0));
-    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1, vec2(1,0));
-    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2, vec2(0,1));
-    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2, vec2(1,1));
+    float t = prototypes[proto_id].trail;
+    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1, vec2(0,0 + (life1) * t));
+    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1, vec2(1 ,0 + (life1) * t));
+    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2, vec2(0 ,1 - (1 - life2) * t));
+    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2, vec2(1 ,1 - (1 - life2) * t));
 
     EndPrimitive();
 

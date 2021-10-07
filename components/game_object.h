@@ -26,7 +26,6 @@ extern std::mutex toDestroym;
 // extern std::deque<game_object *> toDestroyGameObjects;
 extern std::vector<game_object *> toDestroyGameObjects;
 extern std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
-extern int gpID;
 // extern tbb::concurrent_vector<game_object *> toDestroyGameObjects;
 
 // extern tbb::concurrent_unordered_set<component *> toStart;
@@ -61,14 +60,15 @@ public:
 			ImGui::PushID(n);
 			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 			YAML::Node none;
-			if (ImGui::TreeNode((to_string(n) +  ComponentRegistry.registry(i->second)->getName()).c_str()))
+			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.registry(i->second)->getName()).c_str()))
 			{
 				ImGui::SameLine();
 				if (ImGui::Button("x"))
 				{
 					i = components.erase(i);
 				}
-				else{
+				else
+				{
 					i->first->ser_edit(ser_mode::edit_mode, none);
 					i++;
 				}
@@ -171,7 +171,7 @@ struct game_object_prototype
 	int id;
 	game_object_prototype();
 	game_object_prototype(game_object_proto_ *p);
-	game_object_proto_* meta();
+	game_object_proto_ *meta();
 	SER_HELPER()
 	{
 		ar &id;
@@ -254,16 +254,17 @@ public:
 		}
 
 		// rotation
-		glm::vec3 angles = glm::eulerAngles(Transforms.rotations[t.id]);
-		offset = angles;
-		angles = glm::degrees(angles);
-		if (ImGui::DragFloat3("rotation", &angles.x))
+		static unordered_map<int, glm::vec3> transform_euler_angles;
+		if (transform_euler_angles.find(t.id) == transform_euler_angles.end())
 		{
-			angles = glm::radians(angles);
-			t.rotate(glm::vec3(1, 0, 0), angles.x - offset.x);
-			t.rotate(glm::vec3(0, 1, 0), angles.y - offset.y);
-			t.rotate(glm::vec3(0, 0, 1), angles.z - offset.z);
-			Transforms.updates[t.id].rot = true;
+			glm::vec3 angles = glm::eulerAngles(Transforms.rotations[t.id]);
+			transform_euler_angles.emplace(t.id, glm::degrees(angles));
+		}
+		if (ImGui::DragFloat3("rotation", &transform_euler_angles.at(t.id).x))
+		{
+			// glm::quat _q;
+			glm::vec3 angles = glm::radians(transform_euler_angles.at(t.id));
+			t.setRotation(angles);
 		}
 
 		// scale
