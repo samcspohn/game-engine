@@ -75,6 +75,8 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	stoppingGame = true;
 	lock_guard<mutex> lk(transformLock);
 	rootGameObject->_destroy();
+	string s = filename;
+	cout << s;
 	Transforms.clear();
 	// ComponentRegistry.clear();
 	{
@@ -362,13 +364,15 @@ void openFile()
 	fgets(file, 1024, f);
 	string fi(file);
 	fi = fi.substr(0, fi.size() - 1);
-	working_file = fi;
 	if (fi == "")
 		cout << "cancelled load" << endl;
 	else
 	{
 		mainThreadWork.push(new function<void()>([=]()
-												 { load_level(fi.c_str()); }));
+												 {
+													 load_level(fi.c_str());
+													 working_file = fi;
+												 }));
 		cout << "loaded: " << file << endl;
 	}
 }

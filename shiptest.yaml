@@ -37,7 +37,7 @@ transform:
           value:
             shader:
               id: 816754076
-    - name: ""
+    - name: armory
       transform:
         position:
           - 7.985449
@@ -54,7 +54,15 @@ transform:
           - 1
         id: 2
         children: ~
-      components: ~
+      components:
+        - id: 15588507219644773874
+          value:
+            guns:
+              - ammo: 9
+                rof: 0.2
+                speed: 500
+                dispersion: 0.1
+                size: 1
     - name: ship container
       transform:
         position:
@@ -132,23 +140,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -158,7 +150,7 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -220,23 +212,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -246,7 +222,7 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -308,23 +284,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -334,7 +294,7 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -396,23 +356,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -422,7 +366,7 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -484,23 +428,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -510,7 +438,7 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -572,23 +500,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -598,7 +510,7 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -632,7 +544,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 20
+                    id: 17
                     children:
                       - name: guns
                         transform:
@@ -649,7 +561,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 21
+                          id: 18
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -660,23 +572,7 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              rof: 22
-                              speed: 500
-                              dispersion: 0.01
-                              barrels:
-                                -
-                                  - -0.56
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0
-                                  - 0
-                                  - 2.3
-                                -
-                                  - 0.56
-                                  - 0
-                                  - 2.3
-                              ammo: 9
+                              armory_id: 0
                   components:
                     - id: 9328246355543747823
                       value:
@@ -686,7 +582,79 @@ transform:
                           id: 6
                     - id: 12031868808377879742
                       value:
-                        target: 19
+                        target: 23
+                        gun_speed: 1.745329
+                        turret_speed: 1.745329
+                        muzzelFlash:
+                          id: 0
+                        t_angles:
+                          - -2.356194
+                          - 0
+                          - 2.356194
+                        g_angles:
+                          -
+                            - -1.396263
+                            - 0.3490658
+                          -
+                            - -1.396263
+                            - 0.05235988
+                          -
+                            - -1.396263
+                            - 0.3490658
+                - name: turret
+                  transform:
+                    position:
+                      - 1.56024e-07
+                      - 26.79354
+                      - -7.298841
+                    rotation:
+                      - 1
+                      - 4.371139e-08
+                      - 4.371139e-08
+                      - -1.910685e-15
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 19
+                    children:
+                      - name: guns
+                        transform:
+                          position:
+                            - 8.116763e-07
+                            - 26.92575
+                            - -7.988778
+                          rotation:
+                            - 1.000004
+                            - 4.371149e-08
+                            - 3.874302e-07
+                            - -4.440892e-14
+                          scale:
+                            - 1
+                            - 1
+                            - 1
+                          id: 20
+                          children: ~
+                        components:
+                          - id: 9328246355543747823
+                            value:
+                              shader:
+                                id: 0
+                              model:
+                                id: 5
+                          - id: 14876483986192322348
+                            value:
+                              armory_id: 0
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 6
+                    - id: 12031868808377879742
+                      value:
+                        target: 23
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         muzzelFlash:
@@ -735,7 +703,7 @@ transform:
                 - 1
                 - 1
                 - 1
-              id: 17
+              id: 21
               children:
                 - name: camera
                   transform:
@@ -752,7 +720,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 18
+                    id: 22
                     children:
                       - name: target
                         transform:
@@ -769,7 +737,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 19
+                          id: 23
                           children: ~
                         components:
                           - id: 9328246355543747823

@@ -37,7 +37,7 @@ transform:
           value:
             shader:
               id: 816754076
-    - name: armory
+    - name: ""
       transform:
         position:
           - 7.985449
@@ -54,15 +54,7 @@ transform:
           - 1
         id: 2
         children: ~
-      components:
-        - id: 15588507219644773874
-          value:
-            guns:
-              - ammo: 9
-                rof: 0.2
-                speed: 500
-                dispersion: 0.1
-                size: 1
+      components: ~
     - name: ship container
       transform:
         position:
@@ -140,7 +132,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -212,7 +220,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -284,7 +308,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -356,7 +396,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -428,7 +484,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -500,7 +572,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -572,7 +660,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:
@@ -644,7 +748,23 @@ transform:
                                 id: 5
                           - id: 14876483986192322348
                             value:
-                              armory_id: 0
+                              rof: 0.2
+                              speed: 500
+                              dispersion: 0.01
+                              barrels:
+                                -
+                                  - -0.56
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0
+                                  - 0
+                                  - 2.3
+                                -
+                                  - 0.56
+                                  - 0
+                                  - 2.3
+                              ammo: 9
                   components:
                     - id: 9328246355543747823
                       value:

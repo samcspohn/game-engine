@@ -73,10 +73,10 @@ void renderEdit(const char *name, glm::vec4 &v)
     ImGui::DragFloat4(name, &v.x);
 }
 
-unordered_map<glm::quat *, glm::vec3> quat_euler_angles;
 void renderEdit(const char *name, glm::quat &q)
 {
 
+    static unordered_map<glm::quat *, glm::vec3> quat_euler_angles;    
     // glm::vec3 forw = glm::normalize(q * glm::vec3(0,0,1));
     // glm::vec3 up = glm::normalize(q * glm::vec3(0,1,0));
 

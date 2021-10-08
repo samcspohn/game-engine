@@ -422,7 +422,7 @@ public:
 				turrets.push_back(tur);
 			}
 		}
-		t_ = (1.f / turrets[0]->getRateOfFire()) / turrets.size();
+		rof = (1.f / turrets[0]->getRateOfFire()) / turrets.size();
 	}
 	void reset(){
 		turrets.clear();

@@ -93,16 +93,13 @@ void renderEdit(const char *name, vector<t> &v)
     bool open = ImGui::TreeNode(name);
     ImGui::SameLine();
     bool add = ImGui::Button("+");
-    if (add)
-    {
-        v.emplace_back();
-    }
     int remove = -1;
-    if (add || open)
+    std::hash<string> x;
+    if (open)
     {
         for (int i{0}; i < v.size(); ++i)
         {
-            ImGui::PushID(i);
+            ImGui::PushID(x(name) + i);
             renderEdit(to_string(i).c_str(), v[i]);
             ImGui::SameLine();
             if (ImGui::Button("-"))
@@ -115,6 +112,10 @@ void renderEdit(const char *name, vector<t> &v)
             v.erase(v.begin() + remove);
         }
         ImGui::TreePop();
+    }
+    if (add)
+    {
+        v.emplace_back();
     }
 }
 

@@ -65,7 +65,6 @@ terrainHit terrain::getHeight(float x, float z)
     // }
     if (_chunk == 0)
     {
-        cout << "no chunk" << endl;
         return terrainHit(glm::vec3(0, 1, 0), 0);
     }
 

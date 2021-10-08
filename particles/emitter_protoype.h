@@ -215,7 +215,6 @@ namespace YAML
     {
         static Node encode(const emitter_prototype &rhs)
         {
-#define ENCODE_PROTO(arg) node[#arg] = rhs.arg;
             Node node;
             ENCODE_PROTO(emission_rate);
             ENCODE_PROTO(lifetime);
@@ -232,7 +231,6 @@ namespace YAML
             ENCODE_PROTO(trail);
             ENCODE_PROTO(colorLife);
             ENCODE_PROTO(sizeLife);
-        #undef ENCODE_PROTO
             return node;
         }
 
@@ -240,7 +238,7 @@ namespace YAML
         {
             // rhs.emitterPrototype = node["id"].as<int>();
 
-            #define DECODE_PROTO(arg) rhs.arg = node[#arg].as<decltype(rhs.arg)>();
+            
             DECODE_PROTO(emission_rate);
             DECODE_PROTO(lifetime);
             DECODE_PROTO(rotation_rate);
@@ -256,7 +254,6 @@ namespace YAML
             DECODE_PROTO(trail);
             DECODE_PROTO(colorLife);
             DECODE_PROTO(sizeLife);
-        #undef DECODE_PROTO
             return true;
         }
     };

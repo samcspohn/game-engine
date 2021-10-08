@@ -304,7 +304,7 @@ public:
         transform->move(vel * Time.deltaTime);
         vel += vec3(0, -9.81, 0) * Time.deltaTime;
     }
-    void onCollision(collision& col)
+    void onCollision(collision &col)
     {
         glm::vec3 normal = col.normal;
         if (length(normal) == 0)
@@ -333,67 +333,134 @@ public:
 };
 REGISTER_COMPONENT(missile)
 
-class gun final : public component
+struct gun_prototype
 {
-    float lastFire;
     vector<vec3> barrels = {vec3(0, 0, 0)};
-
-public:
     game_object_prototype ammo;
     float rof;
     float speed;
     float dispersion;
     float size = 1;
+    void r()
+    {
+        RENDER(barrels);
+        RENDER(ammo);
+        RENDER(rof);
+        RENDER(speed);
+        RENDER(dispersion);
+        RENDER(size);
+    }
+};
+void renderEdit(const char *name, gun_prototype &gp)
+{
+    gp.r();
+}
+
+namespace YAML
+{
+    template <>
+    struct convert<gun_prototype>
+    {
+        static Node encode(const gun_prototype &rhs)
+        {
+            Node node;
+            ENCODE_PROTO(ammo)
+            ENCODE_PROTO(rof)
+            ENCODE_PROTO(speed)
+            ENCODE_PROTO(dispersion)
+            ENCODE_PROTO(size)
+            return node;
+        }
+        static bool decode(const Node &node, gun_prototype &rhs)
+        {
+            DECODE_PROTO(ammo)
+            DECODE_PROTO(rof)
+            DECODE_PROTO(speed)
+            DECODE_PROTO(dispersion)
+            DECODE_PROTO(size)
+            return true;
+        }
+    };
+}
+class armory final : public component
+{
+public:
+    vector<gun_prototype> guns;
+
+    SER_FUNC()
+    {
+        SER(guns);
+    }
+};
+REGISTER_COMPONENT(armory);
+
+class gun final : public component
+{
+    float lastFire;
+
+public:
+    // game_object_prototype ammo;
+    // float rof;
+    // float speed;
+    // float dispersion;
+    // float size = 1;
+    int armory_id;
     void onStart()
     {
         lastFire = Time.time;
     }
-    void setBarrels(vector<vec3> b)
-    {
-        barrels = b;
-    }
+    // void setBarrels(vector<vec3> b)
+    // {
+    //     barrels = b;
+    // }
     bool isReloaded()
     {
-        return Time.time - lastFire > 1.f / rof;
+        armory *gunid = COMPONENT_LIST(armory)->get(0);
+        gun_prototype *g = &gunid->guns[0];
+        return Time.time - lastFire > 1.f / g->rof;
     }
     bool fire()
     {
+        armory *gunid = COMPONENT_LIST(armory)->get(0);
+        gun_prototype *g = &gunid->guns[0];
 
         // reload += rof * Time.deltaTime;
-        if ((Time.time - lastFire) * rof > 1.f)
+        if ((Time.time - lastFire) * g->rof > 1.f)
         {
-            float x = Time.deltaTime * rof;
-            float reload = std::max((float)(int)x, 1.f);
+            float x = Time.deltaTime * g->rof;
+            float reload = 1; //std::max((float)(int)x, 1.f);
             float r;
             // if(reload > x)
             // 	r = Time.deltaTime * (reload / x);
             // else
             r = Time.deltaTime * (1 - (x - reload));
             lastFire = Time.time - r;
-            for (int i = 0; i < (int)reload; i++)
+            // for (int i = 0; i < (int)reload; i++)
+            // {
+            for (auto &j : g->barrels)
             {
-                for (auto &j : barrels)
-                {
-                    game_object *go = instantiate(ammo);
-                    go->transform->setScale(vec3(size));
-                    go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j, 1)));
-                    // go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
-                    go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * dispersion) * speed;
-                }
+                game_object *go = instantiate(g->ammo);
+                go->transform->setScale(vec3(g->size));
+                go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j, 1)));
+                // go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
+                go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * g->dispersion) * g->speed;
             }
+            // }
             // numCubes.fetch_add((int)reload);
             // reload -= (int)reload;
             return true;
         }
         return false;
+        // return true;
     }
     SER_FUNC()
     {
-        SER(rof)
-        SER(speed)
-        SER(dispersion)
-        SER(barrels)
-        SER(ammo)
+        SER(armory_id)
+        // SER(rof)
+        // SER(speed)
+        // SER(dispersion)
+        // SER(barrels)
+        // SER(ammo)
     }
 };
 REGISTER_COMPONENT(gun)
@@ -496,7 +563,9 @@ public:
                 this->onStart();
             barrels = guns->gameObject()->getComponent<gun>();
         }
-        return barrels->rof;
+        armory *gunid = COMPONENT_LIST(armory)->get(barrels->armory_id);
+        gun_prototype *g = &gunid->guns[0];
+        return g->rof;
     }
     void onStart()
     {
@@ -615,13 +684,12 @@ public:
             vector<vec3> barrels = {vec3(-.56, 0, 2.3), vec3(0, 0, 2.3), vec3(0.56, 0, 2.3)};
 
             auto g = transform.getChildren().front().gameObject()->getComponent<gun>();
-            g->setBarrels(barrels);
-            // g->ammo = ammo_proto; //bullets["bomb"].proto;
-            g->rof = 1.f / 4.f;
-            g->dispersion = 0.01f;
-            g->speed = 500;
+            // g->setBarrels(barrels);
+            // // g->ammo = ammo_proto; //bullets["bomb"].proto;
+            // g->rof = 1.f / 4.f;
+            // g->dispersion = 0.01f;
+            // g->speed = 500;
 
-            
             setTarget(target);
             t_angles[0] = radians(-135.f);
             t_angles[1] = radians(0.f);
@@ -659,25 +727,62 @@ class gunManager final : public component
 
     vector<_turret *> turrets;
     int curr = 0;
-    double t;
-    double t_;
+    double lastFire = 0;
+    double rof;
 
 public:
     void fire()
     {
-        if (Time.time > t)
+
+        // reload += rof * Time.deltaTime;
+        if ((Time.time - lastFire) * rof > 1.f)
         {
-            for (auto &i : turrets)
+            float x = Time.deltaTime * rof;
+            float reload = std::max((float)(int)x, 1.f);
+            float r;
+            // if(reload > x)
+            // 	r = Time.deltaTime * (reload / x);
+            // else
+            r = Time.deltaTime * (1 - (x - reload));
+            lastFire = Time.time - r;
+            int i_ = 0;
+            while (true)
             {
-                if (i->reloaded() && i->onTarget())
+                bool gunsCanFire = false;
+                for (auto &i : turrets)
                 {
-                    i->fire();
-                    t = Time.time + t_;
-                    curr = (curr + 1) % turrets.size();
-                    break;
+                    if (i->reloaded() && i->onTarget())
+                    {
+                        // gunsCanFire = true;
+                        i_++;
+                        i->fire();
+                        curr = (curr + 1) % turrets.size();
+                        if (i_ >= (int)reload)
+                            return;
+                    }
                 }
+                if (!gunsCanFire)
+                    return;
             }
         }
+        // t = Time.time;
+        // while (Time.time + Time.deltaTime > t)
+        // {
+        //     bool gunsCanFire = false;
+        //     for (auto &i : turrets)
+        //     {
+        //         if (i->reloaded() && i->onTarget())
+        //         {
+        //             gunsCanFire = true;
+        //             t += rof;
+        //             i->fire();
+        //             curr = (curr + 1) % turrets.size();
+        //             // break;
+        //         }
+        //     }
+        //     if (!gunsCanFire)
+        //         break;
+        // }
     }
     void onStart()
     {
@@ -689,7 +794,7 @@ public:
                 turrets.push_back(tur);
             }
         }
-        t_ = (1.f / turrets[0]->getRateOfFire()) / turrets.size();
+        rof = 1.f / ((1.f / turrets[0]->getRateOfFire()) / turrets.size());
     }
     void reset()
     {
@@ -1052,7 +1157,7 @@ public:
             // 	}
             // guns[0]->fire();
             gm->fire();
-            cout << "FIRE" << endl;
+            // cout << "FIRE" << endl;
         }
         // if (Input.Mouse.getButton(GLFW_MOUSE_BUTTON_RIGHT))
         // {
@@ -1110,11 +1215,11 @@ public:
 
         guns = transform->gameObject()->getComponents<gun>();
         // bomb = bullets["bomb"];
-        guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
-        guns[0]->rof = 3'000 / 60;
-        guns[0]->dispersion = 0.3f;
-        guns[0]->speed = 200;
-        guns[0]->setBarrels({vec3(-1.1, 0.4, 0.5)});
+        // guns[0]->ammo = ammo_proto; //bullets["bomb"].proto;
+        // guns[0]->rof = 3'000 / 60;
+        // guns[0]->dispersion = 0.3f;
+        // guns[0]->speed = 200;
+        // guns[0]->setBarrels({vec3(-1.1, 0.4, 0.5)});
     }
     void update()
     {
