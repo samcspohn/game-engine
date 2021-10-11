@@ -60,7 +60,7 @@ enum ser_mode
 
 
 #define ENCODE_PROTO(arg) node[#arg] = rhs.arg;
-#define DECODE_PROTO(arg) rhs.arg = node[#arg].as<decltype(rhs.arg)>();
+#define DECODE_PROTO(arg) try{ rhs.arg = node[#arg].as<decltype(rhs.arg)>(); } catch(...) {}
 
 // namespace YAML
 // {

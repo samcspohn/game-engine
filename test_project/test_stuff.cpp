@@ -369,6 +369,7 @@ namespace YAML
             ENCODE_PROTO(speed)
             ENCODE_PROTO(dispersion)
             ENCODE_PROTO(size)
+            ENCODE_PROTO(barrels)
             return node;
         }
         static bool decode(const Node &node, gun_prototype &rhs)
@@ -378,6 +379,7 @@ namespace YAML
             DECODE_PROTO(speed)
             DECODE_PROTO(dispersion)
             DECODE_PROTO(size)
+            DECODE_PROTO(barrels)
             return true;
         }
     };
