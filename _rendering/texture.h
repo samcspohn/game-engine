@@ -15,7 +15,7 @@ using namespace std;
 
 struct TextureMeta
 {
-    GLuint id;
+    GLuint id = -1;
     aiString path;
     string type;
     glm::ivec2 dims;

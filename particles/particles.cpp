@@ -282,6 +282,7 @@ gpu_vector<uint> *atomics = new gpu_vector<uint>();
 gpu_vector_proxy<d> *_input = new gpu_vector_proxy<d>();
 gpu_vector_proxy<d> *_output = new gpu_vector_proxy<d>();
 
+#include "../textureAtlas.h"
 namespace particle_renderer
 {
     GLuint VAO = 0;
@@ -294,7 +295,8 @@ namespace particle_renderer
     ofstream output;
     rolling_buffer time;
     sorter<d> *p_sort;
-    _texture particle_tex;
+    // _texture particle_tex;
+    texAtlas atlas{"particleAtlas"};
     void setCamCull(glm::mat3 ci, glm::vec3 cp)
     {
         camInv = ci;
@@ -329,6 +331,7 @@ struct d{\
 	uint protoID_life;\
 };","z");
 
+        _texture particle_tex;
         particle_tex.load("res/images/particle.png");
 
         // vector<glm::vec4> colors;
@@ -341,6 +344,8 @@ struct d{\
             col.b = 255;
         }
         particle_tex.t->write(colors.data());
+
+        atlas.addTexture(particle_tex);
     }
     
     void init2(){
@@ -427,7 +432,7 @@ struct d{\
 
         particleShader->setInt("particle_tex", 0);
         glActiveTexture(GL_TEXTURE0);
-	    glBindTexture(GL_TEXTURE_2D, particle_tex.t->id);
+	    glBindTexture(GL_TEXTURE_2D, atlas.atlas.t->id);
 
         GPU_TRANSFORMS->bindData(0);
         gpu_emitter_prototypes->bindData(3);

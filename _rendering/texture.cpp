@@ -121,6 +121,9 @@ void TextureMeta::load(string path)
 void TextureMeta::gen(int width, int height, GLenum format, GLenum type, float *data = 0)
 {
     // Assign texture to ID
+    if(id == -1){
+        glDeleteTextures(1,&id);
+    }
 
     dims.x = width;
     dims.y = height;

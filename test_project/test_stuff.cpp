@@ -337,6 +337,7 @@ struct gun_prototype
 {
     vector<vec3> barrels = {vec3(0, 0, 0)};
     game_object_prototype ammo;
+    emitter_prototype_ muzzelFlash;
     float rof;
     float speed;
     float dispersion;
@@ -349,6 +350,7 @@ struct gun_prototype
         RENDER(speed);
         RENDER(dispersion);
         RENDER(size);
+        RENDER(muzzelFlash)
     }
 };
 void renderEdit(const char *name, gun_prototype &gp)
@@ -370,6 +372,7 @@ namespace YAML
             ENCODE_PROTO(dispersion)
             ENCODE_PROTO(size)
             ENCODE_PROTO(barrels)
+            ENCODE_PROTO(muzzelFlash)
             return node;
         }
         static bool decode(const Node &node, gun_prototype &rhs)
@@ -380,6 +383,7 @@ namespace YAML
             DECODE_PROTO(dispersion)
             DECODE_PROTO(size)
             DECODE_PROTO(barrels)
+            DECODE_PROTO(muzzelFlash)
             return true;
         }
     };
@@ -418,13 +422,13 @@ public:
     bool isReloaded()
     {
         armory *gunid = COMPONENT_LIST(armory)->get(0);
-        gun_prototype *g = &gunid->guns[0];
+        gun_prototype *g = &gunid->guns[armory_id];
         return Time.time - lastFire > 1.f / g->rof;
     }
     bool fire()
     {
         armory *gunid = COMPONENT_LIST(armory)->get(0);
-        gun_prototype *g = &gunid->guns[0];
+        gun_prototype *g = &gunid->guns[armory_id];
 
         // reload += rof * Time.deltaTime;
         if ((Time.time - lastFire) * g->rof > 1.f)
@@ -447,6 +451,7 @@ public:
                 // go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
                 go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * g->dispersion) * g->speed;
             }
+            g->muzzelFlash.burst(transform->forward() * transform->getScale() * 5.3f + transform->getPosition(), transform->forward(), 20);
             // }
             // numCubes.fetch_add((int)reload);
             // reload -= (int)reload;
@@ -544,7 +549,7 @@ class _turret final : public component
     bool canFire;
 
 public:
-    emitter_prototype_ muzzelFlash;
+    // emitter_prototype_ muzzelFlash;
     float turret_speed = radians(30.f);
     float gun_speed = radians(30.f);
     // float t_angles[3];
@@ -669,7 +674,7 @@ public:
             if (barrels->fire())
             {
                 // cout << "fire" << endl;
-                muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(), guns->forward(), 20);
+                // muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(), guns->forward(), 20);
                 // getNamedEmitterProto("shockWave").burst(transform->getPosition(), guns->forward(), vec3(0.2), 60);
                 // sound->play();
                 // muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
@@ -709,7 +714,7 @@ public:
         SER(target);
         SER(gun_speed)
         SER(turret_speed)
-        SER(muzzelFlash)
+        // SER(muzzelFlash)
         // SER(guns)
         SER(t_angles)
         SER(g_angles)
