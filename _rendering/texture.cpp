@@ -12,6 +12,7 @@
 #include <assimp/postprocess.h>
 #include <map>
 #include "helper1.h"
+#include "imgui/imgui.h"
 
 using namespace std;
 
@@ -186,3 +187,12 @@ void TextureMeta::read(void* data, GLenum format, GLenum type){
 
 //     return textureID;
 // }
+
+
+bool operator<(const _texture& a, const _texture& b){
+    return a.t->id < b.t->id;
+}
+
+void renderEdit(const char* name, _texture& t){
+    ImGui::Text(t.t->path.C_Str());
+}

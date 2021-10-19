@@ -42,6 +42,10 @@ struct emitter_prototype
     float radius{0};
     int p2;
     int trail{0};
+
+    glm::vec2 texCoord;
+    glm::vec2 sz;
+    
     array<glm::vec4, 100> colorLife;
     array<float, 100> sizeLife{1.f};
     emitter_prototype()
@@ -117,6 +121,7 @@ class emitter_proto_asset : public assets::asset
 public:
     int ref;
     colorArray gradient;
+    _texture texture;
     bool onEdit();
     void copy();
     string type();
@@ -126,6 +131,8 @@ public:
         SER_BASE_ASSET
         ar &ref &gradient;
     }
+    emitter_proto_asset();
+    emitter_proto_asset(const emitter_proto_asset& e) = default;
 };
 extern gpu_vector<emitter_prototype> *gpu_emitter_prototypes;
 extern array_heap<emitter_prototype> emitter_prototypes_;

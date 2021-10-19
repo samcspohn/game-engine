@@ -37,3 +37,7 @@ struct _texture{
 _texture getNamedTexture(string name);
 
 GLint TextureFromFile( const char *path, string directory );
+
+bool operator<(const _texture& a, const _texture& b);
+
+void renderEdit(const char* name, _texture& t);

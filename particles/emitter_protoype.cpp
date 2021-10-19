@@ -176,6 +176,7 @@ void emitter_proto_asset::inspect()
         gradient.t.t->gen(100, 1);
     }
     emitter_prototypes_.get(this->ref).edit(gradient);
+    renderEdit("texture", texture);
 }
 
 

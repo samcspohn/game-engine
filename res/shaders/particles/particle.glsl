@@ -47,6 +47,11 @@ struct emitter_prototype{
     float radius;
     int p2;
     int trail;
+    
+    vec2 texCoord;
+    vec2 sz;
+    
+
     vec4 colorLife[100];
     float sizeLife[100];
 };
