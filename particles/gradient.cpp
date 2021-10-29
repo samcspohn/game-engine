@@ -33,16 +33,16 @@ bool colorArrayEdit(colorArray &a, bool *p_open)
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     bool changed = false;
 
-    if (a.t.t == 0)
+    if (a.t.meta() == 0)
     {
-        a.t.namedTexture("gradient" + to_string(rand()));
-        a.t.t->gen(100, 1);
+        a.t._new();
+        a.t.meta()->gen(100, 1);
         glm::vec4 colors[100];
         a.setColorArray(colors);
-        a.t.t->write(&colors[0][0], GL_RGBA, GL_FLOAT);
+        a.t.meta()->write(&colors[0][0], GL_RGBA, GL_FLOAT);
     }
 
-    draw_list->AddImage((void *)a.t.t->id, pos, {pos.x + size.x, pos.y + size.y}, uv0, uv1, ImGui::GetColorU32(tint_col));
+    draw_list->AddImage((void *)a.t.meta()->glid, pos, {pos.x + size.x, pos.y + size.y}, uv0, uv1, ImGui::GetColorU32(tint_col));
 
     // gradientEditorDatas[&a].color_picker_open = 0;
     int i = 0;
@@ -91,7 +91,7 @@ bool colorArrayEdit(colorArray &a, bool *p_open)
 
             glm::vec4 colors[100];
             a.setColorArray(colors);
-            a.t.t->write(&colors[0][0], GL_RGBA, GL_FLOAT);
+            a.t.meta()->write(&colors[0][0], GL_RGBA, GL_FLOAT);
             changed = true;
         }
         draw_list->AddTriangleFilled({pos.x + p_value - 5, pos.y}, {pos.x + p_value, pos.y + 10}, {pos.x + p_value + 5, pos.y}, ImGui::GetColorU32(tint_col));
@@ -130,7 +130,7 @@ bool colorArrayEdit(colorArray &a, bool *p_open)
     {
         glm::vec4 colors[100];
         a.setColorArray(colors);
-        a.t.t->write(&colors[0][0], GL_RGBA, GL_FLOAT);
+        a.t.meta()->write(&colors[0][0], GL_RGBA, GL_FLOAT);
         changed = true;
         // a.keys.find(key.first)->second.value = key-second.value;
     }

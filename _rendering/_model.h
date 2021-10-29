@@ -43,7 +43,7 @@ namespace modelManager
 	void init();
 }; // namespace modelManager
 
-class _model
+class _model : public assets::asset_instance<_modelMeta>
 {
 public:
 	_model();

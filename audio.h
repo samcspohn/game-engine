@@ -65,10 +65,10 @@ namespace audioManager
     void load(IARCHIVE &ia);
 } // namespace audioManager
 
-struct audio
+struct audio : public assets::asset_instance<audioMeta>
 {
     audio();
-    audioMeta *meta();
+    audioMeta *meta() const;
     audio(string file);
     void play(glm::vec3 pos, float pitch, float gain);
     int a = -1;

@@ -330,7 +330,7 @@ void game_object::_destroy()
 	transform->_destroy();
 }
 
-game_object_proto_* game_object_prototype::meta(){
+game_object_proto_* game_object_prototype::meta() const{
 	return prototypeRegistry.at(id).get();
 }
 

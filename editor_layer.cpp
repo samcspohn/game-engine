@@ -43,19 +43,41 @@ void DestroyComponents(componentStorageBase *cl)
 	}
 }
 
-void save_level(const char *filename)
+void saveAssets()
 {
-	{
-		YAML::Node assets_node;
-		assets_node["workingFile"] = working_file;
-		shaderManager::encode(assets_node);
-		modelManager::encode(assets_node);
-		encodeEmitters(assets_node);
-		encodePrototypes(assets_node);
-		assets_node["assetIdGenerator"] = assets::assetIdGenerator;
-		ofstream("assets.yaml") << assets_node;
-	}
+	YAML::Node assets_node;
+	assets_node["workingFile"] = working_file;
+	texture_manager.encode(assets_node);
+	shaderManager::encode(assets_node);
+	modelManager::encode(assets_node);
+	encodeEmitters(assets_node);
+	encodePrototypes(assets_node);
+	assets_node["assetIdGenerator"] = assets::assetIdGenerator;
+	ofstream("assets.yaml") << assets_node;
+}
+void loadAssets()
+{
+#define TRY(x)try{x} catch(...){}
 
+try{
+
+	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+	working_file = assets_node["workingFile"].as<string>();
+	assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
+	TRY(texture_manager.decode(assets_node);)
+	TRY(shaderManager::decode(assets_node);)
+	TRY(modelManager::decode(assets_node);)
+	TRY(decodeEmitters(assets_node);)
+	TRY(decodePrototypes(assets_node);)
+}catch(...){
+
+}
+#undef TRY
+}
+
+void save_level(string filename)
+{
+	saveAssets();
 	{
 		YAML::Node root_game_object_node;
 		game_object::encode(root_game_object_node, rootGameObject);
@@ -70,7 +92,7 @@ void rebuildGameObject(componentStorageBase *base, int i);
 
 atomic<bool> stoppingGame;
 
-void load_level(const char *filename) // assumes only renderer and terrain are started
+void load_level(string filename)
 {
 	stoppingGame = true;
 	lock_guard<mutex> lk(transformLock);
@@ -78,19 +100,11 @@ void load_level(const char *filename) // assumes only renderer and terrain are s
 	string s = filename;
 	cout << s;
 	Transforms.clear();
-	// ComponentRegistry.clear();
-	{
-		YAML::Node assets_node = YAML::LoadFile("assets.yaml");
-		// ifstream("assets.yaml") >> assets_node;
-		working_file = assets_node["workingFile"].as<string>();
-		shaderManager::decode(assets_node);
-		modelManager::decode(assets_node);
-		decodeEmitters(assets_node);
-		decodePrototypes(assets_node);
-		assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
-	}
+
+	loadAssets();
 	if (string(filename) != "")
 	{
+		working_file = filename;
 		YAML::Node root_game_object_node = YAML::LoadFile(filename);
 		game_object::decode(root_game_object_node, -1);
 		// IARCHIVE ia(ifs);
@@ -127,8 +141,7 @@ void start_game() // assumes only renderer and terrain are started.
 												 for (auto &i : ComponentRegistry.meta_types)
 												 {
 													 StartComponents(i.second->getStorage());
-												 }
-											 }));
+												 } }));
 	gameRunning = true;
 }
 
@@ -154,10 +167,7 @@ void stop_game()
 												 }
 
 												 // ImGui::LoadIniSettingsFromDisk("default.ini");
-												 stoppingGame = false;
-
-												 // load_level(working_file.c_str());
-											 }));
+												 stoppingGame = false; }));
 	// ImGui::SaveIniSettingsToMemory();
 }
 
@@ -370,9 +380,8 @@ void openFile()
 	{
 		mainThreadWork.push(new function<void()>([=]()
 												 {
-													 load_level(fi.c_str());
-													 working_file = fi;
-												 }));
+													 load_level(fi);
+													 working_file = fi; }));
 		cout << "loaded: " << file << endl;
 	}
 }
@@ -389,7 +398,7 @@ void saveAsFile()
 	{
 		working_file = fi;
 		mainThreadWork.push(new function<void()>([=]()
-												 { save_level(working_file.c_str()); }));
+												 { save_level(working_file); }));
 
 		cout << "saved: " << file << endl;
 	}
@@ -397,7 +406,7 @@ void saveAsFile()
 void saveFile()
 {
 	mainThreadWork.push(new function<void()>([=]()
-											 { save_level(working_file.c_str()); }));
+											 { save_level(working_file); }));
 	cout << "saved: " << working_file << endl;
 }
 
@@ -774,8 +783,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 															 selected_transforms.clear();
 															 selected_transforms[r.id] = true;
 														 }
-														 transformLock.unlock();
-													 }));
+														 transformLock.unlock(); }));
 		}
 	}
 	else

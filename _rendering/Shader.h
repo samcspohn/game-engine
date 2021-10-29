@@ -132,11 +132,11 @@ struct texArray
 			hash = -1;
 			return;
 		}
-		hash = textures[0].t->id;
+		hash = textures[0].meta()->glid;
 		for (int i = 1; i < textures.size(); i++)
 		{
 			hash *= 1e6;
-			hash += textures[i].t->id;
+			hash += textures[i].meta()->glid;
 		}
 	}
 	void setTextures(vector<_texture> &texs)
@@ -147,7 +147,7 @@ struct texArray
 	void push_back(_texture t)
 	{
 		this->textures.push_back(t);
-		hash = hash / (10.0 * t.t->id);
+		hash = hash / (10.0 * t.meta()->glid);
 	}
 	_texture &operator[](size_t index)
 	{
@@ -212,6 +212,10 @@ public:
 	{
 		glUniform1f(glGetUniformLocation(Program, name.c_str()), value);
 	}
+	void setDouble(const std::string &name, float value) const
+	{
+		glUniform1d(glGetUniformLocation(Program, name.c_str()), value);
+	}
 	void setInt(const std::string &name, int value) const
 	{
 		GLuint vid = glGetUniformLocation(Program, name.c_str());
@@ -248,7 +252,7 @@ public:
 			// Retrieve texture number (the N in diffuse_textureN)
 			stringstream ss;
 			string number;
-			string name = ta[i].t->type;
+			string name = ta[i].meta()->_type;
 
 			if (name == "texture_diffuse")
 			{
@@ -264,7 +268,7 @@ public:
 			}
 			number = ss.str();
 
-			setTexture(i, "material." + name + number, ta[i].t->id);
+			setTexture(i, "material." + name + number, ta[i].meta()->glid);
 		}
 	}
 	Shader() {}

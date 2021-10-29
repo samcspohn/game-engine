@@ -6,7 +6,7 @@
 #include <vector>
 #include <list>
 #include <string>
-#include "_rendering/texture.h"
+// #include "_rendering/texture.h"
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -15,38 +15,93 @@
 
 using namespace std;
 
-class inspectable{
-    public:
+class inspectable
+{
+public:
     virtual void inspect(){};
-    SER_HELPER(){
+    SER_HELPER()
+    {
         ar;
     }
 };
 
-
-namespace assets{
-    class asset : public inspectable{
-        public:
+namespace assets
+{
+    class asset : public inspectable
+    {
+    public:
         int id = 0;
         string name;
         virtual string type() = 0;
         int genID();
         virtual void copy();
         virtual bool onEdit() = 0;
-        SER_HELPER(){
+        // virtual void load() = 0;
+        SER_HELPER()
+        {
             SER_BASE(inspectable)
-            ar & id & name;
+            ar &id &name;
         }
     };
+
+    template <typename t> // must be asset
+    struct assetManager
+    {
+        map<string, int> path;
+        unordered_map<int, shared_ptr<t>> meta;
+        void encode(YAML::Node &node)
+        {
+            YAML::Node assets;
+            YAML::Node meta_node;
+            // YAML::Node models_node;
+            assets["path"] = path;
+            for (auto &i : path)
+            {
+                meta_node.force_insert(i.second, *meta[i.second]);
+            }
+            assets["meta"] = meta_node;
+            node[typeid(t).name()] = assets;
+        }
+
+        void decode(YAML::Node &node)
+        {
+
+            YAML::Node assets = node[typeid(t).name()];
+            path = assets["path"].as<map<string, int>>();
+            for (auto& i : path)
+            {
+                meta[i.second] = std::make_shared<t>(assets["meta"][to_string(i.second)].as<t>());
+            }
+
+            waitForRenderJob([&]()
+                             {
+			for (auto &m : meta)
+			{
+				m.second->load();
+			} });
+        }
+    };
+
+    template<typename t>
+    struct asset_instance
+    {
+        virtual t *meta() const = 0;
+    };
+    // extern unordered_map<size_t,assetManager*>
+
     // extern map<int, asset*> assets;
     // void registerAsset(asset*);
     extern int assetIdGenerator;
-    void save(OARCHIVE& oa);
-    void load(IARCHIVE& ia);
+    void save(OARCHIVE &oa);
+    void load(IARCHIVE &ia);
 }
 
-#define YAML_ENCODE_ASSET() node["id"] = rhs.id; node["name"] = rhs.name;
-#define YAML_DECODE_ASSET() rhs.id = node["id"].as<int>(); rhs.name = node["name"].as<string>();
+#define YAML_ENCODE_ASSET() \
+    node["id"] = rhs.id;    \
+    node["name"] = rhs.name;
+#define YAML_DECODE_ASSET()        \
+    rhs.id = node["id"].as<int>(); \
+    rhs.name = node["name"].as<string>();
 
 // namespace YAML
 // {
@@ -70,22 +125,20 @@ namespace assets{
 // 	};
 // }
 
+#define RENDER(name) \
+    renderEdit(#name, name);
 
-#define RENDER(name)\
-    renderEdit(#name,name);
+#define _RENDER(_name, name) \
+    renderEdit(_name, name);
 
-#define _RENDER(_name, name)\
-    renderEdit(_name,name);
-
-
-void renderEdit(const char* name, string& s);
-void renderEdit(const char* name, bool& b);
-void renderEdit(const char* name, int& i);
-void renderEdit(const char* name, float& f);
-void renderEdit(const char* name, glm::vec2& v);
-void renderEdit(const char* name, glm::vec3& v);
-void renderEdit(const char* name, glm::vec4& v);
-void renderEdit(const char* name, glm::quat& q);
+void renderEdit(const char *name, string &s);
+void renderEdit(const char *name, bool &b);
+void renderEdit(const char *name, int &i);
+void renderEdit(const char *name, float &f);
+void renderEdit(const char *name, glm::vec2 &v);
+void renderEdit(const char *name, glm::vec3 &v);
+void renderEdit(const char *name, glm::vec4 &v);
+void renderEdit(const char *name, glm::quat &q);
 
 template <typename t>
 void renderEdit(const char *name, vector<t> &v)
@@ -108,7 +161,8 @@ void renderEdit(const char *name, vector<t> &v)
             }
             ImGui::PopID();
         }
-        if(remove != -1){
+        if (remove != -1)
+        {
             v.erase(v.begin() + remove);
         }
         ImGui::TreePop();
@@ -119,9 +173,10 @@ void renderEdit(const char *name, vector<t> &v)
     }
 }
 
-template<typename t, size_t u>
-void renderEdit(const char* name, t (&v)[u]){
-      bool open = ImGui::TreeNode(name);
+template <typename t, size_t u>
+void renderEdit(const char *name, t (&v)[u])
+{
+    bool open = ImGui::TreeNode(name);
     if (open)
     {
         for (int i{0}; i < u; ++i)
@@ -134,9 +189,10 @@ void renderEdit(const char* name, t (&v)[u]){
     }
 }
 
-template<typename t, size_t u>
-void renderEdit(const char* name, array<t,u>& v){
-      bool open = ImGui::TreeNode(name);
+template <typename t, size_t u>
+void renderEdit(const char *name, array<t, u> &v)
+{
+    bool open = ImGui::TreeNode(name);
     if (open)
     {
         for (int i{0}; i < u; ++i)

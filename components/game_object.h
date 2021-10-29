@@ -166,12 +166,12 @@ namespace YAML
 	};
 }
 
-struct game_object_prototype
+struct game_object_prototype  : public assets::asset_instance<game_object_proto_>
 {
 	int id;
 	game_object_prototype();
 	game_object_prototype(game_object_proto_ *p);
-	game_object_proto_ *meta();
+	game_object_proto_ *meta() const;
 	SER_HELPER()
 	{
 		ar &id;
@@ -211,8 +211,8 @@ class game_object : public inspectable
 	//friend component;
 	friend _renderer;
 	friend void rebuildGameObject(componentStorageBase *, int);
-	friend void save_level(const char *);
-	friend void load_level(const char *);
+	friend void save_level(string);
+	friend void load_level(string);
 	friend void loadTransforms(IARCHIVE &ia);
 	friend int main(int argc, char **argv);
 	friend class inspectorWindow;

@@ -10,6 +10,8 @@ gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
 vector<_burst> particle_bursts;
 
 mutex burstLock;
+
+texAtlas* emitter_proto_asset::particleTextureAtlas = 0;
 void swapBurstBuffer()
 {
     gpu_particle_bursts->storage->swap(particle_bursts);
@@ -109,7 +111,6 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, ui
 
 REGISTER_ASSET(emitter_proto_asset);
 
-
 emitter_prototype_ createEmitter(string name)
 {
     shared_ptr<emitter_proto_asset> ep = make_shared<emitter_proto_asset>();
@@ -128,10 +129,17 @@ emitter_prototype_ createEmitter(string name)
 //     ret.emitterPrototype = emitter_prototypes.at(name);
 //     return ret;
 // }
-emitter_proto_asset *emitter_prototype_::meta()
+emitter_proto_asset *emitter_prototype_::meta() const
 {
     return emitter_proto_assets[emitterPrototype].get();
 }
+
+emitter_proto_asset::emitter_proto_asset()
+{
+    waitForRenderJob([&]()
+                     { texture.load("res/images/particle.png"); })
+}
+
 bool emitter_proto_asset::onEdit()
 {
 
@@ -170,16 +178,19 @@ string emitter_proto_asset::type()
 
 void emitter_proto_asset::inspect()
 {
-    if (gradient.t.t == 0)
+    if (gradient.t.meta() == 0)
     {
-        gradient.t.namedTexture("colOverLife" + to_string(id));
-        gradient.t.t->gen(100, 1);
+        gradient.t._new();// namedTexture("colOverLife" + to_string(id));
+        gradient.t.meta()->gen(100, 1);
     }
     emitter_prototypes_.get(this->ref).edit(gradient);
+
+    auto p = texture.meta();
     renderEdit("texture", texture);
+    if(p != texture.meta()){
+        particleTextureAtlas->addTexture(texture);
+    }
 }
-
-
 
 void renderEdit(const char *name, emitter_prototype_ &ep)
 {
@@ -199,6 +210,7 @@ void renderEdit(const char *name, emitter_prototype_ &ep)
     }
 }
 
-void init_prototypes(){
+void init_prototypes()
+{
     gpu_particle_bursts->ownStorage();
 }

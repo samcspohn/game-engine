@@ -756,10 +756,6 @@ void collider::ser_edit(ser_mode x, YAML::Node &node)
 	}
 }
 
-void onEdit()
-{
-	// RENDER(type);
-}
 
 bool raycast(glm::vec3 p, glm::vec3 dir, glm::vec3 &result)
 {

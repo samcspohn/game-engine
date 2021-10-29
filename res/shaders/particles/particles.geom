@@ -20,7 +20,7 @@ uniform mat3 camInv;
 uniform mat4 projection;
 uniform float FC;
 uniform float aspectRatio;
-
+uniform double time;
 flat out uint id;
 
 out vec3 FragPos;
@@ -78,11 +78,25 @@ void main(){
     if(prototypes[proto_id].trail == 1)
         life1 = min(1.f, life1 + 1 / prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime);
 
+    vec2 coord = prototypes[proto_id].texCoord;
+    vec2 sz = prototypes[proto_id].sz;
     float t = prototypes[proto_id].trail;
-    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1, vec2(0,0 + (life1) * t));
-    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1, vec2(1 ,0 + (life1) * t));
-    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2, vec2(0 ,1 - (1 - life2) * t));
-    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2, vec2(1 ,1 - (1 - life2) * t));
+    float a = coord.y;
+    float b = coord.y + sz.y;
+    // float f = float(time / double(prototypes[proto_id].lifetime));
+    float l1 = (0 + life1 * t) * sz.x;
+    float l2 = (1 - (1 - life2) * t) * sz.x;
+    l1 = 0;
+    float v = life2 * prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
+    if(prototypes[proto_id].trail == 1.f)
+        l2 = 1.f;
+    float dfe = l1;
+    l1 = l2;
+    l2 = dfe;
+    createVert(vec3(-.5f,.5f,0),mvp,model,rp, life1, vec2(l1, a));
+    createVert(vec3(.5f,.5f,0),mvp,model,rp, life1, vec2(l1, b));
+    createVert(vec3(-.5f,-.5f,0),mvp,model,rp, life2, vec2(l2, a));
+    createVert(vec3(.5f,-.5f,0),mvp,model,rp, life2, vec2(l2, b));
 
     EndPrimitive();
 

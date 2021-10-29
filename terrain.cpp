@@ -137,9 +137,9 @@ void terrain::render(camera &c)
     currShader->setMat4("normalMat", normalMat);
     currShader->setMat4("mvp", mvp);
     static _texture t;
-    if(t.t == 0)
+    if(t.meta() == 0)
         t.load("res/images/grass.jpg");
-    currShader->setTexture(0, "material.texture_diffuse0", t.t->id);
+    currShader->setTexture(0, "material.texture_diffuse0", t.meta()->glid);
     for (auto &x : chunks)
     {
         for (auto &z : x.second)

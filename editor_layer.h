@@ -41,10 +41,12 @@
 extern game_object *rootGameObject;
 extern tbb::concurrent_queue<function<void()> *> mainThreadWork;
 
-void save_level(const char *filename);
+void save_level(string filename);
 void rebuildGameObject(componentStorageBase *base, int i);
 
-void load_level(const char *filename);
+void loadAssets();
+void saveAssets();
+void load_level(string filename);
 // inspectable *inspector = 0;
 // unordered_map<int, bool> selected;
 

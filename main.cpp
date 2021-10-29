@@ -229,15 +229,12 @@ int main(int argc, char **argv)
     matProgram = _shader("res/shaders/transform.comp");
 
     {
+        loadAssets();
         YAML::Node assets_node = YAML::LoadFile("assets.yaml");
-        // ifstream("assets.yaml") >> assets_node;
-        working_file = assets_node["workingFile"].as<string>();
-        shaderManager::decode(assets_node);
-        modelManager::decode(assets_node);
-        decodeEmitters(assets_node);
-        decodePrototypes(assets_node);
-        assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
         fw.getFileData(assets_node["file_meta"]);
+        if(working_file != ""){
+            load_level(working_file.c_str());
+        }
     }
 
     // Start monitoring a folder for changes and (in case of changes)
@@ -367,17 +364,8 @@ int main(int argc, char **argv)
         fps.add(time.stop());
     }
     fw.stop();
-    {
-        YAML::Node assets_node;
-        assets_node["workingFile"] = working_file;
-        shaderManager::encode(assets_node);
-        modelManager::encode(assets_node);
-        encodeEmitters(assets_node);
-        encodePrototypes(assets_node);
-        assets_node["assetIdGenerator"] = assets::assetIdGenerator;
-        assets_node["file_meta"] = fw.getFileData();
-        ofstream("assets.yaml") << assets_node;
-    }
+    saveAssets();
+    
     fileWatcherThread.join();
     printStats();
     endEditor();

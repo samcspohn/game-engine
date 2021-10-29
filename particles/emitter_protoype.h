@@ -8,6 +8,7 @@
 #include "particles/gradient.h"
 #include "gpu_vector.h"
 #include "array_heap.h"
+#include "textureAtlas.h"
 // #include "particles/emitter.h"
 
 struct _burst
@@ -64,7 +65,7 @@ struct emitter_prototype
         RENDER(maxSpeed);
         RENDER(scale);
         ImGui::ColorPicker4("color", (float *)&colorLife[0]);
-        ca.t.t->write(&colorLife[0][0], GL_RGBA, GL_FLOAT);
+        ca.t.meta()->write(&colorLife[0][0], GL_RGBA, GL_FLOAT);
         int frame_padding = -1;                           // -1 == uses default padding (style.FramePadding)
         ImVec2 size = ImVec2(200.0f, 20.0f);              // Size of the image we want to make visible
         ImVec2 uv0 = ImVec2(0.0f, 0.0f);                  // UV coordinates for lower-left
@@ -72,7 +73,7 @@ struct emitter_prototype
         ImVec4 bg_col = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);   // Black background
         ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // No tint
         static bool col_p_open = false;
-        if (ImGui::ImageButton(ca.t.t->id, size, uv0, uv1, frame_padding, bg_col, tint_col))
+        if (ImGui::ImageButton(ca.t.meta()->glid, size, uv0, uv1, frame_padding, bg_col, tint_col))
         {
             col_p_open = true;
         }
@@ -122,6 +123,8 @@ public:
     int ref;
     colorArray gradient;
     _texture texture;
+
+    static texAtlas* particleTextureAtlas;
     bool onEdit();
     void copy();
     string type();
@@ -139,7 +142,7 @@ extern array_heap<emitter_prototype> emitter_prototypes_;
 extern map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
 extern gpu_vector<_burst> *gpu_particle_bursts;
 
-class emitter_prototype_
+class emitter_prototype_  : public assets::asset_instance<emitter_proto_asset>
 {
     int emitterPrototype = 0;
     // typename array_heap<emitter_prototype>::ref emitterPrototype;
@@ -155,8 +158,7 @@ public:
     void color(glm::vec4 c1, glm::vec4 c2);
     void size(float c);
     void size(float c1, float c2);
-
-    emitter_proto_asset *meta();
+    emitter_proto_asset *meta() const;
     int getId();
     emitter_prototype *operator->();
     emitter_prototype &operator*();
@@ -201,18 +203,16 @@ namespace YAML
             YAML_ENCODE_ASSET();
             node["gradient"] = rhs.gradient;
             node["ref"] = rhs.ref;
+            node["texture"] = rhs.texture;
             return node;
         }
 
         static bool decode(const Node &node, emitter_proto_asset &rhs)
         {
             YAML_DECODE_ASSET();
-            try{
-                rhs.ref = node["ref"].as<int>();
-            }catch(...){}
-            try{
-                rhs.gradient = node["gradient"].as<colorArray>();
-            }catch(...){}
+            DECODE_PROTO(ref)
+            DECODE_PROTO(gradient)
+            DECODE_PROTO(texture)
             return true;
         }
     };

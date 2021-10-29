@@ -28,39 +28,44 @@ enum ser_mode
 //     value = node[name].as<float>();
 // }
 
-#define SER(var)                                                \
-    switch (x)                                                  \
-    {                                                           \
-    case ser_mode::edit_mode:                                   \
-        renderEdit(#var, var);                                  \
-        break;                                                  \
-    case ser_mode::read_mode:                                   \
-        try                                                     \
-        {                                                       \
-            YAML_decode(node_9738469372465[#var], var);         \
-        }                                                       \
-        catch (...)                                             \
-        {                                                       \
-        }                                                       \
-        break;                                                  \
-    case ser_mode::write_mode:                                  \
-        try                                                     \
-        {                                                       \
-            node_9738469372465[#var] = YAML_encode(var);        \
-        }                                                       \
-        catch (...)                                             \
-        {                                                       \
-        }                                                       \
-        break;                                                  \
-    default:                                                    \
-        cout << "no mode provided";                             \
-        break;                                                  \
+#define SER(var)                                         \
+    switch (x)                                           \
+    {                                                    \
+    case ser_mode::edit_mode:                            \
+        renderEdit(#var, var);                           \
+        break;                                           \
+    case ser_mode::read_mode:                            \
+        try                                              \
+        {                                                \
+            YAML_decode(node_9738469372465[#var], var);  \
+        }                                                \
+        catch (...)                                      \
+        {                                                \
+        }                                                \
+        break;                                           \
+    case ser_mode::write_mode:                           \
+        try                                              \
+        {                                                \
+            node_9738469372465[#var] = YAML_encode(var); \
+        }                                                \
+        catch (...)                                      \
+        {                                                \
+        }                                                \
+        break;                                           \
+    default:                                             \
+        cout << "no mode provided";                      \
+        break;                                           \
     }
 
-
-
 #define ENCODE_PROTO(arg) node[#arg] = rhs.arg;
-#define DECODE_PROTO(arg) try{ rhs.arg = node[#arg].as<decltype(rhs.arg)>(); } catch(...) {}
+#define DECODE_PROTO(arg)                             \
+    try                                               \
+    {                                                 \
+        rhs.arg = node[#arg].as<decltype(rhs.arg)>(); \
+    }                                                 \
+    catch (...)                                       \
+    {                                                 \
+    }
 
 // namespace YAML
 // {
@@ -84,3 +89,23 @@ enum ser_mode
 // 		}
 // 	};
 // }
+
+#define YAML_TEMPLATE(x, y, z)                           \
+    namespace YAML                                       \
+    {                                                    \
+        template <>                                      \
+        struct convert<x>                                \
+        {                                                \
+            static Node encode(const x &rhs)             \
+            {                                            \
+                Node node;                               \
+                y;                                       \
+                return node;                             \
+            }                                            \
+            static bool decode(const Node &node, x &rhs) \
+            {                                            \
+                z;                                       \
+                return true;                             \
+            }                                            \
+        };                                               \
+    }

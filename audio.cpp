@@ -142,7 +142,7 @@ namespace audioManager
 } // namespace audioManager
 
 audio::audio() {}
-audioMeta *audio::meta()
+audioMeta *audio::meta() const
 {
     return audioManager::audios_ids[a];
 }

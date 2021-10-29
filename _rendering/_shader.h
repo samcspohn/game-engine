@@ -42,7 +42,7 @@ namespace shaderManager
 	void init();
 }; // namespace shaderManager
 
-class _shader
+class _shader  : public assets::asset_instance<_shaderMeta>
 {
 public:
 	_shader();

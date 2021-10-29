@@ -69,26 +69,6 @@ gpu_vector<GLuint> *atomicCounters = new gpu_vector<GLuint>();
 gpu_vector_proxy<GLuint> *livingParticles = new gpu_vector_proxy<GLuint>();
 gpu_vector_proxy<GLuint> *particleLifes = new gpu_vector_proxy<GLuint>();
 
-
-void encodeEmitters(YAML::Node &node){
-    node["emitter_prototpes_"] = emitter_prototypes_;
-    // node["emitter_proto_assets"] = emitter_proto_assets;
-    YAML::Node epa;
-    for(auto& i : emitter_proto_assets){
-        epa.force_insert(i.first,*i.second);
-        // node["emitter_proto_assets"][i.first] = *i.second;
-    }
-    node["emitter_proto_assets"] = epa;
-}
-void decodeEmitters(YAML::Node &node){
-    new (&emitter_prototypes_) array_heap<emitter_prototype>{node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>()};
-    // emitter_proto_assets = node["emitter_proto_assets"].as<decltype(emitter_proto_assets)>();
-    YAML::Node epa = node["emitter_proto_assets"];
-    for(YAML::const_iterator i = epa.begin(); i != epa.end(); ++i){
-        emitter_proto_assets[i->first.as<int>()] = make_shared<emitter_proto_asset>(i->second.as<emitter_proto_asset>());
-    }
-}
-
 unique_ptr<Shader> particleSortProgram;
 unique_ptr<Shader> particleSortProgram2;
 unique_ptr<Shader> particleProgram;
@@ -132,7 +112,7 @@ void initParticles2()
     // emitter_prototype_ default_emitter = createNamedEmitter("default");
 
     auto ep = make_shared<emitter_proto_asset>();
-    ep->id  = 0;
+    ep->id = 0;
     ep->ref = emitter_prototypes_._new();
     emitter_proto_assets[ep->id] = ep;
     // emitter_prototypes.insert(std::pair<string, int>("default", ep->id));
@@ -161,7 +141,8 @@ int getActualParticles()
 }
 void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
 {
-    //prepare program. bind variables
+
+    // prepare program. bind variables
     int emitters_size = ComponentRegistry.registry<particle_emitter>()->size();
     GPU_TRANSFORMS->bindData(0);
     atomicCounters->bindData(1);
@@ -230,7 +211,7 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(gpu_particle_bursts->size() / 128 + 1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-    atomicCounters->retrieveData(); //TODO // replace with dispatch indirect
+    atomicCounters->retrieveData(); // TODO // replace with dispatch indirect
 
     glUniform1ui(glGetUniformLocation(particleProgram2->Program, "count"), (*atomicCounters)[1]);
     glUniform1ui(glGetUniformLocation(particleProgram2->Program, "stage"), 3);
@@ -308,7 +289,6 @@ namespace particle_renderer
         output = ofstream("particle_perf.txt", ios_base::app);
         atomics->ownStorage();
         atomics->storage->push_back(0);
-       
 
         if (VAO == 0)
         {
@@ -329,28 +309,31 @@ struct d{\
     smquat rot;\
 	uint scale_xy;\
 	uint protoID_life;\
-};","z");
+};",
+                               "z");
 
         _texture particle_tex;
         particle_tex.load("res/images/particle.png");
 
         // vector<glm::vec4> colors;
         vector<glm::u8vec4> colors;
-        colors.resize(particle_tex.t->dims.x * particle_tex.t->dims.y);
-        particle_tex.t->read(colors.data());
-        for(auto& col : colors){
+        colors.resize(particle_tex.meta()->dims.x * particle_tex.meta()->dims.y);
+        particle_tex.meta()->read(colors.data());
+        for (auto &col : colors)
+        {
             col.r = 255;
             col.g = 255;
             col.b = 255;
         }
-        particle_tex.t->write(colors.data());
+        particle_tex.meta()->write(colors.data());
 
         atlas.addTexture(particle_tex);
+        emitter_proto_asset::particleTextureAtlas = &atlas;
     }
-    
-    void init2(){
-        particleShader = _shader("res/shaders/particles/particles.vert", "res/shaders/particles/particles.geom", "res/shaders/particles/particles.frag");
 
+    void init2()
+    {
+        particleShader = _shader("res/shaders/particles/particles.vert", "res/shaders/particles/particles.geom", "res/shaders/particles/particles.frag");
     }
 
     void end()
@@ -415,6 +398,13 @@ struct d{\
     void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos, float farplane, float scr_height, float scr_width)
     {
 
+        for (auto &i : emitter_proto_assets)
+        {
+            rect r = atlas.uvMap.at(i.second->texture);
+            emitter_prototypes_.get(i.second->ref).texCoord = r.coord;
+            emitter_prototypes_.get(i.second->ref).sz = r.sz;
+        }
+
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         particleShader.meta()->shader->use();
         particleShader->setMat4("view", view);
@@ -428,11 +418,12 @@ struct d{\
         particleShader->setFloat("FC", 2.0 / log2(farplane + 1));
         particleShader->setFloat("screenHeight", (float)scr_height);
         particleShader->setFloat("screenWidth", (float)scr_width);
+        particleShader->setFloat("time", Time.time);
         particleShader->setMat3("camInv", camInv);
 
         particleShader->setInt("particle_tex", 0);
         glActiveTexture(GL_TEXTURE0);
-	    glBindTexture(GL_TEXTURE_2D, atlas.atlas.t->id);
+        glBindTexture(GL_TEXTURE_2D, atlas.atlas.meta()->glid);
 
         GPU_TRANSFORMS->bindData(0);
         gpu_emitter_prototypes->bindData(3);
@@ -453,9 +444,36 @@ struct d{\
 
 void prepParticles()
 {
-    if(emitterInits.size() > 0)
+    if (emitterInits.size() > 0)
         cout << "g";
     gpu_emitter_inits->bufferData(emitterInits);
     gpu_emitter_prototypes->bufferData();
     gpu_particle_bursts->bufferData();
+}
+
+
+void encodeEmitters(YAML::Node &node)
+{
+    node["emitter_prototpes_"] = emitter_prototypes_;
+    // node["emitter_proto_assets"] = emitter_proto_assets;
+    YAML::Node epa;
+    for (auto &i : emitter_proto_assets)
+    {
+        epa.force_insert(i.first, *i.second);
+        // node["emitter_proto_assets"][i.first] = *i.second;
+    }
+    node["emitter_proto_assets"] = epa;
+}
+void decodeEmitters(YAML::Node &node)
+{
+    new (&emitter_prototypes_) array_heap<emitter_prototype>{node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>()};
+    // emitter_proto_assets = node["emitter_proto_assets"].as<decltype(emitter_proto_assets)>();
+    YAML::Node epa = node["emitter_proto_assets"];
+    for (YAML::const_iterator i = epa.begin(); i != epa.end(); ++i)
+    {
+        emitter_proto_assets[i->first.as<int>()] = make_shared<emitter_proto_asset>(i->second.as<emitter_proto_asset>());
+    }
+    for(auto& i : emitter_proto_assets){
+        particle_renderer::atlas.addTexture(i.second->texture);
+    }
 }

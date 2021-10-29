@@ -801,7 +801,7 @@ public:
                 turrets.push_back(tur);
             }
         }
-        rof = 1.f / ((1.f / turrets[0]->getRateOfFire()) / turrets.size());
+        rof = 1.f / ((1.f / turrets[0]->getRateOfFire()) / (turrets.size() - 1));
     }
     void reset()
     {
