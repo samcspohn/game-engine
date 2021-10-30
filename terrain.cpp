@@ -120,6 +120,8 @@ void DrawQuadTree(terr::quad_node &node, int depth, int maxDepth, array<glm::vec
 }
 void terrain::render(camera &c)
 {
+    if(shader.meta() == 0)
+        return;
     glm::mat4 vp = c.proj * c.rot;
     glm::mat4 model = glm::translate(-c.pos);
     glm::mat4 normalMat = model;

@@ -139,12 +139,18 @@ public:
 };
 extern gpu_vector<emitter_prototype> *gpu_emitter_prototypes;
 extern array_heap<emitter_prototype> emitter_prototypes_;
-extern map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
+// extern map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
 extern gpu_vector<_burst> *gpu_particle_bursts;
+
+struct emitterManager : public assets::assetManager<emitter_proto_asset>{
+
+    void init();
+};
+extern emitterManager emitter_manager;
 
 class emitter_prototype_  : public assets::asset_instance<emitter_proto_asset>
 {
-    int emitterPrototype = 0;
+    int e = 0;
     // typename array_heap<emitter_prototype>::ref emitterPrototype;
     // string name;
     friend emitter_prototype_ createNamedEmitter(string name);
@@ -159,7 +165,7 @@ public:
     void size(float c);
     void size(float c1, float c2);
     emitter_proto_asset *meta() const;
-    int getId();
+    int getRef();
     emitter_prototype *operator->();
     emitter_prototype &operator*();
     void burst(glm::vec3 pos, glm::vec3 dir, uint count);
@@ -183,13 +189,13 @@ namespace YAML
         static Node encode(const emitter_prototype_ &rhs)
         {
             Node node;
-            node["id"] = rhs.emitterPrototype;
+            node["id"] = rhs.e;
             return node;
         }
 
         static bool decode(const Node &node, emitter_prototype_ &rhs)
         {
-            rhs.emitterPrototype = node["id"].as<int>();
+            rhs.e = node["id"].as<int>();
             return true;
         }
     };
@@ -201,18 +207,30 @@ namespace YAML
         {
             Node node;
             YAML_ENCODE_ASSET();
-            node["gradient"] = rhs.gradient;
-            node["ref"] = rhs.ref;
-            node["texture"] = rhs.texture;
+            // node["path"] = rhs.path;
+
+            Node out;
+
+            out["gradient"] = rhs.gradient;
+            // node["ref"] = rhs.ref;
+            out["texture"] = rhs.texture;
+            out["data"] = emitter_prototypes_.get(rhs.ref);
+            ofstream(rhs.name) << out;
             return node;
         }
 
         static bool decode(const Node &node, emitter_proto_asset &rhs)
         {
             YAML_DECODE_ASSET();
-            DECODE_PROTO(ref)
-            DECODE_PROTO(gradient)
-            DECODE_PROTO(texture)
+            // DECODE_PROTO(ref)
+            rhs.ref = emitter_prototypes_._new();
+
+            Node in = LoadFile(rhs.name);
+            rhs.texture = in["texture"].as<_texture>();
+            // DECODE_PROTO(texture)
+            // DECODE_PROTO(gradient)
+            rhs.gradient = in["gradient"].as<colorArray>();
+            emitter_prototypes_.get(rhs.ref) = in["data"].as<emitter_prototype>();
             return true;
         }
     };

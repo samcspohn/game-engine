@@ -39,9 +39,9 @@ struct particle
     // vec3 position2;
     int next;
 
+    float l;
     // smvec3 velocity2; // 2ints
     float p2;
-    float l;
     int p3;
 };
 struct _emission
@@ -114,7 +114,7 @@ void initParticles2()
     auto ep = make_shared<emitter_proto_asset>();
     ep->id = 0;
     ep->ref = emitter_prototypes_._new();
-    emitter_proto_assets[ep->id] = ep;
+    emitter_manager.meta[ep->id] = ep;
     // emitter_prototypes.insert(std::pair<string, int>("default", ep->id));
     // // ret.emitterPrototype = emitter_prototypes.at(name);
     // emitter_proto_names[ep->id] = "default";
@@ -270,7 +270,7 @@ namespace particle_renderer
     glm::mat3 camInv;
     glm::vec3 camP;
 
-    _shader particleShader;
+    unique_ptr<Shader> particleShader;
 
     vector<d> res;
     ofstream output;
@@ -333,7 +333,7 @@ struct d{\
 
     void init2()
     {
-        particleShader = _shader("res/shaders/particles/particles.vert", "res/shaders/particles/particles.geom", "res/shaders/particles/particles.frag");
+        particleShader = unique_ptr<Shader>(new Shader("res/shaders/particles/particles.vert", "res/shaders/particles/particles.geom", "res/shaders/particles/particles.frag"));
     }
 
     void end()
@@ -398,7 +398,7 @@ struct d{\
     void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos, float farplane, float scr_height, float scr_width)
     {
 
-        for (auto &i : emitter_proto_assets)
+        for (auto &i : emitter_manager.meta)
         {
             rect r = atlas.uvMap.at(i.second->texture);
             emitter_prototypes_.get(i.second->ref).texCoord = r.coord;
@@ -406,7 +406,7 @@ struct d{\
         }
 
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
-        particleShader.meta()->shader->use();
+        particleShader->use();
         particleShader->setMat4("view", view);
         // particleShader->setMat4("view",view);
         // GLuint matPView = glGetUniformLocation(particleShader.s->shader->Program, "view");
@@ -444,36 +444,42 @@ struct d{\
 
 void prepParticles()
 {
-    if (emitterInits.size() > 0)
-        cout << "g";
+    // if (emitterInits.size() > 0)
+    //     cout << "g";
     gpu_emitter_inits->bufferData(emitterInits);
     gpu_emitter_prototypes->bufferData();
     gpu_particle_bursts->bufferData();
 }
 
 
-void encodeEmitters(YAML::Node &node)
-{
-    node["emitter_prototpes_"] = emitter_prototypes_;
-    // node["emitter_proto_assets"] = emitter_proto_assets;
-    YAML::Node epa;
-    for (auto &i : emitter_proto_assets)
-    {
-        epa.force_insert(i.first, *i.second);
-        // node["emitter_proto_assets"][i.first] = *i.second;
-    }
-    node["emitter_proto_assets"] = epa;
-}
-void decodeEmitters(YAML::Node &node)
-{
-    new (&emitter_prototypes_) array_heap<emitter_prototype>{node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>()};
-    // emitter_proto_assets = node["emitter_proto_assets"].as<decltype(emitter_proto_assets)>();
-    YAML::Node epa = node["emitter_proto_assets"];
-    for (YAML::const_iterator i = epa.begin(); i != epa.end(); ++i)
-    {
-        emitter_proto_assets[i->first.as<int>()] = make_shared<emitter_proto_asset>(i->second.as<emitter_proto_asset>());
-    }
-    for(auto& i : emitter_proto_assets){
+// void encodeEmitters(YAML::Node &node)
+// {
+//     node["emitter_prototpes_"] = emitter_prototypes_;
+//     // node["emitter_proto_assets"] = emitter_proto_assets;
+//     YAML::Node epa;
+//     for (auto &i : emitter_proto_assets)
+//     {
+//         epa.force_insert(i.first, *i.second);
+//         // node["emitter_proto_assets"][i.first] = *i.second;
+//     }
+//     node["emitter_proto_assets"] = epa;
+// }
+// void decodeEmitters(YAML::Node &node)
+// {
+//     new (&emitter_prototypes_) array_heap<emitter_prototype>{node["emitter_prototpes_"].as<decltype(emitter_prototypes_)>()};
+//     // emitter_proto_assets = node["emitter_proto_assets"].as<decltype(emitter_proto_assets)>();
+//     YAML::Node epa = node["emitter_proto_assets"];
+//     for (YAML::const_iterator i = epa.begin(); i != epa.end(); ++i)
+//     {
+//         emitter_proto_assets[i->first.as<int>()] = make_shared<emitter_proto_asset>(i->second.as<emitter_proto_asset>());
+//     }
+//     for(auto& i : emitter_proto_assets){
+//         particle_renderer::atlas.addTexture(i.second->texture);
+//     }
+// }
+
+void emitterManager::init(){
+    for(auto& i : meta){
         particle_renderer::atlas.addTexture(i.second->texture);
     }
 }

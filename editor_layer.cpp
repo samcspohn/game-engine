@@ -48,9 +48,10 @@ void saveAssets()
 	YAML::Node assets_node;
 	assets_node["workingFile"] = working_file;
 	texture_manager.encode(assets_node);
-	shaderManager::encode(assets_node);
-	modelManager::encode(assets_node);
-	encodeEmitters(assets_node);
+	shader_manager.encode(assets_node);
+	model_manager.encode(assets_node);
+	// encodeEmitters(assets_node);
+	emitter_manager.encode(assets_node);
 	encodePrototypes(assets_node);
 	assets_node["assetIdGenerator"] = assets::assetIdGenerator;
 	ofstream("assets.yaml") << assets_node;
@@ -65,9 +66,11 @@ try{
 	working_file = assets_node["workingFile"].as<string>();
 	assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
 	TRY(texture_manager.decode(assets_node);)
-	TRY(shaderManager::decode(assets_node);)
-	TRY(modelManager::decode(assets_node);)
-	TRY(decodeEmitters(assets_node);)
+	TRY(shader_manager.decode(assets_node);)
+	TRY(model_manager.decode(assets_node);)
+	// TRY(decodeEmitters(assets_node);)
+	TRY(emitter_manager.decode(assets_node);)
+	emitter_manager.init();
 	TRY(decodePrototypes(assets_node);)
 }catch(...){
 
@@ -494,15 +497,15 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				}
 				ImGui::PopID();
 			};
-			for (auto &s : shaderManager::shaders_ids)
+			for (auto &s : shader_manager.meta)
 			{
 				renderAsset(s.second.get());
 			}
-			for (auto &m : modelManager::models_id)
+			for (auto &m : model_manager.meta)
 			{
 				renderAsset(m.second.get());
 			}
-			for (auto &p : emitter_proto_assets)
+			for (auto &p : emitter_manager.meta)
 			{
 				renderAsset(p.second.get());
 			}
@@ -544,17 +547,13 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			{
 				// ImGui::Text("collider type");
 				ImGui::Separator();
-				if (ImGui::Selectable("new model"))
-				{
-					modelManager::_new();
-				}
 				if (ImGui::Selectable("new emitter"))
 				{
-					emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_proto_assets.size()));
+					emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_manager.meta.size()));
 				}
 				if (ImGui::Selectable("new shader"))
 				{
-					shaderManager::_new();
+					shader_manager._new();
 				}
 				if (ImGui::Selectable("new prototype"))
 				{

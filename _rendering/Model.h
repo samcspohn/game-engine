@@ -75,6 +75,9 @@ namespace YAML
 		static bool decode(const Node &node, Model &rhs)
 		{
 			rhs.modelPath = node["file"].as<string>();
+            waitForRenderJob([&](){
+                rhs.loadModel();
+            })
 			return true;
 		}
 	};

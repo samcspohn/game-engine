@@ -10,8 +10,8 @@ __renderer::__renderer(uint _transform, uint _id) : transform{_transform},id{_id
 
 void destroyRendering()
 {
-	shaderManager::destroy();
-	modelManager::destroy();
+	shader_manager.destroy();
+	model_manager.destroy();
 	renderingManager::destroy();
 }
 _model _renderer::getModel()

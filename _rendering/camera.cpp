@@ -303,7 +303,7 @@ void defferedLighting(camera &c)
 		// lv.setupMesh();
 
 		_model lightVolumeModel("res/models/cube/cube.obj");
-		modelManager::models_id[lightVolumeModel.m]->model->loadModel();
+		model_manager.meta[lightVolumeModel.m]->model->loadModel();
 		// lightVolumeModel.m->loadModel();
 		lv.indices = lightVolumeModel.mesh().indices;
 		lv.vertices = lightVolumeModel.mesh().vertices;

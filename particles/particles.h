@@ -13,8 +13,8 @@
 using namespace std;
 using namespace glm;
 
-void encodeEmitters(YAML::Node &node);
-void decodeEmitters(YAML::Node &node);
+// void encodeEmitters(YAML::Node &node);
+// void decodeEmitters(YAML::Node &node);
 
 
 extern int particleCount;

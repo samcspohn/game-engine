@@ -37,11 +37,11 @@ uniform vec3 floatingOrigin;
 void initEmitters(uint id){
     emitterInit ei = emittersInits[id];
     emitter e = emitters[ei.id];
-    if(e.frame > 0 && e.last != -1){
-        particles[e.last].next = -1;
-        // particles[e.last].position2 = transforms[e.transform].position;
-        // set(particles[e.last].velocity2,vec3(0));
-    }
+    // if(e.frame > 0 && e.last != -1){
+    //     particles[e.last].next = -1;
+    //     // particles[e.last].position2 = transforms[e.transform].position;
+    //     // set(particles[e.last].velocity2,vec3(0));
+    // }
     e.emitter_prototype = ei.emitterProtoID;
     e.transform = ei.transformID;
     e.live = ei.live;
@@ -111,8 +111,8 @@ void emit(uint thread_id){
         e.emission -= float(uint(e.emission));
         e.prevPos = posEnd;
     }else{
-        e.frame = 0;
-        e.last = -1;
+        // e.frame = 0;
+        // e.last = -1;
     }
     emitters[thread_id] = e;
 

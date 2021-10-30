@@ -1,6 +1,6 @@
 #include "_shader.h"
 
-//shader data
+// shader data
 
 _shaderMeta::_shaderMeta() {}
 _shaderMeta::_shaderMeta(string compute)
@@ -29,146 +29,99 @@ _shaderMeta::~_shaderMeta()
 }
 REGISTER_ASSET(_shaderMeta);
 
-namespace shaderManager
+void shaderManager::_new()
 {
-	map<size_t, int> shaders;
-	map<int, shared_ptr<_shaderMeta>> shaders_ids;
-	void _new()
+	auto sm = make_shared<_shaderMeta>();
+	sm->shader = make_unique<Shader>();
+	meta[sm->genID()] = sm;
+	sm->name = "shader_" + to_string(sm->id);
+	// shaderManager::shaders.find(key);
+	// }
+}
+void shaderManager::destroy()
+{
+	path.clear();
+	meta.clear();
+}
+void shaderManager::init()
+{
+	// default shader
+	// std::hash<string> x;
+	string vertex, fragment;
+	vertex = "res/shaders/model.vert";
+	fragment = "res/shaders/model.frag";
+	string key = vertex + fragment;
+	auto ms = path.find(key);
+	if (ms == path.end())
 	{
-		// auto ms = shaderManager::shaders.find(key);
-		// if (ms == shaderManager::shaders.end())
-		// {
-		// auto sm = meta;
-		// shaderManager::shaders[key] = sm;
-		auto sm = make_shared<_shaderMeta>();
-		sm->shader = make_unique<Shader>();
-		shaderManager::shaders_ids[sm->genID()] = sm;
-		sm->name = "shader_" + to_string(sm->id);
-		// shaderManager::shaders.find(key);
-		// }
-	}
-	void destroy()
-	{
-		shaders.clear();
-		shaders_ids.clear();
-	}
-	void save(OARCHIVE &oa)
-	{
-		oa << shaders << shaders_ids;
-	}
-	void load(IARCHIVE &ia)
-	{
-		shaders.clear();
-		shaders_ids.clear();
-		ia >> shaders >> shaders_ids;
-		// waitForRenderJob([&]() {
-		for (auto &i : shaders_ids)
-		{
-			i.second->shader->_Shader();
-		}
-		// });
+		auto sm = make_shared<_shaderMeta>(vertex, fragment);
+		sm->id = 0;
+		path[key] = sm->id;
+		meta[sm->id] = sm;
+		sm->name = "default shader";
 	}
 
-	void encode(YAML::Node &node)
+	vertex = "res/shaders/terrain.vert";
+	key = vertex + fragment;
+	ms = path.find(key);
+	if (ms == path.end())
 	{
-		node["shaders"] = shaders;
-		YAML::Node shaders_ids_node;
-		for(auto& i : shaders_ids){
-			shaders_ids_node[i.first] = *i.second;
-		}
-		node["shader_ids"] = shaders_ids_node;
+		auto sm = make_shared<_shaderMeta>(vertex, fragment);
+		sm->genID();
+		path[key] = sm->id;
+		meta[sm->id] = sm;
+		sm->name = "no_inst shader";
 	}
+}
 
-	void decode(YAML::Node &node)
-	{
-		shaders = node["shaders"].as<map<size_t,int>>();
-
-		for(YAML::const_iterator i = node["shaders_ids"].begin(); i != node["shaders_ids"].end(); ++i){
-			shaders_ids[i->first.as<int>()] = make_shared<_shaderMeta>(i->second.as<_shaderMeta>());
-		}
-	}
-
-	void init()
-	{
-		// default shader
-		std::hash<string> x;
-		string vertex, fragment;
-		vertex = "res/shaders/model.vert";
-		fragment = "res/shaders/model.frag";
-		size_t key = 0;
-		auto ms = shaderManager::shaders.find(key);
-		if (ms == shaderManager::shaders.end())
-		{
-			auto sm = make_shared<_shaderMeta>(vertex, fragment);
-			sm->id = key;
-			shaderManager::shaders[key] = sm->id;
-			shaderManager::shaders_ids[sm->id] = sm;
-			sm->name = "default shader";
-		}
-
-		vertex = "res/shaders/terrain.vert";
-		key = x(vertex + fragment);
-		ms = shaderManager::shaders.find(key);
-		if (ms == shaderManager::shaders.end())
-		{
-			auto sm = make_shared<_shaderMeta>(vertex, fragment);
-			sm->id = key;
-			shaderManager::shaders[key] = sm->id;
-			shaderManager::shaders_ids[sm->id] = sm;
-			sm->name = "no_inst shader";
-		}
-	}
-}; // namespace shaderManager
+shaderManager shader_manager;
 
 _shader::_shader() {}
-#define FIND_SHADER_META(meta)                        \
-	auto ms = shaderManager::shaders.find(key);       \
-	if (ms == shaderManager::shaders.end())           \
-	{                                                 \
-		auto sm = meta;                               \
-		shaderManager::shaders_ids[sm->genID()] = sm; \
-		shaderManager::shaders[key] = sm->id;         \
-		ms = shaderManager::shaders.find(key);        \
-	}                                                 \
-	s = shaderManager::shaders_ids[ms->second]->id;
+#define FIND_SHADER_META(_meta)                 \
+	auto ms = shader_manager.path.find(key);   \
+	if (ms == shader_manager.path.end())       \
+	{                                          \
+		auto sm = _meta;                        \
+		shader_manager.meta[sm->genID()] = sm; \
+		shader_manager.path[key] = sm->id;     \
+		ms = shader_manager.path.find(key);    \
+	}                                          \
+	s = ms->second;
 
 _shader::_shader(string compute)
 {
-	std::hash<string> x;
-	size_t key = x(compute);
+	string key = compute;
 	FIND_SHADER_META(make_shared<_shaderMeta>(compute))
 }
 _shader::_shader(string vertex, string fragment)
 {
-	std::hash<string> x;
-	size_t key = x(vertex + fragment);
+
+	string key = vertex + fragment;
 	FIND_SHADER_META(make_shared<_shaderMeta>(vertex, fragment))
 }
 _shader::_shader(string vertex, string geom, string fragment)
 {
-	std::hash<string> x;
-	size_t key = x(vertex + geom + fragment);
+	string key = vertex + geom + fragment;
 	FIND_SHADER_META(make_shared<_shaderMeta>(vertex, geom, fragment))
 }
 
 _shader::_shader(string vertex, string tess, string geom, string fragment)
 {
-	std::hash<string> x;
-	size_t key = x(vertex + tess + geom + fragment);
+	string key = vertex + tess + geom + fragment;
 	FIND_SHADER_META(make_shared<_shaderMeta>(vertex, tess, geom, fragment))
 }
 
 Shader *_shader::operator->()
 {
-	return shaderManager::shaders_ids[s]->shader.get();
+	return shader_manager.meta[s]->shader.get();
 }
 Shader &_shader::ref()
 {
-	return *(shaderManager::shaders_ids[s]->shader);
+	return *(shader_manager.meta[s]->shader.get());
 }
 _shaderMeta *_shader::meta() const
 {
-	return shaderManager::shaders_ids[s].get();
+	return shader_manager.meta[s].get();
 }
 bool _shaderMeta::onEdit()
 {

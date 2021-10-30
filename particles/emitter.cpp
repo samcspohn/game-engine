@@ -19,7 +19,7 @@ void particle_emitter::setPrototype(emitter_prototype_ ep)
     prototype = ep;
 
     emitterInit ei;
-    ei.emitterProtoID = prototype.getId();
+    ei.emitterProtoID = prototype.getRef();
     ei.live = 1;
     ei.transformID = transform.id;
     ei.id = this->id;
@@ -29,7 +29,7 @@ void particle_emitter::setPrototype(emitter_prototype_ ep)
 }
 void particle_emitter::onEdit()
 {
-    ImGui::InputText("prototype", (char *)emitter_proto_assets.at(prototype.emitterPrototype)->name.c_str(), emitter_proto_assets.at(prototype.emitterPrototype)->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText("prototype", (char *)prototype.meta()->name.c_str(), prototype.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))
@@ -37,7 +37,7 @@ void particle_emitter::onEdit()
             IM_ASSERT(payload->DataSize == sizeof(int));
             int payload_n = *(const int *)payload->Data;
             // prototype = getNamedEmitterProto(emitter_proto_names.at(payload_n));
-            prototype.emitterPrototype = emitter_proto_assets.at(prototype.emitterPrototype)->id;
+            prototype.e = payload_n;
             if (this->transform.id != -1)
                 this->setPrototype(prototype);
         }
@@ -45,12 +45,14 @@ void particle_emitter::onEdit()
     }
     // RENDER(prototype);
 }
-
+emitter_proto_asset* emitter_prototype_::meta() const{
+    return emitter_manager.meta.at(e).get();
+}
 void particle_emitter::init(int id)
 {
 
     emitterInit ei;
-    ei.emitterProtoID = prototype.getId();
+    ei.emitterProtoID = prototype.getRef();
     ei.live = 1;
     ei.transformID = transform.id;
     this->id = id;
@@ -63,7 +65,7 @@ void particle_emitter::init(int id)
 void particle_emitter::deinit(int id)
 {
     emitterInit ei;
-    ei.emitterProtoID = prototype.getId();
+    ei.emitterProtoID = prototype.getRef();
     ei.live = 0;
     ei.transformID = transform.id;
     ei.id = this->id;

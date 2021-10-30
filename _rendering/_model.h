@@ -30,18 +30,14 @@ struct _modelMeta : public assets::asset
 		ar &name &model &bounds &radius &unique;
 	}
 };
-namespace modelManager
+struct modelManager : public assets::assetManager<_modelMeta>
 {
-	extern map<size_t, int> models;
-	extern map<int, shared_ptr<_modelMeta>> models_id;
+public:
 	void destroy();
-	void save(OARCHIVE &oa);
-	void load(IARCHIVE &ia);
-	void encode(YAML::Node &node);
-	void decode(YAML::Node &node);
 	void _new();
 	void init();
 }; // namespace modelManager
+extern modelManager model_manager;
 
 class _model : public assets::asset_instance<_modelMeta>
 {

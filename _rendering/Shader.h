@@ -438,6 +438,9 @@ namespace YAML
 		{
 			rhs._shaders = node["id"].as<map<GLenum, string>>();
 			rhs.primitiveType = node["primitive_type"].as<GLenum>();
+			waitForRenderJob([&](){
+				rhs._Shader();
+			})
 			return true;
 		}
 	};

@@ -5,7 +5,6 @@
 
 array_heap<emitter_prototype> emitter_prototypes_;
 gpu_vector<emitter_prototype> *gpu_emitter_prototypes = new gpu_vector<emitter_prototype>();
-map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
 gpu_vector<_burst> *gpu_particle_bursts = new gpu_vector<_burst>();
 vector<_burst> particle_bursts;
 
@@ -20,47 +19,48 @@ void swapBurstBuffer()
 
 void emitter_prototype_::color(glm::vec4 c)
 {
-    emitter_proto_assets[this->emitterPrototype]->gradient.keys.clear();
-    emitter_proto_assets[this->emitterPrototype]->gradient.keys.emplace(0.f, colorArray::key(colorArray::idGenerator++, c));
-    emitter_proto_assets[this->emitterPrototype]->gradient.setColorArray(emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref).colorLife.data());
+    
+    meta()->gradient.keys.clear();
+    meta()->gradient.keys.emplace(0.f, colorArray::key(colorArray::idGenerator++, c));
+    meta()->gradient.setColorArray(emitter_prototypes_.get(meta()->ref).colorLife.data());
     // for (int i = 0; i < 100; ++i)
     // {
-    //     emitter_proto_assets[this->emitterPrototype]->ref->colorLife[i] = c;
+    //     meta()->ref->colorLife[i] = c;
     // }
 }
 void emitter_prototype_::color(colorArray &c)
 {
-    emitter_proto_assets[this->emitterPrototype]->gradient.keys.clear();
+    meta()->gradient.keys.clear();
     for (auto &i : c.keys)
     {
-        emitter_proto_assets[this->emitterPrototype]->gradient.addKey(i.second.value, i.first);
+        meta()->gradient.addKey(i.second.value, i.first);
     }
-    // emitter_proto_assets[this->emitterPrototype]->gradient = c;
-    emitter_proto_assets[this->emitterPrototype]->gradient.setColorArray(emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref).colorLife.data());
+    // meta()->gradient = c;
+    meta()->gradient.setColorArray(emitter_prototypes_.get(meta()->ref).colorLife.data());
     // for (int i = 0; i < 100; ++i)
     // {
-    //     emitter_proto_assets[this->emitterPrototype]->ref->colorLife[i] = c;
+    //     meta()->ref->colorLife[i] = c;
     // }
 }
 void emitter_prototype_::color(glm::vec4 c1, glm::vec4 c2)
 {
-    emitter_proto_assets[this->emitterPrototype]->gradient.keys.clear();
-    emitter_proto_assets[this->emitterPrototype]->gradient.addKey(c1, 0.f);
-    emitter_proto_assets[this->emitterPrototype]->gradient.addKey(c2, 1.f);
-    // emitter_proto_assets[this->emitterPrototype]->gradient.keys.emplace(0.f,colorArray::key(colorArray::idGenerator++,c1));
-    // emitter_proto_assets[this->emitterPrototype]->gradient.keys.emplace(1.f,colorArray::key(colorArray::idGenerator++,c2));
-    emitter_proto_assets[this->emitterPrototype]->gradient.setColorArray(emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref).colorLife.data());
+    meta()->gradient.keys.clear();
+    meta()->gradient.addKey(c1, 0.f);
+    meta()->gradient.addKey(c2, 1.f);
+    // meta()->gradient.keys.emplace(0.f,colorArray::key(colorArray::idGenerator++,c1));
+    // meta()->gradient.keys.emplace(1.f,colorArray::key(colorArray::idGenerator++,c2));
+    meta()->gradient.setColorArray(emitter_prototypes_.get(meta()->ref).colorLife.data());
     // vec4 step = (c2 - c1) / 100.f;
     // for (int i = 0; i < 100; ++i)
     // {
-    //     emitter_proto_assets[this->emitterPrototype]->ref->colorLife[i] = c1 + step * (float)i;
+    //     meta()->ref->colorLife[i] = c1 + step * (float)i;
     // }
 }
 void emitter_prototype_::size(float c)
 {
     for (int i = 0; i < 100; ++i)
     {
-        emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref).sizeLife[i] = c;
+        emitter_prototypes_.get(meta()->ref).sizeLife[i] = c;
     }
 }
 void emitter_prototype_::size(float c1, float c2)
@@ -68,21 +68,21 @@ void emitter_prototype_::size(float c1, float c2)
     float step = (c2 - c1) / 100.f;
     for (int i = 0; i < 100; ++i)
     {
-        emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref).sizeLife[i] = c1 + step * (float)i;
+        emitter_prototypes_.get(meta()->ref).sizeLife[i] = c1 + step * (float)i;
     }
 }
 
-int emitter_prototype_::getId()
+int emitter_prototype_::getRef()
 {
-    return emitter_proto_assets[emitterPrototype]->ref;
+    return emitter_manager.meta[e]->ref;
 }
 emitter_prototype *emitter_prototype_::operator->()
 {
-    return &emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref);
+    return &emitter_prototypes_.get(meta()->ref);
 }
 emitter_prototype &emitter_prototype_::operator*()
 {
-    return emitter_prototypes_.get(emitter_proto_assets[this->emitterPrototype]->ref);
+    return emitter_prototypes_.get(meta()->ref);
 }
 void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, uint count)
 {
@@ -91,7 +91,7 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, uint count)
     b.count = count;
     b.position = pos;
     b.scale = glm::vec3(1);
-    b.emitter_prototype = getId();
+    b.emitter_prototype = getRef();
     burstLock.lock();
     particle_bursts.push_back(b);
     burstLock.unlock();
@@ -103,7 +103,7 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, ui
     b.count = count;
     b.position = pos;
     b.scale = scale;
-    b.emitter_prototype = getId();
+    b.emitter_prototype = getRef();
     burstLock.lock();
     particle_bursts.push_back(b);
     burstLock.unlock();
@@ -116,22 +116,13 @@ emitter_prototype_ createEmitter(string name)
     shared_ptr<emitter_proto_asset> ep = make_shared<emitter_proto_asset>();
     ep->genID();
     ep->ref = emitter_prototypes_._new();
-    emitter_proto_assets[ep->id] = ep;
+    emitter_manager.meta[ep->id] = ep;
+    emitter_manager.path[name] = ep->id;
     ep->name = name;
     emitter_prototype_ ret;
-    ret.emitterPrototype = ep->id;
+    ret.e = ep->id;
     // ret.genID();
     return ret;
-}
-// emitter_prototype_ getNamedEmitterProto(string name)
-// {
-//     emitter_prototype_ ret;
-//     ret.emitterPrototype = emitter_prototypes.at(name);
-//     return ret;
-// }
-emitter_proto_asset *emitter_prototype_::meta() const
-{
-    return emitter_proto_assets[emitterPrototype].get();
 }
 
 emitter_proto_asset::emitter_proto_asset()
@@ -194,8 +185,8 @@ void emitter_proto_asset::inspect()
 
 void renderEdit(const char *name, emitter_prototype_ &ep)
 {
-    if (ep.emitterPrototype != -1)
-        ImGui::InputText(name, (char *)emitter_proto_assets.at(ep.emitterPrototype)->name.c_str(), emitter_proto_assets.at(ep.emitterPrototype)->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+    if (ep.e != -1)
+        ImGui::InputText(name, (char *)ep.meta()->name.c_str(), ep.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
     else
         ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
     if (ImGui::BeginDragDropTarget())
@@ -204,11 +195,13 @@ void renderEdit(const char *name, emitter_prototype_ &ep)
         {
             IM_ASSERT(payload->DataSize == sizeof(int));
             int payload_n = *(const int *)payload->Data;
-            ep.emitterPrototype = emitter_proto_assets.at(payload_n)->id;
+            ep.e = payload_n;
         }
         ImGui::EndDragDropTarget();
     }
 }
+
+emitterManager emitter_manager;
 
 void init_prototypes()
 {

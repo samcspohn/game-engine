@@ -38,7 +38,7 @@ extern bool renderRunning;
 void renderLoop();
 
 extern _shader _quadShader;
-extern _shader matProgram;
+extern unique_ptr<Shader> matProgram;
 void updateTiming();
 void initGL();
 void initiliazeStuff();

@@ -51,9 +51,9 @@ public:
     // SER1(prototype);
     SER_FUNC(){
 
-        int proto_id = prototype.emitterPrototype;
+        int proto_id = prototype.e;
         SER(prototype);
-        if (this->transform.id != -1 && prototype.emitterPrototype != proto_id)
+        if (this->transform.id != -1 && prototype.e != proto_id)
                 this->setPrototype(prototype);
     }
 };

@@ -2,11 +2,11 @@
 #include "camera.h"
 using namespace std;
 
-class audioMeta;
-namespace audioManager
-{
-    audioMeta *_new(string);
-}
+// class audioMeta;
+// namespace audioManager
+// {
+//     audioMeta *_new(string);
+// }
 
 void audioMeta::inspect()
 {
@@ -77,87 +77,71 @@ ALfloat ListenerVel[] = {0.0, 0.0, 0.0};
 // Orientation of the Listener. (first 3 elements are "at", second 3 are "up")
 // Also note that these should be units of '1'.
 ALfloat ListenerOri[] = {0.0, 0.0, -1.0, 0.0, 1.0, 0.0};
-namespace audioManager
+
+void audioManager::init()
 {
-    map<string, audioMeta *> audios;
-    map<int, audioMeta *> audios_ids;
+    alutInit(NULL, 0);
+    alListenerfv(AL_POSITION, glm::value_ptr(ListenerPos));
+    alListenerfv(AL_VELOCITY, ListenerVel);
+    alListenerfv(AL_ORIENTATION, ListenerOri);
 
-    void init()
+    // error checking omitted for brevity
+    ALCdevice *device = alcOpenDevice(NULL);
+    ALCcontext *context = alcCreateContext(device, NULL);
+    ALCint size;
+    alcGetIntegerv(device, ALC_ATTRIBUTES_SIZE, 1, &size);
+    std::vector<ALCint> attrs(size);
+    alcGetIntegerv(device, ALC_ALL_ATTRIBUTES, size, &attrs[0]);
+    for (size_t i = 0; i < attrs.size(); ++i)
     {
-        alutInit(NULL, 0);
-        alListenerfv(AL_POSITION, glm::value_ptr(ListenerPos));
-        alListenerfv(AL_VELOCITY, ListenerVel);
-        alListenerfv(AL_ORIENTATION, ListenerOri);
-
-        //error checking omitted for brevity
-        ALCdevice *device = alcOpenDevice(NULL);
-        ALCcontext *context = alcCreateContext(device, NULL);
-        ALCint size;
-        alcGetIntegerv(device, ALC_ATTRIBUTES_SIZE, 1, &size);
-        std::vector<ALCint> attrs(size);
-        alcGetIntegerv(device, ALC_ALL_ATTRIBUTES, size, &attrs[0]);
-        for (size_t i = 0; i < attrs.size(); ++i)
+        if (attrs[i] == ALC_MONO_SOURCES)
         {
-            if (attrs[i] == ALC_MONO_SOURCES)
-            {
-                std::cout << "max mono sources: " << attrs[i + 1] << std::endl;
-            }
+            std::cout << "max mono sources: " << attrs[i + 1] << std::endl;
         }
     }
+}
 
-    audioMeta *_new(string file)
-    {
-        audioMeta *am = new audioMeta(file);
-        audioManager::audios[file] = am;
-        audios_ids[am->genID()] = am;
-        return am;
-    }
-    void updateListener(glm::vec3 pos)
-    {
-        ListenerPos = pos;
-        alListenerfv(AL_POSITION, glm::value_ptr(ListenerPos));
-        alListenerfv(AL_VELOCITY, ListenerVel);
-        alListenerfv(AL_ORIENTATION, ListenerOri);
-    }
-    void destroy()
-    {
-        for (auto &i : audios)
-        {
-            delete i.second;
-        }
-        alutExit();
-    }
-    void save(OARCHIVE &oa)
-    {
-        oa << audios << audios_ids;
-    }
-    void load(IARCHIVE &ia)
-    {
-        ia >> audios >> audios_ids;
-        for (auto &i : audios)
-        {
-            i.second->load(i.first);
-        }
-    }
-} // namespace audioManager
+audioMeta *audioManager::_new(string file)
+{
+    audioMeta *am = new audioMeta(file);
+    int id = am->genID();
+    path[file] = id;
+    meta[id] = shared_ptr<audioMeta>(am);
+    return am;
+}
+void audioManager::updateListener(glm::vec3 pos)
+{
+    ListenerPos = pos;
+    alListenerfv(AL_POSITION, glm::value_ptr(ListenerPos));
+    alListenerfv(AL_VELOCITY, ListenerVel);
+    alListenerfv(AL_ORIENTATION, ListenerOri);
+}
+void audioManager::destroy()
+{
+    // for (auto &i : meta)
+    // {
+    //     delete i.second;
+    // }
+    meta.clear();
+    alutExit();
+}
+
+audioManager audio_manager;
 
 audio::audio() {}
 audioMeta *audio::meta() const
 {
-    return audioManager::audios_ids[a];
+    return audio_manager.meta[a].get();
 }
 audio::audio(string file)
 {
-    auto am = audioManager::audios.find(file);
-    if (am != audioManager::audios.end())
+    auto am = audio_manager.path.find(file);
+    if (am == audio_manager.path.end())
     {
-        a = am->second->id;
+        audio_manager._new(file);
+        am = audio_manager.path.find(file);
     }
-    else
-    {
-        audioMeta *m = audioManager::_new(file);
-        a = m->id;
-    }
+    a = am->second;
 }
 
 void renderEdit(const char *name, audio &a)
@@ -201,7 +185,7 @@ void audioSource::stop()
 }
 void audioSource::play(glm::vec3 pos, audio &a, float pitch, float gain)
 {
-    audioMeta *_a = audioManager::audios_ids[a.a];
+    audioMeta *_a = audio_manager.meta[a.a].get();
     alSourcei(Source, AL_BUFFER, _a->Buffer);
     alSourcef(Source, AL_PITCH, pitch);
     alSourcef(Source, AL_GAIN, gain * 100 / glm::length(pos));
@@ -323,7 +307,6 @@ void audiosource::onDestroy()
 }
 
 // BOOST_CLASS_EXPORT(componentStorage<audiosource>)
-
 
 void audio::play(glm::vec3 pos, float pitch, float gain)
 {

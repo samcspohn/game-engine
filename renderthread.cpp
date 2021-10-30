@@ -90,9 +90,10 @@ void initiliazeStuff()
     // _atomics = new gpu_vector<uint>();
     _block_sums = new gpu_vector<GLuint>();
     _histo = new gpu_vector<GLuint>();
+    matProgram = unique_ptr<Shader>(new Shader("res/shaders/transform.comp"));
 }
 
-_shader matProgram;
+unique_ptr<Shader> matProgram;
 
 void copyT(int id, int rnumThreads)
 {
@@ -174,7 +175,7 @@ void updateTransforms()
 {
 
     //################################################################
-    Shader &transformUpdateShader = *matProgram.meta()->shader.get();
+    Shader &transformUpdateShader = *matProgram.get();
     transformUpdateShader.use();
     GPU_TRANSFORMS->grow(Transforms.size());
     transformIds->bindData(6);

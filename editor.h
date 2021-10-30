@@ -73,12 +73,12 @@ namespace assets
                 meta[i.second] = std::make_shared<t>(assets["meta"][to_string(i.second)].as<t>());
             }
 
-            waitForRenderJob([&]()
-                             {
-			for (auto &m : meta)
-			{
-				m.second->load();
-			} });
+            // waitForRenderJob([&]()
+            //                  {
+			// for (auto &m : meta)
+			// {
+			// 	m.second->load();
+			// } });
         }
     };
 

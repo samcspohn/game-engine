@@ -59,7 +59,7 @@ void prepCameras()
     {
         if (cameras->getv(i))
         {
-            cameras->get(i)->c->prepRender(*matProgram.meta()->shader.get(), window);
+            cameras->get(i)->c->prepRender(*matProgram.get(), window);
         }
     }
 }
@@ -93,7 +93,7 @@ void renderFunc(editor *ed, rolling_buffer &fps)
         glfwGetFramebufferSize(window, &w, &h);
         ed->c.width = float(w);
         ed->c.height = float(h);
-        ed->c.prepRender(*matProgram.meta()->shader.get(), window);
+        ed->c.prepRender(*matProgram.get(), window);
         renderFunc(ed->c, window);
         lineRendererRender(ed->c);
     }
@@ -221,12 +221,11 @@ int main(int argc, char **argv)
                          initiliazeStuff();
                          initLineRenderer();
                          ImGui::LoadIniSettingsFromDisk("default.ini");
-                         modelManager::init();
-                         shaderManager::init();
+                         model_manager.init();
+                         shader_manager.init();
                      });
     initParticles2();
     particle_renderer::init2();
-    matProgram = _shader("res/shaders/transform.comp");
 
     {
         loadAssets();
@@ -372,8 +371,8 @@ int main(int argc, char **argv)
     rootGameObject->_destroy();
     delete ed;
     renderingManager::destroy();
-    shaderManager::destroy();
-    modelManager::destroy();
+    shader_manager.destroy();
+    model_manager.destroy();
     particle_renderer::end();
 
     waitForRenderJob([&]()

@@ -11,11 +11,6 @@
 
 using namespace std;
 
-class audioMeta;
-namespace audioManager
-{
-    audioMeta *_new(string);
-}
 struct audioMeta : public assets::asset
 {
     ALuint Buffer;
@@ -28,7 +23,7 @@ struct audioMeta : public assets::asset
     string file;
     void inspect();
     friend class audio;
-    friend audioMeta *audioManager::_new(string);
+    // friend audioMeta *audioManager::_new(string);
     string type();
     audioMeta();
     void load(const string &_file);
@@ -40,30 +35,16 @@ struct audioMeta : public assets::asset
         SER_BASE_ASSET
     }
 };
-// REGISTER_ASSET(audioMeta);
-
-// Position of the Listener.
-// extern glm::vec3 ListenerPos;
-
-// Velocity of the Listener.
-// ALfloat ListenerVel[] = {0.0, 0.0, 0.0};
-
-// Orientation of the Listener. (first 3 elements are "at", second 3 are "up")
-// Also note that these should be units of '1'.
-// ALfloat ListenerOri[] = {0.0, 0.0, -1.0, 0.0, 1.0, 0.0};
-namespace audioManager
+class audioManager : public assets::assetManager<audioMeta>
 {
-    extern map<string, audioMeta *> audios;
-    extern map<int, audioMeta *> audios_ids;
-
+public:
     void init();
 
     audioMeta *_new(string file);
     void updateListener(glm::vec3 pos);
     void destroy();
-    void save(OARCHIVE &oa);
-    void load(IARCHIVE &ia);
-} // namespace audioManager
+};
+extern audioManager audio_manager;
 
 struct audio : public assets::asset_instance<audioMeta>
 {
@@ -78,7 +59,7 @@ struct audio : public assets::asset_instance<audioMeta>
     }
 };
 
-void renderEdit(const char* name, audio& a);
+void renderEdit(const char *name, audio &a);
 class audioSource
 {
 public:
@@ -94,12 +75,12 @@ public:
 
 namespace audioSourceManager
 {
-//     mutex audio_m;
+    //     mutex audio_m;
 
-//     int maxSources;
-//     std::deque<audioSource> sources;
-//     std::deque<audioSource *> inUse;
-//     std::set<audioSource *> notInUse;
+    //     int maxSources;
+    //     std::deque<audioSource> sources;
+    //     std::deque<audioSource *> inUse;
+    //     std::set<audioSource *> notInUse;
 
     void init();
 
@@ -129,7 +110,8 @@ public:
     void set(audio &_a);
     void onStart();
     void onDestroy();
-    SER_FUNC(){
+    SER_FUNC()
+    {
 
         SER(a)
     }
@@ -139,19 +121,23 @@ public:
 
 // void audio::play(glm::vec3 pos, float pitch, float gain);
 
-namespace YAML {
+namespace YAML
+{
 
-template<>
-struct convert<audio> {
-  static Node encode(const audio& rhs) {
-    Node node;
-	node["id"] = rhs.a;
-    return node;
-  }
+    template <>
+    struct convert<audio>
+    {
+        static Node encode(const audio &rhs)
+        {
+            Node node;
+            node["id"] = rhs.a;
+            return node;
+        }
 
-  static bool decode(const Node& node, audio& rhs) {
-	rhs.a = node["id"].as<int>();
-    return true;
-  }
-};
+        static bool decode(const Node &node, audio &rhs)
+        {
+            rhs.a = node["id"].as<int>();
+            return true;
+        }
+    };
 }

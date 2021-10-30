@@ -74,63 +74,13 @@ string _modelMeta::type()
 }
 REGISTER_ASSET(_modelMeta);
 
-namespace modelManager
-{
-	map<size_t, int> models;
-	map<int, shared_ptr<_modelMeta>> models_id;
-	// map<int, _modelMeta *> unique_models;
-	void destroy()
+
+	void modelManager::destroy()
 	{
-		models.clear();
-		models_id.clear();
+		meta.clear();
 	}
 
-	void save(OARCHIVE &oa)
-	{
-		oa << models << models_id;
-	}
-	void load(IARCHIVE &ia)
-	{
-		ia >> models >> models_id;
-		waitForRenderJob([&]()
-		{
-			for (auto &m : models_id)
-			{
-				m.second->model->loadModel();
-			}
-		});
-	}
-	void encode(YAML::Node &node)
-	{
-		YAML::Node models_ids_node;
-		// YAML::Node models_node;
-		for (auto &i : models_id)
-		{
-			models_ids_node[i.first] = *i.second;
-		}
-		node["models_id"] = models_ids_node;
-		node["models"] = models;
-	}
-
-	void decode(YAML::Node &node)
-	{
-
-		// models_id = node["models_id"].as<map<int, shared_ptr<_modelMeta>>>();
-		for (YAML::const_iterator i = node["models_id"].begin(); i != node["models_id"].end(); ++i)
-		{
-			models_id[i->first.as<int>()] = make_shared<_modelMeta>(i->second.as<_modelMeta>());
-		}
-		models = node["models"].as<map<size_t, int>>();
-
-		waitForRenderJob([&]()
-		{
-			for (auto &m : models_id)
-			{
-				m.second->model->loadModel();
-			}
-		});
-	}
-	void _new()
+	void modelManager::_new()
 	{
 		// std::hash<string> x;
 		// size_t key = x("fileName");
@@ -143,28 +93,31 @@ namespace modelManager
 		// {
 		auto _mm = make_shared<_modelMeta>();
 		// modelManager::models[key] = _mm;
-		modelManager::models_id[_mm->genID()] = _mm;
-		modelManager::models_id[_mm->id]->name = "model_" + to_string(_mm->id);
+		meta[_mm->genID()] = _mm;
+		meta[_mm->id]->name = "model_" + to_string(_mm->id);
 		// 	m = _mm->id;
 		// }
 	}
 
-	void init()
+	void modelManager::init()
 	{
 		{
 			auto _mm = make_shared<_modelMeta>("res/models/cube/cube.obj");
 			_mm->id = 0;
-			modelManager::models_id[_mm->id] = _mm;
+			meta[_mm->id] = _mm;
+			path["res/models/cube/cube.obj"] = 0;
 			_mm->name = "cube";
 		}
 		{
 			auto _mm = make_shared<_modelMeta>("res/models/sphere/sphere.obj");
 			_mm->id = 1;
-			modelManager::models_id[_mm->id] = _mm;
+			meta[_mm->id] = _mm;
+			path["res/models/sphere/sphere.obj"] = 1;
 			_mm->name = "sphere";
 		}
 	}
-}; // namespace modelManager
+
+modelManager model_manager;
 
 _model::_model(){
 	// this->makeUnique();
@@ -184,39 +137,34 @@ void _model::destroy()
 }
 _model::_model(string fileName)
 {
-	using namespace modelManager;
-	std::hash<string> x;
-	size_t key = x(fileName);
-	auto mm = modelManager::models.find(key);
-	if (mm != modelManager::models.end())
-	{
-		m = models_id[mm->second]->id;
-	}
-	else
+	string key = fileName;
+	auto mm = model_manager.path.find(key);
+	if (mm == model_manager.path.end())
 	{
 		auto _mm = make_shared<_modelMeta>(fileName);
-		modelManager::models_id[_mm->genID()] = _mm;
-		modelManager::models[key] = _mm->id;
-		m = _mm->id;
+		model_manager.meta[_mm->genID()] = _mm;
+		model_manager.path[key] = _mm->id;
+		mm = model_manager.path.find(key);
 	}
+	m = mm->second;
 }
 
 vector<Mesh *> &_model::meshes()
 {
-	return modelManager::models_id[m]->model->meshes;
+	return model_manager.meta[m]->model->meshes;
 }
 Mesh &_model::mesh()
 {
-	return *modelManager::models_id[m]->model->meshes[0];
+	return *model_manager.meta[m]->model->meshes[0];
 }
 void _model::makeUnique()
 {
 	int id = uniqueMeshIdGenerator.fetch_add(1);
 	m = -id;
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	modelManager::models_id[m] = make_shared<_modelMeta>();
-	modelManager::models_id[m]->name = idStr;
-	modelManager::models_id[m]->unique = true;
+	model_manager.meta[m] = make_shared<_modelMeta>();
+	model_manager.meta[m]->name = idStr;
+	model_manager.meta[m]->unique = true;
 	std::hash<string> x;
 	size_t key = x(idStr);
 }
@@ -225,14 +173,12 @@ void _model::makeProcedural()
 	int id = uniqueMeshIdGenerator.fetch_add(1);
 	m = -id;
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	modelManager::models_id[m] = make_shared<_modelMeta>();
-	modelManager::models_id[m]->name = idStr;
-	std::hash<string> x;
-	size_t key = x(idStr);
+	model_manager.meta[m] = make_shared<_modelMeta>();
+	model_manager.meta[m]->name = idStr;
 }
 _modelMeta *_model::meta() const
 {
-	return modelManager::models_id[m].get();
+	return model_manager.meta[m].get();
 }
 void _modelMeta::getBounds()
 {
@@ -286,8 +232,5 @@ void _modelMeta::inspect()
 
 void _model::recalcBounds()
 {
-	if (m != 0)
-	{
-		modelManager::models_id[m]->getBounds();
-	}
+	model_manager.meta[m]->getBounds();
 }

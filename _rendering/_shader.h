@@ -28,19 +28,17 @@ struct _shaderMeta : public assets::asset
 	}
 };
 
-namespace shaderManager
+class shaderManager : public assets::assetManager<_shaderMeta>
 {
-
-	extern map<size_t, int> shaders;
-	extern map<int, shared_ptr<_shaderMeta>> shaders_ids;
+public:
 	void _new();
 	void destroy();
-	void save(OARCHIVE &oa);
-	void load(IARCHIVE &ia);
-	void encode(YAML::Node &node);
-	void decode(YAML::Node &node);
+	// void encode(YAML::Node &node);
+	// void decode(YAML::Node &node);
 	void init();
 }; // namespace shaderManager
+
+extern shaderManager shader_manager;
 
 class _shader  : public assets::asset_instance<_shaderMeta>
 {
@@ -96,7 +94,7 @@ namespace YAML
 				node["shader"] = *rhs.shader;
 			}else{
 			}
-				return node;
+			return node;
 		}
 
 		static bool decode(const Node &node, _shaderMeta &rhs)

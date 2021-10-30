@@ -36,7 +36,7 @@ transform:
         - id: 4425117626672229357
           value:
             shader:
-              id: 816754076
+              id: 5
     - name: armory
       transform:
         position:
@@ -58,10 +58,10 @@ transform:
         - id: 15588507219644773874
           value:
             guns:
-              - ammo: 27
+              - ammo: 16
                 rof: 3
                 speed: 300
-                dispersion: 0.08
+                dispersion: 0.06
                 size: 1
                 barrels:
                   -
@@ -152,7 +152,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -162,7 +162,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -222,7 +222,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -232,7 +232,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -292,7 +292,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -302,7 +302,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -362,7 +362,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -372,7 +372,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -432,7 +432,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -442,7 +442,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -502,7 +502,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -512,7 +512,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -572,7 +572,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -582,7 +582,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -642,7 +642,7 @@ transform:
                               shader:
                                 id: 0
                               model:
-                                id: 24
+                                id: 12
                           - id: 14876483986192322348
                             value:
                               armory_id: 0
@@ -652,7 +652,7 @@ transform:
                         shader:
                           id: 0
                         model:
-                          id: 25
+                          id: 13
                     - id: 12031868808377879742
                       value:
                         target: 23
@@ -686,7 +686,7 @@ transform:
                   shader:
                     id: 0
                   model:
-                    id: 26
+                    id: 14
           - name: boom
             transform:
               position:

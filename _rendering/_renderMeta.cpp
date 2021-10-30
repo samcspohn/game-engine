@@ -6,10 +6,10 @@ renderingMeta::renderingMeta(_shader _s, _model _m)
 	m = _m;
 	if (m.meta() == 0)
 	{
-		modelManager::models_id[m.m] = make_unique<_modelMeta>();
+		model_manager.meta[m.m] = make_unique<_modelMeta>();
 		string idStr = {(char)(m.m >> 24), (char)(m.m >> 16), (char)(m.m >> 8), (char)m.m, 0};
-		modelManager::models_id[m.m]->name = idStr;
-		modelManager::models_id[m.m]->unique = true;
+		model_manager.meta[m.m]->name = idStr;
+		model_manager.meta[m.m]->unique = true;
 	}
 }
 renderingMeta::renderingMeta(const renderingMeta &other) {}
