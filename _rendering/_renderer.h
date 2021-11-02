@@ -59,7 +59,7 @@ public:
 			_model curr_m = model;
 			renderEdit("shader", shader);
 			renderEdit("model", model);
-			if (model.m != curr_m.m || shader.s != curr_s.s)
+			if (model.id != curr_m.id || shader.id != curr_s.id)
 			{
 				this->set(shader, model);
 			}

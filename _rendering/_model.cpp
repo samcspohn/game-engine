@@ -7,13 +7,13 @@ namespace YAML
 	Node convert<_model>::encode(const _model &rhs)
 	{
 		Node node;
-		node["id"] = rhs.m;
+		node["id"] = rhs.id;
 		return node;
 	}
 
 	bool convert<_model>::decode(const Node &node, _model &rhs)
 	{
-		rhs.m = node["id"].as<int>();
+		rhs.id = node["id"].as<int>();
 		return true;
 	}
 
@@ -120,6 +120,7 @@ REGISTER_ASSET(_modelMeta);
 modelManager model_manager;
 
 _model::_model(){
+	id = 0;
 	// this->makeUnique();
 };
 
@@ -132,7 +133,7 @@ void _model::destroy()
 {
 	if (this->meta() && this->meta()->unique)
 	{
-		toDestroy_models.emplace(this->m);
+		toDestroy_models.emplace(this->id);
 	}
 }
 _model::_model(string fileName)
@@ -146,39 +147,37 @@ _model::_model(string fileName)
 		model_manager.path[key] = _mm->id;
 		mm = model_manager.path.find(key);
 	}
-	m = mm->second;
+	id = mm->second;
 }
 
 vector<Mesh *> &_model::meshes()
 {
-	return model_manager.meta[m]->model->meshes;
+	return model_manager.meta[id]->model->meshes;
 }
 Mesh &_model::mesh()
 {
-	return *model_manager.meta[m]->model->meshes[0];
+	return *model_manager.meta[id]->model->meshes[0];
 }
 void _model::makeUnique()
 {
-	int id = uniqueMeshIdGenerator.fetch_add(1);
-	m = -id;
+	id = -uniqueMeshIdGenerator.fetch_add(1);
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	model_manager.meta[m] = make_shared<_modelMeta>();
-	model_manager.meta[m]->name = idStr;
-	model_manager.meta[m]->unique = true;
+	model_manager.meta[id] = make_shared<_modelMeta>();
+	// model_manager.meta[id]->name = idStr;
+	model_manager.meta[id]->unique = true;
 	std::hash<string> x;
 	size_t key = x(idStr);
 }
 void _model::makeProcedural()
 {
-	int id = uniqueMeshIdGenerator.fetch_add(1);
-	m = -id;
+	id = -uniqueMeshIdGenerator.fetch_add(1);
 	string idStr = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id, 0};
-	model_manager.meta[m] = make_shared<_modelMeta>();
-	model_manager.meta[m]->name = idStr;
+	model_manager.meta[id] = make_shared<_modelMeta>();
+	// model_manager.meta[id]->name = idStr;
 }
 _modelMeta *_model::meta() const
 {
-	return model_manager.meta[m].get();
+	return model_manager.meta[id].get();
 }
 void _modelMeta::getBounds()
 {
@@ -232,5 +231,5 @@ void _modelMeta::inspect()
 
 void _model::recalcBounds()
 {
-	model_manager.meta[m]->getBounds();
+	model_manager.meta[id]->getBounds();
 }

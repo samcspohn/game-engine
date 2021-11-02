@@ -50,9 +50,8 @@ void saveAssets()
 	texture_manager.encode(assets_node);
 	shader_manager.encode(assets_node);
 	model_manager.encode(assets_node);
-	// encodeEmitters(assets_node);
 	emitter_manager.encode(assets_node);
-	encodePrototypes(assets_node);
+	game_object_proto_manager.encode(assets_node);
 	assets_node["assetIdGenerator"] = assets::assetIdGenerator;
 	ofstream("assets.yaml") << assets_node;
 }
@@ -68,10 +67,9 @@ try{
 	TRY(texture_manager.decode(assets_node);)
 	TRY(shader_manager.decode(assets_node);)
 	TRY(model_manager.decode(assets_node);)
-	// TRY(decodeEmitters(assets_node);)
 	TRY(emitter_manager.decode(assets_node);)
 	emitter_manager.init();
-	TRY(decodePrototypes(assets_node);)
+	TRY(game_object_proto_manager.decode(assets_node);)
 }catch(...){
 
 }
@@ -509,7 +507,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			{
 				renderAsset(p.second.get());
 			}
-			for (auto &gp : prototypeRegistry)
+			for (auto &gp : game_object_proto_manager.meta)
 			{
 				renderAsset(gp.second.get());
 			}
@@ -549,7 +547,8 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				ImGui::Separator();
 				if (ImGui::Selectable("new emitter"))
 				{
-					emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_manager.meta.size()));
+					emitter_manager._new();
+					// emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_manager.meta.size()));
 				}
 				if (ImGui::Selectable("new shader"))
 				{
@@ -557,10 +556,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				}
 				if (ImGui::Selectable("new prototype"))
 				{
-					auto gp = new game_object_proto_();
-					gp->id = assets::assetIdGenerator++;
-					prototypeRegistry.emplace(gp->id, gp);
-					// new game_object();
+					game_object_proto_manager._new();
 				}
 				ImGui::EndPopup();
 			}

@@ -46,7 +46,7 @@ struct emitter_prototype
 
     glm::vec2 texCoord;
     glm::vec2 sz;
-    
+
     array<glm::vec4, 100> colorLife;
     array<float, 100> sizeLife{1.f};
     emitter_prototype()
@@ -124,7 +124,7 @@ public:
     colorArray gradient;
     _texture texture;
 
-    static texAtlas* particleTextureAtlas;
+    static texAtlas *particleTextureAtlas;
     bool onEdit();
     void copy();
     string type();
@@ -135,20 +135,21 @@ public:
         ar &ref &gradient;
     }
     emitter_proto_asset();
-    emitter_proto_asset(const emitter_proto_asset& e) = default;
+    emitter_proto_asset(const emitter_proto_asset &e) = default;
 };
 extern gpu_vector<emitter_prototype> *gpu_emitter_prototypes;
 extern array_heap<emitter_prototype> emitter_prototypes_;
 // extern map<int, shared_ptr<emitter_proto_asset>> emitter_proto_assets;
 extern gpu_vector<_burst> *gpu_particle_bursts;
 
-struct emitterManager : public assets::assetManager<emitter_proto_asset>{
-
+struct emitterManager : public assets::assetManager<emitter_proto_asset>
+{
+    void _new();
     void init();
 };
 extern emitterManager emitter_manager;
 
-class emitter_prototype_  : public assets::asset_instance<emitter_proto_asset>
+class emitter_prototype_ : public assets::asset_instance<emitter_proto_asset>
 {
     int e = 0;
     // typename array_heap<emitter_prototype>::ref emitterPrototype;
@@ -263,7 +264,6 @@ namespace YAML
         {
             // rhs.emitterPrototype = node["id"].as<int>();
 
-            
             DECODE_PROTO(emission_rate);
             DECODE_PROTO(lifetime);
             DECODE_PROTO(rotation_rate);

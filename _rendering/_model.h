@@ -52,12 +52,6 @@ public:
 	void makeProcedural();
 	void recalcBounds();
 	_modelMeta *meta() const;
-	// _modelMeta* m = 0;
-	int m = 0;
-	SER_HELPER()
-	{
-		ar &m;
-	}
 };
 
 extern atomic<int> uniqueMeshIdGenerator;

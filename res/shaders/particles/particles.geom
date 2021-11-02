@@ -56,7 +56,7 @@ void createVert(vec3 point, mat4 mvp, mat4 model, inout d rp, float _life, vec2 
 }
 
 void main(){
-    // uint index = data[index_[0]].id;
+    
     uint index = index_[0];
     d rp = data[index];
 
@@ -64,8 +64,7 @@ void main(){
     id = proto_id;
     float life1 = life(rp);
     float life2 = life1;
-    // inverse(camInv) * 
-    // smvec3 pos = ;
+
     vec3 position = inverse(camInv) * get(getPos(rp)) + cameraPos;
     vec2 s = getScale(rp);
     vec3 _scale = vec3(s.x,s.y,0) * prototypes[proto_id].sizeLife[int((1.f - min(max(life1,0.01f),1.f)) * 100.f)];
@@ -89,7 +88,7 @@ void main(){
     l1 = 0;
     float v = life2 * prototypes[proto_id].emission_rate / prototypes[proto_id].lifetime;
     if(prototypes[proto_id].trail == 1.f)
-        l2 = 1.f;
+        l2 = sz.x;
     float dfe = l1;
     l1 = l2;
     l2 = dfe;

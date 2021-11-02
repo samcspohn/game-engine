@@ -17,6 +17,7 @@ workingFile: /home/samuel/Documents/game-engine/shiptest3.yaml
     res/images/grass.jpg: 8
     res/images/particle.png: 2
     res/images/smoke_trail.png: 35
+    res/images/smoke_trail_2.png: 38
     res/models/cube/container2.png: 3
     res/models/cube/container2_specular.png: 4
   meta:
@@ -83,6 +84,10 @@ workingFile: /home/samuel/Documents/game-engine/shiptest3.yaml
     35:
       id: 35
       path: res/images/smoke_trail.png
+      _type: ""
+    38:
+      id: 38
+      path: res/images/smoke_trail_2.png
       _type: ""
     3:
       id: 3
@@ -214,25 +219,11 @@ workingFile: /home/samuel/Documents/game-engine/shiptest3.yaml
     32:
       id: 32
       name: emitter 1
-prototype_registry:
-  16:
-    id: 16
-    name: shell_proto
-    components:
-      - id: 8128736703838043503
-        value:
-          prototype:
-            id: 32
-      - id: 15330709117420109069
-        value:
-          vel:
-            - 0
-            - 4.53694e+24
-            - 4.306412e+21
-          exp:
-            id: 0
-          explosionSound:
-            id: -1
-          explosion_size: 1
-          playSound: false
-assetIdGenerator: 37
+18game_object_proto_:
+  path:
+    prototype_40.gop: 40
+  meta:
+    40:
+      id: 40
+      name: prototype_40.gop
+assetIdGenerator: 42

@@ -25,16 +25,16 @@ class game_object;
 extern std::mutex toDestroym;
 // extern std::deque<game_object *> toDestroyGameObjects;
 extern std::vector<game_object *> toDestroyGameObjects;
-extern std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
+// extern std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
 // extern tbb::concurrent_vector<game_object *> toDestroyGameObjects;
 
 // extern tbb::concurrent_unordered_set<component *> toStart;
 // extern tbb::concurrent_unordered_set<component *> toDestroyComponents;
 // extern tbb::concurrent_unordered_set<compItr *> componentCleanUp;
 
-void encodePrototypes(YAML::Node &node);
-void decodePrototypes(YAML::Node &node);
-void registerProto(game_object_proto_ *p);
+// void encodePrototypes(YAML::Node &node);
+// void decodePrototypes(YAML::Node &node);
+// void registerProto(game_object_proto_ *p);
 void deleteProtoRef(int id);
 class game_object_proto_ : public assets::asset
 {
@@ -145,14 +145,18 @@ namespace YAML
 				component_node["value"] = component_val_node;
 				components_node.push_back(component_node);
 			}
-			node["components"] = components_node;
+			YAML::Node out;
+			out["components"] = components_node;
+			ofstream(rhs.name) << out;
+			// node["components"] = components_node;
 			return node;
 		}
 
 		static bool decode(const Node &node, game_object_proto_ &rhs)
 		{
 			YAML_DECODE_ASSET();
-			YAML::Node components_node = node["components"];
+			YAML::Node in = YAML::LoadFile(rhs.name);
+			YAML::Node components_node = in["components"];
 			for (int i = 0; i < components_node.size(); i++)
 			{
 				YAML::Node component_node = components_node[i];
@@ -166,16 +170,17 @@ namespace YAML
 	};
 }
 
+struct gameObjectProtoManager : public assets::assetManager<game_object_proto_>
+{
+	void _new();
+};
+extern gameObjectProtoManager game_object_proto_manager;
+
 struct game_object_prototype  : public assets::asset_instance<game_object_proto_>
 {
-	int id;
 	game_object_prototype();
 	game_object_prototype(game_object_proto_ *p);
 	game_object_proto_ *meta() const;
-	SER_HELPER()
-	{
-		ar &id;
-	}
 };
 void renderEdit(const char *name, game_object_prototype &g);
 

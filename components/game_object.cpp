@@ -4,34 +4,35 @@ std::mutex toDestroym;
 // std::deque<game_object *> toDestroyGameObjects;
 std::vector<game_object *> toDestroyGameObjects;
 // tbb::concurrent_vector<game_object *> toDestroyGameObjects;
-std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
+// std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
 
 STORAGE<game_object> game_object_cache;
+gameObjectProtoManager game_object_proto_manager;
 
-void encodePrototypes(YAML::Node &node)
-{
-	YAML::Node prototypeRegistry_node;
-	for (auto &i : prototypeRegistry)
-	{
-		prototypeRegistry_node.force_insert(i.first, *i.second);
-	}
-	node["prototype_registry"] = prototypeRegistry_node;
-}
+// void encodePrototypes(YAML::Node &node)
+// {
+// 	YAML::Node prototypeRegistry_node;
+// 	for (auto &i : prototypeRegistry)
+// 	{
+// 		prototypeRegistry_node.force_insert(i.first, *i.second);
+// 	}
+// 	node["prototype_registry"] = prototypeRegistry_node;
+// }
 
-void decodePrototypes(YAML::Node &node)
-{
-	for(auto &p : prototypeRegistry){
-		for (auto &i : p.second->components)
-			delete i.first;
-	}
-	prototypeRegistry.clear();
+// void decodePrototypes(YAML::Node &node)
+// {
+// 	for(auto &p : prototypeRegistry){
+// 		for (auto &i : p.second->components)
+// 			delete i.first;
+// 	}
+// 	prototypeRegistry.clear();
 
-	YAML::Node prototypeRegistry_node = node["prototype_registry"];
-	for (YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i)
-	{
-		prototypeRegistry[i->first.as<int>()] = make_shared<game_object_proto_>(i->second.as<game_object_proto_>());
-	}
-}
+// 	YAML::Node prototypeRegistry_node = node["prototype_registry"];
+// 	for (YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i)
+// 	{
+// 		prototypeRegistry[i->first.as<int>()] = make_shared<game_object_proto_>(i->second.as<game_object_proto_>());
+// 	}
+// }
 
 void game_object::encode(YAML::Node &game_object_node, game_object *g)
 {
@@ -143,26 +144,17 @@ void rebuildGameObject(componentStorageBase *base, int i)
 	base->get(i)->transform->gameObject()->components.emplace(base->hash, i);
 }
 
-void registerProto(game_object_proto_ *p)
-{
-	p->genID();
-	prototypeRegistry.emplace(pair<int, game_object_proto_ *>(p->id, p));
-	// p->ref = prototypeRegistry.end();
-	// assets::registerAsset(p);
-	// --p->ref;
-}
-void deleteProtoRef(int id)
-{
-	prototypeRegistry.erase(id);
-}
+// void registerProto(game_object_proto_ *p)
+// {
+// 	p->genID();
+// 	prototypeRegistry.emplace(pair<int, game_object_proto_ *>(p->id, p));
 
-void saveProto(OARCHIVE &oa)
-{
-	oa << prototypeRegistry;
-}
-void loadProto(IARCHIVE &ia)
-{
-	ia >> prototypeRegistry;
+void gameObjectProtoManager::_new(){
+ 	shared_ptr<game_object_proto_> p = make_shared<game_object_proto_>();
+    p->genID();
+    p->name = "prototype_" + to_string(p->id) + ".gop";
+    meta[p->id] = p;
+    path[p->name] = p->id;
 }
 
 void componentMetaBase::addComponent(game_object *g) {}
@@ -261,7 +253,7 @@ game_object *_instantiate()
 
 game_object *_instantiate(game_object_prototype &g)
 {
-	game_object_proto_ &_g = *prototypeRegistry.at(g.id);
+	game_object_proto_ &_g = *game_object_proto_manager.meta.at(g.id);
 	int ref = game_object_cache._new();
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
@@ -331,15 +323,16 @@ void game_object::_destroy()
 }
 
 game_object_proto_* game_object_prototype::meta() const{
-	return prototypeRegistry.at(id).get();
+	return game_object_proto_manager.meta.at(id).get();
 }
 
 void renderEdit(const char *name, game_object_prototype &g)
 {
-	if (g.id < 1) // uninitialized
-		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
-	else
-		ImGui::InputText(name, (char *)g.meta()->name.c_str(), g.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	// if (g.id < 1) // uninitialized
+	// 	ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	// else
+	// 	ImGui::InputText(name, (char *)g.meta()->name.c_str(), g.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	AssetRenderEdit(name,&g);
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("GAME_OBJECT_PROTO_TYPE"))

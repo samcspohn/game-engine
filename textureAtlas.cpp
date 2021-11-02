@@ -10,7 +10,9 @@ bool texAtlas::addTexture(_texture _t)
     // if(x > sz.x || y > sz.y){
     // resize texture;
     // }
-    int tex_size = textures.size();
+    if(textures.find(_t) != textures.end())
+        return false;
+    // int tex_size = textures.size();
 
     _waitForRenderJob(new std::function<void()>([&]()
                                                 {
@@ -31,6 +33,9 @@ bool texAtlas::addTexture(_texture _t)
                                                         vector<glm::u8vec4> colors;
                                                         colors.resize(t.meta()->dims.x * t.meta()->dims.y);
                                                         t.meta()->read(colors.data());
+                                                        // for(auto& color : colors){
+                                                        //     color.r = color.g = color.b = 255;
+                                                        // }
                                                         uvMap[t].coord = {0.f, float(y_axis) / float(sz.y)};
                                                         uvMap[t].sz = {float(t.meta()->dims.x) / float(sz.x), float(t.meta()->dims.y) / float(sz.y)};
                                                         // uvMap[t].coord.x += 0.5 / sz.x;
@@ -52,7 +57,7 @@ bool texAtlas::addTexture(_texture _t)
                                                         y_axis += t.meta()->dims.y;
                                                     }
                                                     // atlas.t->write(pixels.data());
-                                                    if (atlas.meta()->glid == -1)
+                                                    if (atlas.meta()->glid != -1)
                                                     {
                                                         glDeleteTextures(1, &atlas.meta()->glid);
                                                     }
@@ -65,12 +70,12 @@ bool texAtlas::addTexture(_texture _t)
                                                     // Parameters
                                                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                                                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                                                    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                                                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
                                                     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                                                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
                                                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                                                     glBindTexture(GL_TEXTURE_2D, 0);
                                                 }));
-
-    return tex_size != textures.size();
+    return true;
+    // return tex_size != textures.size();
 }

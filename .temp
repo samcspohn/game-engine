@@ -58,7 +58,7 @@ transform:
         - id: 15588507219644773874
           value:
             guns:
-              - ammo: 16
+              - ammo: 40
                 rof: 3
                 speed: 300
                 dispersion: 0.06
