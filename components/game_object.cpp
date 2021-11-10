@@ -105,9 +105,12 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 											  YAML::Node component_node = components_node[i];
 											  size_t hash = component_node["id"].as<size_t>();
 											  YAML::Node component_val_node = component_node["value"];
+											  try{
+
 											  int id = ComponentRegistry.registry(hash)->decode(component_val_node);
 											  g->components.emplace(hash, id);
 											  _getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
+											  }catch(...){}
 										  }
 									  });
 
@@ -157,8 +160,6 @@ void gameObjectProtoManager::_new(){
     path[p->name] = p->id;
 }
 
-void componentMetaBase::addComponent(game_object *g) {}
-void componentMetaBase::addComponentProto(game_object_proto_ *g) {}
 
 game_object_prototype::game_object_prototype() {}
 game_object_prototype::game_object_prototype(game_object_proto_ *p)
@@ -188,7 +189,7 @@ void _child_instatiate(game_object &g, transform2 parent)
 	for (auto &i : g.components)
 	{
 		// game_object::_getComponent(i)->_copy(ret);
-		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
+		int comp_ref = ComponentRegistry.meta_types.at(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
 		ret->components.emplace(i.first, comp_ref);
 	}
@@ -218,7 +219,7 @@ game_object *_instantiate(game_object &g)
 
 	for (auto &i : g.components)
 	{
-		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
+		int comp_ref = ComponentRegistry.meta_types.at(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
 		ret->components.emplace(i.first, comp_ref);
 	}
@@ -264,7 +265,7 @@ game_object *_instantiate(game_object_prototype &g)
 	for (auto &i : _g.components)
 	{
 		// i.first->_copy(ret);
-		ret->components.emplace(i.second, ComponentRegistry.getByType(i.second)->copy(i.first));
+		ret->components.emplace(i.second, ComponentRegistry.meta_types.at(i.second)->copy(i.first));
 	}
 	for (auto &i : ret->components)
 	{

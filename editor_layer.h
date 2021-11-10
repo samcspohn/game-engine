@@ -44,6 +44,9 @@ extern tbb::concurrent_queue<function<void()> *> mainThreadWork;
 void save_level(string filename);
 void rebuildGameObject(componentStorageBase *base, int i);
 
+
+void initComponents(componentStorageBase *cl);
+
 void loadAssets();
 void saveAssets();
 void load_level(string filename);

@@ -115,7 +115,7 @@ void load_level(string filename)
 	rootGameObject = transform2(0)->gameObject();
 	for (auto &i : ComponentRegistry.meta_types)
 	{
-		initComponents(i.second->getStorage());
+		initComponents(i.second);
 	}
 	stoppingGame = false;
 }
@@ -141,7 +141,7 @@ void start_game() // assumes only renderer and terrain are started.
 
 												 for (auto &i : ComponentRegistry.meta_types)
 												 {
-													 StartComponents(i.second->getStorage());
+													 StartComponents(i.second);
 												 } }));
 	gameRunning = true;
 }
@@ -164,7 +164,7 @@ void stop_game()
 												 rootGameObject = transform2(0)->gameObject();
 												 for (auto &i : ComponentRegistry.meta_types)
 												 {
-													 initComponents(i.second->getStorage());
+													 initComponents(i.second);
 												 }
 
 												 // ImGui::LoadIniSettingsFromDisk("default.ini");

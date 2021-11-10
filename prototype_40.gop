@@ -1,4 +1,8 @@
 components:
+  - id: 8128736703838043503
+    value:
+      prototype:
+        id: 32
   - id: 15330709117420109069
     value:
       vel:
@@ -11,7 +15,3 @@ components:
         id: -1
       explosion_size: 1
       playSound: false
-  - id: 8128736703838043503
-    value:
-      prototype:
-        id: 32

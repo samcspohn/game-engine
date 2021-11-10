@@ -176,7 +176,7 @@ struct gameObjectProtoManager : public assets::assetManager<game_object_proto_>
 };
 extern gameObjectProtoManager game_object_proto_manager;
 
-struct game_object_prototype  : public assets::asset_instance<game_object_proto_>
+struct game_object_prototype : public assets::asset_instance<game_object_proto_>
 {
 	game_object_prototype();
 	game_object_prototype(game_object_proto_ *p);
@@ -213,7 +213,7 @@ class game_object : public inspectable
 
 	multimap<size_t, int> components = {};
 	bool destroyed = false;
-	//friend component;
+	// friend component;
 	friend _renderer;
 	friend void rebuildGameObject(componentStorageBase *, int);
 	friend void save_level(string);
@@ -286,7 +286,7 @@ public:
 		{
 			ImGui::PushID(n);
 			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.registry(i->first)->getName()).c_str()))
+			if (ImGui::TreeNode(ComponentRegistry.registry(i->first)->getName().c_str()))
 			{
 				ImGui::SameLine();
 				if (ImGui::Button("x"))
@@ -513,6 +513,16 @@ private:
 	void _destroy();
 };
 
+template<typename t>
+void componentStorage<t>::addComponent(game_object *g)
+{
+	g->_addComponent<t>();
+}
+template<typename t>
+void componentStorage<t>::addComponentProto(game_object_proto_ *g)
+{
+	g->addComponent<t>();
+}
 extern STORAGE<game_object> game_object_cache;
 game_object *_instantiate(game_object &g);
 game_object *instantiate(game_object &g);

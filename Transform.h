@@ -9,10 +9,10 @@
 #include <GLFW/glfw3.h>
 #include <mutex>
 // #include "Component.h"
-#include "gpu_vector.h"
+#include "_rendering/gpu_vector.h"
 #include "serialize.h"
 // #include "editor.h"
-#include <imgui/imgui.h>
+#include "imgui/imgui.h"
 // ~-1 = 0
 
 using namespace std;

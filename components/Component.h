@@ -100,14 +100,11 @@ public:
 	virtual void sort(){};
 	virtual void clear() {}
 	virtual int copy(int id) = 0;
-	// virtual string ser(){};
+	virtual void addComponent(game_object *g) = 0;
+	virtual void addComponentProto(game_object_proto_ *g) = 0;
+	virtual void floatingComponent(component *) = 0;
+	virtual int copy(component *c) = 0;
 };
-
-// std::ostream & operator<<(std::ostream &os, const componentStorageBase &base)
-// {
-//     return os << base.name << base.h_update << base.h_lateUpdate << base.ser();
-// }
-REGISTER_BASE(componentStorageBase)
 
 template <typename t>
 class componentStorage : public componentStorageBase
@@ -116,9 +113,8 @@ public:
 	// deque_heap<t> data;
 	STORAGE<t> data;
 
-	componentStorage()
-	{
-	}
+	componentStorage(const char *_name);
+	~componentStorage();
 	unsigned int active()
 	{
 		return data.active();
@@ -213,7 +209,17 @@ public:
 	{
 		data.clear();
 	}
+	void addComponent(game_object *g);
+	void addComponentProto(game_object_proto_ *g);
+	void floatingComponent(component *c)
+	{
+		new (c) t();
+	}
 
+	int copy(component *c)
+	{
+		return data._new(*static_cast<t*>(c));
+	}
 	void encode(YAML::Node &node, int i)
 	{
 		try
@@ -243,69 +249,43 @@ public:
 		c->ser_edit(ser_mode::read_mode, node);
 		return c;
 	}
-	// string ser(){
-	// 	stringstream ss;
-	// 	ss << boost::serialization:: data;
-	// 	return string(ss.str());
-	// }
-};
-
-struct componentMetaBase
-{
-	virtual void addComponent(game_object *g);
-	virtual void addComponentProto(game_object_proto_ *g);
-	// virtual void removeComponent(game_object *g);
-	// virtual void removeComponentProto(game_object_proto_ *g);
-	virtual void floatingComponent(component *) = 0;
-	virtual int copy(int id) = 0;
-	virtual int copy(component *c) = 0;
-	virtual componentStorageBase *getStorage() = 0;
-};
-template <typename t>
-struct componentMeta : public componentMetaBase
-{
-	componentStorage<t> storage;
 };
 
 class Registry
 {
 public:
-	// std::map<size_t, unique_ptr<componentStorageBase>> components;
-	std::map<std::string, shared_ptr<componentMetaBase>> meta;
-	std::map<size_t, shared_ptr<componentMetaBase>> meta_types;
+	std::map<std::string, componentStorageBase *> meta;
+	std::map<size_t, componentStorageBase *> meta_types;
 	std::mutex lock;
 
 	void clear()
 	{
-		// for (auto &i : components)
-		// {
-		// 	delete i.second;
-		// 	// i.second->clear();
-		// }
-		// components.clear();
-		// gameEngineComponents.clear();
-		// gameComponents.clear();
+		for (auto &i : meta)
+		{
+			i.second->clear();
+		}
 	}
+	void registerComponentStorage(componentStorageBase *p)
+    {
+        // p->name = _name;
+        meta.emplace(p->name, p);
+		meta_types.emplace(p->hash,p);
+    }
+    void deregisterComponentStorage(componentStorageBase *p){
+        meta.erase(p->name);
+		meta_types.erase(p->hash);
+    }
 	template <typename t>
 	inline componentStorage<t> *registry()
 	{
-		return static_cast<componentStorage<t> *>(&(static_cast<componentMeta<t> *>(meta_types[typeid(t).hash_code()].get())->storage));
+		return static_cast<componentStorage<t>*>(meta_types.at(typeid(t).hash_code()));
 	}
 	inline componentStorageBase *registry(size_t hash)
 	{
-		return meta_types.at(hash)->getStorage();
+		return meta_types.at(hash);
 	}
 
-	componentMetaBase *getByType(size_t type)
-	{
-		return meta_types[type].get();
-	}
 };
-
-// extern std::map<ull, componentStorageBase *> componentRegistry;
-// extern std::set<componentStorageBase *> gameEngineComponents;
-// extern std::set<componentStorageBase *> gameComponents;
-// extern std::mutex componentLock;
 extern Registry ComponentRegistry;
 
 template <typename t>
@@ -313,26 +293,6 @@ componentStorage<t> *GetStorage()
 {
 	size_t hash = typeid(t).hash_code();
 	return ComponentRegistry.registry<t>();
-}
-
-template <typename t>
-componentMeta<t> *registerComponent()
-{
-	size_t hash = typeid(t).hash_code();
-	ComponentRegistry.meta_types.emplace(hash, make_shared<componentMeta<t>>());
-	ComponentRegistry.meta.emplace(string(typeid(t).name()), ComponentRegistry.meta_types.at(hash));
-
-	// ComponentRegistry.components[hash] = make_unique<componentStorage<t>>();
-	componentStorageBase *csb = ComponentRegistry.registry<t>();
-	csb->name = typeid(t).name();
-	csb->h_update = typeid(&t::update) != typeid(&component::update);
-	csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
-	csb->hash = hash;
-	// if (t::_registerEngineComponent())
-	// 	ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
-	// else
-	// ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
-	return static_cast<componentMeta<t>*>(ComponentRegistry.meta_types.at(hash).get());
 }
 template <typename t>
 int addComponentToRegistry(const t &c)
@@ -348,44 +308,23 @@ int addComponentToRegistry()
 	return compStorage->data._new();
 }
 
-// void save_game(const char *filename);
-
-// void load_game(const char *filename);
-
 void destroyAllComponents();
 #define COMPONENT_LIST(x) static_cast<componentStorage<x> *>(ComponentRegistry.registry<x>())
 
-#define REGISTER_COMPONENT(comp)                               \
-	template <>                                                \
-	struct componentMeta<comp> : public componentMetaBase      \
-	{                                                          \
-		static componentMeta<comp> const *c;                   \
-		void addComponent(game_object *g)                      \
-		{                                                      \
-			g->_addComponent<comp>();                          \
-		}                                                      \
-		void addComponentProto(game_object_proto_ *g)          \
-		{                                                      \
-			g->addComponent<comp>();                           \
-		}                                                      \
-		void floatingComponent(component *c)                   \
-		{                                                      \
-			new (c) comp();                                    \
-		}                                                      \
-		componentStorageBase *getStorage()                     \
-		{                                                      \
-			return &storage;                                   \
-		}                                                      \
-		int copy(int id)                                       \
-		{                                                      \
-			return storage.copy(id);                           \
-		}                                                      \
-		int copy(component *c)                                 \
-		{                                                      \
-			return storage.data._new(*static_cast<comp *>(c)); \
-		}                                                      \
-		componentStorage<comp> storage;                        \
-	};                                                         \
-	componentMeta<comp> const *componentMeta<comp>::c = registerComponent<comp>();
-// template<>
-// componentMeta<comp>::g = registerComponent<comp>();
+#define REGISTER_COMPONENT(comp) componentStorage<comp> component_storage_##comp(#comp);
+
+template <typename t>
+componentStorage<t>::componentStorage(const char *_name)
+{
+	this->name = _name;
+	this->hash = typeid(t).hash_code();
+	std::cout << "register component " << name << std::endl;
+	ComponentRegistry.registerComponentStorage(this);
+}
+
+template <typename t>
+componentStorage<t>::~componentStorage()
+{
+	std::cout << "de-register component " << name << std::endl;
+	ComponentRegistry.deregisterComponentStorage(this);
+}

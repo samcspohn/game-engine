@@ -1,4 +1,6 @@
 #include "game_engine.h"
+#include "fileWatcher.h"
+#include "runtimeCompiler.h"
 
 using namespace std;
 
@@ -16,7 +18,7 @@ void doLoopIteration()
     // //UPDATE
     for (auto &i : ComponentRegistry.meta_types)
     {
-        componentStorageBase *cb = i.second->getStorage();
+        componentStorageBase *cb = i.second;
         if (cb->hasUpdate())
         {
             stopWatch.start();
@@ -27,7 +29,7 @@ void doLoopIteration()
     // LATE //UPDATE
     for (auto &i : ComponentRegistry.meta_types)
     {
-        componentStorageBase *cb = i.second->getStorage();
+        componentStorageBase *cb = i.second;
         if (cb->hasLateUpdate())
         {
             stopWatch.start();
@@ -64,7 +66,7 @@ void prepCameras()
     }
 }
 
-void renderFunc(editor *ed, rolling_buffer &fps)
+void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
 {
     // lock_guard<mutex> lk(transformLock);
     // renderLock.lock();
@@ -98,7 +100,9 @@ void renderFunc(editor *ed, rolling_buffer &fps)
         lineRendererRender(ed->c);
     }
 
+    rc.lock.lock();
     editorLayer(window, ed);
+    rc.lock.unlock();
     dockspaceEnd();
     // ImGui::PushFont(font_default);
 
@@ -200,11 +204,19 @@ void printStats()
     // cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
     // cout << "entities : " << entities << endl;
 }
-#include "fileWatcher.h"
+
 int main(int argc, char **argv)
 {
 
     FileWatcher fw{"./test_project", std::chrono::milliseconds(500)};
+    dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+    runtimeCompiler rc;
+    rc.include.push_back("_rendering");
+    rc.include.push_back("components");
+    rc.include.push_back("lighting");
+    rc.include.push_back("particles");
+    rc.include.push_back("physics");
+    rc.run("./test_project");
 
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
@@ -222,8 +234,7 @@ int main(int argc, char **argv)
                          initLineRenderer();
                          ImGui::LoadIniSettingsFromDisk("default.ini");
                          model_manager.init();
-                         shader_manager.init();
-                     });
+                         shader_manager.init(); });
     initParticles2();
     particle_renderer::init2();
 
@@ -231,7 +242,8 @@ int main(int argc, char **argv)
         loadAssets();
         YAML::Node assets_node = YAML::LoadFile("assets.yaml");
         fw.getFileData(assets_node["file_meta"]);
-        if(working_file != ""){
+        if (working_file != "")
+        {
             load_level(working_file.c_str());
         }
     }
@@ -239,9 +251,8 @@ int main(int argc, char **argv)
     // Start monitoring a folder for changes and (in case of changes)
     // run a user provided lambda function
     thread fileWatcherThread([&]()
-                             {
-                                 fw.start([&](std::string path_to_watch, FileStatus status) -> void
-                                          {
+                             { fw.start([&](std::string path_to_watch, FileStatus status) -> void
+                                        {
                                               // Process only regular files, all other file types are ignored
                                               if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != FileStatus::erased)
                                               {
@@ -272,9 +283,7 @@ int main(int argc, char **argv)
                                                   YAML::Node assets = YAML::LoadFile("assets.yaml");
                                                   assets["file_meta"] = fw.getFileData();
                                                   ofstream("assets.yaml") << assets;
-                                              }
-                                          });
-                             });
+                                              } }); });
 
     // rootGameObject->_addComponent<player>();
 
@@ -289,7 +298,7 @@ int main(int argc, char **argv)
     ed->position = glm::vec3(0, 0, -10);
     // player::m_editor = ed;
 
-    toDestroyGameObjects.reserve(10'000);
+    // toDestroyGameObjects.reserve(10'000);
 
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
@@ -302,7 +311,30 @@ int main(int argc, char **argv)
             {
                 (*f)();
                 delete f;
-                /* code */
+            }
+        }
+        {
+            if (rc.getCompilationComplete() && rc.getCompilationSuccess())
+            {
+
+                YAML::Node root_game_object_node;
+                game_object::encode(root_game_object_node, rootGameObject);
+                root_game_object_node;
+
+                rootGameObject->_destroy();
+                Transforms.clear();
+
+                ////////////////////////////////////////////////////
+                rc.reloadModules();
+                ////////////////////////////////////////////////////
+
+                game_object::decode(root_game_object_node, -1);
+
+                rootGameObject = transform2(0)->gameObject();
+                for (auto &i : ComponentRegistry.meta_types)
+                {
+                    initComponents(i.second);
+                }
             }
         }
 
@@ -340,8 +372,7 @@ int main(int argc, char **argv)
                                      emitterInits.push_back(i.second);
                                  emitter_inits.clear();
                                  swapBurstBuffer();
-                                 updateTiming();
-                             });
+                                 updateTiming(); });
         }
         if (isGameRunning())
         {
@@ -358,13 +389,14 @@ int main(int argc, char **argv)
         }
         // ############################################################
         enqueRenderJob([&]()
-                       { renderFunc(ed, fps); });
+                       { renderFunc(ed, fps, rc); });
 
         fps.add(time.stop());
     }
     fw.stop();
     saveAssets();
-    
+
+    rc.stop();
     fileWatcherThread.join();
     printStats();
     endEditor();
@@ -387,8 +419,7 @@ int main(int argc, char **argv)
                          ImGui::DestroyContext();
 
                          glFlush();
-                         glfwTerminate();
-                     });
+                         glfwTerminate(); });
 
     while (shaders.size() > 0)
     {
