@@ -313,11 +313,35 @@ void destroyAllComponents();
 
 #define REGISTER_COMPONENT(comp) componentStorage<comp> component_storage_##comp(#comp);
 
+
+
+// template <typename t>
+// componentMeta<t> *registerComponent()
+// {
+// 	size_t hash = typeid(t).hash_code();
+// 	ComponentRegistry.meta_types.emplace(hash, make_shared<componentMeta<t>>());
+// 	ComponentRegistry.meta.emplace(string(typeid(t).name()), ComponentRegistry.meta_types.at(hash));
+
+// 	// ComponentRegistry.components[hash] = make_unique<componentStorage<t>>();
+// 	componentStorageBase *csb = ComponentRegistry.registry<t>();
+// 	csb->name = typeid(t).name();
+// 	csb->h_update = typeid(&t::update) != typeid(&component::update);
+// 	csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
+// 	csb->hash = hash;
+// 	// if (t::_registerEngineComponent())
+// 	// 	ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
+// 	// else
+// 	// ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
+// 	return static_cast<componentMeta<t>*>(ComponentRegistry.meta_types.at(hash).get());
+// }
+
 template <typename t>
 componentStorage<t>::componentStorage(const char *_name)
 {
 	this->name = _name;
 	this->hash = typeid(t).hash_code();
+	this->h_update = typeid(&t::update) != typeid(&component::update);
+	this->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
 	std::cout << "register component " << name << std::endl;
 	ComponentRegistry.registerComponentStorage(this);
 }
