@@ -57,11 +57,9 @@ void main () {
         emitter_prototype proto = prototypes[p.emitter_prototype];
         vec3 position = p.position;
         vec3 position2 = position;
-        if(p.next == -1){
-            position2 = position;
-        } else if(p.next < -1 && emitters[-p.next - 2].last == id){
+        if(p.next < -1 && emitters[-p.next - 2].last == id){
             position2 = transforms[emitters[-p.next - 2].transform].position;
-        }else{
+        }else if(p.next > -1) {
             position2 = particles[p.next].position;
         }
         position -= camp;

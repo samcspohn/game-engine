@@ -311,6 +311,7 @@ public:
             normal = randomSphere();
         exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 50);
         transform->gameObject()->destroy();
+        // vel = glm::reflect(vel,col.normal);
         // }
         // numCubes.fetch_add(-1);
 

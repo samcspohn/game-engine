@@ -1,4 +1,26 @@
 components:
+  - id: 226969208628627968
+    value:
+      type:
+        type: 3
+      layer: 0
+      r:
+        - 1
+        - 1
+        - 1
+      dim:
+        - 1
+        - 1
+        - 1
+      p:
+        -
+          - 0
+          - 0
+          - 0
+        -
+          - 0
+          - 0
+          - 0
   - id: 8128736703838043503
     value:
       prototype:

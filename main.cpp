@@ -11,6 +11,7 @@ REGISTER_COMPONENT(_renderer);
 REGISTER_COMPONENT(_camera);
 REGISTER_COMPONENT(audiosource)
 
+
 void doLoopIteration()
 {
     timer stopWatch;
@@ -216,7 +217,6 @@ int main(int argc, char **argv)
     rc.include.push_back("lighting");
     rc.include.push_back("particles");
     rc.include.push_back("physics");
-    rc.run("./test_project");
 
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
@@ -242,6 +242,11 @@ int main(int argc, char **argv)
         loadAssets();
         YAML::Node assets_node = YAML::LoadFile("assets.yaml");
         fw.getFileData(assets_node["file_meta"]);
+        try{
+            rc.fw->getFileData(assets_node["compile_meta"]);
+        }catch(YAML::Exception e){
+
+        }
         if (working_file != "")
         {
             load_level(working_file.c_str());
@@ -250,6 +255,7 @@ int main(int argc, char **argv)
 
     // Start monitoring a folder for changes and (in case of changes)
     // run a user provided lambda function
+    rc.run("./test_project");
     thread fileWatcherThread([&]()
                              { fw.start([&](std::string path_to_watch, FileStatus status) -> void
                                         {
@@ -328,6 +334,9 @@ int main(int argc, char **argv)
                 rc.reloadModules();
                 ////////////////////////////////////////////////////
 
+                // loadAssets();
+                YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+	            game_object_proto_manager.decode(assets_node);
                 game_object::decode(root_game_object_node, -1);
 
                 rootGameObject = transform2(0)->gameObject();

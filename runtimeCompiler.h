@@ -142,5 +142,7 @@ struct runtimeCompiler
     {
         fw->stop();
         t->join();
+        delete fw;
+        delete t;
     }
 };

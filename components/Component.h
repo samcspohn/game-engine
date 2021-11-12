@@ -42,7 +42,7 @@ struct collision
 			  game_object *_g_o) : point(_point), normal(_normal), this_collider(_this_collider), other_collider(_other_collider), g_o(_g_o) {}
 };
 
-class component
+struct component
 {
 	friend game_object;
 
@@ -282,7 +282,10 @@ public:
 	}
 	inline componentStorageBase *registry(size_t hash)
 	{
-		return meta_types.at(hash);
+		std::map<size_t, componentStorageBase *>::iterator i;
+		if((i = meta_types.find(hash)) != meta_types.end())
+			return i->second;
+		return 0;
 	}
 
 };
