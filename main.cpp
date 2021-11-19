@@ -11,7 +11,6 @@ REGISTER_COMPONENT(_renderer);
 REGISTER_COMPONENT(_camera);
 REGISTER_COMPONENT(audiosource)
 
-
 void doLoopIteration()
 {
     timer stopWatch;
@@ -102,7 +101,19 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
     }
 
     rc.lock.lock();
-    editorLayer(window, ed);
+    editorLayer(window, ed, rc.getCompiling());
+
+    if (rc.getCompiling())
+    {
+        auto sz = ImGui::GetWindowSize();
+        ImGui::SetNextWindowPos({sz.x / 2 - 100, sz.y / 2 - 50}, ImGuiCond_Once);
+        ImGui::SetNextWindowSize({200.f, 100.f}, ImGuiCond_Once);
+        ImGui::SetWindowFontScale(2);
+        ImGui::Begin("cmpiling", 0, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Text("Compiling");
+        ImGui::End();
+        ImGui::SetWindowFontScale(1);
+    }
     rc.lock.unlock();
     dockspaceEnd();
     // ImGui::PushFont(font_default);
@@ -234,7 +245,8 @@ int main(int argc, char **argv)
                          initLineRenderer();
                          ImGui::LoadIniSettingsFromDisk("default.ini");
                          model_manager.init();
-                         shader_manager.init(); });
+                         shader_manager.init();
+                     });
     initParticles2();
     particle_renderer::init2();
 
@@ -242,10 +254,13 @@ int main(int argc, char **argv)
         loadAssets();
         YAML::Node assets_node = YAML::LoadFile("assets.yaml");
         fw.getFileData(assets_node["file_meta"]);
-        try{
-            rc.fw->getFileData(assets_node["compile_meta"]);
-        }catch(YAML::Exception e){
-
+        try
+        {
+            rc.fw.getFileData(assets_node["scripts"]);
+            rc.initLoadedScripts();
+        }
+        catch (YAML::Exception e)
+        {
         }
         if (working_file != "")
         {
@@ -257,8 +272,9 @@ int main(int argc, char **argv)
     // run a user provided lambda function
     rc.run("./test_project");
     thread fileWatcherThread([&]()
-                             { fw.start([&](std::string path_to_watch, FileStatus status) -> void
-                                        {
+                             {
+                                 fw.start([&](std::string path_to_watch, FileStatus status) -> void
+                                          {
                                               // Process only regular files, all other file types are ignored
                                               if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != FileStatus::erased)
                                               {
@@ -289,7 +305,9 @@ int main(int argc, char **argv)
                                                   YAML::Node assets = YAML::LoadFile("assets.yaml");
                                                   assets["file_meta"] = fw.getFileData();
                                                   ofstream("assets.yaml") << assets;
-                                              } }); });
+                                              }
+                                          });
+                             });
 
     // rootGameObject->_addComponent<player>();
 
@@ -320,30 +338,33 @@ int main(int argc, char **argv)
             }
         }
         {
+            // lock_guard<mutex> lck(transformLock);
             if (rc.getCompilationComplete() && rc.getCompilationSuccess())
             {
+                waitForRenderJob([&]()
+                                 {
+                                     YAML::Node root_game_object_node;
+                                     game_object::encode(root_game_object_node, rootGameObject);
+                                     root_game_object_node;
 
-                YAML::Node root_game_object_node;
-                game_object::encode(root_game_object_node, rootGameObject);
-                root_game_object_node;
+                                     rootGameObject->_destroy();
+                                     Transforms.clear();
 
-                rootGameObject->_destroy();
-                Transforms.clear();
+                                     ////////////////////////////////////////////////////
+                                     rc.reloadModules();
+                                     ////////////////////////////////////////////////////
 
-                ////////////////////////////////////////////////////
-                rc.reloadModules();
-                ////////////////////////////////////////////////////
+                                     // loadAssets();
+                                     YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+                                     game_object_proto_manager.decode(assets_node);
+                                     game_object::decode(root_game_object_node, -1);
 
-                // loadAssets();
-                YAML::Node assets_node = YAML::LoadFile("assets.yaml");
-	            game_object_proto_manager.decode(assets_node);
-                game_object::decode(root_game_object_node, -1);
-
-                rootGameObject = transform2(0)->gameObject();
-                for (auto &i : ComponentRegistry.meta_types)
-                {
-                    initComponents(i.second);
-                }
+                                     rootGameObject = transform2(0)->gameObject();
+                                     for (auto &i : ComponentRegistry.meta_types)
+                                     {
+                                         initComponents(i.second);
+                                     }
+                                 })
             }
         }
 
@@ -381,7 +402,8 @@ int main(int argc, char **argv)
                                      emitterInits.push_back(i.second);
                                  emitter_inits.clear();
                                  swapBurstBuffer();
-                                 updateTiming(); });
+                                 updateTiming();
+                             });
         }
         if (isGameRunning())
         {
@@ -406,6 +428,11 @@ int main(int argc, char **argv)
     saveAssets();
 
     rc.stop();
+
+    YAML::Node assets = YAML::LoadFile("assets.yaml");
+    assets["scripts"] = rc.fw.getFileData();
+    ofstream("assets.yaml") << assets;
+
     fileWatcherThread.join();
     printStats();
     endEditor();
@@ -428,7 +455,8 @@ int main(int argc, char **argv)
                          ImGui::DestroyContext();
 
                          glFlush();
-                         glfwTerminate(); });
+                         glfwTerminate();
+                     });
 
     while (shaders.size() > 0)
     {

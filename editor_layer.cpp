@@ -413,7 +413,7 @@ void saveFile()
 
 mutex transformLock;
 
-void editorLayer(GLFWwindow *window, editor *m_editor)
+void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 {
 
 	static double nextFPS = 0;
@@ -721,7 +721,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			ImGui::Text(string{"fps: " + to_string(fps)}.c_str());
 			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
 			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
-			if (!isGameRunning() && ImGui::Button("play"))
+			if (!isGameRunning() && !compiling && ImGui::Button("play"))
 			{
 				start_game();
 			}

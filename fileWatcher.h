@@ -27,6 +27,8 @@ public:
     {
         
     }
+    FileWatcher() = default;
+    
     // Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
     void start(const std::function<void(std::string, FileStatus)> &action)
     {
@@ -110,8 +112,8 @@ public:
         // }
     }
 
-private:
     std::unordered_map<std::string, std::filesystem::file_time_type> paths_;
+private:
     bool running_ = true;
 
     // Check if "paths_" contains a given key
