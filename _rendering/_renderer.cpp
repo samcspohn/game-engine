@@ -45,26 +45,26 @@ void _renderer::set(_shader s, _model m)
 	if(transformIdRef != -1)
 		meta->ids._delete(transformIdRef);
 	renderingManager::lock();
-	auto r = renderingManager::shader_model_vector.find(s.s);
+	auto r = renderingManager::shader_model_vector.find(s.id);
 	if (r == renderingManager::shader_model_vector.end())
 	{
-		renderingManager::shader_model_vector[s.s][m.m] = make_unique<renderingMeta>(s, m);
+		renderingManager::shader_model_vector[s.id][m.id] = make_unique<renderingMeta>(s, m);
 
-		r = renderingManager::shader_model_vector.find(s.s);
-		// updatedRenderMetas.push_back(r->second[m.m->name]);
+		r = renderingManager::shader_model_vector.find(s.id);
+		// updatedRenderMetas.push_back(r->second[m.id->name]);
 	}
 	else
 	{
-		auto rm = r->second.find(m.m);
+		auto rm = r->second.find(m.id);
 		if (rm == r->second.end())
 		{
-			r->second[m.m] = make_unique<renderingMeta>(s, m);
-			// updatedRenderMetas.push_back(r->second[m.m->name]);
+			r->second[m.id] = make_unique<renderingMeta>(s, m);
+			// updatedRenderMetas.push_back(r->second[m.id->name]);
 		}
 	}
 	renderingManager::unlock();
 
-	meta = (r->second[m.m]).get();
+	meta = (r->second[m.id]).get();
 		
 	transformIdRef = meta->ids._new(static_cast<GLuint>(transform.id));
 }
@@ -74,22 +74,22 @@ void _renderer::set_proto(_shader s, _model m)
 	shader = s;
 	model = m;
 	renderingManager::lock();
-	auto r = renderingManager::shader_model_vector.find(s.s);
+	auto r = renderingManager::shader_model_vector.find(s.id);
 	if (r == renderingManager::shader_model_vector.end())
 	{
-		renderingManager::shader_model_vector[s.s][m.m] = make_unique<renderingMeta>(s, m);
+		renderingManager::shader_model_vector[s.id][m.id] = make_unique<renderingMeta>(s, m);
 
-		r = renderingManager::shader_model_vector.find(s.s);
+		r = renderingManager::shader_model_vector.find(s.id);
 	}
 	else
 	{
-		auto rm = r->second.find(m.m);
+		auto rm = r->second.find(m.id);
 		if (rm == r->second.end())
-			r->second[m.m] = make_unique<renderingMeta>(s, m);
+			r->second[m.id] = make_unique<renderingMeta>(s, m);
 	}
 	renderingManager::unlock();
 
-	meta = (r->second[m.m]).get();
+	meta = (r->second[m.id]).get();
 }
 
 void _renderer::set(renderingMeta *_meta)
@@ -124,17 +124,18 @@ void _renderer::deinit(int id)
 void renderEdit(const char *name, _model &m)
 {
 	// ImGui::DragInt(name,&i);
-	// if (m.m == 0) // uninitialized
+	// if (m.id == 0) // uninitialized
 	// 	ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
 	// else
-		ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+		// ImGui::InputText(name, (char *)m.meta()->name.c_str(), m.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	AssetRenderEdit(name,&m);
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("MODEL_DRAG_AND_DROP"))
 		{
 			IM_ASSERT(payload->DataSize == sizeof(int));
 			int payload_n = *(const int *)payload->Data;
-			m.m = payload_n;
+			m.id = payload_n;
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -143,17 +144,18 @@ void renderEdit(const char *name, _model &m)
 void renderEdit(const char *name, _shader &s)
 {
 	// ImGui::DragInt(name,&i);
-	// if (s.s == 0) // uninitialized
+	// if (s.id == 0) // uninitialized
 	// 	ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
 	// else
-		ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+		// ImGui::InputText(name, (char *)s.meta()->name.c_str(), s.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	AssetRenderEdit(name,&s);
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SHADER_DRAG_AND_DROP"))
 		{
 			IM_ASSERT(payload->DataSize == sizeof(int));
 			int payload_n = *(const int *)payload->Data;
-			s.s = payload_n;
+			s.id = payload_n;
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -166,7 +168,7 @@ void _renderer::onEdit()
 	RENDER(model);
 	RENDER(shader);
 
-	if (model.m != curr_m.m || shader.s != curr_s.s)
+	if (model.id != curr_m.id || shader.id != curr_s.id)
 	{
 		this->set(shader, model);
 	}

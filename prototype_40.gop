@@ -1,0 +1,39 @@
+components:
+  - id: 15330709117420109069
+    value:
+      vel:
+        - 0
+        - 4.53694e+24
+        - 4.306412e+21
+      exp:
+        id: 44
+      explosionSound:
+        id: -1
+      explosion_size: 1
+      playSound: false
+  - id: 226969208628627968
+    value:
+      type:
+        type: 3
+      layer: 0
+      r:
+        - 1
+        - 1
+        - 1
+      dim:
+        - 1
+        - 1
+        - 1
+      p:
+        -
+          - 0
+          - 0
+          - 0
+        -
+          - 0
+          - 0
+          - 0
+  - id: 8128736703838043503
+    value:
+      prototype:
+        id: 49

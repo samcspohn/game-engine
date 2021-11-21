@@ -1,37 +1,62 @@
 #include "game_object.h"
 
+void placeholder::ser_edit(ser_mode x, YAML::Node &n)
+{
+	switch (x)
+	{
+	case ser_mode::edit_mode:
+		ImGui::Text("place holder");
+		/* code */
+		break;
+	case ser_mode::read_mode:
+		this->data = n["data"].as<YAML::Node>();
+		/* code */
+		break;
+	case ser_mode::write_mode:
+		n["data"] = this->data;
+		/* code */
+		break;
+
+	default:
+		break;
+	}
+}
+
+REGISTER_COMPONENT(placeholder);
+
 std::mutex toDestroym;
 // std::deque<game_object *> toDestroyGameObjects;
 std::vector<game_object *> toDestroyGameObjects;
 // tbb::concurrent_vector<game_object *> toDestroyGameObjects;
-std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
+// std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
 
 STORAGE<game_object> game_object_cache;
+gameObjectProtoManager game_object_proto_manager;
 
-void encodePrototypes(YAML::Node &node)
-{
-	YAML::Node prototypeRegistry_node;
-	for (auto &i : prototypeRegistry)
-	{
-		prototypeRegistry_node.force_insert(i.first, *i.second);
-	}
-	node["prototype_registry"] = prototypeRegistry_node;
-}
+// void encodePrototypes(YAML::Node &node)
+// {
+// 	YAML::Node prototypeRegistry_node;
+// 	for (auto &i : prototypeRegistry)
+// 	{
+// 		prototypeRegistry_node.force_insert(i.first, *i.second);
+// 	}
+// 	node["prototype_registry"] = prototypeRegistry_node;
+// }
 
-void decodePrototypes(YAML::Node &node)
-{
-	for(auto &p : prototypeRegistry){
-		for (auto &i : p.second->components)
-			delete i.first;
-	}
-	prototypeRegistry.clear();
+// void decodePrototypes(YAML::Node &node)
+// {
+// 	for(auto &p : prototypeRegistry){
+// 		for (auto &i : p.second->components)
+// 			delete i.first;
+// 	}
+// 	prototypeRegistry.clear();
 
-	YAML::Node prototypeRegistry_node = node["prototype_registry"];
-	for (YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i)
-	{
-		prototypeRegistry[i->first.as<int>()] = make_shared<game_object_proto_>(i->second.as<game_object_proto_>());
-	}
-}
+// 	YAML::Node prototypeRegistry_node = node["prototype_registry"];
+// 	for (YAML::const_iterator i = prototypeRegistry_node.begin(); i != prototypeRegistry_node.end(); ++i)
+// 	{
+// 		prototypeRegistry[i->first.as<int>()] = make_shared<game_object_proto_>(i->second.as<game_object_proto_>());
+// 	}
+// }
 
 void game_object::encode(YAML::Node &game_object_node, game_object *g)
 {
@@ -79,12 +104,15 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 	int ref = game_object_cache._new();
 	game_object *g = &game_object_cache.get(ref);
 
-
 	g->transform = Transforms._new();
 
-	try{
+	try
+	{
 		g->transform->name() = game_object_node["name"].as<string>();
-	}catch(...){ }
+	}
+	catch (...)
+	{
+	}
 	g->transform->setPosition(game_object_node["transform"]["position"].as<glm::vec3>());
 	g->transform->setRotation(game_object_node["transform"]["rotation"].as<glm::quat>());
 	g->transform->setScale(game_object_node["transform"]["scale"].as<glm::vec3>());
@@ -101,14 +129,27 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 									  {
 										  for (int i = 0; i < components_node.size(); i++)
 										  {
-											  YAML::Node component_node = components_node[i];
-											  size_t hash = component_node["id"].as<size_t>();
-											  YAML::Node component_val_node = component_node["value"];
-											  int id = ComponentRegistry.registry(hash)->decode(component_val_node);
-											  g->components.emplace(hash, id);
-											  _getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
-										  }
-									  });
+											YAML::Node component_node = components_node[i];
+											size_t hash = component_node["id"].as<size_t>();
+											YAML::Node component_val_node = component_node["value"];
+
+											if(hash == typeid(placeholder).hash_code() && ComponentRegistry.registry(component_val_node["data"]["id"].as<size_t>()) != 0){
+												hash = component_val_node["data"]["id"].as<size_t>();
+												component_val_node = component_val_node["data"]["value"];
+											} // if registry does not contain component placeholder is referencing then placeholder is de-serialized
+
+											if(ComponentRegistry.registry(hash)){
+
+												int id = ComponentRegistry.registry(hash)->decode(component_val_node);
+												g->components.emplace(hash, id);
+												_getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
+											}else{
+												//   int id = ComponentRegistry.registry(typeid(placeholder).hash_code());
+												placeholder* p = g->_addComponent<placeholder>();
+												p->data = component_node;
+
+											}
+										  } });
 
 	YAML::Node transform_children = game_object_node["transform"]["children"];
 	for (int i = 0; i < transform_children.size(); i++)
@@ -143,30 +184,19 @@ void rebuildGameObject(componentStorageBase *base, int i)
 	base->get(i)->transform->gameObject()->components.emplace(base->hash, i);
 }
 
-void registerProto(game_object_proto_ *p)
+// void registerProto(game_object_proto_ *p)
+// {
+// 	p->genID();
+// 	prototypeRegistry.emplace(pair<int, game_object_proto_ *>(p->id, p));
+
+void gameObjectProtoManager::_new()
 {
+	shared_ptr<game_object_proto_> p = make_shared<game_object_proto_>();
 	p->genID();
-	prototypeRegistry.emplace(pair<int, game_object_proto_ *>(p->id, p));
-	// p->ref = prototypeRegistry.end();
-	// assets::registerAsset(p);
-	// --p->ref;
+	p->name = "prototype_" + to_string(p->id) + ".gop";
+	meta[p->id] = p;
+	path[p->name] = p->id;
 }
-void deleteProtoRef(int id)
-{
-	prototypeRegistry.erase(id);
-}
-
-void saveProto(OARCHIVE &oa)
-{
-	oa << prototypeRegistry;
-}
-void loadProto(IARCHIVE &ia)
-{
-	ia >> prototypeRegistry;
-}
-
-void componentMetaBase::addComponent(game_object *g) {}
-void componentMetaBase::addComponentProto(game_object_proto_ *g) {}
 
 game_object_prototype::game_object_prototype() {}
 game_object_prototype::game_object_prototype(game_object_proto_ *p)
@@ -196,7 +226,7 @@ void _child_instatiate(game_object &g, transform2 parent)
 	for (auto &i : g.components)
 	{
 		// game_object::_getComponent(i)->_copy(ret);
-		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
+		int comp_ref = ComponentRegistry.meta_types.at(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
 		ret->components.emplace(i.first, comp_ref);
 	}
@@ -226,7 +256,7 @@ game_object *_instantiate(game_object &g)
 
 	for (auto &i : g.components)
 	{
-		int comp_ref = ComponentRegistry.getByType(i.first)->copy(i.second);
+		int comp_ref = ComponentRegistry.meta_types.at(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
 		ret->components.emplace(i.first, comp_ref);
 	}
@@ -261,7 +291,7 @@ game_object *_instantiate()
 
 game_object *_instantiate(game_object_prototype &g)
 {
-	game_object_proto_ &_g = *prototypeRegistry.at(g.id);
+	game_object_proto_ &_g = *game_object_proto_manager.meta.at(g.id);
 	int ref = game_object_cache._new();
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
@@ -272,7 +302,7 @@ game_object *_instantiate(game_object_prototype &g)
 	for (auto &i : _g.components)
 	{
 		// i.first->_copy(ret);
-		ret->components.emplace(i.second, ComponentRegistry.getByType(i.second)->copy(i.first));
+		ret->components.emplace(i.second, ComponentRegistry.meta_types.at(i.second)->copy(i.first));
 	}
 	for (auto &i : ret->components)
 	{
@@ -330,16 +360,18 @@ void game_object::_destroy()
 	transform->_destroy();
 }
 
-game_object_proto_* game_object_prototype::meta() const{
-	return prototypeRegistry.at(id).get();
+game_object_proto_ *game_object_prototype::meta() const
+{
+	return game_object_proto_manager.meta.at(id).get();
 }
 
 void renderEdit(const char *name, game_object_prototype &g)
 {
-	if (g.id < 1) // uninitialized
-		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
-	else
-		ImGui::InputText(name, (char *)g.meta()->name.c_str(), g.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	// if (g.id < 1) // uninitialized
+	// 	ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	// else
+	// 	ImGui::InputText(name, (char *)g.meta()->name.c_str(), g.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
+	AssetRenderEdit(name, &g);
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("GAME_OBJECT_PROTO_TYPE"))
@@ -350,4 +382,60 @@ void renderEdit(const char *name, game_object_prototype &g)
 		}
 		ImGui::EndDragDropTarget();
 	}
+}
+
+// template<>
+YAML::Node YAML::convert<game_object_proto_>::encode(const game_object_proto_ &rhs)
+{
+	Node node;
+	YAML_ENCODE_ASSET();
+	// components
+	YAML::Node components_node;
+	for (auto &i : rhs.components)
+	{
+		YAML::Node component_node;
+		component_node["id"] = i.second;
+		YAML::Node component_val_node;
+		i.first->ser_edit(ser_mode::write_mode, component_val_node);
+		component_node["value"] = component_val_node;
+		components_node.push_back(component_node);
+	}
+	YAML::Node out;
+	out["components"] = components_node;
+	ofstream(rhs.name) << out;
+	// node["components"] = components_node;
+	return node;
+}
+
+bool YAML::convert<game_object_proto_>::decode(const Node &node, game_object_proto_ &rhs)
+{
+	YAML_DECODE_ASSET();
+	YAML::Node in = YAML::LoadFile(rhs.name);
+	YAML::Node components_node = in["components"];
+	for (int i = 0; i < components_node.size(); i++)
+	{
+		YAML::Node component_node = components_node[i];
+		size_t hash = component_node["id"].as<size_t>();
+		YAML::Node component_val_node = component_node["value"];
+
+		if (hash == typeid(placeholder).hash_code() && ComponentRegistry.registry(component_val_node["data"]["id"].as<size_t>()) != 0)
+		{
+			hash = component_val_node["data"]["id"].as<size_t>();
+			component_val_node = component_val_node["data"]["value"];
+		} // if registry does not contain component placeholder is referencing then placeholder is de-serialized
+
+		if (ComponentRegistry.registry(hash))
+		{
+			component *c = ComponentRegistry.registry(hash)->_decode(component_val_node);
+			rhs.components.emplace(c, hash);
+		}
+		else
+		{
+			placeholder *p = new placeholder();
+			p->data = component_node;
+
+			rhs.components.emplace(p, typeid(placeholder).hash_code());
+		}
+	}
+	return true;
 }

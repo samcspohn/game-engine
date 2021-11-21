@@ -4,17 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(game_engine)
 
-# add_subdirectory(bullet)
-# add the executable
-
 include_directories(${CMAKE_SOURCE_DIR}/imgui ${CMAKE_SOURCE_DIR}/_rendering)
-# add_subdirectory(imgui)
-
-# add_subdirectory(bullet)
-# add_library(game libBulletSoftBody.a)
-# add_library(game libBulletDynamics.a)
-# add_library(game libBulletCollision.a)
-# add_library(game libLinearMath.a)
 
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW
  GLM_GTX_intersect #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -27,27 +17,14 @@ file(GLOB SOURCES "*.cpp"
     "components/*.cpp"
     "physics/*.cpp"
     "lighting/*.cpp"
-    "test_project/*.cpp"
+    # "test_project/*.cpp"
     "particles/*.cpp")
  
 add_executable(game ${SOURCES})
 
-target_link_libraries(game GL)
-target_link_libraries(game GLU)
-target_link_libraries(game GLEW)
-target_link_libraries(game glfw)
-target_link_libraries(game X11)
-target_link_libraries(game Xxf86dga)
-target_link_libraries(game Xrandr)
-target_link_libraries(game pthread)
-target_link_libraries(game Xi)
-target_link_libraries(game SOIL)
-target_link_libraries(game assimp)
-target_link_libraries(game alut)
-target_link_libraries(game openal)
-target_link_libraries(game tbb)
-target_link_libraries(game boost_serialization)
-target_link_libraries(game yaml-cpp)
+
+set_target_properties(game PROPERTIES ENABLE_EXPORTS 1)
+target_link_libraries(game GL GLU GLEW glfw X11 Xxf86dga Xrandr pthread Xi SOIL assimp alut openal tbb boost_serialization yaml-cpp dl)
 
 target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}
@@ -69,7 +46,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 option(BUILD_DEBUG "build un-optimized with debugger info" ON)
 if(BUILD_DEBUG)
-    target_compile_options(game PUBLIC -fpermissive -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type)
+    target_compile_options(game PUBLIC -fpermissive  -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type)
 else()
-    target_compile_options(game PUBLIC -fpermissive -Wreturn-type -g -O3 -std=c++17 -ffast-math -fno-inline -fno-omit-frame-pointer -Werror=return-type)
+    target_compile_options(game PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -fno-inline -fno-omit-frame-pointer -Werror=return-type)
 endif()

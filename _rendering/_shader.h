@@ -49,14 +49,9 @@ public:
 	_shader(string vertex, string geom, string fragment);
 	_shader(string vertex, string tess, string geom, string fragment);
 	// _shaderMeta* s = 0;
-	int s = 0;
 	Shader &ref();
 	Shader *operator->();
 	_shaderMeta *meta() const;
-	SER_HELPER()
-	{
-		ar &s;
-	}
 };
 
 bool operator<(const _shader &l, const _shader &r);
@@ -69,13 +64,13 @@ namespace YAML
 		static Node encode(const _shader &rhs)
 		{
 			Node node;
-			node["id"] = rhs.s;
+			node["id"] = rhs.id;
 			return node;
 		}
 
 		static bool decode(const Node &node, _shader &rhs)
 		{
-			rhs.s = node["id"].as<int>();
+			rhs.id = node["id"].as<int>();
 			return true;
 		}
 	};

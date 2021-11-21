@@ -58,7 +58,7 @@ transform:
         - id: 15588507219644773874
           value:
             guns:
-              - ammo: 16
+              - ammo: 40
                 rof: 3
                 speed: 300
                 dispersion: 0.06
@@ -77,7 +77,620 @@ transform:
                     - 0
                     - 0
                 muzzelFlash:
-                  id: 0
+                  id: 48
+    - name: enemy ship
+      transform:
+        position:
+          - -38.10833
+          - 28
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 3
+        children:
+          - name: turret
+            transform:
+              position:
+                - -38.10833
+                - 29.25728
+                - 7.490891
+              rotation:
+                - 0
+                - 0
+                - 0
+                - 1
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 4
+              children:
+                - name: guns
+                  transform:
+                    position:
+                      - -38.10833
+                      - 29.12507
+                      - 8.180829
+                    rotation:
+                      - 0
+                      - 0
+                      - 0
+                      - 1
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 5
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: ""
+            transform:
+              position:
+                - -38.10833
+                - 29.80093
+                - 4.488482
+              rotation:
+                - 0
+                - 0
+                - 0
+                - 1
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 6
+              children:
+                - name: ""
+                  transform:
+                    position:
+                      - -38.10833
+                      - 29.66872
+                      - 5.17842
+                    rotation:
+                      - 0
+                      - 0
+                      - 0
+                      - 1
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 7
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: ""
+            transform:
+              position:
+                - -38.10833
+                - 29.80093
+                - -5.073053
+              rotation:
+                - 0
+                - 1
+                - 0
+                - -5.04354e-08
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 8
+              children:
+                - name: ""
+                  transform:
+                    position:
+                      - -38.10833
+                      - 29.66872
+                      - -5.762991
+                    rotation:
+                      - 0
+                      - 1
+                      - 0
+                      - -5.04354e-08
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 9
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: ""
+            transform:
+              position:
+                - -38.10833
+                - 29.17769
+                - -7.984013
+              rotation:
+                - 0
+                - 1
+                - 0
+                - -5.04354e-08
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 10
+              children:
+                - name: ""
+                  transform:
+                    position:
+                      - -38.10833
+                      - 29.04548
+                      - -8.673946
+                    rotation:
+                      - 0
+                      - 1
+                      - 0
+                      - -5.04354e-08
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 11
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: turret
+            transform:
+              position:
+                - -38.10833
+                - 26.85064
+                - 6.146109
+              rotation:
+                - 0
+                - 0
+                - 1
+                - 6.158884e-08
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 12
+              children:
+                - name: guns
+                  transform:
+                    position:
+                      - -38.10833
+                      - 26.98285
+                      - 6.836045
+                    rotation:
+                      - 0
+                      - 0
+                      - 1
+                      - 6.158884e-08
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 13
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 22
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: turret
+            transform:
+              position:
+                - -38.10833
+                - 26.19157
+                - 3.082726
+              rotation:
+                - 0
+                - 0
+                - 1
+                - 6.158884e-08
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 14
+              children:
+                - name: guns
+                  transform:
+                    position:
+                      - -38.10833
+                      - 26.32378
+                      - 3.772663
+                    rotation:
+                      - 0
+                      - 0
+                      - 1
+                      - 6.158884e-08
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 15
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: turret
+            transform:
+              position:
+                - -38.10833
+                - 26.19157
+                - -4.540699
+              rotation:
+                - -1
+                - -4.371139e-08
+                - -4.371139e-08
+                - 1.910685e-15
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 16
+              children:
+                - name: guns
+                  transform:
+                    position:
+                      - -38.10833
+                      - 26.32378
+                      - -5.230636
+                    rotation:
+                      - -1.000004
+                      - -4.371149e-08
+                      - -3.874302e-07
+                      - 4.440892e-14
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 17
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+          - name: turret
+            transform:
+              position:
+                - -38.10833
+                - 26.79354
+                - -7.298841
+              rotation:
+                - 1
+                - 4.371139e-08
+                - 4.371139e-08
+                - -1.910685e-15
+              scale:
+                - 1
+                - 1
+                - 1
+              id: 18
+              children:
+                - name: guns
+                  transform:
+                    position:
+                      - -38.10833
+                      - 26.92575
+                      - -7.988778
+                    rotation:
+                      - 1.000004
+                      - 4.371149e-08
+                      - 3.874302e-07
+                      - -4.440892e-14
+                    scale:
+                      - 1
+                      - 1
+                      - 1
+                    id: 19
+                    children: ~
+                  components:
+                    - id: 9328246355543747823
+                      value:
+                        shader:
+                          id: 0
+                        model:
+                          id: 12
+                    - id: 14876483986192322348
+                      value:
+                        armory_id: 0
+            components:
+              - id: 9328246355543747823
+                value:
+                  shader:
+                    id: 0
+                  model:
+                    id: 13
+              - id: 12031868808377879742
+                value:
+                  target: 21
+                  gun_speed: 1.745329
+                  turret_speed: 1.745329
+                  t_angles:
+                    - -2.356194
+                    - 0
+                    - 2.356194
+                  g_angles:
+                    -
+                      - -1.396263
+                      - 0.3490658
+                    -
+                      - -1.396263
+                      - 0.05235988
+                    -
+                      - -1.396263
+                      - 0.3490658
+      components:
+        - id: 226969208628627968
+          value:
+            type:
+              type: 1
+            layer: 0
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            o:
+              c:
+                - 0
+                - 0
+                - 0
+              u:
+                - 0
+                - 0
+                - 0
+                - 0
+              e:
+                - 0
+                - 0
+                - 0
+        - id: 1602829304412528585
+          value: ~
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 14
     - name: ship container
       transform:
         position:
@@ -93,7 +706,7 @@ transform:
           - 1
           - 1
           - 1
-        id: 3
+        id: 20
         children:
           - name: ship
             transform:
@@ -110,7 +723,7 @@ transform:
                 - 1
                 - 1
                 - 1
-              id: 4
+              id: 21
               children:
                 - name: turret
                   transform:
@@ -127,7 +740,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 5
+                    id: 22
                     children:
                       - name: guns
                         transform:
@@ -144,7 +757,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 6
+                          id: 23
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -165,7 +778,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -197,7 +810,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 7
+                    id: 24
                     children:
                       - name: ""
                         transform:
@@ -214,7 +827,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 8
+                          id: 25
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -235,7 +848,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -267,7 +880,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 9
+                    id: 26
                     children:
                       - name: ""
                         transform:
@@ -284,7 +897,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 10
+                          id: 27
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -305,7 +918,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -337,7 +950,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 11
+                    id: 28
                     children:
                       - name: ""
                         transform:
@@ -354,7 +967,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 12
+                          id: 29
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -375,7 +988,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -407,7 +1020,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 13
+                    id: 30
                     children:
                       - name: guns
                         transform:
@@ -424,7 +1037,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 14
+                          id: 31
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -445,7 +1058,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -477,7 +1090,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 15
+                    id: 32
                     children:
                       - name: guns
                         transform:
@@ -494,7 +1107,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 16
+                          id: 33
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -515,7 +1128,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -547,7 +1160,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 17
+                    id: 34
                     children:
                       - name: guns
                         transform:
@@ -564,7 +1177,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 18
+                          id: 35
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -585,7 +1198,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -617,7 +1230,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 19
+                    id: 36
                     children:
                       - name: guns
                         transform:
@@ -634,7 +1247,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 20
+                          id: 37
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -655,7 +1268,7 @@ transform:
                           id: 13
                     - id: 12031868808377879742
                       value:
-                        target: 23
+                        target: 40
                         gun_speed: 1.745329
                         turret_speed: 1.745329
                         t_angles:
@@ -702,7 +1315,7 @@ transform:
                 - 1
                 - 1
                 - 1
-              id: 21
+              id: 38
               children:
                 - name: camera
                   transform:
@@ -719,7 +1332,7 @@ transform:
                       - 1
                       - 1
                       - 1
-                    id: 22
+                    id: 39
                     children:
                       - name: target
                         transform:
@@ -736,7 +1349,7 @@ transform:
                             - 1
                             - 1
                             - 1
-                          id: 23
+                          id: 40
                           children: ~
                         components:
                           - id: 9328246355543747823
@@ -758,7 +1371,7 @@ transform:
                     - id: 3228409147411556496
                       value:
                         speed: 10
-                        ship_t: 4
+                        ship_t: 21
             components: ~
       components: ~
 components: ~

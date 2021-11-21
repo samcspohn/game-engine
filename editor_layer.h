@@ -44,6 +44,9 @@ extern tbb::concurrent_queue<function<void()> *> mainThreadWork;
 void save_level(string filename);
 void rebuildGameObject(componentStorageBase *base, int i);
 
+
+void initComponents(componentStorageBase *cl);
+
 void loadAssets();
 void saveAssets();
 void load_level(string filename);
@@ -55,7 +58,7 @@ void load_level(string filename);
 // void renderTransform(transform2 t);
 extern string working_file;
 
-void editorLayer(GLFWwindow *window, editor *m_editor);
+void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling);
 void endEditor();
 void dockspaceBegin(GLFWwindow* window, editor* m_editor);
 void dockspaceEnd();

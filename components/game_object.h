@@ -13,29 +13,22 @@
 #include <tbb/tbb.h>
 #include "imgui/imgui.h"
 #include <tbb/concurrent_vector.h>
+
+struct placeholder : public component{
+    YAML::Node data;
+    void ser_edit(ser_mode x, YAML::Node &n);
+};
+
 using namespace std;
 
 class _renderer;
 class game_object_proto_;
-// #define protoListRef typename std::list<game_object_proto_ *>::iterator
-// #define protoList std::list<game_object_proto_ *>
-
 class game_object;
 
+
 extern std::mutex toDestroym;
-// extern std::deque<game_object *> toDestroyGameObjects;
 extern std::vector<game_object *> toDestroyGameObjects;
-extern std::unordered_map<int, shared_ptr<game_object_proto_>> prototypeRegistry;
-// extern tbb::concurrent_vector<game_object *> toDestroyGameObjects;
 
-// extern tbb::concurrent_unordered_set<component *> toStart;
-// extern tbb::concurrent_unordered_set<component *> toDestroyComponents;
-// extern tbb::concurrent_unordered_set<compItr *> componentCleanUp;
-
-void encodePrototypes(YAML::Node &node);
-void decodePrototypes(YAML::Node &node);
-void registerProto(game_object_proto_ *p);
-void deleteProtoRef(int id);
 class game_object_proto_ : public assets::asset
 {
 public:
@@ -130,52 +123,23 @@ namespace YAML
 	template <>
 	struct convert<game_object_proto_>
 	{
-		static Node encode(const game_object_proto_ &rhs)
-		{
-			Node node;
-			YAML_ENCODE_ASSET();
-			// components
-			YAML::Node components_node;
-			for (auto &i : rhs.components)
-			{
-				YAML::Node component_node;
-				component_node["id"] = i.second;
-				YAML::Node component_val_node;
-				i.first->ser_edit(ser_mode::write_mode, component_val_node);
-				component_node["value"] = component_val_node;
-				components_node.push_back(component_node);
-			}
-			node["components"] = components_node;
-			return node;
-		}
+		static Node encode(const game_object_proto_ &rhs);
 
-		static bool decode(const Node &node, game_object_proto_ &rhs)
-		{
-			YAML_DECODE_ASSET();
-			YAML::Node components_node = node["components"];
-			for (int i = 0; i < components_node.size(); i++)
-			{
-				YAML::Node component_node = components_node[i];
-				size_t hash = component_node["id"].as<size_t>();
-				YAML::Node component_val_node = component_node["value"];
-				component *c = ComponentRegistry.registry(hash)->_decode(component_val_node);
-				rhs.components.emplace(c, hash);
-			}
-			return true;
-		}
+		static bool decode(const Node &node, game_object_proto_ &rhs);
 	};
 }
 
-struct game_object_prototype  : public assets::asset_instance<game_object_proto_>
+struct gameObjectProtoManager : public assets::assetManager<game_object_proto_>
 {
-	int id;
+	void _new();
+};
+extern gameObjectProtoManager game_object_proto_manager;
+
+struct game_object_prototype : public assets::asset_instance<game_object_proto_>
+{
 	game_object_prototype();
 	game_object_prototype(game_object_proto_ *p);
 	game_object_proto_ *meta() const;
-	SER_HELPER()
-	{
-		ar &id;
-	}
 };
 void renderEdit(const char *name, game_object_prototype &g);
 
@@ -208,7 +172,7 @@ class game_object : public inspectable
 
 	multimap<size_t, int> components = {};
 	bool destroyed = false;
-	//friend component;
+	// friend component;
 	friend _renderer;
 	friend void rebuildGameObject(componentStorageBase *, int);
 	friend void save_level(string);
@@ -281,7 +245,7 @@ public:
 		{
 			ImGui::PushID(n);
 			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-			if (ImGui::TreeNode((to_string(n) + ComponentRegistry.registry(i->first)->getName()).c_str()))
+			if (ImGui::TreeNode(ComponentRegistry.registry(i->first)->getName().c_str()))
 			{
 				ImGui::SameLine();
 				if (ImGui::Button("x"))
@@ -508,6 +472,16 @@ private:
 	void _destroy();
 };
 
+template <typename t>
+void componentStorage<t>::addComponent(game_object *g)
+{
+	g->_addComponent<t>();
+}
+template <typename t>
+void componentStorage<t>::addComponentProto(game_object_proto_ *g)
+{
+	g->addComponent<t>();
+}
 extern STORAGE<game_object> game_object_cache;
 game_object *_instantiate(game_object &g);
 game_object *instantiate(game_object &g);

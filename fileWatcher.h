@@ -19,6 +19,8 @@ class FileWatcher
 {
 public:
     std::string path_to_watch;
+    std::vector<std::string> ignore;
+    std::vector<std::string> specialize;
     // Time interval at which we check the base folder for changes
     std::chrono::duration<int, std::milli> delay;
 
@@ -27,6 +29,8 @@ public:
     {
         
     }
+    FileWatcher() = default;
+    
     // Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
     void start(const std::function<void(std::string, FileStatus)> &action)
     {
@@ -57,6 +61,26 @@ public:
             // Check if a file was created or modified
             for (auto &file : std::filesystem::recursive_directory_iterator(path_to_watch))
             {
+                bool brk = false;
+                for(auto& ig : ignore){
+                    if(file.path().string().find(ig) != -1){
+                        brk = true;
+                        break;
+                    }
+                }
+                if(specialize.size() > 0 && !brk){
+                    brk = true;
+                    std::string f = file.path().string();
+                    std::string type = f.substr(f.find_last_of("."));
+                    for(auto& s : specialize){
+                        if(s == type){
+                            brk = false;
+                            break;
+                        }
+                    }
+                }
+                if(brk)
+                    continue;
                 auto current_file_last_write_time = std::filesystem::last_write_time(file);
                 // File creation
                 if (!contains(file.path().string()))
@@ -110,8 +134,8 @@ public:
         // }
     }
 
-private:
     std::unordered_map<std::string, std::filesystem::file_time_type> paths_;
+private:
     bool running_ = true;
 
     // Check if "paths_" contains a given key

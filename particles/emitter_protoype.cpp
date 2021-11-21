@@ -125,6 +125,15 @@ emitter_prototype_ createEmitter(string name)
     return ret;
 }
 
+void emitterManager::_new(){
+    shared_ptr<emitter_proto_asset> ep = make_shared<emitter_proto_asset>();
+    ep->genID();
+    ep->name = "emitter " + to_string(emitter_manager.meta.size()) + ".pemt";
+    ep->ref = emitter_prototypes_._new();
+    emitter_manager.meta[ep->id] = ep;
+    emitter_manager.path[ep->name] = ep->id;
+}
+
 emitter_proto_asset::emitter_proto_asset()
 {
     waitForRenderJob([&]()

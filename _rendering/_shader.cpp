@@ -76,7 +76,7 @@ void shaderManager::init()
 
 shaderManager shader_manager;
 
-_shader::_shader() {}
+_shader::_shader() { id = 0;}
 #define FIND_SHADER_META(_meta)                 \
 	auto ms = shader_manager.path.find(key);   \
 	if (ms == shader_manager.path.end())       \
@@ -86,7 +86,7 @@ _shader::_shader() {}
 		shader_manager.path[key] = sm->id;     \
 		ms = shader_manager.path.find(key);    \
 	}                                          \
-	s = ms->second;
+	id = ms->second;
 
 _shader::_shader(string compute)
 {
@@ -113,15 +113,15 @@ _shader::_shader(string vertex, string tess, string geom, string fragment)
 
 Shader *_shader::operator->()
 {
-	return shader_manager.meta[s]->shader.get();
+	return shader_manager.meta[id]->shader.get();
 }
 Shader &_shader::ref()
 {
-	return *(shader_manager.meta[s]->shader.get());
+	return *(shader_manager.meta[id]->shader.get());
 }
 _shaderMeta *_shader::meta() const
 {
-	return shader_manager.meta[s].get();
+	return shader_manager.meta[id].get();
 }
 bool _shaderMeta::onEdit()
 {
@@ -185,5 +185,5 @@ string _shaderMeta::type()
 }
 bool operator<(const _shader &l, const _shader &r)
 {
-	return l.s < r.s;
+	return l.id < r.id;
 }

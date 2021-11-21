@@ -1,4 +1,6 @@
 #include "game_engine.h"
+#include "fileWatcher.h"
+#include "runtimeCompiler.h"
 
 using namespace std;
 
@@ -16,7 +18,7 @@ void doLoopIteration()
     // //UPDATE
     for (auto &i : ComponentRegistry.meta_types)
     {
-        componentStorageBase *cb = i.second->getStorage();
+        componentStorageBase *cb = i.second;
         if (cb->hasUpdate())
         {
             stopWatch.start();
@@ -27,7 +29,7 @@ void doLoopIteration()
     // LATE //UPDATE
     for (auto &i : ComponentRegistry.meta_types)
     {
-        componentStorageBase *cb = i.second->getStorage();
+        componentStorageBase *cb = i.second;
         if (cb->hasLateUpdate())
         {
             stopWatch.start();
@@ -64,7 +66,7 @@ void prepCameras()
     }
 }
 
-void renderFunc(editor *ed, rolling_buffer &fps)
+void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
 {
     // lock_guard<mutex> lk(transformLock);
     // renderLock.lock();
@@ -98,7 +100,21 @@ void renderFunc(editor *ed, rolling_buffer &fps)
         lineRendererRender(ed->c);
     }
 
-    editorLayer(window, ed);
+    rc.lock.lock();
+    editorLayer(window, ed, rc.getCompiling());
+
+    if (rc.getCompiling())
+    {
+        auto sz = ImGui::GetWindowSize();
+        ImGui::SetNextWindowPos({sz.x / 2 - 100, sz.y / 2 - 50}, ImGuiCond_Once);
+        ImGui::SetNextWindowSize({200.f, 100.f}, ImGuiCond_Once);
+        ImGui::SetWindowFontScale(2);
+        ImGui::Begin("cmpiling", 0, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Text("Compiling");
+        ImGui::End();
+        ImGui::SetWindowFontScale(1);
+    }
+    rc.lock.unlock();
     dockspaceEnd();
     // ImGui::PushFont(font_default);
 
@@ -200,11 +216,18 @@ void printStats()
     // cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
     // cout << "entities : " << entities << endl;
 }
-#include "fileWatcher.h"
+
 int main(int argc, char **argv)
 {
 
     FileWatcher fw{"./test_project", std::chrono::milliseconds(500)};
+    dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+    runtimeCompiler rc;
+    rc.include.push_back("_rendering");
+    rc.include.push_back("components");
+    rc.include.push_back("lighting");
+    rc.include.push_back("particles");
+    rc.include.push_back("physics");
 
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
@@ -231,7 +254,17 @@ int main(int argc, char **argv)
         loadAssets();
         YAML::Node assets_node = YAML::LoadFile("assets.yaml");
         fw.getFileData(assets_node["file_meta"]);
-        if(working_file != ""){
+        try
+        {
+            rc.fw.getFileData(assets_node["scripts"]);
+            // rc.initLoadedScripts();
+            rc.run("./test_project");
+        }
+        catch (YAML::Exception e)
+        {
+        }
+        if (working_file != "")
+        {
             load_level(working_file.c_str());
         }
     }
@@ -289,7 +322,7 @@ int main(int argc, char **argv)
     ed->position = glm::vec3(0, 0, -10);
     // player::m_editor = ed;
 
-    toDestroyGameObjects.reserve(10'000);
+    // toDestroyGameObjects.reserve(10'000);
 
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
@@ -302,7 +335,36 @@ int main(int argc, char **argv)
             {
                 (*f)();
                 delete f;
-                /* code */
+            }
+        }
+        {
+            // lock_guard<mutex> lck(transformLock);
+            if (rc.getCompilationComplete() && rc.getCompilationSuccess())
+            {
+                waitForRenderJob([&]()
+                                 {
+                                     YAML::Node root_game_object_node;
+                                     game_object::encode(root_game_object_node, rootGameObject);
+                                     root_game_object_node;
+
+                                     rootGameObject->_destroy();
+                                     Transforms.clear();
+
+                                     ////////////////////////////////////////////////////
+                                     rc.reloadModules();
+                                     ////////////////////////////////////////////////////
+
+                                     // loadAssets();
+                                     YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+                                     game_object_proto_manager.decode(assets_node);
+                                     game_object::decode(root_game_object_node, -1);
+
+                                     rootGameObject = transform2(0)->gameObject();
+                                     for (auto &i : ComponentRegistry.meta_types)
+                                     {
+                                         initComponents(i.second);
+                                     }
+                                 })
             }
         }
 
@@ -358,13 +420,19 @@ int main(int argc, char **argv)
         }
         // ############################################################
         enqueRenderJob([&]()
-                       { renderFunc(ed, fps); });
+                       { renderFunc(ed, fps, rc); });
 
         fps.add(time.stop());
     }
     fw.stop();
     saveAssets();
-    
+
+    rc.stop();
+
+    YAML::Node assets = YAML::LoadFile("assets.yaml");
+    assets["scripts"] = rc.fw.getFileData();
+    ofstream("assets.yaml") << assets;
+
     fileWatcherThread.join();
     printStats();
     endEditor();

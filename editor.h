@@ -72,19 +72,15 @@ namespace assets
             {
                 meta[i.second] = std::make_shared<t>(assets["meta"][to_string(i.second)].as<t>());
             }
-
-            // waitForRenderJob([&]()
-            //                  {
-			// for (auto &m : meta)
-			// {
-			// 	m.second->load();
-			// } });
         }
+
+        // void _new() = 0;
     };
 
     template<typename t>
     struct asset_instance
     {
+        int id = -1;
         virtual t *meta() const = 0;
     };
     // extern unordered_map<size_t,assetManager*>
@@ -94,6 +90,14 @@ namespace assets
     extern int assetIdGenerator;
     void save(OARCHIVE &oa);
     void load(IARCHIVE &ia);
+}
+
+template<typename t>
+void AssetRenderEdit(const char* name, assets::asset_instance<t> * a){
+    if (a->id == -1) // uninitialized
+		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+	else
+		ImGui::InputText(name, (char *)a->meta()->name.c_str(), a->meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
 }
 
 #define YAML_ENCODE_ASSET() \

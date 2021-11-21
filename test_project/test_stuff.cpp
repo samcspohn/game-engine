@@ -309,8 +309,9 @@ public:
         glm::vec3 normal = col.normal;
         if (length(normal) == 0)
             normal = randomSphere();
-        exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 50);
+        exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 15);
         transform->gameObject()->destroy();
+        // vel = glm::reflect(vel,col.normal);
         // }
         // numCubes.fetch_add(-1);
 

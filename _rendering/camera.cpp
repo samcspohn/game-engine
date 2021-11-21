@@ -303,7 +303,7 @@ void defferedLighting(camera &c)
 		// lv.setupMesh();
 
 		_model lightVolumeModel("res/models/cube/cube.obj");
-		model_manager.meta[lightVolumeModel.m]->model->loadModel();
+		model_manager.meta[lightVolumeModel.id]->model->loadModel();
 		// lightVolumeModel.m->loadModel();
 		lv.indices = lightVolumeModel.mesh().indices;
 		lv.vertices = lightVolumeModel.mesh().vertices;
@@ -372,7 +372,7 @@ void renderParticles(camera &c)
 	glEnable(GL_BLEND);
 	// glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// glBlendEquation(GL_FUNC_ADD);
+	glBlendEquation(GL_FUNC_ADD);
 
 	particle_renderer::drawParticles(c.view, c.rot, c.proj, c.pos, c.farPlane, c.height, c.width);
 	// appendStat("render particles", gt_.stop());

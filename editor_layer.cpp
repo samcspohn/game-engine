@@ -45,36 +45,28 @@ void DestroyComponents(componentStorageBase *cl)
 
 void saveAssets()
 {
-	YAML::Node assets_node;
+	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
 	assets_node["workingFile"] = working_file;
 	texture_manager.encode(assets_node);
 	shader_manager.encode(assets_node);
 	model_manager.encode(assets_node);
-	// encodeEmitters(assets_node);
 	emitter_manager.encode(assets_node);
-	encodePrototypes(assets_node);
+	game_object_proto_manager.encode(assets_node);
 	assets_node["assetIdGenerator"] = assets::assetIdGenerator;
 	ofstream("assets.yaml") << assets_node;
 }
 void loadAssets()
 {
 #define TRY(x)try{x} catch(...){}
-
-try{
-
 	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
-	working_file = assets_node["workingFile"].as<string>();
-	assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
+	TRY(working_file = assets_node["workingFile"].as<string>();)
+	TRY(assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();)
 	TRY(texture_manager.decode(assets_node);)
 	TRY(shader_manager.decode(assets_node);)
 	TRY(model_manager.decode(assets_node);)
-	// TRY(decodeEmitters(assets_node);)
 	TRY(emitter_manager.decode(assets_node);)
 	emitter_manager.init();
-	TRY(decodePrototypes(assets_node);)
-}catch(...){
-
-}
+	TRY(game_object_proto_manager.decode(assets_node);)
 #undef TRY
 }
 
@@ -117,7 +109,7 @@ void load_level(string filename)
 	rootGameObject = transform2(0)->gameObject();
 	for (auto &i : ComponentRegistry.meta_types)
 	{
-		initComponents(i.second->getStorage());
+		initComponents(i.second);
 	}
 	stoppingGame = false;
 }
@@ -143,7 +135,7 @@ void start_game() // assumes only renderer and terrain are started.
 
 												 for (auto &i : ComponentRegistry.meta_types)
 												 {
-													 StartComponents(i.second->getStorage());
+													 StartComponents(i.second);
 												 } }));
 	gameRunning = true;
 }
@@ -166,7 +158,7 @@ void stop_game()
 												 rootGameObject = transform2(0)->gameObject();
 												 for (auto &i : ComponentRegistry.meta_types)
 												 {
-													 initComponents(i.second->getStorage());
+													 initComponents(i.second);
 												 }
 
 												 // ImGui::LoadIniSettingsFromDisk("default.ini");
@@ -415,7 +407,7 @@ void saveFile()
 
 mutex transformLock;
 
-void editorLayer(GLFWwindow *window, editor *m_editor)
+void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 {
 
 	static double nextFPS = 0;
@@ -509,7 +501,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			{
 				renderAsset(p.second.get());
 			}
-			for (auto &gp : prototypeRegistry)
+			for (auto &gp : game_object_proto_manager.meta)
 			{
 				renderAsset(gp.second.get());
 			}
@@ -549,7 +541,8 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				ImGui::Separator();
 				if (ImGui::Selectable("new emitter"))
 				{
-					emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_manager.meta.size()));
+					emitter_manager._new();
+					// emitter_prototype_ a = createEmitter("emitter " + to_string(emitter_manager.meta.size()));
 				}
 				if (ImGui::Selectable("new shader"))
 				{
@@ -557,10 +550,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 				}
 				if (ImGui::Selectable("new prototype"))
 				{
-					auto gp = new game_object_proto_();
-					gp->id = assets::assetIdGenerator++;
-					prototypeRegistry.emplace(gp->id, gp);
-					// new game_object();
+					game_object_proto_manager._new();
 				}
 				ImGui::EndPopup();
 			}
@@ -725,7 +715,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor)
 			ImGui::Text(string{"fps: " + to_string(fps)}.c_str());
 			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
 			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
-			if (!isGameRunning() && ImGui::Button("play"))
+			if (!isGameRunning() && ImGui::Button("play") && !compiling)
 			{
 				start_game();
 			}
