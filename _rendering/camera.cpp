@@ -368,11 +368,11 @@ void renderParticles(camera &c)
 	// gt_.start();
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-	// glDepthMask(GL_FALSE);
-	// glEnable(GL_BLEND);
+	glDepthMask(GL_FALSE);
+	glEnable(GL_BLEND);
 	// glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// glBlendEquation(GL_FUNC_ADD);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendEquation(GL_FUNC_ADD);
 
 	particle_renderer::drawParticles(c.view, c.rot, c.proj, c.pos, c.farPlane, c.height, c.width);
 	// appendStat("render particles", gt_.stop());

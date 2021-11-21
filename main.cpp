@@ -257,7 +257,8 @@ int main(int argc, char **argv)
         try
         {
             rc.fw.getFileData(assets_node["scripts"]);
-            rc.initLoadedScripts();
+            // rc.initLoadedScripts();
+            rc.run("./test_project");
         }
         catch (YAML::Exception e)
         {
@@ -270,7 +271,6 @@ int main(int argc, char **argv)
 
     // Start monitoring a folder for changes and (in case of changes)
     // run a user provided lambda function
-    rc.run("./test_project");
     thread fileWatcherThread([&]()
                              {
                                  fw.start([&](std::string path_to_watch, FileStatus status) -> void

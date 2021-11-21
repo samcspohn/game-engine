@@ -3,10 +3,10 @@ components:
     value:
       vel:
         - 0
-        - 4.5369401e+24
-        - 4.30641205e+21
+        - 4.53694e+24
+        - 4.306412e+21
       exp:
-        id: 0
+        id: 44
       explosionSound:
         id: -1
       explosion_size: 1
@@ -36,4 +36,4 @@ components:
   - id: 8128736703838043503
     value:
       prototype:
-        id: 32
+        id: 49

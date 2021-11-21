@@ -9,6 +9,8 @@
 #include <thread>
 #include <set>
 #include <mutex>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 struct runtimeCompiler
 {
@@ -20,9 +22,16 @@ struct runtimeCompiler
     bool compilationComplete = false;
     bool compilationSuccess = false;
     vector<std::string> include;
+    std::string getCppName(std::string path)
+    {
+        return path.substr(path.find_last_of("/") + 1);
+    }
+    std::string getRuntimeSO(std::string _path){
+        return fw.path_to_watch + "/runtime/" + getCppName(_path) + ".so";
+    }
     void compileCpp(std::string &path_to_watch)
     {
-        std::string path = path_to_watch.substr(0, path_to_watch.find(".cpp"));
+        std::string path = fw.path_to_watch + "/runtime/" + getCppName(path_to_watch);
         compiling = true;
         string includes = "-I" + fw.path_to_watch + "/..";
         for (auto &i : include)
@@ -61,8 +70,6 @@ struct runtimeCompiler
                 dlclose(file_map.at(i.first));
             }
             void *handle;
-            void (*myfunc)(Registry *);
-            char *error;
             handle = dlopen(i.first.c_str(), RTLD_LAZY);
             if (!handle)
             {
@@ -76,7 +83,8 @@ struct runtimeCompiler
     runtimeCompiler()
     {
     }
-    bool getCompiling(){
+    bool getCompiling()
+    {
         return compiling;
     }
     bool getCompilationComplete()
@@ -103,20 +111,27 @@ struct runtimeCompiler
 
         for (auto &i : fw.paths_)
         {
-            if (i.first.find(".cpp") != -1)
+            if (i.first.find(".cpp") != -1  && i.first.find(".o") == -1 && i.first.find(".so") == -1)
             {
                 cpp_files.emplace(i.first);
+                if(!fs::exists(getRuntimeSO(i.first))){
+                    string s = i.first;
+                    compileCpp(s);
+                }
             }
-            if (i.first.find(".so") != -1)
+            if (i.first.find(".so") != -1 && fs::exists(i.first))
             {
                 file_map.emplace(i.first, (void *)0);
             }
         }
         for (auto &i : cpp_files)
         {
-            if (file_map.find(i) == file_map.end())
+            std::string so = fw.path_to_watch + "/runtime/" + getCppName(i) + ".so";
+            if (file_map.find(so) == file_map.end())
             {
-                //compile cpp
+                std::filesystem::file_time_type t;
+                fw.paths_.at(so) = t;
+                // compile cpp
             }
         }
         reloadModules();
@@ -129,12 +144,15 @@ struct runtimeCompiler
     void run(std::string s)
     {
         // fw = FileWatcher{s, std::chrono::milliseconds(500)};
+        system(("mkdir " + s + "/runtime").c_str());
         fw.delay = std::chrono::milliseconds(500);
         fw.path_to_watch = s;
+        // fw.ignore = {"runtime"};
+        fw.specialize = {".cpp", ".so", ".o"};
+        initLoadedScripts();
         t = new std::thread([&]()
-                            {
-                                fw.start([&](std::string path_to_watch, FileStatus status) -> void
-                                         {
+                            { fw.start([&](std::string path_to_watch, FileStatus status) -> void
+                                       {
                                              // Process only regular files, all other file types are ignored
                                              if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != FileStatus::erased)
                                              {
@@ -142,24 +160,22 @@ struct runtimeCompiler
                                              }
                                              auto handleFile = [&]()
                                              {
-                                                 if (path_to_watch.find(".cpp") != -1)
+                                                 if (path_to_watch.find(".cpp") != -1 && path_to_watch.find(".o") == -1 && path_to_watch.find(".so") == -1)
                                                      compileCpp(path_to_watch);
                                              };
                                              auto handleFileErased = [&]()
                                              {
                                                  int i;
-                                                 if (i = path_to_watch.find(".cpp") != -1)
+                                                 if (i = path_to_watch.find(".cpp") != -1 && path_to_watch.find(".o") == -1 && path_to_watch.find(".so") == -1)
                                                  {
-                                                     std::string o = path_to_watch.substr(0, i);
-                                                     std::string so = o + ".so";
-                                                     o += ".o";
+                                                    std::string path = path_to_watch.substr(0, path_to_watch.find(".cpp"));
+                                                    path = fw.path_to_watch + "/runtime/" + getCppName(path_to_watch);
+                                                     std::string o = path + ".o";
+                                                     std::string so = path + ".so";
                                                      system(("rm " + o).c_str());
                                                      system(("rm " + so).c_str());
-                                                 }
-                                                 if (path_to_watch.find(".so"))
-                                                 {
-                                                     dlclose(file_map.at(path_to_watch));
-                                                     file_map.erase(path_to_watch);
+                                                     dlclose(file_map.at(so));
+                                                     file_map.erase(so);
                                                  }
                                              };
 
@@ -179,9 +195,7 @@ struct runtimeCompiler
                                                  break;
                                              default:
                                                  std::cout << "Error! Unknown file status.\n";
-                                             };
-                                         });
-                            });
+                                             }; }); });
     }
     void stop()
     {

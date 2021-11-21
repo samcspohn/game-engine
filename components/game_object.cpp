@@ -417,8 +417,6 @@ bool YAML::convert<game_object_proto_>::decode(const Node &node, game_object_pro
 		YAML::Node component_node = components_node[i];
 		size_t hash = component_node["id"].as<size_t>();
 		YAML::Node component_val_node = component_node["value"];
-		// component *c = ComponentRegistry.registry(hash)->_decode(component_val_node);
-		// rhs.components.emplace(c, hash);
 
 		if (hash == typeid(placeholder).hash_code() && ComponentRegistry.registry(component_val_node["data"]["id"].as<size_t>()) != 0)
 		{

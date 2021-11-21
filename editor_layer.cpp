@@ -45,7 +45,7 @@ void DestroyComponents(componentStorageBase *cl)
 
 void saveAssets()
 {
-	YAML::Node assets_node;
+	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
 	assets_node["workingFile"] = working_file;
 	texture_manager.encode(assets_node);
 	shader_manager.encode(assets_node);
@@ -58,21 +58,15 @@ void saveAssets()
 void loadAssets()
 {
 #define TRY(x)try{x} catch(...){}
-
-try{
-
 	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
-	working_file = assets_node["workingFile"].as<string>();
-	assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();
+	TRY(working_file = assets_node["workingFile"].as<string>();)
+	TRY(assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();)
 	TRY(texture_manager.decode(assets_node);)
 	TRY(shader_manager.decode(assets_node);)
 	TRY(model_manager.decode(assets_node);)
 	TRY(emitter_manager.decode(assets_node);)
 	emitter_manager.init();
 	TRY(game_object_proto_manager.decode(assets_node);)
-}catch(...){
-
-}
 #undef TRY
 }
 
@@ -721,7 +715,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 			ImGui::Text(string{"fps: " + to_string(fps)}.c_str());
 			ImGui::Text(string{"entities: " + FormatWithCommas(Transforms.getCount())}.c_str());
 			ImGui::Text(string{"particles: " + FormatWithCommas(getParticleCount())}.c_str());
-			if (!isGameRunning() && !compiling && ImGui::Button("play"))
+			if (!isGameRunning() && ImGui::Button("play") && !compiling)
 			{
 				start_game();
 			}
