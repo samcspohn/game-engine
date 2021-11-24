@@ -355,6 +355,7 @@ int main(int argc, char **argv)
                                      ////////////////////////////////////////////////////
 
                                      // loadAssets();
+                                     saveAssets();
                                      YAML::Node assets_node = YAML::LoadFile("assets.yaml");
                                      game_object_proto_manager.decode(assets_node);
                                      game_object::decode(root_game_object_node, -1);

@@ -44,7 +44,7 @@ class _model : public assets::asset_instance<_modelMeta>
 public:
 	_model();
 	_model(string fileName);
-	~_model();
+	// ~_model();
 	void destroy();
 	vector<Mesh *> &meshes();
 	Mesh &mesh();

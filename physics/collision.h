@@ -2,7 +2,7 @@
 #include <glm/glm.hpp>
 #include "serialize.h"
 #include <vector>
-
+#include "_model.h"
 
 struct AABB
 {
@@ -55,11 +55,14 @@ struct MESH
 
 struct mesh
 {
+    // _model mod;
+    int mod;
     MESH *m;
     SER_HELPER()
     {
         ar &m;
     }
+    // constexpr mesh(const mesh&);
 };
 
 class rigidBody;
@@ -204,6 +207,7 @@ namespace YAML
         static Node encode(const mesh &rhs)
         {
             Node node;
+            ENCODE_PROTO(mod);
             // node["m"] = rhs.m;
             return node;
         }
@@ -211,6 +215,8 @@ namespace YAML
         static bool decode(const Node &node, mesh &rhs)
         {
             // rhs.m = node["m"].as<MESH*>();
+            rhs.mod = 0;
+            DECODE_PROTO(mod);
             return true;
         }
     };

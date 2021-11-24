@@ -74,7 +74,8 @@ struct runtimeCompiler
             if (!handle)
             {
                 fprintf(stderr, "%s\n", dlerror());
-                exit(1);
+                // exit(1);
+                std::cout << "failed to load" << i.first << std::endl;
             }
             file_map.at(i.first) = handle;
         }

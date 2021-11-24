@@ -46,7 +46,8 @@ bool colorArrayEdit(colorArray &a, bool *p_open)
 
     // gradientEditorDatas[&a].color_picker_open = 0;
     int i = 0;
-    for (auto key : a.keys)
+    auto tempKeys = a.keys;
+    for (auto key : tempKeys)
     {
 
         // add carat

@@ -125,9 +125,9 @@ _model::_model(){
 };
 
 set<int> toDestroy_models;
-_model::~_model()
-{
-}
+// _model::~_model()
+// {
+// }
 
 void _model::destroy()
 {

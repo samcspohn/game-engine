@@ -595,6 +595,8 @@ public:
     }
     void update()
     {
+        if(Input.Mouse.getButtonDown(1))
+            return;
         /////////////////////////////////////////////// turn turret
         vec3 targetPos = inverse(toMat3(transform->getRotation())) * (target->getPosition() - transform->getPosition());
         targetPos = normalize(vec3(targetPos.x, 0, targetPos.z));

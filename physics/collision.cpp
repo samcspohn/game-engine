@@ -30,6 +30,12 @@
 using namespace glm;
 using namespace std;
 
+// constexpr mesh::mesh(const mesh& rhs){
+//     this->m = rhs.m;
+//     this->mod = rhs.mod;
+// }
+
+
 AABB::AABB(glm::vec3 _c, glm::vec3 _r) : c(_c), r(_r){};
 AABB::AABB(){};
 bool AABB::fits(const AABB &a)

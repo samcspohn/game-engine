@@ -127,7 +127,7 @@ public:
 
 	void onDestroy();
 
-	void setMesh(Mesh *_m);
+	glm::vec3 setMesh(Mesh *_m);
 	void setPoint();
 	void setOBB();
 	// void update();
@@ -137,6 +137,8 @@ public:
 	void _lateUpdate();
 	void update_data();
 	void ser_edit(ser_mode x, YAML::Node &);
+	// collider();
+	// collider(const collider&);
 };
 
 struct treenode

@@ -49,7 +49,7 @@ void rigidBody::onEdit()
 	RENDER(bounciness);
 	RENDER(gravity);
 }
-//UPDATE(rigidBody, update);
+// UPDATE(rigidBody, update);
 
 void rigidBody::setVelocity(glm::vec3 _vel)
 {
@@ -58,15 +58,15 @@ void rigidBody::setVelocity(glm::vec3 _vel)
 		cout << "bad vel" << endl;
 		throw;
 	}
-	//lock.lock();
+	// lock.lock();
 	vel = _vel;
-	//lock.unlock();
+	// lock.unlock();
 }
 void rigidBody::accelerate(glm::vec3 acc)
 {
-	//lock.lock();
+	// lock.lock();
 	vel += acc;
-	//lock.unlock();
+	// lock.unlock();
 }
 glm::vec3 rigidBody::getVelocity()
 {
@@ -113,13 +113,15 @@ void kinematicBody::update()
 	velocity += gravity * Time.deltaTime;
 	transform.move(velocity * Time.deltaTime);
 }
-void kinematicBody::onCollision(collision& col)
+void kinematicBody::onCollision(collision &col)
 {
-	if(col.other_collider){
+	if (col.other_collider)
+	{
 		transform.move((col.this_collider->a.getCenter() - col.other_collider->a.getCenter()) / 4.f);
 		auto k = col.g_o->getComponent<kinematicBody>();
-		if(k != 0){
-			std::swap(k->velocity,this->velocity);
+		if (k != 0)
+		{
+			std::swap(k->velocity, this->velocity);
 		}
 		this->velocity *= 0.99f;
 		return;
@@ -349,6 +351,12 @@ float size(glm::vec3 a)
 	return a.x * a.y * a.z;
 }
 
+// collider::collider(){
+// 	setOBB();
+// }
+// collider::collider(const collider& rhs){
+
+// }
 bool collider::_registerEngineComponent()
 {
 	return true;
@@ -377,7 +385,7 @@ void collider::onDestroy()
 	this->valid = false;
 }
 using namespace physics_manager;
-void collider::setMesh(Mesh *_m)
+glm::vec3 collider::setMesh(Mesh *_m)
 {
 	// cd.type = 2;
 	this->type = meshType;
@@ -394,7 +402,19 @@ void collider::setMesh(Mesh *_m)
 		}
 		this->m.m = &meshes.at(_m);
 		this->m.m->references++;
+		glm::vec3 ret(0);
+		for (auto &v : _m->vertices)
+		{
+			if (ret.x < std::abs(v.x))
+				ret.x = std::abs(v.x);
+			if (ret.y < std::abs(v.y))
+				ret.y = std::abs(v.y);
+			if (ret.z < std::abs(v.z))
+				ret.z = std::abs(v.z);
+		}
+		return ret;
 	}
+	return glm::vec3(1);
 }
 void collider::setPoint()
 {
@@ -586,7 +606,7 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		case aabbType: // aabb
 			return true;
 			break;
-		case obbType: //aabb - obb
+		case obbType: // aabb - obb
 
 			break;
 		default:
@@ -634,7 +654,7 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		default:
 			break;
 		}
-	case pointType: //point
+	case pointType: // point
 		switch (b->type)
 		{
 		// case 0: // aabb
@@ -653,8 +673,10 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 	return false;
 }
 
-void collider::ser_edit(ser_mode x, YAML::Node &node)
+void collider::ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 {
+	YAML::Node &node = node_9738469372465;
+	SER(layer);
 	switch (x)
 	{
 	case ser_mode::edit_mode:
@@ -691,6 +713,25 @@ void collider::ser_edit(ser_mode x, YAML::Node &node)
 				}
 			ImGui::EndPopup();
 		}
+		switch (this->type)
+		{
+		case meshType:
+		{
+
+			_model mod;
+			mod.id = m.mod;
+			renderEdit("model", mod);
+			if (m.mod != mod.id)
+			{
+				m.mod = mod.id;
+				this->dim = setMesh(&mod.mesh());
+			}
+			// ImGui::Text("mesh goes here");
+		}
+		break;
+		default:
+			break;
+		}
 		RENDER(dim);
 		break;
 	case ser_mode::read_mode:
@@ -700,6 +741,7 @@ void collider::ser_edit(ser_mode x, YAML::Node &node)
 		layer = node["layer"].as<int>();
 		r = node["r"].as<glm::vec3>();
 		dim = node["dim"].as<glm::vec3>();
+		// this->m.mod = 0;
 
 		switch (this->type)
 		{
@@ -712,9 +754,15 @@ void collider::ser_edit(ser_mode x, YAML::Node &node)
 			// (*_iar) >> this->o;
 			break;
 		case meshType:
+		{
+
 			m = node["m"].as<mesh>();
+			_model mod;
+			mod.id = m.mod;
+			setMesh(&mod.mesh());
 			// (*_iar) >> this->m;
-			break;
+		}
+		break;
 		case pointType:
 			p = node["p"].as<point>();
 			// (*_iar) >> this->p;
@@ -755,7 +803,6 @@ void collider::ser_edit(ser_mode x, YAML::Node &node)
 		break;
 	}
 }
-
 
 bool raycast(glm::vec3 p, glm::vec3 dir, glm::vec3 &result)
 {
