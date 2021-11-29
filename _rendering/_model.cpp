@@ -228,7 +228,10 @@ void _modelMeta::inspect()
 	// 	// do something
 	// }
 }
-
+void modelManager::load(string path){
+	_model m(path);
+	m.meta()->name = path.substr(path.find_last_of('/') + 1);
+}
 void _model::recalcBounds()
 {
 	model_manager.meta[id]->getBounds();

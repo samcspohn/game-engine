@@ -384,7 +384,7 @@ void renderEdit(const char *name, game_object_prototype &g)
 	}
 }
 
-// template<>
+// template<>6
 YAML::Node YAML::convert<game_object_proto_>::encode(const game_object_proto_ &rhs)
 {
 	Node node;

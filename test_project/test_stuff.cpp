@@ -452,7 +452,7 @@ public:
                 // go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
                 go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * g->dispersion) * g->speed;
             }
-            g->muzzelFlash.burst(transform->forward() * transform->getScale() * 5.3f + transform->getPosition(), transform->forward(), 20);
+            g->muzzelFlash.burst(transform->forward() * transform->getScale() * 3.f + transform->getPosition(), transform->forward(), 20);
             // }
             // numCubes.fetch_add((int)reload);
             // reload -= (int)reload;

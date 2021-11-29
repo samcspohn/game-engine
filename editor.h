@@ -43,9 +43,12 @@ namespace assets
             ar &id &name;
         }
     };
+    struct assetManagerBase{
+        virtual void load(string){};
+    };
 
     template <typename t> // must be asset
-    struct assetManager
+    struct assetManager : assetManagerBase
     {
         map<string, int> path;
         unordered_map<int, shared_ptr<t>> meta;

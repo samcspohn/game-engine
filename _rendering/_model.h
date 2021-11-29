@@ -22,7 +22,6 @@ struct _modelMeta : public assets::asset
 	glm::vec3 bounds;
 	float radius;
 	bool unique = false;
-
 	friend class _model;
 	SER_HELPER()
 	{
@@ -36,6 +35,7 @@ public:
 	void destroy();
 	void _new();
 	void init();
+	void load(string path);
 }; // namespace modelManager
 extern modelManager model_manager;
 

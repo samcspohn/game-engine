@@ -1,6 +1,7 @@
 #include "game_engine.h"
 #include "fileWatcher.h"
 #include "runtimeCompiler.h"
+#include "assetManager.h"
 
 using namespace std;
 
@@ -219,7 +220,8 @@ void printStats()
 
 int main(int argc, char **argv)
 {
-
+    assetManager asset_manager;
+    asset_manager.registerAssetManager({".obj"}, &model_manager);
     FileWatcher fw{"./test_project", std::chrono::milliseconds(500)};
     dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
     runtimeCompiler rc;
@@ -295,13 +297,14 @@ int main(int argc, char **argv)
                                               default:
                                                   std::cout << "Error! Unknown file status.\n";
                                               }
-                                              if (path_to_watch.find(".obj") != -1)
-                                              {
-                                                  _model m(path_to_watch);
-                                                  m.meta()->name = path_to_watch.substr(path_to_watch.find_last_of('/') + 1);
-                                              }
+                                            //   if (path_to_watch.find(".obj") != -1)
+                                            //   {
+                                            //       _model m(path_to_watch);
+                                            //       m.meta()->name = path_to_watch.substr(path_to_watch.find_last_of('/') + 1);
+                                            //   }
                                               if (path_to_watch != "assets.yaml")
                                               {
+                                                asset_manager.load(path_to_watch);
                                                   YAML::Node assets = YAML::LoadFile("assets.yaml");
                                                   assets["file_meta"] = fw.getFileData();
                                                   ofstream("assets.yaml") << assets;
@@ -350,12 +353,12 @@ int main(int argc, char **argv)
                                      rootGameObject->_destroy();
                                      Transforms.clear();
 
+                                     saveAssets();
                                      ////////////////////////////////////////////////////
                                      rc.reloadModules();
                                      ////////////////////////////////////////////////////
 
                                      // loadAssets();
-                                     saveAssets();
                                      YAML::Node assets_node = YAML::LoadFile("assets.yaml");
                                      game_object_proto_manager.decode(assets_node);
                                      game_object::decode(root_game_object_node, -1);
