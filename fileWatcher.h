@@ -21,6 +21,7 @@ public:
     std::string path_to_watch;
     std::vector<std::string> ignore;
     std::vector<std::string> specialize;
+    bool pause = false;
     // Time interval at which we check the base folder for changes
     std::chrono::duration<int, std::milli> delay;
 
@@ -43,6 +44,8 @@ public:
         {
             // Wait for "delay" milliseconds
             std::this_thread::sleep_for(delay);
+            if(pause)
+                continue;
 
             auto it = paths_.begin();
             while (it != paths_.end())

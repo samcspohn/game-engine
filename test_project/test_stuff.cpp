@@ -311,9 +311,12 @@ public:
             normal = randomSphere();
         exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 15);
         transform->gameObject()->destroy();
-        // vel = glm::reflect(vel,col.normal);
-        // }
-        // numCubes.fetch_add(-1);
+        
+        // transform->setPosition(col.point + glm::vec3(0,0.5,0));
+        // transform->gameObject()->getComponent<collider>()->p.pos1 = transform->getPosition();
+        // if(vel.y < 0)
+        //     vel = glm::reflect(vel,col.normal);
+        
 
         // b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
         if (playSound)
@@ -406,20 +409,11 @@ class gun final : public component
     float lastFire;
 
 public:
-    // game_object_prototype ammo;
-    // float rof;
-    // float speed;
-    // float dispersion;
-    // float size = 1;
     int armory_id;
     void onStart()
     {
         lastFire = Time.time;
     }
-    // void setBarrels(vector<vec3> b)
-    // {
-    //     barrels = b;
-    // }
     bool isReloaded()
     {
         armory *gunid = COMPONENT_LIST(armory)->get(0);
@@ -451,8 +445,8 @@ public:
                 go->transform->setPosition(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j, 1)));
                 // go->getComponent<physicsObject>()->init((transform->forward() + randomSphere() * dispersion) * speed);
                 go->getComponent<missile>()->vel = (transform->forward() + randomSphere() * g->dispersion) * g->speed;
+                g->muzzelFlash.burst(transform->getPosition() + vec3(toMat4(transform->getRotation()) * scale(transform->getScale()) * vec4(j, 1)), transform->forward(), 10);
             }
-            g->muzzelFlash.burst(transform->forward() * transform->getScale() * 3.f + transform->getPosition(), transform->forward(), 20);
             // }
             // numCubes.fetch_add((int)reload);
             // reload -= (int)reload;

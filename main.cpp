@@ -87,11 +87,13 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
 
     if (isGameRunning())
     {
+        rc.fw.pause = true;
         prepCameras();
         renderCameras();
     }
     else
     {
+        rc.fw.pause = false;
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
         ed->c.width = float(w);
@@ -323,10 +325,6 @@ int main(int argc, char **argv)
     ed->c.width = 1920;
     ed->c.height = 1080;
     ed->position = glm::vec3(0, 0, -10);
-    // player::m_editor = ed;
-
-    // toDestroyGameObjects.reserve(10'000);
-
     int frameCount{0};
     while (!glfwWindowShouldClose(window))
     {
