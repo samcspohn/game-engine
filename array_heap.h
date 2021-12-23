@@ -18,11 +18,6 @@ class deque_heap
 	mutex m;
 
 public:
-	SER_HELPER()
-	{
-		ar &avail &valid &data;
-	}
-
 	t &get(int i)
 	{
 		return data[i];
@@ -104,11 +99,6 @@ class array_heap
 	mutex m;
 
 public:
-	SER_HELPER()
-	{
-		ar &avail &valid &data;
-	}
-
 	t &get(int i)
 	{
 		return data[i];

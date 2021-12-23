@@ -108,9 +108,6 @@ void emitter_prototype_::burst(glm::vec3 pos, glm::vec3 dir, glm::vec3 scale, ui
     particle_bursts.push_back(b);
     burstLock.unlock();
 }
-
-REGISTER_ASSET(emitter_proto_asset);
-
 emitter_prototype_ createEmitter(string name)
 {
     shared_ptr<emitter_proto_asset> ep = make_shared<emitter_proto_asset>();

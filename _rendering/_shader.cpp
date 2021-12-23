@@ -27,8 +27,6 @@ _shaderMeta::~_shaderMeta()
 {
 	// delete shader.get();
 }
-REGISTER_ASSET(_shaderMeta);
-
 void shaderManager::_new()
 {
 	auto sm = make_shared<_shaderMeta>();

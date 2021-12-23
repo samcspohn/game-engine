@@ -177,7 +177,6 @@ class game_object : public inspectable
 	friend void rebuildGameObject(componentStorageBase *, int);
 	friend void save_level(string);
 	friend void load_level(string);
-	friend void loadTransforms(IARCHIVE &ia);
 	friend int main(int argc, char **argv);
 	friend class inspectorWindow;
 	friend class particle_emitter;
@@ -187,11 +186,6 @@ class game_object : public inspectable
 	}
 
 public:
-	// ~game_object() { destroyed = false; };
-
-	static void serialize(OARCHIVE &ar, game_object *g);
-	static void deserialize(IARCHIVE &ar, map<int, int> &transform_map);
-
 	static void encode(YAML::Node &node, game_object *g);
 	static void decode(YAML::Node &node, int, list<function<void()>> * = 0);
 

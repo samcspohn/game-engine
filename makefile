@@ -12,9 +12,11 @@ getDeps:
 	pacman -S --noconfirm cmake
 	pacman -S --noconfirm openal
 	pacman -S --noconfirm freealut
-	pacman -S --noconfirm boost
+	# pacman -S --noconfirm boost
 	pacman -S --noconfirm libxxf86dga
 	# pacman -S --noconfirm clang
+	pacman -S --noconfirm tbb
+	pacman -S --noconfirm yaml-cpp
 
 getDebDeps:
 	apt-get install libglfw3-dev -y

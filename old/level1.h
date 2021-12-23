@@ -83,12 +83,6 @@ public:
 		// }
 	}
 	COPY(missile);
-	// SER5(vel, exp, explosionSound, explosion_size, playSound);
-	SER_HELPER()
-	{
-		SER_BASE(component);
-		ar &vel &exp &explosionSound &explosion_size &playSound;
-	}
 };
 REGISTER_COMPONENT(missile)
 
@@ -379,11 +373,6 @@ public:
 	}
 	//UPDATE(_turret,update);
 	COPY(_turret);
-	SER_HELPER()
-	{
-		SER_BASE(component);
-		ar &target &gun_speed &turret_speed &muzzelFlash &guns &t_angles &g_angles &turret_angle &guns_angle; // & forward & under;
-	}
 };
 REGISTER_COMPONENT(_turret)
 

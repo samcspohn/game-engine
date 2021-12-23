@@ -22,10 +22,6 @@ private:
 	mutex m;
 
 public:
-	SER_HELPER()
-	{
-		ar &data &iterators;
-	}
 	vector<t> data;
 
 	struct _itr
@@ -72,20 +68,13 @@ public:
 		int index;
 		fast_list *fl;
 		unsigned int it;
-		SER_HELPER()
-		{
-			ar &fl &index &it;
-		}
+
 	};
 	vector<unique_ptr<_itr>> iterators;
 
 	struct iterator
 	{
 	public:
-		SER_HELPER()
-		{
-			ar &itr;
-		}
 		bool isNull()
 		{
 			return itr == nullptr;

@@ -17,10 +17,6 @@ struct AABB2
 {
     glm::vec3 min;
     glm::vec3 max;
-    SER_HELPER()
-    {
-        ar &min &max;
-    }
     AABB2(glm::vec3 _min, glm::vec3 _max);
     AABB2();
     AABB2(float x);
@@ -36,10 +32,7 @@ struct OBB
     // glm::vec3 u[3]; // Local x-, y-, and z-axes
     glm::quat u;
     glm::vec3 e; // Positive halfwidth extents of OBB along each axis
-    SER_HELPER()
-    {
-        ar &c &u &e;
-    }
+
 };
 
 struct MESH
@@ -47,10 +40,6 @@ struct MESH
     std::vector<glm::vec3> points;
     std::vector<uint> tris;
     int32_t references;
-    SER_HELPER()
-    {
-        ar &points &tris;
-    }
 };
 
 struct mesh
@@ -58,10 +47,6 @@ struct mesh
     // _model mod;
     int mod;
     MESH *m;
-    SER_HELPER()
-    {
-        ar &m;
-    }
     // constexpr mesh(const mesh&);
 };
 
@@ -73,10 +58,6 @@ struct point
 {
     glm::vec3 pos1;
     glm::vec3 pos2;
-    SER_HELPER()
-    {
-        ar &pos1 &pos2;
-    }
 };
 
 struct octDat

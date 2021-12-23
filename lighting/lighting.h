@@ -25,10 +25,6 @@ public:
     float outerCutOff = -1;
 
     void setRadius();
-    SER_HELPER()
-    {
-        ar &color &constant &linear &quadratic &transfromId &radius &cutOff &outerCutOff;
-    }
 };
 
 namespace lightingManager
@@ -79,10 +75,20 @@ public:
             pl->setRadius();
             break;
         case ser_mode::read_mode:
-            (*_iar) >> *pl;
+            pl->color = node_9738469372465["color"].as<decltype(pl->color)>();
+            pl->constant = node_9738469372465["constant"].as<decltype(pl->constant)>();
+            pl->linear = node_9738469372465["linear"].as<decltype(pl->linear)>();
+            pl->quadratic = node_9738469372465["quadratic"].as<decltype(pl->quadratic)>();
+            pl->cutOff = node_9738469372465["cut off"].as<decltype(pl->cutOff)>();
+            pl->outerCutOff = node_9738469372465["outer cut off"].as<decltype(pl->outerCutOff)>();
             break;
         case ser_mode::write_mode:
-            (*_oar) << *pl;
+            node_9738469372465["color"] = pl->color;
+            node_9738469372465["constant"] = pl->constant;
+            node_9738469372465["linear"] = pl->linear;
+            node_9738469372465["quadratic"] = pl->quadratic;
+            node_9738469372465["cut off"] = pl->cutOff;
+            node_9738469372465["outer cut off"] = pl->outerCutOff;
             break;
         default:
             cout << "no mode provided";

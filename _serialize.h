@@ -3,8 +3,6 @@
 #include "serialize.h"
 #include "editor.h"
 
-extern IARCHIVE *_iar;
-extern OARCHIVE *_oar;
 enum ser_mode
 {
     edit_mode,

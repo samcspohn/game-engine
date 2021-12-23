@@ -129,11 +129,6 @@ public:
     void copy();
     string type();
     void inspect();
-    SER_HELPER()
-    {
-        SER_BASE_ASSET
-        ar &ref &gradient;
-    }
     emitter_proto_asset();
     emitter_proto_asset(const emitter_proto_asset &e) = default;
 };

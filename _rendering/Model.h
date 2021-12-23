@@ -43,9 +43,6 @@ public:
 	int numVerts=0;
     vector<Mesh*> meshes;
     void loadModel();
-    SER_HELPER(){
-        ar & modelPath;
-    }
 private:
   
     string directory;

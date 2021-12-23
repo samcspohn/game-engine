@@ -21,11 +21,6 @@ struct _shaderMeta : public assets::asset
 	string type();
 	shared_ptr<Shader> shader = 0;
 	friend struct _shader;
-	SER_HELPER()
-	{
-		SER_BASE_ASSET
-		ar &shader;
-	}
 };
 
 class shaderManager : public assets::assetManager<_shaderMeta>

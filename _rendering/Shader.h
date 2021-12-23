@@ -178,11 +178,6 @@ public:
 	GLenum primitiveType = GL_TRIANGLES;
 	unordered_map<std::string, GLuint> vars;
 
-	SER_HELPER()
-	{
-		ar &_shaders &primitiveType;
-	}
-
 	GLuint getVar(const string &name)
 	{
 		auto var = vars.find(name);

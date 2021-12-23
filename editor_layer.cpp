@@ -102,9 +102,6 @@ void load_level(string filename)
 		working_file = filename;
 		YAML::Node root_game_object_node = YAML::LoadFile(filename);
 		game_object::decode(root_game_object_node, -1);
-		// IARCHIVE ia(ifs);
-		// map<int, int> transform_map;
-		// game_object::deserialize(ia, transform_map);
 	}
 	rootGameObject = transform2(0)->gameObject();
 	for (auto &i : ComponentRegistry.meta_types)

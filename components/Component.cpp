@@ -9,6 +9,7 @@ bool component::_registerEngineComponent() { return false; };
 void component::onCollision(collision& c){};
 void component::update(){};
 void component::lateUpdate(){};
+void component::editorUpdate(){};
 int component::getThreadID()
 {
 	// return 0;

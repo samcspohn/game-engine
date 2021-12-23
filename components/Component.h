@@ -56,29 +56,19 @@ public:
 	virtual void lateUpdate();
 	virtual void init(int id);
 	virtual void deinit(int id);
-
-	// virtual void onEdit() = 0;
-	// template<class Archive>
+	virtual void editorUpdate();
 	virtual void ser_edit(ser_mode x, YAML::Node &n) = 0;
-	// virtual void ser_edit(ser_mode x) = 0;
 	transform2 transform;
 	int getThreadID();
 	size_t getHash();
-
-	SER_HELPER()
-	{
-		ar;
-		// ar &transform;
-	}
 };
-REGISTER_BASE(component)
-
 class componentStorageBase
 {
 public:
 	size_t hash;
 	bool h_update;
 	bool h_lateUpdate;
+	bool h_editorUpdate;
 	timer update_timer;
 	float update_t;
 	float lateupdate_t;
@@ -87,8 +77,10 @@ public:
 	virtual string getName() { return "component"; }
 	bool hasUpdate() { return h_update; }
 	bool hasLateUpdate() { return h_lateUpdate; }
+	bool hasEditorUpdate() { return h_editorUpdate; }
 	virtual void update(){};
 	virtual void lateUpdate(){};
+	virtual void editorUpdate(){};
 	virtual component *get(int i) { return 0; }
 	virtual bool getv(int i) { return false; }
 	virtual void erase(int i) {}
@@ -205,6 +197,17 @@ public:
 		}
 		_lateupdate_t.add(update_timer.stop());
 	}
+	void editorUpdate()
+	{
+		int size = data.size();
+		for (int i = 0; i < size; i++)
+		{
+			if (data.getv(i))
+			{
+				data.get(i).editorUpdate();
+			}
+		}
+	}
 	void clear()
 	{
 		data.clear();
@@ -218,7 +221,7 @@ public:
 
 	int copy(component *c)
 	{
-		return data._new(*static_cast<t*>(c));
+		return data._new(*static_cast<t *>(c));
 	}
 	void encode(YAML::Node &node, int i)
 	{
@@ -265,28 +268,28 @@ public:
 		}
 	}
 	void registerComponentStorage(componentStorageBase *p)
-    {
-        // p->name = _name;
-        meta.emplace(p->name, p);
-		meta_types.emplace(p->hash,p);
-    }
-    void deregisterComponentStorage(componentStorageBase *p){
-        meta.erase(p->name);
+	{
+		// p->name = _name;
+		meta.emplace(p->name, p);
+		meta_types.emplace(p->hash, p);
+	}
+	void deregisterComponentStorage(componentStorageBase *p)
+	{
+		meta.erase(p->name);
 		meta_types.erase(p->hash);
-    }
+	}
 	template <typename t>
 	inline componentStorage<t> *registry()
 	{
-		return static_cast<componentStorage<t>*>(meta_types.at(typeid(t).hash_code()));
+		return static_cast<componentStorage<t> *>(meta_types.at(typeid(t).hash_code()));
 	}
 	inline componentStorageBase *registry(size_t hash)
 	{
 		std::map<size_t, componentStorageBase *>::iterator i;
-		if((i = meta_types.find(hash)) != meta_types.end())
+		if ((i = meta_types.find(hash)) != meta_types.end())
 			return i->second;
 		return 0;
 	}
-
 };
 extern Registry ComponentRegistry;
 
@@ -315,8 +318,6 @@ void destroyAllComponents();
 
 #define REGISTER_COMPONENT(comp) componentStorage<comp> component_storage_##comp(#comp);
 
-
-
 // template <typename t>
 // componentMeta<t> *registerComponent()
 // {
@@ -344,6 +345,7 @@ componentStorage<t>::componentStorage(const char *_name)
 	this->hash = typeid(t).hash_code();
 	this->h_update = typeid(&t::update) != typeid(&component::update);
 	this->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
+	this->h_editorUpdate = typeid(&t::editorUpdate) != typeid(&component::editorUpdate);
 	std::cout << "register component " << name << std::endl;
 	ComponentRegistry.registerComponentStorage(this);
 }

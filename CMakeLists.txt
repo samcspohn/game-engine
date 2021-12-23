@@ -21,7 +21,16 @@ file(GLOB SOURCES "*.cpp"
     "particles/*.cpp")
  
 add_executable(game ${SOURCES})
-
+add_library(game_engine SHARED ${SOURCES})
+set_target_properties(game_engine PROPERTIES
+    VERSION 1
+    SOVERSION 1
+    PUBLIC_HEADER game_engine.h)
+target_include_directories(game_engine PUBLIC
+    ${CMAKE_SOURCE_DIR}
+ #    ${CMAKE_SOURCE_DIR}/bullet/src
+    ${CMAKE_SOURCE_DIR}/imgui
+    )
 
 set_target_properties(game PROPERTIES ENABLE_EXPORTS 1)
 target_link_libraries(game GL GLU GLEW glfw X11 Xxf86dga Xrandr pthread Xi SOIL assimp alut openal tbb boost_serialization yaml-cpp dl)
@@ -47,6 +56,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 option(BUILD_DEBUG "build un-optimized with debugger info" ON)
 if(BUILD_DEBUG)
     target_compile_options(game PUBLIC -fpermissive  -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type)
+    target_compile_options(game_engine PUBLIC -fpermissive  -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type)
 else()
     target_compile_options(game PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -fno-inline -fno-omit-frame-pointer -Werror=return-type)
+    target_compile_options(game_engine PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -fno-inline -fno-omit-frame-pointer -Werror=return-type)
 endif()

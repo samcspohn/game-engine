@@ -93,15 +93,6 @@ private:
 	friend void destroyRoot(transform2 *t);
 
 	void orphan();
-
-	// friend OARCHIVE  & operator<<(OARCHIVE  &os, const transform2 &t);
-	friend class boost::serialization::access;
-
-	template <class Archive>
-	void serialize(Archive &ar, const unsigned int /* file_version */)
-	{
-		ar &id;
-	}
 };
 // OARCHIVE & operator<<(OARCHIVE  &os, const transform2 &t){
 // 	return os << t.id;
@@ -112,7 +103,6 @@ struct trans_update
 	bool pos = true;
 	bool rot = true;
 	bool scl = true;
-	SER_HELPER(){	}
 };
 
 struct transform_meta
@@ -124,9 +114,6 @@ struct transform_meta
 	string name;
 	// tbb::spin_mutex m;
 	mutex m;
-	SER_HELPER(){
-		ar & parent & name;
-	}
 };
 
 struct my_spin_lock {
@@ -273,9 +260,6 @@ struct _Transforms
 		return meta.size() - avail.size();
 	}
 	friend void loadTransforms();
-	SER_HELPER(){
-		ar & positions & rotations & scales & meta & updates & avail;
-	}
 };
 
 void newGameObject(transform2 t);

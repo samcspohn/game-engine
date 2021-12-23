@@ -72,8 +72,6 @@ string _modelMeta::type()
 {
 	return "MODEL_DRAG_AND_DROP";
 }
-REGISTER_ASSET(_modelMeta);
-
 
 	void modelManager::destroy()
 	{

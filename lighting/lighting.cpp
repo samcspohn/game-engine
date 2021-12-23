@@ -22,11 +22,6 @@ void pointLight::setRadius()
     radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * lightMax))) / (2 * quadratic);
     // radius2 *= radius2;
 }
-//     SER_HELPER()
-//     {
-//         ar &color &constant &linear &quadratic &transfromId &radius &cutOff &outerCutOff;
-//     }
-// };
 
 namespace lightingManager
 {

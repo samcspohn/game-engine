@@ -5,8 +5,6 @@
 
 using namespace std;
 
-// mutex toDestroym;
-// std::deque<transform2> toDestroy;
 
 REGISTER_COMPONENT(_renderer);
 REGISTER_COMPONENT(_camera);
@@ -249,8 +247,7 @@ int main(int argc, char **argv)
                          initLineRenderer();
                          ImGui::LoadIniSettingsFromDisk("default.ini");
                          model_manager.init();
-                         shader_manager.init();
-                     });
+                         shader_manager.init(); });
     initParticles2();
     particle_renderer::init2();
 
@@ -276,9 +273,8 @@ int main(int argc, char **argv)
     // Start monitoring a folder for changes and (in case of changes)
     // run a user provided lambda function
     thread fileWatcherThread([&]()
-                             {
-                                 fw.start([&](std::string path_to_watch, FileStatus status) -> void
-                                          {
+                             { fw.start([&](std::string path_to_watch, FileStatus status) -> void
+                                        {
                                               // Process only regular files, all other file types are ignored
                                               if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != FileStatus::erased)
                                               {
@@ -310,9 +306,7 @@ int main(int argc, char **argv)
                                                   YAML::Node assets = YAML::LoadFile("assets.yaml");
                                                   assets["file_meta"] = fw.getFileData();
                                                   ofstream("assets.yaml") << assets;
-                                              }
-                                          });
-                             });
+                                              } }); });
 
     // rootGameObject->_addComponent<player>();
 
@@ -365,8 +359,7 @@ int main(int argc, char **argv)
                                      for (auto &i : ComponentRegistry.meta_types)
                                      {
                                          initComponents(i.second);
-                                     }
-                                 })
+                                     } })
             }
         }
 
@@ -383,6 +376,18 @@ int main(int argc, char **argv)
                 {
                     logger("physics");
                     physicsUpdate(Time.time);
+                }
+            }
+            else
+            {
+                // EDITOR UPDATE
+                for (auto &i : ComponentRegistry.meta_types)
+                {
+                    componentStorageBase *cb = i.second;
+                    if (cb->hasEditorUpdate())
+                    {
+                        cb->editorUpdate();
+                    }
                 }
             }
             parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
@@ -404,8 +409,7 @@ int main(int argc, char **argv)
                                      emitterInits.push_back(i.second);
                                  emitter_inits.clear();
                                  swapBurstBuffer();
-                                 updateTiming();
-                             });
+                                 updateTiming(); });
         }
         if (isGameRunning())
         {
@@ -457,8 +461,7 @@ int main(int argc, char **argv)
                          ImGui::DestroyContext();
 
                          glFlush();
-                         glfwTerminate();
-                     });
+                         glfwTerminate(); });
 
     while (shaders.size() > 0)
     {

@@ -57,7 +57,6 @@ string _modelMeta::type()
 {
 	return "MODEL_DRAG_AND_DROP";
 }
-REGISTER_ASSET(_modelMeta);
 
 namespace modelManager
 {
@@ -71,21 +70,6 @@ namespace modelManager
 			delete models.begin()->second;
 			models.erase(models.begin());
 		}
-	}
-
-	void save(OARCHIVE &oa)
-	{
-		oa << models << models_id;
-	}
-	void load(IARCHIVE &ia)
-	{
-		ia >> models >> models_id;
-		waitForRenderJob([&]() {
-			for (auto &m : models)
-			{
-				m.second->model->loadModel();
-			}
-		});
 	}
 }; // namespace modelManager
 
@@ -177,7 +161,6 @@ _shaderMeta::~_shaderMeta()
 {
 	delete shader;
 }
-REGISTER_ASSET(_shaderMeta);
 
 namespace shaderManager
 {
@@ -191,20 +174,7 @@ namespace shaderManager
 			shaders.erase(shaders.begin());
 		}
 	}
-	void save(OARCHIVE &oa)
-	{
-		oa << shaders << shaders_ids;
-	}
-	void load(IARCHIVE &ia)
-	{
-		ia >> shaders >> shaders_ids;
-		waitForRenderJob([&]() {
-			for (auto &i : shaders)
-			{
-				i.second->shader->_Shader();
-			}
-		});
-	}
+	
 }; // namespace shaderManager
 
 _shader::_shader() {}

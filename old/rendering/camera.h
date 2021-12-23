@@ -91,10 +91,6 @@ struct camera{
 	glm::mat4 GetViewMatrix();
 	glm::mat4 getProjection();
 	glm::vec3 screenPosToRay(glm::vec2 mp);
-	// _frustum getFrustum();
-	SER_HELPER(){
-		ar &fov &nearPlane &farPlane;
-	}
 };
 
 class _camera : public component

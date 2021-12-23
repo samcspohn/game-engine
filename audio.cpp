@@ -66,7 +66,6 @@ bool audioMeta::onEdit()
     return false;
 }
 
-REGISTER_ASSET(audioMeta);
 
 // Position of the Listener.
 glm::vec3 ListenerPos;

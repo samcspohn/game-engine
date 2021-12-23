@@ -23,11 +23,6 @@ struct _modelMeta : public assets::asset
 	float radius;
 	bool unique = false;
 	friend class _model;
-	SER_HELPER()
-	{
-		SER_BASE_ASSET
-		ar &name &model &bounds &radius &unique;
-	}
 };
 struct modelManager : public assets::assetManager<_modelMeta>
 {

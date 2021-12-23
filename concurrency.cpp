@@ -2,13 +2,14 @@
 #include "concurrency.h"
 #include <iostream>
 #include <sched.h>
-#include <tbb/task_scheduler_init.h>
+// #include <tbb/task_scheduler_init.h>
+#include <tbb/tbb.h>
 namespace concurrency {
 
 	// int numThreads = 8;
 	int numThreads = std::thread::hardware_concurrency();
 	// int numThreads = 1;
-	tbb::task_scheduler_init tbbinit(numThreads);
+	tbb::task_arena tbbinit(numThreads);
 	// threadpool _parallelfor(numThreads);
 	// pinning_observer pinningObserver(1);
 

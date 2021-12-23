@@ -3,8 +3,8 @@ components:
     value:
       vel:
         - 0
-        - 4.53694e+24
-        - 4.306412e+21
+        - 4.5369401e+24
+        - 4.30641205e+21
       exp:
         id: 44
       explosionSound:

@@ -30,10 +30,6 @@ struct audioMeta : public assets::asset
     audioMeta(string _file);
     ~audioMeta();
     bool onEdit();
-    SER_HELPER()
-    {
-        SER_BASE_ASSET
-    }
 };
 class audioManager : public assets::assetManager<audioMeta>
 {
@@ -53,10 +49,6 @@ struct audio : public assets::asset_instance<audioMeta>
     audio(string file);
     void play(glm::vec3 pos, float pitch, float gain);
     int a = -1;
-    SER_HELPER()
-    {
-        ar &a;
-    }
 };
 
 void renderEdit(const char *name, audio &a);
@@ -116,11 +108,6 @@ public:
         SER(a)
     }
 };
-// BOOST_CLASS_EXPORT(componentStorage<audiosource>)
-// REGISTER_COMPONENT(audiosource)
-
-// void audio::play(glm::vec3 pos, float pitch, float gain);
-
 namespace YAML
 {
 

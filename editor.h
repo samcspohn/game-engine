@@ -19,10 +19,6 @@ class inspectable
 {
 public:
     virtual void inspect(){};
-    SER_HELPER()
-    {
-        ar;
-    }
 };
 
 namespace assets
@@ -37,11 +33,6 @@ namespace assets
         virtual void copy();
         virtual bool onEdit() = 0;
         // virtual void load() = 0;
-        SER_HELPER()
-        {
-            SER_BASE(inspectable)
-            ar &id &name;
-        }
     };
     struct assetManagerBase{
         virtual void load(string){};
@@ -91,8 +82,6 @@ namespace assets
     // extern map<int, asset*> assets;
     // void registerAsset(asset*);
     extern int assetIdGenerator;
-    void save(OARCHIVE &oa);
-    void load(IARCHIVE &ia);
 }
 
 template<typename t>

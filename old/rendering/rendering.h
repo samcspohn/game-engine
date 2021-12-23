@@ -64,11 +64,6 @@ struct _modelMeta : public assets::asset
 	void inspect();
 	bool unique = false;
 	friend class _model;
-	SER_HELPER()
-	{
-		SER_BASE_ASSET
-		ar &name &model &bounds &radius &unique;
-	}
 };
 namespace modelManager
 {
@@ -94,10 +89,6 @@ public:
 	_modelMeta *meta() const;
 	// _modelMeta* m = 0;
 	int m = 0;
-	SER_HELPER()
-	{
-		ar &m;
-	}
 };
 
 //shader data
@@ -115,11 +106,6 @@ struct _shaderMeta : public assets::asset
 	string type();
 	Shader *shader = 0;
 	friend struct _shader;
-	SER_HELPER()
-	{
-		SER_BASE_ASSET
-		ar &shader;
-	}
 };
 
 namespace shaderManager
@@ -145,10 +131,6 @@ public:
 	Shader &ref();
 	Shader *operator->();
 	_shaderMeta *meta() const;
-	SER_HELPER()
-	{
-		ar &s;
-	}
 };
 
 extern int renderingId;

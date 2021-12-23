@@ -378,6 +378,9 @@ void terrain::update()
                     genHeight(x, z);
                 });
 }
+void terrain::editorUpdate(){
+    this->update();
+}
 
 void terrain::deinit()
 {
@@ -516,5 +519,4 @@ void genOctree(chunk &c, vector<glm::vec3> &verts)
 {
     insertAABB(c.quadtree, verts, 10.f, range(0, terrainSize - 1, 0, terrainSize - 1));
 }
-
 REGISTER_COMPONENT(terrain);

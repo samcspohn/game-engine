@@ -54,6 +54,7 @@ public:
     glm::vec3 makeVert(float x, float z);
     void onStart();
     void update();
+    void editorUpdate();
     void genHeight(int x, int z);
     static terrainHit getHeight(float x, float z);
     void init(int i);

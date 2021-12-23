@@ -20,22 +20,7 @@ namespace assets
     void asset::copy()
     {
     }
-    // map<int, asset *> assets;
-    // void registerAsset(asset *ass)
-    // {
-    //     assets[ass->id] = ass;
-    // }
-    void save(OARCHIVE &oa)
-    {
-        oa << assetIdGenerator;
-    }
-    void load(IARCHIVE &ia)
-    {
-        ia >> assetIdGenerator;
-    }
 } // namespace assets
-REGISTER_BASE(inspectable);
-REGISTER_BASE(assets::asset)
 
 void renderEdit(const char *name, bool &b)
 {

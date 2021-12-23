@@ -5,16 +5,33 @@ void placeholder::ser_edit(ser_mode x, YAML::Node &n)
 	switch (x)
 	{
 	case ser_mode::edit_mode:
+	{
+
 		ImGui::Text("place holder");
-		/* code */
-		break;
+		if(ImGui::Button("replace"))
+			ImGui::OpenPopup("replace_component_context");
+		if (ImGui::BeginPopup("replace_component_context"))
+		{
+			for (auto &i : ComponentRegistry.meta)
+			{
+				if (ImGui::Selectable(i.first.c_str()))
+				{
+					i.second->addComponent(this->transform->gameObject());
+				}
+			}
+			ImGui::EndPopup();
+		}
+		stringstream ss;
+		ss << this->data;
+		// ImGui::Text("place holder 2");
+		ImGui::Text(ss.str().c_str());
+	}
+	break;
 	case ser_mode::read_mode:
 		this->data = n["data"].as<YAML::Node>();
-		/* code */
 		break;
 	case ser_mode::write_mode:
 		n["data"] = this->data;
-		/* code */
 		break;
 
 	default:
@@ -129,27 +146,31 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 									  {
 										  for (int i = 0; i < components_node.size(); i++)
 										  {
-											YAML::Node component_node = components_node[i];
-											size_t hash = component_node["id"].as<size_t>();
-											YAML::Node component_val_node = component_node["value"];
+											  YAML::Node component_node = components_node[i];
+											  size_t hash = component_node["id"].as<size_t>();
+											  YAML::Node component_val_node = component_node["value"];
 
-											if(hash == typeid(placeholder).hash_code() && ComponentRegistry.registry(component_val_node["data"]["id"].as<size_t>()) != 0){
-												hash = component_val_node["data"]["id"].as<size_t>();
-												component_val_node = component_val_node["data"]["value"];
-											} // if registry does not contain component placeholder is referencing then placeholder is de-serialized
+											  if (hash == typeid(placeholder).hash_code() && ComponentRegistry.registry(component_val_node["data"]["id"].as<size_t>()) != 0)
+											  {
+												  hash = component_val_node["data"]["id"].as<size_t>();
+												  component_val_node = component_val_node["data"]["value"];
+											  } // if registry does not contain component placeholder is referencing then placeholder is de-serialized
 
-											if(ComponentRegistry.registry(hash)){
+											  if (ComponentRegistry.registry(hash))
+											  {
 
-												int id = ComponentRegistry.registry(hash)->decode(component_val_node);
-												g->components.emplace(hash, id);
-												_getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
-											}else{
-												//   int id = ComponentRegistry.registry(typeid(placeholder).hash_code());
-												placeholder* p = g->_addComponent<placeholder>();
-												p->data = component_node;
-
-											}
-										  } });
+												  int id = ComponentRegistry.registry(hash)->decode(component_val_node);
+												  g->components.emplace(hash, id);
+												  _getComponent(pair<size_t, int>(hash, id))->transform = g->transform;
+											  }
+											  else
+											  {
+												  //   int id = ComponentRegistry.registry(typeid(placeholder).hash_code());
+												  placeholder *p = g->_addComponent<placeholder>();
+												  p->data = component_node;
+											  }
+										  }
+									  });
 
 	YAML::Node transform_children = game_object_node["transform"]["children"];
 	for (int i = 0; i < transform_children.size(); i++)
@@ -177,7 +198,6 @@ void newGameObject(transform2 t)
 	// ref->transform = t;
 	t->setGameObject(ref);
 }
-REGISTER_ASSET(game_object_proto_);
 
 void rebuildGameObject(componentStorageBase *base, int i)
 {
