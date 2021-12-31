@@ -52,7 +52,7 @@ using namespace std;
 //     }
 // } // namespace textureManager
 
-textureManager texture_manager;
+textureManager texture_manager __attribute__ ((init_priority (2000)));;
 
 void _texture::load(string path)
 {

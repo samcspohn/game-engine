@@ -62,7 +62,7 @@ camera::camera()
 		// 	lv.vertices = lightVolumeModel.mesh().vertices;
 		// 	lv.setupMesh();
 		// }
-
+		
 		gBuffer.scr_width = this->width;
 		gBuffer.scr_height = this->height;
 		gBuffer.init();
@@ -382,7 +382,9 @@ void camera::render(GLFWwindow *window)
 {
 	if (!inited)
 		return;
-
+	// width = 1920;
+	// height = 1080;
+	glfwGetWindowSize(window, &width, &height);
 	ratio = width / (float)height;
 
 	glViewport(0, 0, width, height);

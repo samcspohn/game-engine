@@ -19,9 +19,12 @@ file(GLOB SOURCES "*.cpp"
     "lighting/*.cpp"
     # "test_project/*.cpp"
     "particles/*.cpp")
+
+file(GLOB SOURCES2 ${SOURCES} "builder/game.cpp")
+file(GLOB SOURCES ${SOURCES} "main/main.cpp")
  
 add_executable(game ${SOURCES})
-add_library(game_engine SHARED ${SOURCES})
+add_library(game_engine STATIC ${SOURCES2})
 set_target_properties(game_engine PROPERTIES
     VERSION 1
     SOVERSION 1

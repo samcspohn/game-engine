@@ -59,8 +59,8 @@ transform:
           value:
             guns:
               - ammo: 40
-                rof: 10
-                speed: 200
+                rof: 1
+                speed: 100
                 dispersion: 0.0599999987
                 size: 1
                 barrels:

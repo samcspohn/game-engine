@@ -134,4 +134,3 @@ void Light::onEdit()
 
 //     // SER1(pl);
 // };
-REGISTER_COMPONENT(Light)

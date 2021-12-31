@@ -82,4 +82,3 @@ void particle_emitter::deinit(int id)
 //             ImGui::Text(i.first.c_str());
 //     }
 // }
-REGISTER_COMPONENT(particle_emitter)

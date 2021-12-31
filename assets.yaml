@@ -1,4 +1,3 @@
-workingFile: /home/samuel/Documents/game-engine/shiptest3.yaml
 11TextureMeta:
   path:
     ./test_project/models/Spruce_obj/Spruce branches.png: 9
@@ -244,104 +243,105 @@ workingFile: /home/samuel/Documents/game-engine/shiptest3.yaml
       name: prototype_40.gop
 assetIdGenerator: 65
 file_meta:
-  - path: ./test_project/models/nanosuit/nanosuit.obj
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/helmet_diff.png
-    time: -4805553740631358000
-  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
-    time: -4805553740635358000
-  - path: ./test_project/models/ship1/ship.obj
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
-    time: -4805553740623358000
   - path: ./test_project/models/nanosuit/body_dif.png
-    time: -4805553740647359000
+    time: -4802157561569841064
   - path: ./test_project/models/Crate/Crate1.mtl
-    time: -4805553740655359000
+    time: -4802157561576507731
+  - path: ./test_project/models/ship1/ship.obj
+    time: -4802157561539841065
+  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
+    time: -4802157561553174399
   - path: ./test_project/models/nanosuit
-    time: -4805553740615358000
-  - path: ./test_project/models/ship1
-    time: -4805553740607358000
-  - path: ./test_project/models/ship1/3guns.mtl
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/nanosuit.mtl
-    time: -4805553740615358000
-  - path: ./test_project/models/Crate
-    time: -4805553740655359000
-  - path: ./test_project/models
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/body_showroom_spec.png
-    time: -4805553740639358000
-  - path: ./test_project/models/Spruce_obj/Spruce.mtl
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/leg_showroom_ddn.png
-    time: -4805553740623358000
-  - path: ./test_project/models/nanosuit/glass_dif.png
-    time: -4805553740639358000
-  - path: ./test_project/models/Crate/Crate1.blend
-    time: -4805553740655359000
-  - path: ./test_project/models/ship1/maingun.obj
-    time: -4805553740607358000
-  - path: ./test_project/models/Spruce_obj/Spruce branches.png
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/leg_dif.png
-    time: -4805553740623358000
-  - path: ./test_project/models/Spruce_obj
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
-    time: -4805553740631358000
-  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
-    time: -4805553740643358000
-  - path: ./test_project/models/Crate/Crate1.3ds
-    time: -4805553740663359000
-  - path: ./test_project/models/nanosuit/arm_dif.png
-    time: -4805553740651359000
-  - path: ./test_project/models/nanosuit/nanosuit.blend
-    time: -4805553740615358000
-  - path: ./test_project/models/nanosuit/LICENSE.txt
-    time: -4805553740655359000
+    time: -4802157561543174399
+  - path: ./test_project/models/nanosuit/nanosuit.obj
+    time: -4802157561539841065
+  - path: ./test_project/models/nanosuit/helmet_diff.png
+    time: -4802157561556507731
   - path: ./test_project/file.txt
-    time: -4805553740663359000
-  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
-    time: -4805553740631358000
-  - path: ./test_project/models/Crate/crate_1.jpg
-    time: -4805553740655359000
-  - path: ./test_project/models/ship1/3guns.obj
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/hand_dif.png
-    time: -4805553740639358000
-  - path: ./test_project/models/Spruce_obj/Spruce.obj
-    time: -4805553740655359000
-  - path: ./test_project/models/Crate/CrateImage1.JPG
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
-    time: -4805553740615358000
+    time: -4802157561583174397
+  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
+    time: -4802157561563174398
+  - path: ./test_project/models/ship1
+    time: -4802157561539841065
+  - path: ./test_project/models/ship1/3guns.mtl
+    time: -4802157561539841065
+  - path: ./test_project/models/Spruce_obj/Spruce.mtl
+    time: -4802157561576507731
   - path: ./test_project/models/Crate/CrateImage2.JPG
-    time: -4805553740655359000
+    time: -4802157561576507731
+  - path: ./test_project/models/nanosuit/body_showroom_spec.png
+    time: -4802157561563174398
+  - path: ./test_project/models/Crate
+    time: -4802157561576507731
+  - path: ./test_project/models
+    time: -4802157561539841065
+  - path: ./test_project/models/nanosuit/nanosuit.mtl
+    time: -4802157561543174399
+  - path: ./test_project/models/Crate/Crate1.blend
+    time: -4802157561576507731
+  - path: ./test_project/models/ship1/maingun.obj
+    time: -4802157561539841065
+  - path: ./test_project/models/Spruce_obj/Spruce branches.png
+    time: -4802157561576507731
+  - path: ./test_project/models/Spruce_obj
+    time: -4802157561576507731
+  - path: ./test_project/models/nanosuit/leg_dif.png
+    time: -4802157561549841065
+  - path: ./test_project/models/nanosuit/glass_dif.png
+    time: -4802157561563174398
+  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
+    time: -4802157561569841064
+  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
+    time: -4802157561556507731
+  - path: ./test_project/models/Crate/Crate1.3ds
+    time: -4802157561583174397
+  - path: ./test_project/models/nanosuit/arm_dif.png
+    time: -4802157561576507731
+  - path: ./test_project/models/nanosuit/LICENSE.txt
+    time: -4802157561576507731
+  - path: ./test_project/models/nanosuit/nanosuit.blend
+    time: -4802157561543174399
+  - path: ./test_project/models/nanosuit/leg_showroom_ddn.png
+    time: -4802157561549841065
+  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
+    time: -4802157561546507731
+  - path: ./test_project/models/nanosuit/hand_dif.png
+    time: -4802157561563174398
+  - path: ./test_project/models/ship1/3guns.obj
+    time: -4802157561539841065
+  - path: ./test_project/models/Crate/crate_1.jpg
+    time: -4802157561576507731
+  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
+    time: -4802157561556507731
   - path: ./test_project/models/ship1/ship.mtl
-    time: -4805553740607358000
-  - path: ./test_project/test_stuff.cpp
-    time: -4798772939470076000
+    time: -4802157561539841065
   - path: ./test_project/models/ship1/maingun.mtl
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/glass_ddn.png
-    time: -4805553740639358000
-  - path: ./test_project/runtime/test_stuff.cpp.so
-    time: -4797698946448874562
-  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
-    time: -4805553740651359000
-  - path: ./test_project/runtime
-    time: -4797698946565541228
-  - path: ./test_project/models/nanosuit/arm_showroom_spec.png
-    time: -4805553740647359000
-  - path: ./test_project/models/Spruce_obj/Spruce trunk.jpeg
-    time: -4805553740655359000
-  - path: ./test_project/runtime/test_stuff.cpp.o
-    time: -4797698946598874562
-scripts:
-  - path: ./test_project/runtime/test_stuff.cpp.so
-    time: -4797698946448874562
-  - path: ./test_project/runtime/test_stuff.cpp.o
-    time: -4797698946598874562
+    time: -4802157561539841065
   - path: ./test_project/test_stuff.cpp
-    time: -4798772939470076000
+    time: -4797119718963390037
+  - path: ./test_project/models/nanosuit/glass_ddn.png
+    time: -4802157561563174398
+  - path: ./test_project/runtime/test_stuff.cpp.so
+    time: -4797119699120057396
+  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
+    time: -4802157561576507731
+  - path: ./test_project/runtime
+    time: -4797119699223390726
+  - path: ./test_project/models/nanosuit/arm_showroom_spec.png
+    time: -4802157561569841064
+  - path: ./test_project/models/Spruce_obj/Spruce trunk.jpeg
+    time: -4802157561576507731
+  - path: ./test_project/runtime/test_stuff.cpp.o
+    time: -4797119699250057392
+  - path: ./test_project/models/Spruce_obj/Spruce.obj
+    time: -4802157561576507731
+  - path: ./test_project/models/Crate/CrateImage1.JPG
+    time: -4802157561576507731
+scripts:
+  - path: ./test_project/test_stuff.cpp
+    time: -4797119718963390037
+  - path: ./test_project/runtime/test_stuff.cpp.so
+    time: -4797119699120057396
+  - path: ./test_project/runtime/test_stuff.cpp.o
+    time: -4797119699250057392
+workingFile: /home/samuel/Documents/game-engine/shiptest3.yaml

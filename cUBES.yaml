@@ -1,0 +1,72 @@
+name: ""
+transform:
+  position:
+    - 0
+    - 0
+    - 0
+  rotation:
+    - 0
+    - 0
+    - 0
+    - 1
+  scale:
+    - 1
+    - 1
+    - 1
+  id: 0
+  children:
+    - name: ""
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 1
+        children: ~
+      components:
+        - id: 7578320930438095478
+          value:
+            num_to_spawn: 1000000
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 0
+    - name: ""
+      transform:
+        position:
+          - 0
+          - 0
+          - -5.42997932
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 2
+        children: ~
+      components:
+        - id: 2575793217791610351
+          value:
+            fov: 1.39626336
+            near: 0.100000001
+            far: 10000
+            clearColor:
+              - 4.59163468e-41
+              - 6.72623263e-43
+              - 0
+components: ~

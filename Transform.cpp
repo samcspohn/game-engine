@@ -20,8 +20,8 @@ gpu_vector_proxy<glm::vec3> *gpu_position_updates;
 gpu_vector_proxy<glm::quat> *gpu_rotation_updates;
 gpu_vector_proxy<glm::vec3> *gpu_scale_updates;
 
-_Transforms Transforms;
-transform2 root2;
+_Transforms Transforms __attribute__ ((init_priority (2000)));;
+transform2 root2 __attribute__ ((init_priority (2000)));;
 
 transform2::transform2() {}
 
@@ -35,7 +35,7 @@ void transform2::_init()
 }
 void transform2::init(int g)
 {
-	Transforms.meta[id].gameObject = g;
+	Transforms.meta[id].gameObject = g;	
 	_init();
 }
 

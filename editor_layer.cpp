@@ -57,7 +57,14 @@ void saveAssets()
 }
 void loadAssets()
 {
-#define TRY(x)try{x} catch(...){}
+#define TRY(x)  \
+	try         \
+	{           \
+		x       \
+	}           \
+	catch (...) \
+	{           \
+	}
 	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
 	TRY(working_file = assets_node["workingFile"].as<string>();)
 	TRY(assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();)
@@ -133,7 +140,8 @@ void start_game() // assumes only renderer and terrain are started.
 												 for (auto &i : ComponentRegistry.meta_types)
 												 {
 													 StartComponents(i.second);
-												 } }));
+												 }
+											 }));
 	gameRunning = true;
 }
 
@@ -159,7 +167,8 @@ void stop_game()
 												 }
 
 												 // ImGui::LoadIniSettingsFromDisk("default.ini");
-												 stoppingGame = false; }));
+												 stoppingGame = false;
+											 }));
 	// ImGui::SaveIniSettingsToMemory();
 }
 
@@ -373,7 +382,8 @@ void openFile()
 		mainThreadWork.push(new function<void()>([=]()
 												 {
 													 load_level(fi);
-													 working_file = fi; }));
+													 working_file = fi;
+												 }));
 		cout << "loaded: " << file << endl;
 	}
 }
@@ -443,6 +453,42 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 			if (ImGui::MenuItem("save", NULL))
 			{
 				saveFile();
+			}
+			if (ImGui::MenuItem("build", NULL))
+			{
+				// string game_engine_a = "release/libgame_engine.a";
+				string build_str = "g++ -fpermissive -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type -o _game release/libgame_engine.a";
+				// Check if a file was created or modified
+				for (auto &file : std::filesystem::recursive_directory_iterator("test_project/runtime"))
+				{
+					std::string f = file.path().string();
+					std::string type = f.substr(f.find_last_of("."));
+					if (type == ".o")
+					{
+						build_str += " " + f;
+					}
+				}
+				vector<string> include;
+				include.push_back("_rendering");
+				include.push_back("components");
+				include.push_back("lighting");
+				include.push_back("particles");
+				include.push_back("physics");
+				string includes = " -I.";// = "-I" + fw.path_to_watch + "/..";
+				system("pwd");
+				for (auto &i : include)
+				{
+					includes += " -I" + i;
+				}
+				build_str += includes;
+
+				vector<string> libs = {"GL", "GLU", "GLEW", "glfw", "X11", "Xxf86dga", "Xrandr", "pthread", "Xi", "SOIL", "assimp", "alut", "openal", "tbb", "yaml-cpp", "dl"};
+				for(auto& i : libs){
+					build_str += " -l" + i;
+				}
+				cout << build_str << endl << flush;
+				system(build_str.c_str());
+				system("./_game");
 			}
 			// ImGui::Separator();
 
@@ -769,7 +815,8 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 															 selected_transforms.clear();
 															 selected_transforms[r.id] = true;
 														 }
-														 transformLock.unlock(); }));
+														 transformLock.unlock();
+													 }));
 		}
 	}
 	else

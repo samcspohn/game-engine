@@ -19,7 +19,7 @@ size_t component::getHash()
 {
 	return typeid(*this).hash_code();
 }
-Registry ComponentRegistry;
+Registry ComponentRegistry __attribute__ ((init_priority (2000)));;
 
 void destroyAllComponents(){
 	// ComponentRegistry.components.clear();

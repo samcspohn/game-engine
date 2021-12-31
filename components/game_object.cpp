@@ -39,7 +39,6 @@ void placeholder::ser_edit(ser_mode x, YAML::Node &n)
 	}
 }
 
-REGISTER_COMPONENT(placeholder);
 
 std::mutex toDestroym;
 // std::deque<game_object *> toDestroyGameObjects;

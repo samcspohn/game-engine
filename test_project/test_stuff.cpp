@@ -99,41 +99,41 @@ public:
     }
 };
 
-class player : public component
-{
-public:
-    static editor *m_editor;
-    void update()
-    {
-        playerPos = m_editor->position;
-        console::log("here");
+// class player : public component
+// {
+// public:
+//     static editor *m_editor;
+//     void update()
+//     {
+//         playerPos = m_editor->position;
+//         console::log("here");
 
-        if (Input.Mouse.getButtonDown(0))
-        {
-            ImVec2 mp = ImGui::GetMousePos();
-            ImVec2 sz = {float(m_editor->c.width), float(m_editor->c.height)};
-            cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
-            glm::vec2 sz_2 = {sz.x, sz.y};
-            sz_2 /= 2.f;
+//         if (Input.Mouse.getButtonDown(0))
+//         {
+//             ImVec2 mp = ImGui::GetMousePos();
+//             ImVec2 sz = {float(m_editor->c.width), float(m_editor->c.height)};
+//             cout << "mp: " << mp.x << "," << mp.y << " sz:" << sz.x << "," << sz.y << endl;
+//             glm::vec2 sz_2 = {sz.x, sz.y};
+//             sz_2 /= 2.f;
 
-            camera &c = m_editor->c;
-            glm::mat3 per = c.getProjection();
+//             camera &c = m_editor->c;
+//             glm::mat3 per = c.getProjection();
 
-            glm::vec3 p = m_editor->position;
-            glm::vec3 d = c.screenPosToRay({mp.x, mp.y});
+//             glm::vec3 p = m_editor->position;
+//             glm::vec3 d = c.screenPosToRay({mp.x, mp.y});
 
-            glm::vec3 res;
-            if (terrain::IntersectRayTerrain(p, d, res))
-            {
+//             glm::vec3 res;
+//             if (terrain::IntersectRayTerrain(p, d, res))
+//             {
 
-                auto g = instantiate();
-                g->addComponent<_renderer>()->set(shader, cube);
-                g->transform->setPosition(res);
-            }
-        }
-    }
-    SER_FUNC() {}
-};
+//                 auto g = instantiate();
+//                 g->addComponent<_renderer>()->set(shader, cube);
+//                 g->transform->setPosition(res);
+//             }
+//         }
+//     }
+//     SER_FUNC() {}
+// };
 
 class bomb : public component
 {
@@ -179,7 +179,7 @@ public:
     void onStart()
     {
         c = transform.gameObject()->getComponent<_camera>();
-        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         // float h = 0.f;
         // for (int x = -50; x < 50; x++)
@@ -252,7 +252,7 @@ public:
     SER_FUNC() {}
 };
 
-editor *player::m_editor;
+// editor *player::m_editor;
 
 // REGISTER_COMPONENT(player);
 REGISTER_COMPONENT(player2);

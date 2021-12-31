@@ -5,11 +5,6 @@ using namespace std;
 const int maxObj = 8;
 const int maxDepth = 100;
 
-REGISTER_COMPONENT(rigidBody)
-
-REGISTER_COMPONENT(collider)
-
-REGISTER_COMPONENT(kinematicBody)
 
 atomic<int> rbId;
 

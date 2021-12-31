@@ -45,6 +45,27 @@
             ],
             "preLaunchTask": "build debug",
             // "miDebuggerPath": "/usr/bin/lldb-mi"
+        },
+        {
+            "name": "_game",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/_game",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode":"gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build debug",
+            // "miDebuggerPath": "/usr/bin/lldb-mi"
         }
     ]
 }
