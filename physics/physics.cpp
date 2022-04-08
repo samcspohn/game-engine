@@ -2,15 +2,72 @@
 #include "physics.h"
 using namespace std;
 
-const int maxObj = 8;
+const int maxObj = 1000;
 const int maxDepth = 100;
-
 
 atomic<int> rbId;
 
 bool vecIsNan(glm::vec3 v)
 {
 	return isnan(v.x) || isnan(v.y) || isnan(v.z);
+}
+
+void resolve_collision(collision& col){
+	//   glm::vec3 normal = glm::normalize(transform.getPosition() - col.point);
+        // glm::vec3 penetration = col.point - col.this_collider->transform->getPosition();
+        // float l = glm::length(penetration);
+        // penetration = penetration * (1.f - l);
+		float penetration = col.penetration;
+
+        // sphere_test *sp = col.g_o->getComponent<sphere_test>();
+
+        float inverse_massB{0};
+        if (col.other_collider->rb)
+            inverse_massB = col.other_collider->rb->inverse_mass;
+        float total_mass = col.this_collider->rb->inverse_mass + inverse_massB;
+
+        // pos
+        glm::vec3 relativeA = col.point - col.this_collider->transform->getPosition();
+        glm::vec3 relativeB = col.point - col.other_collider->transform->getPosition();
+
+        col.this_collider->rb->transform.move(col.normal * -penetration * (col.this_collider->rb->inverse_mass / total_mass));
+		if(col.other_collider->rb)
+			col.other_collider->rb->transform.move(col.normal * penetration * (col.other_collider->rb->inverse_mass / total_mass));
+
+        // ang vel
+        glm::vec3 angular_velA = glm::cross(col.this_collider->rb->ang_vel, relativeA);
+        glm::vec3 angular_velB{0};
+        if (col.other_collider->rb)
+            angular_velB = glm::cross(col.other_collider->rb->ang_vel, relativeB);
+            
+        // vel
+        glm::vec3 full_velA = col.this_collider->rb->vel + angular_velA;
+        glm::vec3 full_velB{0};
+        if (col.other_collider->rb)
+        {
+            full_velB = col.other_collider->rb->vel + angular_velB;
+        }
+
+        glm::vec3 contact_vel = full_velB - full_velA;
+        float impulse_force = glm::dot(contact_vel, col.normal);
+
+        using namespace glm;
+        vec3 inertiaA = cross(cross(relativeA, col.normal), relativeA);
+        vec3 inertiaB = cross(cross(relativeB, col.normal), relativeB);
+        float ang_effect = dot(inertiaA + inertiaB, col.normal);
+        float cRestitution = 0.66f;
+        float j = (-(1.0f + cRestitution) * impulse_force) / (total_mass + ang_effect);
+        vec3 full_imp = col.normal * j;
+
+        // vec3 force = cross(relativeA, -full_imp);
+
+        col.this_collider->rb->vel += -full_imp * col.this_collider->rb->inverse_mass;
+        col.this_collider->rb->ang_vel += cross(relativeA, -full_imp);
+
+		if(col.other_collider->rb){
+			col.other_collider->rb->vel += full_imp * col.other_collider->rb->inverse_mass;
+			col.other_collider->rb->ang_vel += cross(relativeA, full_imp);
+		}
 }
 
 rigidBody::rigidBody()
@@ -31,17 +88,24 @@ void rigidBody::onStart()
 	}
 	//        mass = 1;
 }
-void rigidBody::update()
+void rigidBody::_update(float dt)
 {
-	transform->move(vel * Time.deltaTime);
-	if (gravity)
-		vel += Time.deltaTime * glm::vec3(0, -9.81f, 0);
+	  if(inverse_mass != 0){
+            vel += glm::vec3(0.f, -10.f, 0.f) * dt;
+			transform->move(vel * dt);
+
+			glm::quat rot = transform->getRotation();
+			glm::vec3 r = ang_vel * dt;
+			rot = rot + glm::quat(r.x, r.y, r.z, 0.f) * rot;
+			rot = glm::normalize(rot);
+			transform->setRotation(rot);
+	  }
 }
 void rigidBody::onEdit()
 {
-	RENDER(mass);
+	RENDER(inverse_mass);
 	RENDER(damping)
-	RENDER(bounciness);
+	// RENDER(bounciness);
 	RENDER(gravity);
 }
 // UPDATE(rigidBody, update);
@@ -77,7 +141,7 @@ void collider::collide(collider &a, collider &b, int &colCount)
 
 	// if (a.c >= b.c)
 	// 	return;
-	glm::vec3 res;
+	collision c;
 	if (&a < &b && a.valid && b.valid && testAABB(a.a, b.a) &&
 		[&]
 		{
@@ -91,15 +155,22 @@ void collider::collide(collider &a, collider &b, int &colCount)
 				b.update_data();
 				b.collider_shape_updated = true;
 			}
-			// return o1.c->collide(o2.c);
-			//  return TestOBBOBB(a.o,b.o);
-			return testCollision(a, b, res);
+			return testCollision(a, b, c);
 		}())
 	{
-		collision c{res, glm::vec3(0), &a, &b, b.transform->gameObject()};
-		a.transform->gameObject()->collide(c);
-		c = collision{res, glm::vec3(0), &b, &a, a.transform->gameObject()};
-		b.transform->gameObject()->collide(c);
+		c.this_collider = &a;
+		c.other_collider = &b;
+		c.g_o = a.transform->gameObject();
+		// collision c{res, normal, &a, &b, b.transform->gameObject()};
+		// a.transform->gameObject()->collide(c);
+		if(a.rb != 0)
+			resolve_collision(c);
+
+		// c = collision{res, normal, &b, &a, a.transform->gameObject()};
+		// b.transform->gameObject()->collide(c);
+		if(b.rb != 0 && a.rb == 0)
+			resolve_collision(c);
+
 	}
 }
 
@@ -422,73 +493,93 @@ void collider::setOBB()
 	this->type = obbType;
 	this->o = OBB();
 }
-
+void collider::setSphere()
+{
+	this->type = sphereType;
+	this->s = Sphere();
+	this->s.r = 1.f;
+}
+void collider::setPlane()
+{
+	this->type = planeType;
+	this->pl = Plane();
+	this->pl.n = glm::vec3(0, 1, 0);
+	this->pl.d = 0;
+}
 void collider::_update()
 {
 
 	// posInTree = 0;
 	switch (type)
 	{
-	case aabbType:
-	case obbType:
-	case meshType:
-	{
-		glm::vec3 sc = transform->getScale() * dim;
-		// glm::mat3 rot = glm::toMat3(transform->getRotation());
-		glm::vec3 r = glm::vec3(length(sc));
-		glm::vec3 pos = transform->getPosition();
-		a = AABB2(pos - r, pos + r);
-		this->collider_shape_updated = false;
-	}
-	break;
-	case pointType:
-	{
-		if (this->p.pos1 == glm::vec3(0))
+		case aabbType:
+		case obbType:
+		case meshType:
+		case planeType:
+		case sphereType:
 		{
-			this->p.pos2 = transform->getPosition();
+			glm::vec3 sc = transform->getScale() * dim;
+			// glm::mat3 rot = glm::toMat3(transform->getRotation());
+			glm::vec3 r = glm::vec3(length(sc));
+			glm::vec3 pos = transform->getPosition();
+			a = AABB2(pos - r, pos + r);
+			this->collider_shape_updated = false;
 		}
-		else
+		break;
+		case pointType:
 		{
-			this->p.pos2 = this->p.pos1;
+			if (this->p.pos1 == glm::vec3(0))
+			{
+				this->p.pos2 = transform->getPosition();
+			}
+			else
+			{
+				this->p.pos2 = this->p.pos1;
+			}
+			this->p.pos1 = transform->getPosition();
+			// this->a.max = this->p.pos1;
+			// this->a.min = this->p.pos2;
+			// if(this->a.max.x < this->a.min.x)
+			// 	std::swap(this->a.max.x,this->a.min.x);
+			// if(this->a.max.y < this->a.min.y)
+			// 	std::swap(this->a.max.y,this->a.min.y);
+			// if(this->a.max.z < this->a.min.z)
+			// 	std::swap(this->a.max.z,this->a.min.z);
+
+			new (&a.max) glm::vec3(glm::max(this->p.pos1.x, this->p.pos2.x),
+								glm::max(this->p.pos1.y, this->p.pos2.y),
+								glm::max(this->p.pos1.z, this->p.pos2.z));
+
+			new (&a.min) glm::vec3(glm::min(this->p.pos1.x, this->p.pos2.x),
+								glm::min(this->p.pos1.y, this->p.pos2.y),
+								glm::min(this->p.pos1.z, this->p.pos2.z));
+
+			// // x
+			// if(this->p.pos1.x > this->p.pos2.x){
+			// 	this->a.max.x = this->p.pos1.x;this->a.min.x = this->p.pos2.x;
+			// }else{
+			// 	this->a.max.x = this->p.pos2.x;this->a.min.x = this->p.pos1.x;
+			// }
+			// // y
+			// if(this->p.pos1.y > this->p.pos2.y){
+			// 	this->a.max.y = this->p.pos1.y;this->a.min.y = this->p.pos2.y;
+			// }else{
+			// 	this->a.max.y = this->p.pos2.y;this->a.min.y = this->p.pos1.y;
+			// }
+			// // z
+			// if(this->p.pos1.z > this->p.pos2.z){
+			// 	this->a.max.z = this->p.pos1.z;this->a.min.z = this->p.pos2.z;
+			// }else{
+			// 	this->a.max.z = this->p.pos2.z;this->a.min.z = this->p.pos1.z;
+			// }
+			this->collider_shape_updated = true;
 		}
-		this->p.pos1 = transform->getPosition();
-		// this->a.max = this->p.pos1;
-		// this->a.min = this->p.pos2;
-		// if(this->a.max.x < this->a.min.x)
-		// 	std::swap(this->a.max.x,this->a.min.x);
-		// if(this->a.max.y < this->a.min.y)
-		// 	std::swap(this->a.max.y,this->a.min.y);
-		// if(this->a.max.z < this->a.min.z)
-		// 	std::swap(this->a.max.z,this->a.min.z);
-
-		new (&a.max) glm::vec3(glm::max(this->p.pos1.x, this->p.pos2.x),
-							   glm::max(this->p.pos1.y, this->p.pos2.y),
-							   glm::max(this->p.pos1.z, this->p.pos2.z));
-
-		new (&a.min) glm::vec3(glm::min(this->p.pos1.x, this->p.pos2.x),
-							   glm::min(this->p.pos1.y, this->p.pos2.y),
-							   glm::min(this->p.pos1.z, this->p.pos2.z));
-
-		// // x
-		// if(this->p.pos1.x > this->p.pos2.x){
-		// 	this->a.max.x = this->p.pos1.x;this->a.min.x = this->p.pos2.x;
-		// }else{
-		// 	this->a.max.x = this->p.pos2.x;this->a.min.x = this->p.pos1.x;
-		// }
-		// // y
-		// if(this->p.pos1.y > this->p.pos2.y){
-		// 	this->a.max.y = this->p.pos1.y;this->a.min.y = this->p.pos2.y;
-		// }else{
-		// 	this->a.max.y = this->p.pos2.y;this->a.min.y = this->p.pos1.y;
-		// }
-		// // z
-		// if(this->p.pos1.z > this->p.pos2.z){
-		// 	this->a.max.z = this->p.pos1.z;this->a.min.z = this->p.pos2.z;
-		// }else{
-		// 	this->a.max.z = this->p.pos2.z;this->a.min.z = this->p.pos1.z;
-		// }
-		this->collider_shape_updated = true;
-	}
+		break;
+		// case planeType:
+		// 	a = AABB2(glm::vec3(-1000.f,-1000.f,-1000.f),glm::vec3(1000.f,1000.f,1000.f));
+		// 	glm::vec3(-1000.f,-0.1f,-1000.f);
+		// 	this->collider_shape_updated = true;
+		break;
 	}
 	// glm::vec3 sc = transform->getScale() * dim;
 	// // glm::mat3 rot = glm::toMat3(transform->getRotation());
@@ -522,24 +613,28 @@ void collider::_lateUpdate()
 	}
 
 	glm::vec3 center = a.getCenter();
-	terrainHit h = terrain::getHeight(center.x, center.z);
-	// if (t != 0)
-	// {
-	// 	if (a.min.y > t->max_height * t->transform->getScale().y + t->transform->getPosition().y)
-	// 		return;
-	if (a.min.y < h.height)
+	auto terrains = COMPONENT_LIST(terrain);
+	if (terrains->size() > 0)
 	{
-		glm::vec3 p = transform->getPosition();
-		if (rb != 0)
+		terrainHit h = terrain::getHeight(center.x, center.z);
+		// if (t != 0)
+		// {
+		// 	if (a.min.y > t->max_height * t->transform->getScale().y + t->transform->getPosition().y)
+		// 		return;
+		if (a.min.y < h.height)
 		{
-			rb->vel = glm::reflect(rb->vel, h.normal) * rb->bounciness;
-			// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
+			glm::vec3 p = transform->getPosition();
+			if (rb != 0)
+			{
+				rb->vel = glm::reflect(rb->vel, h.normal);
+				// rb->vel.y = rb->vel.y >= 0 ? rb->vel.y : -rb->vel.y;
+			}
+			transform->setPosition(glm::vec3(p.x, h.height + (a.max.y - a.min.y) / 2.f, p.z));
+			// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
+			auto g = COMPONENT_LIST(terrain)->get(0)->transform.gameObject();
+			collision c{glm::vec3(p.x, h.height, p.z), h.normal, this, 0, g};
+			transform->gameObject()->collide(c);
 		}
-		transform->setPosition(glm::vec3(p.x, h.height + (a.max.y - a.min.y) / 2.f, p.z));
-		// transform->gameObject->collide(i.second->transform->gameObject,glm::vec3(p.x, h.height, p.z),h.normal);
-		auto g = COMPONENT_LIST(terrain)->get(0)->transform.gameObject();
-		collision c{glm::vec3(p.x, h.height, p.z), h.normal, this, 0, g};
-		transform->gameObject()->collide(c);
 	}
 	// }
 }
@@ -558,14 +653,28 @@ void collider::update_data()
 		o.e = sc;
 	}
 	break;
-	// case meshType:
-	// 	break;
-	// case pointType: // point
-	// {
-	// 	// p.pos2 = p.pos1;
-	// 	// p.pos1 = c->transform->getPosition();
-	// }
-	// break;
+	case sphereType:
+	{
+		this->s.c = transform->getPosition();
+	}
+	break;
+	case planeType:
+	{
+		glm::vec3 pos = transform->getPosition();
+		this->pl.n = transform->getRotation() * glm::vec3(0,1,0);
+		this->pl.d = (pl.n.x * pos.x + pl.n.y * pos.y + pl.n.z * pos.z);
+		// pl.n = glm::vec3(0,1,0);
+		// pl.d = 0;
+	}
+	break;
+	case meshType:
+		break;
+	case pointType: // point
+	{
+		// p.pos2 = p.pos1;
+		// p.pos1 = c->transform->getPosition();
+	}
+	break;
 	default:
 		break;
 	}
@@ -576,7 +685,7 @@ void assignRigidBody(collider *c, rigidBody *rb)
 	c->rb = rb;
 }
 
-bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
+bool testCollision(collider &c1, collider &c2, collision& col)
 {
 
 	collider *a;
@@ -593,6 +702,9 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		a = &c2;
 		b = &c1;
 	}
+	col.g_o = 0;
+	col.this_collider = a;
+	col.other_collider = b;
 	switch (a->type)
 	{
 	case aabbType: // aabb
@@ -612,15 +724,15 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		switch (b->type)
 		{
 		case obbType: // obb
-			return TestOBBOBB(a->o, b->o);
+			return TestOBBOBB(a->o, b->o, col);
 			break;
 		case meshType: // mesh
 			trans = a->transform->getModel();
 			trans2 = b->transform->getModel();
-			return testOBBMesh(a->o, trans, b->m, trans2, result);
+			return testOBBMesh(a->o, trans, b->m, trans2, col);
 			break;
 		case pointType:
-			return testPointOBB(b->p, a->o, result);
+			return testPointOBB(b->p, a->o, col);
 		default:
 			break;
 		}
@@ -642,10 +754,10 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 				m2 = &a->m;
 				trans = glm::inverse(b->transform->getModel()) * a->transform->getModel();
 			}
-			return testMeshMesh(*m1, trans, *m2, trans2, result);
+			return testMeshMesh(*m1, trans, *m2, trans2, col);
 			break;
 		case pointType: // point
-			return testPointMesh(b->p, a->m, a->transform->getPosition(), a->transform->getScale(), a->transform->getRotation(), result);
+			return testPointMesh(b->p, a->m, a->transform->getPosition(), a->transform->getScale(), a->transform->getRotation(), col);
 		default:
 			break;
 		}
@@ -661,7 +773,26 @@ bool testCollision(collider &c1, collider &c2, glm::vec3 &result)
 		default:
 			break;
 		}
-
+	case sphereType:
+		switch (b->type)
+		{
+		case sphereType:
+			return TestSphereSphere(a->s, b->s, col);
+			break;
+		case planeType:
+			return TestSpherePlane(a->s, b->pl, col);
+			break;
+		default:
+			break;
+		}
+		break;
+	case planeType:
+		switch (b->type)
+		{
+		default:
+			break;
+		}
+		break;
 	default:
 		break;
 	}
@@ -675,7 +806,7 @@ void collider::ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 	switch (x)
 	{
 	case ser_mode::edit_mode:
-		static map<colType, string> types = {{aabbType, "aabb"}, {obbType, "obb"}, {meshType, "mesh"}, {pointType, "point"}};
+		static map<colType, string> types = {{aabbType, "aabb"}, {obbType, "obb"}, {meshType, "mesh"}, {pointType, "point"}, {sphereType, "sphere"}, {planeType, "plane"}};
 		// static bool isTypeOpen = false;
 		if (ImGui::Button(types[this->type].c_str()))
 			ImGui::OpenPopup("type");
@@ -684,7 +815,7 @@ void collider::ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 		{
 			ImGui::Text("collider type");
 			ImGui::Separator();
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < types.size(); i++)
 				if (ImGui::Selectable(types[(colType)i].c_str()))
 				{
 					switch ((colType)i)
@@ -700,6 +831,12 @@ void collider::ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 						break;
 					case pointType:
 						setPoint();
+						break;
+					case sphereType:
+						setSphere();
+						break;
+					case planeType:
+						setPlane();
 						break;
 					default:
 						break;
@@ -724,43 +861,50 @@ void collider::ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 			// ImGui::Text("mesh goes here");
 		}
 		break;
+		case sphereType:
+		{
+			renderEdit("radius", this->s.r);
+		}
+		break;
+		case planeType:
+			// renderEdit("normal", this->pl.n);
+			// renderEdit("d", this->pl.d);
+			break;
 		default:
 			break;
 		}
 		RENDER(dim);
 		break;
 	case ser_mode::read_mode:
-		// (*_iar) >> boost::serialization::base_object<component>(*this);
-		// (*_iar) >> layer >> type >> r >> dim;
 		type = node["type"].as<decltype(type)>();
 		layer = node["layer"].as<int>();
 		r = node["r"].as<glm::vec3>();
 		dim = node["dim"].as<glm::vec3>();
-		// this->m.mod = 0;
 
 		switch (this->type)
 		{
 		case aabbType:
 			a = node["a"].as<AABB2>();
-			// (*_iar) >> this->a;
 			break;
 		case obbType:
 			o = node["o"].as<OBB>();
-			// (*_iar) >> this->o;
 			break;
 		case meshType:
 		{
-
 			m = node["m"].as<mesh>();
 			_model mod;
 			mod.id = m.mod;
 			setMesh(&mod.mesh());
-			// (*_iar) >> this->m;
 		}
 		break;
 		case pointType:
 			p = node["p"].as<point>();
-			// (*_iar) >> this->p;
+			break;
+		case sphereType:
+			s = node["s"].as<Sphere>();
+			break;
+		case planeType:
+			pl = node["pl"].as<Plane>();
 			break;
 		default:
 			break;
@@ -778,19 +922,21 @@ void collider::ser_edit(ser_mode x, YAML::Node &node_9738469372465)
 		{
 		case aabbType:
 			node["a"] = a;
-			// (*_iar) >> this->a;
 			break;
 		case obbType:
 			node["o"] = o;
-			// (*_iar) >> this->o;
 			break;
 		case meshType:
 			node["m"] = m;
-			// (*_iar) >> this->m;
 			break;
 		case pointType:
 			node["p"] = p;
-			// (*_iar) >> this->p;
+			break;
+		case sphereType:
+			node["s"] = s;
+			break;
+		case planeType:
+			node["pl"] = pl;
 			break;
 		default:
 			break;

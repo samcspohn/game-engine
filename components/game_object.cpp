@@ -48,7 +48,7 @@ std::vector<game_object *> toDestroyGameObjects;
 
 STORAGE<game_object> game_object_cache;
 gameObjectProtoManager game_object_proto_manager;
-
+unordered_map<int, glm::vec3> transform_euler_angles;
 // void encodePrototypes(YAML::Node &node)
 // {
 // 	YAML::Node prototypeRegistry_node;

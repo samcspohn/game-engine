@@ -97,6 +97,7 @@ private:
 // OARCHIVE & operator<<(OARCHIVE  &os, const transform2 &t){
 // 	return os << t.id;
 // }
+void setRotationChild(transform2 tc, glm::quat& rot, glm::vec3& pos);
 
 struct trans_update
 {

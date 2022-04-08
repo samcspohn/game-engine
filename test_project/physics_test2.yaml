@@ -1,0 +1,208 @@
+name: ""
+transform:
+  position:
+    - 0
+    - 0
+    - 0
+  rotation:
+    - 0
+    - 0
+    - 0
+    - 1
+  scale:
+    - 1
+    - 1
+    - 1
+  id: 0
+  children:
+    - name: ball
+      transform:
+        position:
+          - 0
+          - 2.33795166
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 1
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: plane
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 2
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 0
+                - 1
+                - 0
+              d: 0
+    - name: camera
+      transform:
+        position:
+          - 0
+          - 1.17787051
+          - -4.7670126
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 3
+        children: ~
+      components:
+        - id: 2575793217791610351
+          value:
+            fov: 1.39626336
+            near: 0.100000001
+            far: 10000
+            clearColor:
+              - 4.99324682e-41
+              - 1.97847649e-39
+              - 1.40129846e-45
+        - id: 7533234078955283426
+          value: ~
+    - name: plane
+      transform:
+        position:
+          - 4.07338619
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0.707106769
+          - 0.707106769
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 4
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 0
+                - 1
+                - 0
+              d: 0
+    - name: plane
+      transform:
+        position:
+          - -9.72915268
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - -0.707106769
+          - 0.707106769
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 5
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 0
+                - 1
+                - 0
+              d: 0
+    - name: ""
+      transform:
+        position:
+          - -10.6313
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 5.01447964
+          - 5.85461712
+        id: 6
+        children: ~
+      components:
+        - id: 782240804096941237
+          value: ~
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 0
+components: ~

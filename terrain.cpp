@@ -51,13 +51,15 @@ terrainHit terrain::getHeight(float x, float z)
     chunk *_chunk = 0;
     // try
     // {
-        auto& chunks = COMPONENT_LIST(terrain)->get(0)->chunks;
-        if(chunks.find(int(_x)) != chunks.end()){
-            std::map<int, std::shared_ptr<chunk>>& row = chunks.find(int(_x))->second;
-            if(row.find(int(_z)) != row.end()){
-                _chunk = row.find(int(_z))->second.get();
-            }
+    auto &chunks = COMPONENT_LIST(terrain)->get(0)->chunks;
+    if (chunks.find(int(_x)) != chunks.end())
+    {
+        std::map<int, std::shared_ptr<chunk>> &row = chunks.find(int(_x))->second;
+        if (row.find(int(_z)) != row.end())
+        {
+            _chunk = row.find(int(_z))->second.get();
         }
+    }
     //     _chunk = COMPONENT_LIST(terrain)->get(0)->chunks.at(int(_x)).at(int(_z)).get();
     // }
     // catch (...)
@@ -120,7 +122,7 @@ void DrawQuadTree(terr::quad_node &node, int depth, int maxDepth, array<glm::vec
 }
 void terrain::render(camera &c)
 {
-    if(shader.meta() == 0)
+    if (shader.meta() == 0)
         return;
     glm::mat4 vp = c.proj * c.rot;
     glm::mat4 model = glm::translate(-c.pos);
@@ -139,7 +141,7 @@ void terrain::render(camera &c)
     currShader->setMat4("normalMat", normalMat);
     currShader->setMat4("mvp", mvp);
     static _texture t;
-    if(t.meta() == 0)
+    if (t.meta() == 0)
         t.load("res/images/grass.jpg");
     currShader->setTexture(0, "material.texture_diffuse0", t.meta()->glid);
     for (auto &x : chunks)
@@ -244,9 +246,9 @@ void terrain::genHeight(int _x, int _z)
     {
         for (int z = 0; z < terrainSize; z++)
         {
-            mesh->vertices[xz(x,z)] = makeVert((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
-            h[x][z] = mesh->vertices[xz(x,z)].y;
-            mesh->uvs[xz(x,z)] = glm::vec2((float)x + _x * (terrainSize - 1),(float)z + _z * (terrainSize - 1));
+            mesh->vertices[xz(x, z)] = makeVert((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
+            h[x][z] = mesh->vertices[xz(x, z)].y;
+            mesh->uvs[xz(x, z)] = glm::vec2((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
         }
     }
     auto _makeVert = [&](int x, int z)
@@ -378,15 +380,18 @@ void terrain::update()
                     genHeight(x, z);
                 });
 }
-void terrain::editorUpdate(){
+void terrain::editorUpdate()
+{
     this->update();
 }
 
-void terrain::deinit()
+void terrain::deinit(int i)
 {
-    enqueRenderJob([&]()
-                   { chunks.clear(); });
-    renderShit.erase(1);
+    waitForRenderJob([&]()
+                   {
+                       renderShit.erase(1);
+                       chunks.clear();
+                   });
 }
 
 void terrain::IntersectRayQuadTree(chunk *_chunk, terr::quad_node &node, ray &r, glm::vec3 &result, float &t)

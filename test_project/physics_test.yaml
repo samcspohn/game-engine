@@ -1,0 +1,2953 @@
+name: ""
+transform:
+  position:
+    - 0
+    - 0
+    - 0
+  rotation:
+    - 0
+    - 0
+    - 0
+    - 1
+  scale:
+    - 1
+    - 1
+    - 1
+  id: 0
+  children:
+    - name: ""
+      transform:
+        position:
+          - 0.0955802202
+          - 6.5469408
+          - -5.75772476
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 1
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.394379914
+          - 5.77170706
+          - 2.61334705
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 2
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -7.30661201
+          - 5.66848803
+          - 2.61334705
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 3
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.394379914
+          - 5.66606379
+          - -1.15659106
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 4
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 4.96671486
+          - 9.05747986
+          - -0.770658493
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 5
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 3.26801896
+          - 9.05747986
+          - 2.61334705
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 6
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.792226374
+          - 9.05747986
+          - 2.61334705
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 7
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 4.4767561
+          - 5.82765007
+          - 2.61334705
+        rotation:
+          - 0
+          - -0.03796985
+          - 0
+          - -0.99928093
+        scale:
+          - 0.999986589
+          - 1
+          - 0.999986589
+        id: 8
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: camera
+      transform:
+        position:
+          - 13.16084
+          - 1.65043998
+          - -4.2711668
+        rotation:
+          - 0
+          - -0.85209471
+          - 0
+          - 0.523387909
+        scale:
+          - 0.999994397
+          - 1
+          - 0.999994397
+        id: 9
+        children: ~
+      components:
+        - id: 2575793217791610351
+          value:
+            fov: 1.396263
+            near: 0.100000001
+            far: 10000
+            clearColor:
+              - 4.99324682e-41
+              - 1.97847649e-39
+              - 0
+        - id: 7533234078955283426
+          value: ~
+    - name: ""
+      transform:
+        position:
+          - 3.41590309
+          - 8.30510521
+          - -4.71690178
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 10
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.603854299
+          - 7.52987099
+          - 1.09570706
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 11
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.60155606
+          - 7.42665195
+          - -1.69968796
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 12
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -3.27979112
+          - 7.42422819
+          - 4.34674311
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 13
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.98799515
+          - 10.81565
+          - -0.375989914
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 14
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 1.05772495
+          - 10.81565
+          - 4.35947514
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 15
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -3.55419493
+          - 10.81565
+          - -4.69942808
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 16
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 1.60611296
+          - 7.585814
+          - 5.43663788
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 17
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 1.60611296
+          - 11.1926899
+          - 4.10968113
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 18
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -3.55419493
+          - 14.4225197
+          - -6.02638388
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 19
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.291136593
+          - 14.4225197
+          - 1.98211503
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 20
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 6.13499403
+          - 14.4225197
+          - -1.70295501
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 21
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.95723391
+          - 11.0311003
+          - 3.01978111
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 22
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.34289098
+          - 11.0335197
+          - -2.56499791
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 23
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.603854179
+          - 11.1367397
+          - -0.231257096
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 24
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.09016609
+          - 11.9119797
+          - -6.043859
+        rotation:
+          - 0
+          - 0.489895105
+          - 0
+          - -0.871783614
+        scale:
+          - 0.999982893
+          - 1
+          - 0.999982893
+        id: 25
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 4.43379688
+          - 15.2802296
+          - 1.01482499
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 26
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.258620888
+          - 14.5049896
+          - -3.69937706
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 27
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.77221298
+          - 13.32687
+          - -4.36511898
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 28
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -1.35326397
+          - 14.3993502
+          - -4.842134
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 29
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 2.54584098
+          - 17.7907906
+          - 0.33401829
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 30
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -3.35752702
+          - 17.7907906
+          - -1.74760902
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 31
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.2438159
+          - 17.7907906
+          - -7.16500092
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 32
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -4.3802681
+          - 14.5609398
+          - -1.10342395
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 33
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -4.1237011
+          - 11.8438501
+          - -3.61640906
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 34
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.16021299
+          - 15.0737104
+          - -3.43071699
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 35
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.92519403
+          - 15.0737104
+          - -3.77266312
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 36
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.82879901
+          - 15.0737104
+          - 0.768049479
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 37
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.219994202
+          - 11.6822596
+          - -4.80167294
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 38
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 7.12701988
+          - 11.68468
+          - -4.00237417
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 39
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 11.7879
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 40
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 2.001019
+          - 12.5631399
+          - 3.40917397
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 41
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 11.7879
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 42
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 11.7879
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 43
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 11.7879
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 44
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 11.7879
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 45
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 11.7879
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 46
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: plane
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 47
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 0
+                - 1
+                - 0
+              d: 0
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 0
+    - name: plane z1
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 48
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 0
+                - 0
+                - -1
+              d: -6
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 0
+    - name: plane z2
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 49
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 0
+                - 0
+                - 1
+              d: -6
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 0
+    - name: plane x1
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 50
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - 1
+                - 0
+                - 0
+              d: -6
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 0
+    - name: plane x2
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 0.999999881
+          - 1
+          - 1
+        id: 51
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 5
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1000
+              - 1000
+              - 1000
+            pl:
+              n:
+                - -1
+                - 0
+                - 0
+              d: -6
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 0
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 17.0562401
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 52
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 17.0562401
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 53
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 17.0562401
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 54
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 17.0562401
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 55
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 17.0562401
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 56
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 2.001019
+          - 17.83148
+          - 3.40917397
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 57
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 0.706311285
+          - 17.0562401
+          - -4.24605799
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 58
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 7.12701988
+          - 16.9530201
+          - -4.00237417
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 59
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 4.43379688
+          - 20.5485802
+          - 1.01482499
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 60
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.258620888
+          - 19.7733402
+          - -3.69937706
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 61
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.77221298
+          - 18.5952091
+          - -4.36511898
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 62
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -1.35326397
+          - 19.6676998
+          - -4.842134
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 63
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 2.54584098
+          - 23.0591507
+          - 0.334018201
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 64
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -3.35752702
+          - 23.0591507
+          - -1.74760902
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 65
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.2438159
+          - 23.0591507
+          - -7.16500092
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 66
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -4.3802681
+          - 19.8292904
+          - -1.10342395
+        rotation:
+          - 0
+          - 0.949548423
+          - 0
+          - -0.313627005
+        scale:
+          - 0.999977827
+          - 1
+          - 0.999977827
+        id: 67
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -4.1237011
+          - 17.1121902
+          - -3.61640906
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 68
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - 5.16021299
+          - 20.3420601
+          - -3.43071699
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 69
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.92519403
+          - 20.3420601
+          - -3.77266312
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 70
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -2.82879901
+          - 20.3420601
+          - 0.768049479
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 71
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+    - name: ""
+      transform:
+        position:
+          - -0.219994202
+          - 16.9505997
+          - -4.80167294
+        rotation:
+          - 0
+          - 0.99472332
+          - 0
+          - -0.102616698
+        scale:
+          - 0.999966085
+          - 1
+          - 0.999966085
+        id: 72
+        children: ~
+      components:
+        - id: 226969208628627968
+          value:
+            layer: 0
+            type:
+              type: 4
+            r:
+              - 1
+              - 1
+              - 1
+            dim:
+              - 1
+              - 1
+              - 1
+            s: 1
+        - id: 1660938883860351620
+          value:
+            inverse_mass: 1
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+components: ~

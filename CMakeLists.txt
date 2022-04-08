@@ -5,6 +5,9 @@ cmake_minimum_required(VERSION 3.10)
 project(game_engine)
 
 include_directories(${CMAKE_SOURCE_DIR}/imgui ${CMAKE_SOURCE_DIR}/_rendering)
+set(BULLET2_MULTITHREADING ON)
+include_directories(${CMAKE_SOURCE_DIR}/bullet)
+add_subdirectory(bullet)
 
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW
  GLM_GTX_intersect #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -22,7 +25,7 @@ file(GLOB SOURCES "*.cpp"
 
 file(GLOB SOURCES2 ${SOURCES} "builder/game.cpp")
 file(GLOB SOURCES ${SOURCES} "main/main.cpp")
- 
+
 add_executable(game ${SOURCES})
 add_library(game_engine STATIC ${SOURCES2})
 set_target_properties(game_engine PROPERTIES
@@ -33,15 +36,21 @@ target_include_directories(game_engine PUBLIC
     ${CMAKE_SOURCE_DIR}
  #    ${CMAKE_SOURCE_DIR}/bullet/src
     ${CMAKE_SOURCE_DIR}/imgui
+    ${CMAKE_SOURCE_DIR}/components
     )
 
 set_target_properties(game PROPERTIES ENABLE_EXPORTS 1)
 target_link_libraries(game GL GLU GLEW glfw X11 Xxf86dga Xrandr pthread Xi SOIL assimp alut openal tbb boost_serialization yaml-cpp dl)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletSoftBody/libBulletSoftBody.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletDynamics/libBulletDynamics.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/BulletCollision/libBulletCollision.a)
+target_link_libraries(game ${CMAKE_BINARY_DIR}/bullet/src/LinearMath/libLinearMath.a)
 
 target_include_directories(game PUBLIC
                            ${CMAKE_SOURCE_DIR}
                         #    ${CMAKE_SOURCE_DIR}/bullet/src
                            ${CMAKE_SOURCE_DIR}/imgui
+                           ${CMAKE_SOURCE_DIR}/bullet/src
                            )
 
 add_custom_command(

@@ -124,7 +124,7 @@ glm::quat transform2::getRotation()
 }
 
 
-void setRotationChild(transform2 tc, glm::quat& rot, glm::vec3& pos){
+void setRotationChild(transform2 tc, glm::quat& rot, glm::vec3& pos) {
 	#define rotat Transforms.rotations[tc.id]
 	#define posi Transforms.positions[tc.id]
 

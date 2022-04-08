@@ -7,8 +7,8 @@
 namespace concurrency {
 
 	// int numThreads = 8;
-	int numThreads = std::thread::hardware_concurrency();
-	// int numThreads = 1;
+	// int numThreads = std::thread::hardware_concurrency();
+	int numThreads = 1;
 	tbb::task_arena tbbinit(numThreads);
 	// threadpool _parallelfor(numThreads);
 	// pinning_observer pinningObserver(1);

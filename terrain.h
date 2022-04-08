@@ -58,7 +58,7 @@ public:
     void genHeight(int x, int z);
     static terrainHit getHeight(float x, float z);
     void init(int i);
-    void deinit();
+    void deinit(int i);
 
     void IntersectRayQuadTree(chunk* _chunk, terr::quad_node &node, ray &r, glm::vec3 &result, float& t);
     static bool IntersectRayTerrain(glm::vec3 p, glm::vec3 dir, glm::vec3 &result);

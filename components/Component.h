@@ -32,6 +32,7 @@ struct collision
 {
 	glm::vec3 point;
 	glm::vec3 normal;
+	float penetration;
 	collider *this_collider;
 	collider *other_collider;
 	game_object *g_o;
@@ -40,6 +41,7 @@ struct collision
 			  collider *_this_collider,
 			  collider *_other_collider,
 			  game_object *_g_o) : point(_point), normal(_normal), this_collider(_this_collider), other_collider(_other_collider), g_o(_g_o) {}
+	collision(){}
 };
 
 struct component

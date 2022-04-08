@@ -160,7 +160,8 @@ bool emitter_proto_asset::onEdit()
 }
 void emitter_proto_asset::copy()
 {
-    emitter_prototype_ cp = createEmitter(this->name + " copy");
+    string s = this->name.substr(0,this->name.find_last_of('.')) + " copy";
+    emitter_prototype_ cp = createEmitter(s + ".pemt");
     // cp.meta()->name = cp.meta()->name;
     // assets::registerAsset(cp.meta());
     cp.meta()->gradient = this->gradient;

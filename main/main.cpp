@@ -2,6 +2,8 @@
 #include "fileWatcher.h"
 #include "runtimeCompiler.h"
 #include "assetManager.h"
+#include "physics/physics_.h"
+_physicsManager *pm;
 
 using namespace std;
 
@@ -97,6 +99,8 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
     }
 
     rc.lock.lock();
+    pm->drawDebug();
+
     editorLayer(window, ed, rc.getCompiling());
 
     if (rc.getCompiling())
@@ -136,40 +140,186 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
 
 void physicsUpdate(float dt)
 {
-    for (auto &i : physics_manager::collisionGraph)
-        physics_manager::collisionLayers[i.first].clear();
-    timer stopWatch;
-    static float time = 0;
-    time += dt;
-    if (time > 1.f / 30.f)
-    {
+    pm->simulate(Time.deltaTime);
 
-        componentStorage<collider> *cb = COMPONENT_LIST(collider);
-        stopWatch.start();
+    // for (auto &i : physics_manager::collisionGraph)
+    //     physics_manager::collisionLayers[i.first].clear();
+    // timer stopWatch;
+    // static float time = 0;
+    // time += dt;
+    // if (time >= 1.f / 30.f)
+    // {
 
-        parallelfor(
-            cb->size(),
-            if (cb->data.getv(i)) {
-                cb->data.get(i)._update();
-            });
-        appendStat(cb->name + "--update", stopWatch.stop());
-        stopWatch.start();
-        parallelfor(
-            cb->data.size(),
-            if (cb->data.getv(i)) {
-                cb->data.get(i).midUpdate();
-            });
-        appendStat(cb->name + "--mid_update", stopWatch.stop());
-        stopWatch.start();
-        parallelfor(
-            cb->size(),
-            if (cb->data.getv(i)) {
-                cb->data.get(i)._lateUpdate();
-            });
-        appendStat(cb->name + "--late_update", stopWatch.stop());
-        time -= (1.f / 30.f);
-    }
+    //     componentStorage<collider> *cb = COMPONENT_LIST(collider);
+    //     componentStorage<rigidBody> *rb = COMPONENT_LIST(rigidBody);
+    //     stopWatch.start();
+    //     parallelfor(
+    //         rb->size(),
+    //         if (rb->data.getv(i)) {
+    //             rb->data.get(i)._update((1.f / 30.f));
+    //         });
+    //     appendStat(rb->name + "--update", stopWatch.stop());
+
+    //     stopWatch.start();
+    //     parallelfor(
+    //         cb->size(),
+    //         if (cb->data.getv(i)) {
+    //             cb->data.get(i)._update();
+    //         });
+    //     appendStat(cb->name + "--update", stopWatch.stop());
+
+    //     for (int i = 0; i < cb->size() - 1; i++)
+    //     {
+    //         for (int j = i + 1; j < cb->size(); j++)
+    //         {
+    //             if (cb->data.getv(i) && cb->data.getv(j))
+    //             {
+    //                 auto a = cb->data.get(i);
+    //                 auto b = cb->data.get(j);
+    //                 collision c;
+    //                 if (testAABB(a.a, b.a))
+    //                 {
+    //                     if (!a.collider_shape_updated)
+    //                     {
+    //                         a.update_data();
+    //                         a.collider_shape_updated = true;
+    //                     }
+    //                     if (!b.collider_shape_updated)
+    //                     {
+    //                         b.update_data();
+    //                         b.collider_shape_updated = true;
+    //                     }
+    //                     if(testCollision(a, b, c)){
+    //                         resolve_collision(c);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    // stopWatch.start();
+    // parallelfor(
+    //     cb->data.size(),
+    //     if (cb->data.getv(i)) {
+    //         cb->data.get(i).midUpdate();
+    //     });
+    // appendStat(cb->name + "--mid_update", stopWatch.stop());
+    // stopWatch.start();
+    // parallelfor(
+    //     cb->size(),
+    //     if (cb->data.getv(i)) {
+    //         cb->data.get(i)._lateUpdate();
+    //     });
+    // appendStat(cb->name + "--late_update", stopWatch.stop());
+    // time -= (1.f / 30.f);
+    // }
 }
+
+_transform getTransform(btRigidBody *rb)
+{
+    // if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
+    // 	return;
+    // glColor3f(1,0,0);
+    // float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
+    btTransform _t;
+    rb->getMotionState()->getWorldTransform(_t); // get the transform
+    mat4 mat;
+    _t.getOpenGLMatrix(glm::value_ptr(mat)); // OpenGL matrix stores the rotation and orientation
+
+    _transform t;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+    glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
+    return t;
+}
+
+struct bullet_rb : component
+{
+
+    btRigidBody *bt = 0;
+    void onStart()
+    {
+        glm::vec3 pos = transform->getPosition();
+        bt = pm->addSphere(1.f, pos.x, pos.y, pos.z, 1);
+    }
+    void update()
+    {
+        _transform t = getTransform(bt);
+        transform->setPosition(t.position);
+        transform->setRotation(t.rotation);
+    }
+    void onDestroy()
+    {
+        if (bt)
+            pm->removeRigidBody(bt);
+    }
+
+    SER_FUNC()
+    {
+    }
+};
+REGISTER_COMPONENT(bullet_rb);
+
+
+struct bullet_box_rb : component
+{
+
+    btRigidBody *bt = 0;
+    void onStart()
+    {
+        glm::vec3 pos = transform->getPosition();
+        glm::quat rot = transform->getRotation();
+        bt = pm->addBox(glm::vec3(1.f), rot, pos, 1);
+    }
+    void update()
+    {
+        _transform t = getTransform(bt);
+        transform->setPosition(t.position);
+        transform->setRotation(t.rotation);
+    }
+    void onDestroy()
+    {
+        if (bt)
+            pm->removeRigidBody(bt);
+    }
+
+    SER_FUNC()
+    {
+    }
+};
+REGISTER_COMPONENT(bullet_box_rb);
+
+
+struct bullet_ship_rb : component
+{
+
+    btRigidBody *bt = 0;
+    _model m;
+    void onStart()
+    {
+        glm::vec3 pos = transform->getPosition();
+        glm::quat rot = transform->getRotation();
+
+        bt = pm->addTriangleMesh(&m.mesh(), pos, rot, 100);
+    }
+    void update()
+    {
+        _transform t = getTransform(bt);
+        transform->setPosition(t.position);
+        transform->setRotation(t.rotation);
+    }
+    void onDestroy()
+    {
+        if (bt)
+            pm->removeRigidBody(bt);
+    }
+
+    SER_FUNC()
+    {
+        SER(m)
+    }
+};
+REGISTER_COMPONENT(bullet_ship_rb);
 
 void updateCameras()
 {
@@ -223,8 +373,44 @@ REGISTER_COMPONENT(particle_emitter);
 REGISTER_COMPONENT(rigidBody);
 REGISTER_COMPONENT(collider);
 REGISTER_COMPONENT(kinematicBody);
+
+btBoxShape *createBoxShape(const btVector3 &halfExtents)
+{
+    btBoxShape *box = new btBoxShape(halfExtents);
+    return box;
+}
+
 int main(int argc, char **argv)
 {
+    pm = new _physicsManager();
+    pm->setDebug();
+
+    {
+        btBoxShape *groundShape = createBoxShape(btVector3(btScalar(10.), btScalar(0.1), btScalar(10.)));
+        btTransform groundTransform;
+        groundTransform.setIdentity();
+        groundTransform.setOrigin(btVector3(0, 0, 0));
+        // m_collisionShapes.push_back(groundShape);
+
+        {
+            btScalar mass(0.);
+            // rigidbody is dynamic if and only if mass is non zero, otherwise static
+            bool isDynamic = (mass != 0.f);
+
+            btVector3 localInertia(0, 0, 0);
+
+            btDefaultMotionState *myMotionState = new btDefaultMotionState(groundTransform);
+            btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, groundShape, localInertia);
+            btRigidBody *m_groundBody = new btRigidBody(cInfo);
+
+            m_groundBody->setUserIndex(-1);
+
+            m_groundBody->forceActivationState(DISABLE_DEACTIVATION);
+            m_groundBody->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT | btCollisionObject::CF_STATIC_OBJECT);
+            pm->addBody(m_groundBody);
+        }
+        // m_dynamicsWorld->setInternalTickCallback(kinematicPreTickCallback, m_groundBody, true);
+    }
 
     assetManager asset_manager;
     asset_manager.registerAssetManager({".obj"}, &model_manager);
@@ -253,8 +439,7 @@ int main(int argc, char **argv)
                          initLineRenderer();
                          ImGui::LoadIniSettingsFromDisk("default.ini");
                          model_manager.init();
-                         shader_manager.init();
-                     });
+                         shader_manager.init(); });
     initParticles2();
     particle_renderer::init2();
 
@@ -280,9 +465,8 @@ int main(int argc, char **argv)
     // Start monitoring a folder for changes and (in case of changes)
     // run a user provided lambda function
     thread fileWatcherThread([&]()
-                             {
-                                 fw.start([&](std::string path_to_watch, FileStatus status) -> void
-                                          {
+                             { fw.start([&](std::string path_to_watch, FileStatus status) -> void
+                                        {
                                               // Process only regular files, all other file types are ignored
                                               if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != FileStatus::erased)
                                               {
@@ -314,9 +498,7 @@ int main(int argc, char **argv)
                                                   YAML::Node assets = YAML::LoadFile("assets.yaml");
                                                   assets["file_meta"] = fw.getFileData();
                                                   ofstream("assets.yaml") << assets;
-                                              }
-                                          });
-                             });
+                                              } }); });
 
     // rootGameObject->_addComponent<player>();
 
@@ -369,8 +551,7 @@ int main(int argc, char **argv)
                                      for (auto &i : ComponentRegistry.meta_types)
                                      {
                                          initComponents(i.second);
-                                     }
-                                 })
+                                     } })
             }
         }
 
@@ -386,7 +567,7 @@ int main(int argc, char **argv)
                 }
                 {
                     logger("physics");
-                    physicsUpdate(Time.time);
+                    physicsUpdate(Time.deltaTime);
                 }
             }
             else
@@ -420,8 +601,7 @@ int main(int argc, char **argv)
                                      emitterInits.push_back(i.second);
                                  emitter_inits.clear();
                                  swapBurstBuffer();
-                                 updateTiming();
-                             });
+                                 updateTiming(); });
         }
         if (isGameRunning())
         {
@@ -456,6 +636,7 @@ int main(int argc, char **argv)
     endEditor();
     rootGameObject->_destroy();
     delete ed;
+    delete pm;
     renderingManager::destroy();
     shader_manager.destroy();
     model_manager.destroy();
@@ -473,8 +654,7 @@ int main(int argc, char **argv)
                          ImGui::DestroyContext();
 
                          glFlush();
-                         glfwTerminate();
-                     });
+                         glfwTerminate(); });
 
     while (shaders.size() > 0)
     {

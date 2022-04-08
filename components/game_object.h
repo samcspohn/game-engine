@@ -164,6 +164,8 @@ namespace YAML
 	};
 }
 
+extern unordered_map<int, glm::vec3> transform_euler_angles;
+
 class game_object : public inspectable
 {
 	// mutex lock;
@@ -212,7 +214,6 @@ public:
 		}
 
 		// rotation
-		static unordered_map<int, glm::vec3> transform_euler_angles;
 		if (transform_euler_angles.find(t.id) == transform_euler_angles.end())
 		{
 			glm::vec3 angles = glm::eulerAngles(Transforms.rotations[t.id]);
@@ -451,6 +452,7 @@ private:
 	friend void run();
 	friend void setRootGameObject(transform2 r);
 	friend void stop_game();
+	friend void newFile();
 
 	static void startComponents(game_object &g)
 	{

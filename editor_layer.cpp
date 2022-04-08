@@ -10,7 +10,7 @@ bool gameRunning = false;
 inspectable *inspector = 0;
 ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 transform2 selected_transform = -1;
-static unordered_map<int, bool> selected_transforms;
+static unordered_set<int> selected_transforms;
 
 void StartComponents(componentStorageBase *cl)
 {
@@ -177,7 +177,7 @@ void renderTransform(transform2 t, int &count)
 	if (count > 10'000)
 		return;
 	ImGuiTreeNodeFlags flags = base_flags;
-	if (selected_transforms[t.id])
+	if (selected_transforms.find(t.id) != selected_transforms.end())
 	{
 		flags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -212,40 +212,70 @@ void renderTransform(transform2 t, int &count)
 	}
 	if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered()) // mouseUp(clicked, t.id)) // mouse up
 	{
-		if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
-			selected_transforms[t.id] = true;
-		else
-		{
+		if (!Input.getKey(GLFW_KEY_LEFT_CONTROL))
 			selected_transforms.clear();
-			selected_transforms[t.id] = true;
-		}
+		selected_transforms.emplace(t.id);
+
 		selected_transform.id = t.id;
 		inspector = t->gameObject();
 	}
-
+	auto cp_game_objects = [&]()
+	{
+		auto cp = selected_transforms;
+		for (auto i : cp)
+		{ // remove game objects that are children of selected game objects
+			if (selected_transforms.find(transform2(i)->getParent().id) != selected_transforms.end())
+			{
+				selected_transforms.erase(i);
+			}
+		}
+		unordered_set<int> new_selected;
+		for (auto _t : selected_transforms)
+		{
+			game_object *g = _instantiate(*transform2(_t)->gameObject());
+			inspector = g;
+			new_selected.emplace(g->transform.id);
+			selected_transform = g->transform;
+		}
+		selected_transforms.clear();
+		selected_transforms = new_selected;
+		// selected_transforms[g->transform.id] = true;
+	};
+	if (Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKeyDown(GLFW_KEY_D))
+	{
+		cp_game_objects();
+	}
+	// cout << Input.getKeyDown(GLFW_KEY_D);
 	if (ImGui::IsItemClicked(1))
 		ImGui::OpenPopup("game_object_context");
 	if (ImGui::BeginPopup("game_object_context"))
 	{
 		// ImGui::Text("collider type");
 		ImGui::Separator();
-		if (ImGui::Selectable("copy"))
+		if (ImGui::Selectable("copy Game Object(s)"))
 		{
-			game_object *g = _instantiate(*t->gameObject());
-			inspector = g;
-			selected_transform = g->transform;
-			selected_transforms.clear();
-			selected_transforms[g->transform.id] = true;
+			cp_game_objects();
 		}
 		if (ImGui::Selectable("delete"))
 		{
-			if (inspector == t->gameObject())
-			{
-				inspector = 0;
-				selected_transform = -1;
-				selected_transforms.clear();
+			auto cp = selected_transforms;
+			for (auto i : cp)
+			{ // remove game objects that are children of selected game objects
+				if (selected_transforms.find(transform2(i)->getParent().id) != selected_transforms.end())
+				{
+					selected_transforms.erase(i);
+				}
 			}
-			t->gameObject()->destroy();
+			for (auto _t : selected_transforms)
+			{
+				if (inspector == transform2(_t)->gameObject())
+				{
+					inspector = 0;
+				}
+				transform2(_t)->gameObject()->destroy();
+			}
+			selected_transform = -1;
+			selected_transforms.clear();
 		}
 		if (ImGui::Selectable("new game object"))
 		{
@@ -253,7 +283,7 @@ void renderTransform(transform2 t, int &count)
 			inspector = g;
 			selected_transform = g->transform;
 			selected_transforms.clear();
-			selected_transforms[g->transform.id] = true;
+			selected_transforms.emplace(g->transform.id);
 		}
 		ImGui::EndPopup();
 	}
@@ -405,6 +435,21 @@ void saveAsFile()
 		cout << "saved: " << file << endl;
 	}
 }
+
+void newFile()
+{
+	// lock_guard<mutex> lk(transformLock);
+	mainThreadWork.push(new function<void()>([=]()
+											 {
+												 rootGameObject->_destroy();
+												 // rootGameObject = ;
+												 int ref = game_object_cache._new();
+												 rootGameObject = &game_object_cache.get(ref);
+
+												 rootGameObject->transform = Transforms._new();
+												 working_file = "";
+											 }));
+}
 void saveFile()
 {
 	mainThreadWork.push(new function<void()>([=]()
@@ -441,7 +486,10 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-
+			if (ImGui::MenuItem("New", NULL))
+			{
+				newFile();
+			}
 			if (ImGui::MenuItem("Open", NULL))
 			{
 				openFile();
@@ -468,25 +516,27 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 						build_str += " " + f;
 					}
 				}
-				vector<string> include;
-				include.push_back("_rendering");
-				include.push_back("components");
-				include.push_back("lighting");
-				include.push_back("particles");
-				include.push_back("physics");
-				string includes = " -I.";// = "-I" + fw.path_to_watch + "/..";
+				// vector<string> include;
+				// include.push_back("_rendering");
+				// include.push_back("components");
+				// include.push_back("lighting");
+				// include.push_back("particles");
+				// include.push_back("physics");
+				string includes = " -I."; // = "-I" + fw.path_to_watch + "/..";
 				system("pwd");
-				for (auto &i : include)
+				for (string i : {"_rendering", "components", "lighting", "particles", "physics"})
 				{
 					includes += " -I" + i;
 				}
 				build_str += includes;
 
-				vector<string> libs = {"GL", "GLU", "GLEW", "glfw", "X11", "Xxf86dga", "Xrandr", "pthread", "Xi", "SOIL", "assimp", "alut", "openal", "tbb", "yaml-cpp", "dl"};
-				for(auto& i : libs){
+				// vector<string> libs = ;
+				for (string i : {"GL", "GLU", "GLEW", "glfw", "X11", "Xxf86dga", "Xrandr", "pthread", "Xi", "SOIL", "assimp", "alut", "openal", "tbb", "yaml-cpp", "dl"})
+				{
 					build_str += " -l" + i;
 				}
-				cout << build_str << endl << flush;
+				cout << build_str << endl
+					 << flush;
 				system(build_str.c_str());
 				system("./_game");
 			}
@@ -661,7 +711,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 					inspector = g;
 					selected_transform = g->transform;
 					selected_transforms.clear();
-					selected_transforms[g->transform.id] = true;
+					selected_transforms.emplace(g->transform.id);
 				}
 				ImGui::EndPopup();
 			}
@@ -716,7 +766,16 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 			// mat4 view = COMPONENT_LIST(_camera)->get(0)->view;
 			// glm::mat4 proj = m_editor->c.proj;
 			mat4 proj = glm::perspective(m_editor->c.fov, ww / wy, m_editor->c.nearPlane, m_editor->c.farPlane);
-			glm::mat4 trans = selected_transform.getModel();
+			// glm::mat4 trans = selected_transform.getModel();
+			
+			glm::vec3 avg_pos{0.f};
+			for (auto &i : selected_transforms)
+			{
+				avg_pos += transform2(i)->getPosition();
+			}
+			avg_pos /= selected_transforms.size();
+			static glm::mat4 trans = glm::translate(avg_pos);
+			// trans /= selected_transforms.size();
 			static auto guizmo_mode = ImGuizmo::LOCAL;
 			static auto guizmo_transform = ImGuizmo::OPERATION::TRANSLATE;
 			if (!ImGui::IsMouseDown(1))
@@ -732,23 +791,67 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 				if (ImGui::IsKeyPressed(GLFW_KEY_L))
 					guizmo_mode = ImGuizmo::LOCAL;
 			}
+			glm::mat4 delta;
 
-			ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans));
-
+			ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans), glm::value_ptr(delta));
+			static int counter_uh = 0;
 			if (ImGuizmo::IsUsing())
 			{
+				if(counter_uh++ > 300){
+					cout << "here" << endl;
+				}
 				glm::vec3 pos;
 				glm::vec3 scale;
-				glm::quat rot;
+				glm::quat r;
 				glm::vec3 skew;
 				glm::vec4 pers;
 				// ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(trans),pos,)
-				glm::decompose(trans, scale, rot, pos, skew, pers);
+				glm::decompose(trans, scale, r, pos, skew, pers);
 
-				selected_transform.setPosition(pos);
-				selected_transform.setRotation(rot);
-				selected_transform.setScale(scale);
+				glm::vec3 pos1;
+				glm::vec3 scale1;
+				glm::quat r1;
+				glm::vec3 skew1;
+				glm::vec4 pers1;
+				glm::decompose(delta, scale1, r1, pos1, skew1, pers1);
+				// Transforms.updates[id].rot = true;
+				// Transforms.rotations[id] = r;
+
+				// for (transform2 t : this->getChildren())
+				// {
+				// }
+
+				// glm::quat rot = r;// * glm::inverse(glm::quat());
+				for (auto &i : selected_transforms)
+				{
+					transform2 t{i};
+					t->translate(pos - avg_pos, glm::quat());
+					// glm::vec3 p = t->getPosition();
+					setRotationChild(t, r1, avg_pos);
+					// t->scale(scale);
+
+					// rotation
+					// if (transform_euler_angles.find(t.id) == transform_euler_angles.end())
+					// {
+						glm::vec3 angles = glm::eulerAngles(Transforms.rotations[t.id]);
+						transform_euler_angles[t.id] = glm::degrees(angles);
+					// }
+					// if (ImGui::DragFloat3("rotation", &transform_euler_angles.at(t.id).x))
+					// {
+					// 	// glm::quat _q;
+					// 	glm::vec3 angles = glm::radians(transform_euler_angles.at(t.id));
+					// 	t.setRotation(angles);
+					// }
+					
+					t->scaleChild(pos,scale1);
+				}
+
+				// selected_transform.setPosition(pos);
+				// selected_transform.setRotation(r);
+				// selected_transform.setScale(scale);
 				using_gizmo = true;
+			}else{
+				trans = glm::translate(avg_pos);
 			}
 		}
 
@@ -813,7 +916,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 															 inspector = r->gameObject();
 															 selected_transform = r;
 															 selected_transforms.clear();
-															 selected_transforms[r.id] = true;
+															 selected_transforms.emplace(r.id);
 														 }
 														 transformLock.unlock();
 													 }));

@@ -21,7 +21,7 @@
 #include "terrain.h"
 using namespace std;
 
-bool testCollision(collider &c1, collider &c2, glm::vec3 &result);
+bool testCollision(collider &c1, collider &c2,collision& col);
 
 void assignRigidBody(collider *c, rigidBody *rb);
 
@@ -31,17 +31,17 @@ class rigidBody : public component
 
 public:
 	bool gravity = true;
-	float bounciness = .5f;
+	// float bounciness = .5f;
 	rigidBody();
 	bool _registerEngineComponent();
 
 	void onStart();
-	void update();
+	void _update(float dt);
 	void onEdit();
 	//UPDATE(rigidBody, update);
 
 	int id;
-	float mass = 1;
+	float inverse_mass = 1;
 	float damping = 0;
 	void setVelocity(glm::vec3 _vel);
 	void accelerate(glm::vec3 acc);
@@ -49,15 +49,14 @@ public:
 	SER_FUNC()
 	{
 		SER(gravity)
-		SER(bounciness)
-		SER(mass)
+		// SER(bounciness)
+		SER(inverse_mass)
 		SER(damping)
 	}
 
-private:
 	glm::vec3 vel = glm::vec3(0);
-	glm::quat axis;
-	float rotVel;
+	glm::vec3 ang_vel = glm::vec3(0);
+private:
 };
 
 enum colType
@@ -65,7 +64,9 @@ enum colType
 	aabbType,
 	obbType,
 	meshType,
-	pointType
+	pointType,
+	sphereType,
+	planeType
 };
 
 class kinematicBody : public component
@@ -114,6 +115,8 @@ public:
 		OBB o;
 		mesh m;
 		point p;
+		Sphere s;
+		Plane pl;
 	};
 	bool valid;
 	bool collider_shape_updated;
@@ -130,7 +133,8 @@ public:
 	glm::vec3 setMesh(Mesh *_m);
 	void setPoint();
 	void setOBB();
-	// void update();
+	void setSphere();
+	void setPlane();
 	void _update();
 	void midUpdate();
 	// void lateUpdate();
@@ -194,3 +198,5 @@ void assignRigidBody(collider *c, rigidBody *rb);
 bool testCollision(collider &c1, collider &c2, glm::vec3 &result);
 
 bool raycast(glm::vec3 p, glm::vec3 dir, glm::vec3 &result);
+
+void resolve_collision(collision& col);

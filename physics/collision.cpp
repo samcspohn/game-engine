@@ -125,7 +125,7 @@ bool testOBBHeightMap(OBB &a, std::vector<float> &h)
 }
 
 #define EPSILON 0.00001
-int TestOBBOBB(OBB &a, OBB &b)
+int TestOBBOBB(OBB &a, OBB &b, collision& col)
 {
     float ra, rb;
     glm::mat3 R, AbsR;
@@ -502,9 +502,11 @@ int IntersectLineTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, gl
 }
 
 int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b, glm::vec3 c,
-                             float &u, float &v, float &w, float &t)
+                             glm::vec3& result, float &t)
 {
-
+    float& u = result.x;
+    float& v = result.x;
+    float& w = result.x;
     glm::vec3 ab = b - a;
     glm::vec3 ac = c - a;
     glm::vec3 qp = p - q;
@@ -555,7 +557,7 @@ int IntersectSegmentTriangle(glm::vec3 p, glm::vec3 q, glm::vec3 a, glm::vec3 b,
     return 1;
 }
 
-int IntersectTriangleTriangle(array<glm::vec3,3> &t1, array<glm::vec3,3> &t2, glm::vec3 &result)
+int IntersectTriangleTriangle(array<glm::vec3,3> &t1, array<glm::vec3,3> &t2, collision& col)
 {
     vec3 p1;
     vec3 p2;
@@ -565,17 +567,17 @@ int IntersectTriangleTriangle(array<glm::vec3,3> &t1, array<glm::vec3,3> &t2, gl
     vec3 p5;
     vec3 p6;
     float t;
-    bool intersected1 = IntersectSegmentTriangle(t1[0], t1[1], t2[0], t2[1], t2[2], p1.x, p1.y, p1.z, t);
-    bool intersected2 = IntersectSegmentTriangle(t1[1], t1[2], t2[0], t2[1], t2[2], p2.x, p2.y, p2.z, t);
-    bool intersected3 = IntersectSegmentTriangle(t1[2], t1[0], t2[0], t2[1], t2[2], p3.x, p3.y, p3.z, t);
+    bool intersected1 = IntersectSegmentTriangle(t1[0], t1[1], t2[0], t2[1], t2[2], p1, t);
+    bool intersected2 = IntersectSegmentTriangle(t1[1], t1[2], t2[0], t2[1], t2[2], p2, t);
+    bool intersected3 = IntersectSegmentTriangle(t1[2], t1[0], t2[0], t2[1], t2[2], p3, t);
 
-    bool intersected4 = IntersectSegmentTriangle(t2[0], t2[1], t1[0], t1[1], t1[2], p4.x, p4.y, p4.z, t);
-    bool intersected5 = IntersectSegmentTriangle(t2[1], t2[2], t1[0], t1[1], t1[2], p5.x, p5.y, p5.z, t);
-    bool intersected6 = IntersectSegmentTriangle(t2[2], t2[0], t1[0], t1[1], t1[2], p6.x, p6.y, p6.z, t);
+    bool intersected4 = IntersectSegmentTriangle(t2[0], t2[1], t1[0], t1[1], t1[2], p4, t);
+    bool intersected5 = IntersectSegmentTriangle(t2[1], t2[2], t1[0], t1[1], t1[2], p5, t);
+    bool intersected6 = IntersectSegmentTriangle(t2[2], t2[0], t1[0], t1[1], t1[2], p6, t);
     // bool intersected1 = RayIntersectsTriangle(t1[0],t1[1]-t1[0],t2,p1);
     // bool intersected2 = RayIntersectsTriangle(t1[1],t1[2]-t1[1],t2,p2);
     // bool intersected3 = RayIntersectsTriangle(t1[2],t1[0]-t1[2],t2,p3);
-    result = glm::vec3(0);
+    glm::vec3 result = glm::vec3(0);
     int intersections = 0;
     if (intersected1 || intersected2 || intersected3 || intersected4 || intersected5 || intersected6)
     {
@@ -610,6 +612,7 @@ int IntersectTriangleTriangle(array<glm::vec3,3> &t1, array<glm::vec3,3> &t2, gl
             intersections++;
         }
         result /= intersections;
+        col.point = result;
         return 1;
     }
     return 0;
@@ -618,7 +621,7 @@ int IntersectTriangleTriangle(array<glm::vec3,3> &t1, array<glm::vec3,3> &t2, gl
 bool testMeshMesh(mesh &m1, // longer tris
                   const mat4 &trans1,
                   mesh &m2, // shorter tris
-                  const mat4 &trans2, glm::vec3 &result)
+                  const mat4 &trans2, collision& col)
 {
     array<glm::vec3,3> tri1;
     array<glm::vec3,3> tri2;
@@ -632,7 +635,7 @@ bool testMeshMesh(mesh &m1, // longer tris
             tri2[0] = trans2 * glm::vec4((m2.m->points)[(m2.m->tris)[j]], 1);
             tri2[1] = trans2 * glm::vec4((m2.m->points)[(m2.m->tris)[j + 1]], 1);
             tri2[2] = trans2 * glm::vec4((m2.m->points)[(m2.m->tris)[j + 2]], 1);
-            if (IntersectTriangleTriangle(tri1, tri2, result))
+            if (IntersectTriangleTriangle(tri1, tri2, col))
             {
                 return true;
             }
@@ -667,14 +670,14 @@ vector<uint> boxTris{
 
 MESH BOX_MESH{boxPoints, boxTris};
 
-bool testOBBMesh(OBB &o, const mat4 o_trans, mesh &m, const mat4 m_trans, glm::vec3 &result)
+bool testOBBMesh(OBB &o, const mat4 o_trans, mesh &m, const mat4 m_trans, collision& col)
 {
     mesh o_m;
     o_m.m = &BOX_MESH;
-    return testMeshMesh(m, m_trans, o_m, o_trans, result);
+    return testMeshMesh(m, m_trans, o_m, o_trans, col);
 }
 
-bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, glm::vec3 &result)
+bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat mRot, collision& col)
 {
     // glm::vec3 pos1 = (1.f / mScl) * glm::inverse(mRot) * (p.pos1 - mPos);
     // glm::vec3 pos2 = (1.f / mScl) * glm::inverse(mRot) * (p.pos2 - mPos);
@@ -694,27 +697,67 @@ bool testPointMesh(point &p, mesh &m, glm::vec3 mPos, glm::vec3 mScl, glm::quat 
         tri1[0] = (m.m->points)[(m.m->tris)[i]];
         tri1[1] = (m.m->points)[(m.m->tris)[i + 1]];
         tri1[2] = (m.m->points)[(m.m->tris)[i + 2]];
-        if (IntersectSegmentTriangle(pos2, pos1, tri1[0], tri1[1], tri1[2], p1.x, p1.y, p1.z, t))
+        if (IntersectSegmentTriangle(pos2, pos1, tri1[0], tri1[1], tri1[2], p1, t))
         {
             // result = mPos;
-            result = inverse(trans) * vec4(p1, 1);
+            col.point = inverse(trans) * vec4(p1, 1);
             return true;
         }
     }
     return false;
 }
 
-bool testPointOBB(point &p, OBB &o, glm::vec3 &result)
+bool testPointOBB(point &p, OBB &o, collision& col)
 {
     glm::vec3 pos = glm::inverse(o.u) * (p.pos1 - o.c);
 
     mesh o_m;
     o_m.m = &BOX_MESH;
-    return testPointMesh(p, o_m, o.c, o.e, o.u, result);
+    return testPointMesh(p, o_m, o.c, o.e, o.u, col);
     // if(abs(pos.x) < o.e.x &&
     //  abs(pos.y) < o.e.y &&
     //  abs(pos.z) < o.e.z){
     //      return true;
     //  }
     //  return false;
+}
+
+bool TestSphereSphere(Sphere a, Sphere b, collision& col)
+{
+    // Calculate squared distance between centers
+    glm::vec3 d = a.c - b.c;
+    // float dist2 = glm::dot(d, d);
+    float dist2 = glm::length2(d);
+    // Spheres intersect if squared distance is less than squared sum of radii
+    float radiusSum = a.r + b.r;
+    bool intersects = dist2 <= radiusSum * radiusSum;
+    if(intersects){
+        // float ratio = a.r / (b.r + a.r);
+        col.point = b.c + glm::normalize(d) * b.r;
+        col.penetration = a.r + b.r - glm::length(d);
+        col.normal = -glm::normalize(d);
+    }
+
+    return intersects;
+}
+
+glm::vec3 ClosestPtPointPlane(glm::vec3 q, Plane p)
+{
+    float t = glm::dot(p.n, q) - p.d;
+    return q - t * p.n;
+}
+bool TestSpherePlane(Sphere s, Plane p, collision& col)
+{
+    // For a normalized plane (|p.n| = 1), evaluating the plane equation
+    // for a point gives the signed distance of the point to the plane
+    float dist = glm::dot(s.c, p.n) - p.d;
+    // If sphere center within +/-radius from plane, plane intersects sphere
+    bool intersects = (dist <= s.r);
+    if(intersects){
+        col.point = s.c - p.n * dist;
+        col.penetration = s.r - dist;
+        col.normal = -p.n;
+        // result = ClosestPtPointPlane(s.c,p);
+    }
+    return intersects;
 }

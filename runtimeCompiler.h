@@ -39,7 +39,9 @@ struct runtimeCompiler
             includes += " -I" + fw.path_to_watch + "/../" + i;
         }
         std::cout << includes << std::endl;
-        int cppSuccess = system(("g++ -fPIC -fpermissive -O2 " + includes + " -g -c -o " + path + ".o " + path_to_watch).c_str());
+        string compile = "g++ -fPIC -fpermissive " + includes + " -g -c -o " + path + ".o " + path_to_watch;
+        std::cout << compile << std::endl;
+        int cppSuccess = system(compile.c_str());
         if (cppSuccess == 0)
         { // create shared if compilation succeeds
             system(("gcc -shared -o " + path + ".so " + path + ".o").c_str());

@@ -12,6 +12,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include "serialize.h"
+#include <unordered_map>
 
 using namespace std;
 
@@ -51,7 +52,8 @@ namespace assets
             assets["path"] = path;
             for (auto &i : path)
             {
-                meta_node.force_insert(i.second, *meta[i.second]);
+                if(meta.find(i.second) != meta.end())
+                    meta_node.force_insert(i.second, *meta.at(i.second));
             }
             assets["meta"] = meta_node;
             node[typeid(t).name()] = assets;

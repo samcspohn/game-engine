@@ -179,7 +179,7 @@ public:
     void onStart()
     {
         c = transform.gameObject()->getComponent<_camera>();
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         // float h = 0.f;
         // for (int x = -50; x < 50; x++)
