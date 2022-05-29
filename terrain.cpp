@@ -22,6 +22,7 @@ chunk::chunk()
 
 chunk::~chunk()
 {
+    b->release();
     // waitForRenderJob([&]() {
     // this->mesh.release();
     // });
@@ -228,6 +229,7 @@ glm::vec3 terrain::makeVert(float x, float z)
     return glm::vec3(x, makeHeight(x + 0, z + 0), z) * 10.f;
 }
 mutex chunk_lock;
+
 void terrain::genHeight(int _x, int _z)
 {
     {
@@ -235,6 +237,8 @@ void terrain::genHeight(int _x, int _z)
         chunks[_x][_z] = make_shared<chunk>();
     }
     array<array<float, terrainSize>, terrainSize> &h = chunks[_x][_z]->h;
+    array<array<float, terrainSize>, terrainSize> &_h = chunks[_x][_z]->_h;
+
     // chunks[_x][_z].mesh = make_unique<Mesh>();
     Mesh *mesh = chunks[_x][_z]->mesh.get();
 
@@ -242,15 +246,30 @@ void terrain::genHeight(int _x, int _z)
     mesh->normals.resize(terrainSize * terrainSize);
     mesh->uvs.resize(terrainSize * terrainSize);
 
+    float min = 1e10;
+    float max = -1e10;
     for (int x = 0; x < terrainSize; x++)
     {
         for (int z = 0; z < terrainSize; z++)
         {
             mesh->vertices[xz(x, z)] = makeVert((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
             h[x][z] = mesh->vertices[xz(x, z)].y;
+            _h[z][x] = h[x][z];
+            if (min > h[x][z])
+                min = h[x][z];
+            if (max < h[x][z])
+                max = h[x][z];
             mesh->uvs[xz(x, z)] = glm::vec2((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
         }
     }
+    float size = (terrainSize - 1) * 10.f;
+    glm::vec3 orig = glm::vec3(_x * size,
+                               0,
+                               _z * size);
+
+    // chunks[_x][_z]->b = pm->addTerrain(&_h[0][0], terrainSize, terrainSize, min, max, glm::vec3(10, 1, 10), orig);
+    
+
     auto _makeVert = [&](int x, int z)
     {
         return makeVert((float)x + _x * (terrainSize - 1), (float)z + _z * (terrainSize - 1));
@@ -301,8 +320,12 @@ void terrain::genHeight(int _x, int _z)
 
     genOctree(*chunks[_x][_z], mesh->vertices);
     mesh->makePoints();
-    waitForRenderJob([=]()
-                     { mesh->reloadMesh(); });
+    glm::vec3 pos = glm::vec3(0);
+    glm::quat rot = glm::quat(1,0,0,0);
+    chunks[_x][_z]->b = pm->addPxMesh(glm::vec3(0,0,0), mesh, transform->gameObject());
+    // chunks[_x][_z]->b = pm->addPxHeightMap(orig,terrainSize,terrainSize,&h[0][0]);
+    enqueRenderJob([=]()
+                   { mesh->reloadMesh(); });
 }
 void terrain::init(int i)
 {
@@ -313,15 +336,16 @@ void terrain::init(int i)
 
 void terrain::onStart()
 {
-    chunks.clear();
+    // chunks.clear();
 }
 glm::vec3 playerPos;
 
 void terrain::update()
 {
 
-    int radius = 32;
-    glm::vec3 playerPosScaled = playerPos / (float)((terrainSize - 1) * 10);
+    int radius = 8;
+    // glm::vec3 playerPosScaled = playerPos / (float)((terrainSize - 1) * 10);
+    glm::vec3 playerPosScaled = glm::vec3(0);
     vector<int> v;
     for (auto [x, m] : chunks)
     {
@@ -335,32 +359,28 @@ void terrain::update()
         }
     }
 
-    [&]
+    for (auto &[x, m] : chunks)
     {
-        for (auto &[x, m] : chunks)
+        vector<int> _z;
+        for (auto [z, p] : m)
         {
-            vector<int> _z;
-            for (auto [z, p] : m)
+            _z.push_back(z);
+        }
+        for (auto &z : _z)
+        {
+            if (glm::length(glm::vec2(x, z) - glm::vec2(playerPosScaled.x, playerPosScaled.z)) >= radius)
             {
-                _z.push_back(z);
-            }
-            for (auto &z : _z)
-            {
-                if (glm::length(glm::vec2(x, z) - glm::vec2(playerPosScaled.x, playerPosScaled.z)) >= radius)
-                {
-                    // if (chunks.find(x) != chunks.end() && chunks.at(x).find(z) != chunks.at(x).end())
-                    chunks.at(x).erase(z);
-                    // return;
-                }
+                // if (chunks.find(x) != chunks.end() && chunks.at(x).find(z) != chunks.at(x).end())
+                chunks.at(x).erase(z);
+                // return;
             }
         }
-    }();
-    // }));
+    }
+
     vector<pair<int, int>> chunks_to_gen;
-    bool generatedChunk = false;
-    for (int x = playerPosScaled.x - radius; x <= playerPosScaled.x + radius && !generatedChunk; x++)
+    for (int x = playerPosScaled.x - radius; x <= playerPosScaled.x + radius; x++)
     {
-        for (int z = playerPosScaled.z - radius; z <= playerPosScaled.z + radius && !generatedChunk; z++)
+        for (int z = playerPosScaled.z - radius; z <= playerPosScaled.z + radius; z++)
         {
             if (glm::length(glm::vec2(x, z) - glm::vec2(playerPosScaled.x, playerPosScaled.z)) < radius)
             {
@@ -388,10 +408,9 @@ void terrain::editorUpdate()
 void terrain::deinit(int i)
 {
     waitForRenderJob([&]()
-                   {
+                     {
                        renderShit.erase(1);
-                       chunks.clear();
-                   });
+                       chunks.clear(); });
 }
 
 void terrain::IntersectRayQuadTree(chunk *_chunk, terr::quad_node &node, ray &r, glm::vec3 &result, float &t)
@@ -501,7 +520,7 @@ void insertAABB(terr::quad_node &node, vector<glm::vec3> &verts, float width, ra
 
     if (r.end.x - r.begin.x == 1 && r.end.y - r.begin.y == 1)
     {
-        //node.triangle = range
+        // node.triangle = range
         node.quad = r.begin;
         return;
     }
@@ -512,7 +531,7 @@ void insertAABB(terr::quad_node &node, vector<glm::vec3> &verts, float width, ra
 
     // left forward
     insertAABB(node.children->at(0)[0], verts, width, range(r.begin.x, r_middle.x, r.begin.y, r_middle.y));
-    //right forward
+    // right forward
     insertAABB(node.children->at(1)[0], verts, width, range(r_middle.x, r.end.x, r.begin.y, r_middle.y));
     // left back
     insertAABB(node.children->at(0)[1], verts, width, range(r.begin.x, r_middle.x, r_middle.y, r.end.y));

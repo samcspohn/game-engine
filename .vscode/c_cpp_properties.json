@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/Components/**"
+                "${workspaceFolder}/PhysX/physx/include/**",
+                "${workspaceFolder}/PhysX/pxshared/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

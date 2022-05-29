@@ -5,6 +5,7 @@
 #include <map>
 #include <deque>
 #include <mutex>
+#include <queue>
 #include <math.h>
 #include <atomic>
 #include "concurrency.h"
@@ -235,7 +236,8 @@ namespace YAML
 	};
 }
 
-
+#include <tbb/concurrent_priority_queue.h>
+#include <tbb/atomic.h>
 template <typename t>
 class storage
 {
@@ -245,11 +247,12 @@ class storage
 	vector<t*> d1;
 	vector<t*> d2;
 	atomic<vector<t*>*> r;
-    deque<int> avail;
+    tbb::concurrent_priority_queue<int, std::greater<int>> avail;
     deque<atomic<bool>> valid;
 
-	atomic<int> extent;
-	atomic<int> avail_count;
+	int extent;
+	// atomic<int> _extent;
+	// tbb::atomic<int> _extent;
 public:
 
     t &get(int id)
@@ -265,47 +268,81 @@ public:
 	int _new(types&&... args)
     {
         int id;
-        {
-            lock_guard<mutex> lck(m);
-            if (avail.size() > 0)
-            {
-                id = avail.front();
-                avail.pop_front();
-				--avail_count;
-                valid[id] = true;
-            }
-            else
-            {
-                id = valid.size();
-                valid.emplace_back(true);
-				++extent;
-                if (valid.size() >= data.size() * chunk)
-                {
-                    data.emplace_back((t*)(new char[chunk * sizeof(t)]));
-					if(r == &d1){
-						d2.emplace_back(data.back());
-						r = &d2;
-						d1.emplace_back(data.back());
-					}else{
-						d1.emplace_back(data.back());
-						r = &d1;
-						d2.emplace_back(data.back());
-					}
-                }
-            }
-        }
+        // {
+
+		if(avail.try_pop(id)){
+			valid[id] = true;
+			{
+				lock_guard<mutex> lck(m);
+				if(id >= extent){
+					extent = id + 1;
+				}
+			}
+		}else {
+			lock_guard<mutex> lck(m);
+			id = valid.size();
+			valid.emplace_back(true);
+			++extent;
+			if (valid.size() >= data.size() * chunk)
+			{
+				data.emplace_back((t*)(new char[chunk * sizeof(t)]));
+				if(r == &d1){
+					d2.emplace_back(data.back());
+					r = &d2;
+					d1.emplace_back(data.back());
+				}else{
+					d1.emplace_back(data.back());
+					r = &d1;
+					d2.emplace_back(data.back());
+				}
+			}
+		}
+
+
+            // lock_guard<mutex> lck(m);
+			// if(avail.try_pop(id)){
+			// 	// id = -id;
+            //     valid[id] = true;
+			// 	if(id >= extent){
+			// 		extent = id + 1;
+			// 	}
+				
+            // }
+            // else
+            // {
+            //     id = valid.size();
+            //     valid.emplace_back(true);
+			// 	++extent;
+            //     if (valid.size() >= data.size() * chunk)
+            //     {
+            //         data.emplace_back((t*)(new char[chunk * sizeof(t)]));
+			// 		if(r == &d1){
+			// 			d2.emplace_back(data.back());
+			// 			r = &d2;
+			// 			d1.emplace_back(data.back());
+			// 		}else{
+			// 			d1.emplace_back(data.back());
+			// 			r = &d1;
+			// 			d2.emplace_back(data.back());
+			// 		}
+            //     }
+            // }
+        // }
         new (&(*r)[id / chunk][id % chunk]) t{args...};
         return id;
     }
+	void compress(){
+			while(extent > 0 && !valid[extent - 1])
+				--extent;
+	}
     void _delete(int i)
     {
         data[i / chunk][i % chunk].~t();
-        {
-            lock_guard<mutex> lck(m);
+        // {
+        //     lock_guard<mutex> lck(m);
             valid[i] = false;
-            avail.push_front(i);
-			++avail_count;
-        }
+            avail.push(i);
+        // }
     }
     int size()
     {
@@ -315,7 +352,7 @@ public:
     int active()
     {
 		lock_guard<mutex> lck(m);
-        return extent - avail_count;
+        return valid.size() - avail.size();
     }
 	void clear(){
 		for (int i = 0; i < valid.size(); i++)
@@ -343,7 +380,7 @@ public:
     {
         clear();
     }
-	storage() : m{}, extent{0}, avail_count{0}{	}
+	storage() : m{}, extent{0} { }
 
 #undef chunk
 #undef get

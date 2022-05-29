@@ -66,6 +66,7 @@ void loadAssets()
 	{           \
 	}
 	YAML::Node assets_node = YAML::LoadFile("assets.yaml");
+	
 	TRY(working_file = assets_node["workingFile"].as<string>();)
 	TRY(assets::assetIdGenerator = assets_node["assetIdGenerator"].as<int>();)
 	TRY(texture_manager.decode(assets_node);)
@@ -794,12 +795,8 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 			glm::mat4 delta;
 
 			ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), guizmo_transform, guizmo_mode, glm::value_ptr(trans), glm::value_ptr(delta));
-			static int counter_uh = 0;
 			if (ImGuizmo::IsUsing())
 			{
-				if(counter_uh++ > 300){
-					cout << "here" << endl;
-				}
 				glm::vec3 pos;
 				glm::vec3 scale;
 				glm::quat r;

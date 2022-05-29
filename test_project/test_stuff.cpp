@@ -12,7 +12,7 @@ public:
         // updateCount = numeric_limits<float>::max();
         // updateCount = Time.time + randf() * 50 + 50;
         transform->setRotation(glm::quatLookAtLH(randomSphere(), randomSphere()));
-        updateCount = 100; //10 + (transform.id % 55);
+        updateCount = 100; // 10 + (transform.id % 55);
     }
     void update()
     {
@@ -171,15 +171,154 @@ public:
 };
 REGISTER_COMPONENT(bomb)
 
+// _transform _getTransform(btRigidBody *rb)
+// {
+//     // if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
+//     // 	return;
+//     // glColor3f(1,0,0);
+//     // float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
+//     btTransform _t;
+//     rb->getMotionState()->getWorldTransform(_t); // get the transform
+//     mat4 mat;
+//     _t.getOpenGLMatrix(glm::value_ptr(mat)); // OpenGL matrix stores the rotation and orientation
+
+//     _transform t;
+//     glm::vec3 skew;
+//     glm::vec4 perspective;
+//     glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
+//     return t;
+// }
+// _transform _getTransform(PxRigidDynamic *rb)
+// {
+//     // if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
+//     // 	return;
+//     // glColor3f(1,0,0);
+//     // float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
+//     PxTransform t = rb->getGlobalPose();
+//     t.p
+//     PxMat44 m = PxMat44(t);
+//     // rb->getMotionState()->getWorldTransform(_t); // get the transform
+//     mat4 mat;
+//     // _t.getOpenGLMatrix(glm::value_ptr(mat)); // OpenGL matrix stores the rotation and orientation
+
+//     _transform t;
+//     glm::vec3 skew;
+//     glm::vec4 perspective;
+//     glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
+//     return t;
+// }
+
+struct sphere_rb : component
+{
+
+    // btRigidBody *bt = 0;
+    PxRigidDynamic *pt = 0;
+    void onStart()
+    {
+        glm::vec3 pos = transform->getPosition();
+        // bt = pm->addSphere(1.f, pos.x, pos.y, pos.z, 1);
+        pt = pm->addPxShpere(pos, transform->gameObject());
+    }
+    void fixedUpdate()
+    {
+
+        // _transform t = _getTransform(pt);
+        PxTransform t = pt->getGlobalPose();
+        transform->setPosition(glm::vec3(t.p.x, t.p.y, t.p.z));
+        transform->setRotation(glm::quat(t.q.w, t.q.x, t.q.y, t.q.z));
+    }
+    void onDestroy()
+    {
+        if (pt)
+            pt->release();
+        // if (pt)
+        //     pm->removeRigidBody(bt);
+    }
+
+    SER_FUNC()
+    {
+    }
+};
+REGISTER_COMPONENT(sphere_rb);
+
+const float fixedStep = 1.f / 30.f;
+emitter_prototype_ pxexpl;
+struct pxBomb : component
+{
+
+    glm::vec3 vel;
+    void update()
+    {
+        float step = std::min(Time.deltaTime, (1.f / 30.f));
+        glm::vec3 pos = transform->getPosition();
+        float vel_len = glm::length(vel);
+        glm::vec3 velnormal = vel / vel_len;
+        vel_len *= step;
+        PxRaycastBuffer hitb;
+        PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+        bool hit = pm->gScene->raycast(PxVec3(pos.x, pos.y, pos.z), PxVec3(velnormal.x, velnormal.y, velnormal.z), vel_len, hitb);
+
+        if (hit)
+        {
+            transform->gameObject()->destroy();
+            pxexpl.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 10);
+
+            // PxVec3 p = hitb.block.position;
+            // game_object* g = instantiate(rayHit);
+            // g->transform->setPosition(*reinterpret_cast<glm::vec3*>(&p));
+        }
+        transform->move(vel * step);
+        vel += glm::vec3(0, -10, 0) * step;
+    }
+    SER_FUNC()
+    {
+    }
+};
+REGISTER_COMPONENT(pxBomb);
+
+// struct mt_gun : component
+// {
+//     game_object_prototype px_bomb;
+//     void update()
+//     {
+//         if (Input.Mouse.getButtonDown(0))
+//         {
+
+//             for (int i = 0; i < 100000 / concurrency::numThreads * Time.deltaTime; i++)
+//             {
+//                 glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); // transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
+//                 auto box = instantiate(px_bomb);
+//                 box->transform->setPosition(start_pos);
+//                 box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;
+//             }
+//         }
+//     }
+//     SER_FUNC()
+//     {
+//     }
+// };
+// REGISTER_COMPONENT(mt_gun);
+
 class player2 : public component
 {
 public:
     float speed = 2;
     _camera *c;
+    game_object_prototype ball;
+    game_object_prototype rayHit;
+    game_object_prototype px_bomb;
+    emitter_prototype_ l_expl;
+    double lastFire;
     void onStart()
     {
+        lastFire = Time.time;
         c = transform.gameObject()->getComponent<_camera>();
-        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        pxexpl = l_expl;
+        // for( int i = 0; i < concurrency::numThreads; i++){
+        //     mt_gun* g = transform->gameObject()->addComponent<mt_gun>();
+        //     g->px_bomb = this->px_bomb;
+        // }
 
         // float h = 0.f;
         // for (int x = -50; x < 50; x++)
@@ -196,6 +335,9 @@ public:
         //     }
         // }
     }
+    // void fixedUpdate(){
+
+    // }
     void update()
     {
         transform.translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
@@ -222,34 +364,69 @@ public:
 
         playerPos = transform.getPosition();
 
-        // if (Input.Mouse.getButtonDown(0))
-        // {
-        //     // glm::vec3 r;
-        //     // // transform.gameObject()->getComponent<_camera>()->c->screenPosToRay();
-        //     // if(raycast(transform.getPosition(),transform.forward(),r)){
-        //     //     auto box =  instantiate();
-        //     //     box->transform.setPosition(r);
-        //     //     box->addComponent<_renderer>();
-        //     // }
-        //     auto box = instantiate();
-        //     box->transform.setPosition(transform.getPosition());
-        //     box->addComponent<_renderer>();
-        //     box->addComponent<collider>();
-        //     box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
-        //     // box->addComponent<bomb>();
-        // }
-        // if (Input.Mouse.getButtonClicked(1))
-        // {
+        if (Input.Mouse.getButtonDown(0))
+        {
+            //    // shoot
+            //     parallelfor(17000 * Time.deltaTime,
+            //     // for(int i = 0; i < 17000 * Time.deltaTime; i++){
+            //         //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
+            //         glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
+            //         auto box = instantiate(px_bomb);
+            //         box->transform->setPosition(start_pos);
+            //         box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
+            //     );
+            // }
+            // rain
+            parallelfor(170000 * Time.deltaTime,
+                        //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
+                        // glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
+                        glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
+                        auto box = instantiate(px_bomb);
+                        box->transform->setPosition(start_pos);
+                        // box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
+                        box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;);
 
-        //     auto box = instantiate();
-        //     box->transform.setPosition(transform.getPosition());
-        //     box->addComponent<_renderer>();
-        //     box->addComponent<collider>();
-        //     box->addComponent<kinematicBody>()->velocity = transform.forward() * 50.f;
-        //     box->addComponent<bomb>();
-        // }
+            // raycast
+            // glm::vec3 _for = transform->forward();
+            // PxRaycastBuffer hitb;
+            // PxU32 maxHits = 1;
+            // PxTransform pt;
+            // PxGeometry* pg;
+            // PxHitFlags hitFlags = PxHitFlag::ePOSITION|PxHitFlag::eNORMAL|PxHitFlag::eUV;
+            // bool hit = pm->gScene->raycast(PxVec3(playerPos.x,playerPos.y,playerPos.z), PxVec3(_for.x,_for.y,_for.z),1000.f,hitb);
+
+            // if(hit){
+            //     PxVec3 p = hitb.block.position;
+            //     game_object* g = instantiate(rayHit);
+            //     g->transform->setPosition(*reinterpret_cast<glm::vec3*>(&p));
+            // }
+
+            // auto forward = transform->forward();
+
+            // for(int i = 0; i < 50; i++){
+            //     auto box = instantiate(ball);
+            //     glm::vec3 randPos = randomSphere() * 50.f + playerPos;
+            //     box->getComponent<sphere_rb>()->pt->setGlobalPose(PxTransform(PxVec3(randPos.x,randPos.y,randPos.z)));
+            // }
+        }
+        if (Input.Mouse.getButtonDown(1))
+        {
+            parallelfor(17000 * Time.deltaTime,
+                        // for(int i = 0; i < 17000 * Time.deltaTime; i++){
+                        //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
+                        glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
+                        auto box = instantiate(px_bomb);
+                        box->transform->setPosition(start_pos);
+                        box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;);
+        }
     }
-    SER_FUNC() {}
+    SER_FUNC()
+    {
+        SER(ball);
+        SER(rayHit);
+        SER(px_bomb);
+        SER(l_expl);
+    }
 };
 
 // editor *player::m_editor;
@@ -311,12 +488,11 @@ public:
             normal = randomSphere();
         exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 15);
         transform->gameObject()->destroy();
-        
+
         // transform->setPosition(col.point + glm::vec3(0,0.5,0));
         // transform->gameObject()->getComponent<collider>()->p.pos1 = transform->getPosition();
         // if(vel.y < 0)
         //     vel = glm::reflect(vel,col.normal);
-        
 
         // b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
         if (playSound)
@@ -429,7 +605,7 @@ public:
         if ((Time.time - lastFire) * g->rof > 1.f)
         {
             float x = Time.deltaTime * g->rof;
-            float reload = 1; //std::max((float)(int)x, 1.f);
+            float reload = 1; // std::max((float)(int)x, 1.f);
             float r;
             // if(reload > x)
             // 	r = Time.deltaTime * (reload / x);
@@ -504,6 +680,7 @@ float ship_vel;
 // 	//UPDATE(nbody, update);
 // 	COPY(nbody);
 // };
+
 class spinner final : public component
 {
 public:
@@ -522,7 +699,7 @@ public:
         RENDER(axis);
         RENDER(speed);
     }
-    //UPDATE(spinner,update);
+    // UPDATE(spinner,update);
     SER_FUNC()
     {
         SER(speed)
@@ -589,7 +766,7 @@ public:
     }
     void update()
     {
-        if(Input.Mouse.getButtonDown(1))
+        if (Input.Mouse.getButtonDown(1))
             return;
         /////////////////////////////////////////////// turn turret
         vec3 targetPos = inverse(toMat3(transform->getRotation())) * (target->getPosition() - transform->getPosition());
@@ -611,7 +788,7 @@ public:
             turn_angle = t_angles[0] - turret_angle;
         }
 
-        canFire = abs(angle) < 0.01; //turret_speed * Time.deltaTime;
+        canFire = abs(angle) < 0.01; // turret_speed * Time.deltaTime;
         turret_angle += turn_angle;
         float turret_turn_angle = turn_angle - angle;
         transform->rotate(vec3(0, 1, 0), angle);
@@ -645,12 +822,12 @@ public:
 
         transform->rotate(vec3(0, 1, 0), turret_turn_angle);
 
-        canFire = canFire && abs(angle) < 0.01; //gun_speed * Time.deltaTime;
-                                                // if(canFire && Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
-                                                // 	if(barrels->fire()){
-                                                // 		// cout << "fire" << endl;
-                                                // 		muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),20);
-                                                // 		getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),guns->forward(),vec3(0.2),60);
+        canFire = canFire && abs(angle) < 0.01; // gun_speed * Time.deltaTime;
+                                                //  if(canFire && Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){
+                                                //  	if(barrels->fire()){
+                                                //  		// cout << "fire" << endl;
+                                                //  		muzzelFlash.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),20);
+                                                //  		getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),guns->forward(),vec3(0.2),60);
 
         // 		// muzzelSmoke.burst(guns->forward() * guns->getScale() * 5.3f + guns->getPosition(),guns->forward(),17);
         // 	}
@@ -680,7 +857,7 @@ public:
         }
         return false;
     }
-    //UPDATE(_turret,update);
+    // UPDATE(_turret,update);
     SER_FUNC()
     {
         if (x == ser_mode::edit_mode && ImGui::Button("init"))
@@ -814,7 +991,7 @@ public:
             reset();
         }
     }
-    //UPDATE(gunManager,update);
+    // UPDATE(gunManager,update);
 
     SER_FUNC()
     {
@@ -841,7 +1018,7 @@ public:
             g->fire();
     }
     void onEdit() {}
-    //UPDATE(autoShooter, update);
+    // UPDATE(autoShooter, update);
     SER_FUNC()
     {
         SER(shouldFire)
@@ -948,7 +1125,7 @@ public:
         RENDER(maxForward);
         RENDER(rotationSpeed);
     }
-    //UPDATE(_ship,update);
+    // UPDATE(_ship,update);
     SER_FUNC()
     {
         SER(maxReverse);
@@ -971,7 +1148,7 @@ public:
     {
         RENDER(t.id);
     }
-    //UPDATE(_boom,update);
+    // UPDATE(_boom,update);
     SER_FUNC()
     {
         SER(t)
@@ -1102,7 +1279,7 @@ public:
         // transform->translate(vec3(0,1,-4) * -Input.Mouse.getScroll());
         fov -= Input.Mouse.getScroll() * 0.5;
         fov = glm::clamp(fov, radians(5.f), _80);
-        transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
+        transform->gameObject()->getComponent<_camera>()->c->fov = fov; // Input.Mouse.getScroll();
 
         if (framecount++ > 1)
         {
@@ -1181,7 +1358,7 @@ public:
         ship->yaw(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D));
         ship->accelerate(Input.getKey(GLFW_KEY_R) - Input.getKey(GLFW_KEY_F));
     }
-    //UPDATE(player_sc, update);
+    // UPDATE(player_sc, update);
     SER_FUNC()
     {
         SER(speed)
@@ -1241,7 +1418,7 @@ public:
 
         fov -= Input.Mouse.getScroll() * 5;
         fov = glm::clamp(fov, 5.f, 80.f);
-        transform->gameObject()->getComponent<_camera>()->c->fov = fov; //Input.Mouse.getScroll();
+        transform->gameObject()->getComponent<_camera>()->c->fov = fov; // Input.Mouse.getScroll();
 
         if (Input.getKeyDown(GLFW_KEY_ESCAPE) && cursorReleased)
         {

@@ -12,7 +12,7 @@ data:
   emission_rate: 1000
   lifetime: 20
   rotation_rate: 0
-  dispersion: 3.14159012
+  dispersion: 3.14159
   minSpeed: 2
   maxSpeed: 3
   lifetime2: 20

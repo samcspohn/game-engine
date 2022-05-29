@@ -1,0 +1,12 @@
+components:
+  - id: 9328246355543747823
+    value:
+      shader:
+        id: 0
+      model:
+        id: 1
+  - id: 4213951982114442359
+    value:
+      data:
+        id: 782240804096941237
+        value: ~

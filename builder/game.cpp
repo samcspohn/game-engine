@@ -134,39 +134,39 @@ void renderFunc(rolling_buffer &fps)//, runtimeCompiler &rc)
 
 void physicsUpdate(float dt)
 {
-    for (auto &i : physics_manager::collisionGraph)
-        physics_manager::collisionLayers[i.first].clear();
-    timer stopWatch;
-    static float time = 0;
-    time += dt;
-    if (time > 1.f / 30.f)
-    {
+    // for (auto &i : physics_manager::collisionGraph)
+    //     physics_manager::collisionLayers[i.first].clear();
+    // timer stopWatch;
+    // static float time = 0;
+    // time += dt;
+    // if (time > 1.f / 30.f)
+    // {
 
-        componentStorage<collider> *cb = COMPONENT_LIST(collider);
-        stopWatch.start();
+    //     componentStorage<collider> *cb = COMPONENT_LIST(collider);
+    //     stopWatch.start();
 
-        parallelfor(
-            cb->size(),
-            if (cb->data.getv(i)) {
-                cb->data.get(i)._update();
-            });
-        appendStat(cb->name + "--update", stopWatch.stop());
-        stopWatch.start();
-        parallelfor(
-            cb->data.size(),
-            if (cb->data.getv(i)) {
-                cb->data.get(i).midUpdate();
-            });
-        appendStat(cb->name + "--mid_update", stopWatch.stop());
-        stopWatch.start();
-        parallelfor(
-            cb->size(),
-            if (cb->data.getv(i)) {
-                cb->data.get(i)._lateUpdate();
-            });
-        appendStat(cb->name + "--late_update", stopWatch.stop());
-        time -= (1.f / 30.f);
-    }
+    //     parallelfor(
+    //         cb->size(),
+    //         if (cb->data.getv(i)) {
+    //             cb->data.get(i)._update();
+    //         });
+    //     appendStat(cb->name + "--update", stopWatch.stop());
+    //     stopWatch.start();
+    //     parallelfor(
+    //         cb->data.size(),
+    //         if (cb->data.getv(i)) {
+    //             cb->data.get(i).midUpdate();
+    //         });
+    //     appendStat(cb->name + "--mid_update", stopWatch.stop());
+    //     stopWatch.start();
+    //     parallelfor(
+    //         cb->size(),
+    //         if (cb->data.getv(i)) {
+    //             cb->data.get(i)._lateUpdate();
+    //         });
+    //     appendStat(cb->name + "--late_update", stopWatch.stop());
+    //     time -= (1.f / 30.f);
+    // }
 }
 
 void updateCameras()

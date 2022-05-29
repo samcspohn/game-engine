@@ -1,10 +1,14 @@
 components:
+  - id: 8128736703838043503
+    value:
+      prototype:
+        id: 49
   - id: 15330709117420109069
     value:
       vel:
         - 0
-        - 4.5369401e+24
-        - 4.30641205e+21
+        - 4.53694e+24
+        - 4.306412e+21
       exp:
         id: 44
       explosionSound:
@@ -33,7 +37,3 @@ components:
           - 0
           - 0
           - 0
-  - id: 8128736703838043503
-    value:
-      prototype:
-        id: 49

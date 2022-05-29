@@ -41,7 +41,7 @@ struct collision
 			  collider *_this_collider,
 			  collider *_other_collider,
 			  game_object *_g_o) : point(_point), normal(_normal), this_collider(_this_collider), other_collider(_other_collider), g_o(_g_o) {}
-	collision(){}
+	collision() {}
 };
 
 struct component
@@ -56,6 +56,7 @@ public:
 	virtual void onCollision(collision &);
 	virtual void update();
 	virtual void lateUpdate();
+	virtual void fixedUpdate();
 	virtual void init(int id);
 	virtual void deinit(int id);
 	virtual void editorUpdate();
@@ -70,6 +71,7 @@ public:
 	size_t hash;
 	bool h_update;
 	bool h_lateUpdate;
+	bool h_fixedUpdate;
 	bool h_editorUpdate;
 	timer update_timer;
 	float update_t;
@@ -82,6 +84,7 @@ public:
 	bool hasEditorUpdate() { return h_editorUpdate; }
 	virtual void update(){};
 	virtual void lateUpdate(){};
+	virtual void fixedUpdate(){};
 	virtual void editorUpdate(){};
 	virtual component *get(int i) { return 0; }
 	virtual bool getv(int i) { return false; }
@@ -92,6 +95,7 @@ public:
 	virtual int decode(YAML::Node &node) = 0;
 	virtual component *_decode(YAML::Node &node) = 0;
 	virtual void sort(){};
+	virtual void compress(){};
 	virtual void clear() {}
 	virtual int copy(int id) = 0;
 	virtual void addComponent(game_object *g) = 0;
@@ -100,18 +104,93 @@ public:
 	virtual int copy(component *c) = 0;
 };
 
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_priority_queue.h>
+#include <tbb/parallel_for_each.h>
+template <typename t>
+struct tbb_storage
+{
+	tbb::concurrent_unordered_map<int, t> data;
+	tbb::concurrent_priority_queue<int> avail;
+	mutex m;
+	int extent = 0;
+	t &get(int id)
+	{
+		// tbb::concurrent_unordered_map<int,string> d;
+		// string& s = *d.find(id);
+		t &d = data.find(id)->second;
+		return d;
+	}
+	
+
+	bool getv(int id) const
+	{
+		return data.find(id) != data.end();
+	}
+	template <typename... types>
+	int _new(types &&...args)
+	{
+		int id;
+		if (avail.try_pop(id))
+		{
+			data.emplace(id, t{args...});
+		}
+		else
+		{
+			m.lock();
+			id = data.emplace(data.size(), t{args...}).first->first;
+			extent++;
+			m.unlock();
+		}
+		return id;
+	}
+	void _delete(int i)
+	{
+		m.lock();
+		data.unsafe_erase(i);
+		m.unlock();
+		avail.push(i);
+		// data[i / chunk][i % chunk].~t();
+		// {
+		//     lock_guard<mutex> lck(m);
+		//     valid[i] = false;
+		//     avail.push_front(i);
+		// 	++avail_count;
+		// }
+	}
+	int size()
+	{
+		// lock_guard<mutex> lck(m);
+		return extent;
+	}
+	int active()
+	{
+		// lock_guard<mutex> lck(m);
+		return data.size();
+	}
+	void clear()
+	{
+		data.clear();
+		avail.clear();
+	}
+};
+
 template <typename t>
 class componentStorage : public componentStorageBase
 {
 public:
 	// deque_heap<t> data;
 	STORAGE<t> data;
+	// tbb_storage<t> data;
 
 	componentStorage(const char *_name);
 	~componentStorage();
 	unsigned int active()
 	{
 		return data.active();
+	}
+	void compress(){
+		data.compress();
 	}
 	int size()
 	{
@@ -123,7 +202,10 @@ public:
 		if (i >= data.size())
 			return 0;
 		else
+		{
 			return &data.get(i);
+			// return &r;
+		}
 	}
 	bool getv(int i)
 	{
@@ -148,56 +230,55 @@ public:
 	rolling_buffer _update_t;
 	void update()
 	{
-		update_timer.start();
-		if (true) //_update_t.getAverageValue() > 1.f)
-		{
-			parallelfor(data.size(),
+		// if(h_update){
+		// 	tbb::parallel_for(data.data.range(), [](auto& x) {
+		// 		for(auto& i : x) {
+		// 			i.second.update();
+		// 		}
+		// 	});
+		// }
+		parallelfor(data.size(),
+					{
+						if (data.getv(i))
 						{
-							if (data.getv(i))
-							{
-								data.get(i).update();
-							}
-						});
-		}
-		else
-		{
-			int size = data.size();
-			for (int i = 0; i < size; i++)
-			{
-				if (data.getv(i))
-				{
-					data.get(i).update();
-				}
-			}
-		}
-		_update_t.add(update_timer.stop());
+							data.get(i).update();
+						}
+					});
 	}
 	rolling_buffer _lateupdate_t;
 	void lateUpdate()
 	{
-		update_timer.start();
-		if (_lateupdate_t.getAverageValue() > 1.f)
-		{
-			parallelfor(data.size(),
+		// if(h_lateUpdate){
+		// 	tbb::parallel_for(data.data.range(), [](auto& x) {
+		// 		for(auto& i : x) {
+		// 			i.second.lateUpdate();
+		// 		}
+		// 	});
+		// }
+		parallelfor(data.size(),
+					{
+						if (data.getv(i))
 						{
-							if (data.getv(i))
-							{
-								data.get(i).lateUpdate();
-							}
-						});
-		}
-		else
-		{
-			int size = data.size();
-			for (int i = 0; i < size; i++)
-			{
-				if (data.getv(i))
-				{
-					data.get(i).lateUpdate();
-				}
-			}
-		}
-		_lateupdate_t.add(update_timer.stop());
+							data.get(i).lateUpdate();
+						}
+					});
+	}
+	void fixedUpdate()
+	{
+		// if(h_fixedUpdate){
+		// 	tbb::parallel_for(data.data.range(), [](auto& x) {
+		// 		for(auto& i : x) {
+		// 			i.second.fixedUpdate();
+		// 		}
+		// 	});
+		// }
+		parallelfor(data.size(),
+					{
+						if (data.getv(i))
+						{
+							data.get(i).fixedUpdate();
+						}
+					});
 	}
 	void editorUpdate()
 	{
@@ -320,26 +401,6 @@ void destroyAllComponents();
 
 #define REGISTER_COMPONENT(comp) componentStorage<comp> component_storage_##comp(#comp);
 
-// template <typename t>
-// componentMeta<t> *registerComponent()
-// {
-// 	size_t hash = typeid(t).hash_code();
-// 	ComponentRegistry.meta_types.emplace(hash, make_shared<componentMeta<t>>());
-// 	ComponentRegistry.meta.emplace(string(typeid(t).name()), ComponentRegistry.meta_types.at(hash));
-
-// 	// ComponentRegistry.components[hash] = make_unique<componentStorage<t>>();
-// 	componentStorageBase *csb = ComponentRegistry.registry<t>();
-// 	csb->name = typeid(t).name();
-// 	csb->h_update = typeid(&t::update) != typeid(&component::update);
-// 	csb->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
-// 	csb->hash = hash;
-// 	// if (t::_registerEngineComponent())
-// 	// 	ComponentRegistry.gameEngineComponents.insert(pair(hash, ComponentRegistry.components[hash]));
-// 	// else
-// 	// ComponentRegistry.gameComponents.insert(pair(hash, ComponentRegistry.components[hash]));
-// 	return static_cast<componentMeta<t>*>(ComponentRegistry.meta_types.at(hash).get());
-// }
-
 template <typename t>
 componentStorage<t>::componentStorage(const char *_name)
 {
@@ -348,6 +409,7 @@ componentStorage<t>::componentStorage(const char *_name)
 	this->h_update = typeid(&t::update) != typeid(&component::update);
 	this->h_lateUpdate = typeid(&t::lateUpdate) != typeid(&component::lateUpdate);
 	this->h_editorUpdate = typeid(&t::editorUpdate) != typeid(&component::editorUpdate);
+	this->h_fixedUpdate = typeid(&t::fixedUpdate) != typeid(&component::fixedUpdate);
 	std::cout << "register component " << name << std::endl;
 	ComponentRegistry.registerComponentStorage(this);
 }

@@ -8,6 +8,7 @@
 #include "_rendering/camera.h"
 #include <array>
 #include "physics/collision.h"
+#include "physics/physics_.h"
 using namespace std;
 
 #define quadrant array<array<terr::quad_node, 2>, 2>
@@ -26,7 +27,9 @@ struct chunk
 {
     unique_ptr<Mesh> mesh;
     array<array<float, terrainSize>, terrainSize> h;
+    array<array<float, terrainSize>, terrainSize> _h;
     terr::quad_node quadtree;
+    PxRigidStatic* b;
     chunk();
     ~chunk();
 };

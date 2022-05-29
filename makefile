@@ -30,6 +30,6 @@ getDebDeps:
 	apt install g++ -y
 	apt install libglew-dev -y
 	apt install libtbb-dev -y
-	apt install libxxf86dga-dev -y
+	apt install libxxf86dga-dev -ybt
 	apt install libasio-dev -y
 	apt install libyaml-cpp-dev -y

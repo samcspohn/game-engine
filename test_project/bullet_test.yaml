@@ -18,9 +18,9 @@ transform:
     - name: sphere
       transform:
         position:
-          - 0
-          - 3.56599998
-          - 0
+          - 63.96449
+          - 56.75339
+          - 58.37265
         rotation:
           - 0
           - 0
@@ -33,25 +33,25 @@ transform:
         id: 1
         children: ~
       components:
-        - id: 782240804096941237
-          value: ~
         - id: 9328246355543747823
           value:
             shader:
               id: 0
             model:
               id: 1
+        - id: 11170344006673021740
+          value: ~
     - name: camera
       transform:
         position:
-          - -1.39363384
-          - 2.43089509
-          - 25.3808937
+          - 81.32652
+          - 68.14937
+          - 111.6011
         rotation:
           - 0
           - 1
           - 0
-          - -4.37113883e-08
+          - -4.371139e-08
         scale:
           - 1
           - 1
@@ -61,30 +61,35 @@ transform:
       components:
         - id: 2575793217791610351
           value:
-            fov: 1.39626336
-            near: 0.100000001
+            fov: 1.396263
+            near: 0.1
             far: 10000
             clearColor:
-              - 4.59163468e-41
-              - 1.7954191e+20
-              - 4.59163468e-41
+              - 4.591635e-41
+              - 1.795419e+20
+              - 4.591635e-41
         - id: 7533234078955283426
-          value: ~
+          value:
+            ball: 25
+            rayHit: 26
+            px_bomb: 28
+            l_expl:
+              id: 32
     - name: ""
       transform:
         position:
-          - 0
-          - 5.96485186
-          - 0.415743828
+          - 63.96449
+          - 61.0771
+          - 58.78838
         rotation:
-          - 0.127143443
-          - 0.314411432
-          - -0.233528316
-          - 0.911287367
+          - 0.1271434
+          - 0.3144114
+          - -0.2335283
+          - 0.9112874
         scale:
-          - 0.99998945
-          - 0.999985993
-          - 0.999996305
+          - 0.9999894
+          - 0.999986
+          - 0.9999963
         id: 3
         children: ~
       components:
@@ -99,18 +104,18 @@ transform:
     - name: ship
       transform:
         position:
-          - -5.28988886
-          - 9.50566292
-          - 12.8093262
+          - 58.67459
+          - 64.6179
+          - 71.18199
         rotation:
-          - -0.141268924
-          - -0.0378504656
-          - 0.0740579367
-          - 0.986470997
+          - -0.1412689
+          - -0.03785047
+          - 0.07405794
+          - 0.986471
         scale:
-          - 0.99996382
-          - 0.999965727
-          - 0.999972522
+          - 0.9999638
+          - 0.9999657
+          - 0.9999725
         id: 4
         children: ~
       components:
@@ -119,9 +124,3151 @@ transform:
             shader:
               id: 0
             model:
-              id: 14
+              id: 8
         - id: 18115064742936952173
           value:
             m:
-              id: 14
+              id: 8
+    - name: ""
+      transform:
+        position:
+          - 0
+          - 0
+          - 0
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 5
+        children: ~
+      components:
+        - id: 4425117626672229357
+          value:
+            shader:
+              id: 5
+    - name: sphere
+      transform:
+        position:
+          - 98.42291
+          - 78.16727
+          - 166.6461
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 6
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 115.5502
+          - 78.16727
+          - 166.6461
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 7
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 128.6345
+          - 78.16727
+          - 166.6461
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 8
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 142.326
+          - 78.16727
+          - 166.6461
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 9
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 159.4533
+          - 78.16727
+          - 166.6461
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 10
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 172.5376
+          - 78.16727
+          - 166.6461
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 11
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 115.5502
+          - 78.16727
+          - 146.9387
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 12
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 98.42291
+          - 78.16727
+          - 146.9387
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 13
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 128.6345
+          - 78.16727
+          - 146.9387
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 14
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 142.326
+          - 78.16727
+          - 146.9387
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 15
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 159.4533
+          - 78.16727
+          - 146.9387
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 16
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 172.5376
+          - 78.16727
+          - 146.9387
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 17
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 98.42291
+          - 78.16727
+          - 129.8901
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 18
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 115.5502
+          - 78.16727
+          - 129.8901
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 19
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 128.6345
+          - 78.16727
+          - 129.8901
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 20
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 142.326
+          - 78.16727
+          - 129.8901
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 21
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 159.4533
+          - 78.16727
+          - 129.8901
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 22
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 172.5376
+          - 78.16727
+          - 129.8901
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 23
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 172.5376
+          - 78.16727
+          - 110.1828
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 24
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 159.4533
+          - 78.16727
+          - 110.1828
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 25
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 142.326
+          - 78.16727
+          - 110.1828
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 26
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 128.6345
+          - 78.16727
+          - 110.1828
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 27
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 98.42291
+          - 78.16727
+          - 110.1828
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 28
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 115.5502
+          - 78.16727
+          - 110.1828
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 29
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 115.5502
+          - 78.16727
+          - 92.38738
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 30
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 98.42291
+          - 78.16727
+          - 92.38738
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 31
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 128.6345
+          - 78.16727
+          - 92.38738
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 32
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 142.326
+          - 78.16727
+          - 92.38738
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 33
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 159.4533
+          - 78.16727
+          - 92.38738
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 34
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 172.5376
+          - 78.16727
+          - 92.38738
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 35
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 92.85842
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 36
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 130.3611
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 37
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 147.4098
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 38
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 147.4098
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 39
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 147.4098
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 40
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 147.4098
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 41
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 147.4098
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 42
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 147.4098
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 43
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 167.1172
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 44
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 167.1172
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 45
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 167.1172
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 46
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 167.1172
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 47
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 167.1172
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 48
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 167.1172
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 49
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 130.3611
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 50
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 130.3611
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 51
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 130.3611
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 52
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 130.3611
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 53
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 130.3611
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 54
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 110.6538
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 55
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 110.6538
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 56
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 110.6538
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 57
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 110.6538
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 58
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 110.6538
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 59
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 110.6538
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 60
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 92.85842
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 61
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 92.85842
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 62
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 92.85842
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 63
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 92.85842
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 64
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 92.85842
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 65
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 66
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 67
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 68
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 69
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 70
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 71
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 72
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 73
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 74
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 75
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 76
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 77
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 78
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 79
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 80
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 81
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 82
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 83
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 84
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 85
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 92.31406
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 86
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 79.2298
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 87
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 88
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 89
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 90
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 91
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 35.32663
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 92
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 18.19917
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 93
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 48.41087
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 94
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 62.10241
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 95
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 144.6677
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 96
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 100.7646
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 97
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 174.8794
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 98
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 161.7951
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 99
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 144.6677
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 100
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 130.9763
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 101
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 100.7646
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 102
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 117.892
+          - 78.16727
+          - 58.80787
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 103
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 174.8794
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 104
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 161.7951
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 105
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 144.6677
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 106
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 130.9763
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 107
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 117.892
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 108
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 161.7951
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 109
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 174.8794
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 110
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 100.7646
+          - 78.16727
+          - 78.51534
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 111
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 117.892
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 112
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 130.9763
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 113
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 144.6677
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 114
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 161.7951
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 115
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 174.8794
+          - 78.16727
+          - 41.75929
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 116
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 174.8794
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 117
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 161.7951
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 118
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 144.6677
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 119
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 130.9763
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 120
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 100.7646
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 121
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 117.892
+          - 78.16727
+          - 22.05206
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 122
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 117.892
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 123
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 100.7646
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 124
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
+    - name: sphere
+      transform:
+        position:
+          - 130.9763
+          - 78.16727
+          - 4.256714
+        rotation:
+          - 0
+          - 0
+          - 0
+          - 1
+        scale:
+          - 1
+          - 1
+          - 1
+        id: 125
+        children: ~
+      components:
+        - id: 9328246355543747823
+          value:
+            shader:
+              id: 0
+            model:
+              id: 1
+        - id: 11170344006673021740
+          value: ~
 components: ~

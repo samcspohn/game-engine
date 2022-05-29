@@ -3,9 +3,21 @@
 #include "runtimeCompiler.h"
 #include "assetManager.h"
 #include "physics/physics_.h"
-_physicsManager *pm;
 
 using namespace std;
+struct logger
+{
+    string name;
+    timer t;
+    logger(string name) : name(name)
+    {
+        t.start();
+    }
+    ~logger()
+    {
+        appendStat(name, t.stop());
+    }
+};
 
 void doLoopIteration()
 {
@@ -19,7 +31,7 @@ void doLoopIteration()
         {
             stopWatch.start();
             cb->update();
-            appendStat(cb->name + "--update", stopWatch.stop());
+            appendStat("update--" + cb->name, stopWatch.stop());
         }
     }
     // LATE //UPDATE
@@ -30,7 +42,7 @@ void doLoopIteration()
         {
             stopWatch.start();
             cb->lateUpdate();
-            appendStat(cb->name + "--late_update", stopWatch.stop());
+            appendStat("late_update--" + cb->name, stopWatch.stop());
         }
     }
 }
@@ -140,15 +152,32 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
 
 void physicsUpdate(float dt)
 {
-    pm->simulate(Time.deltaTime);
 
     // for (auto &i : physics_manager::collisionGraph)
     //     physics_manager::collisionLayers[i.first].clear();
     // timer stopWatch;
-    // static float time = 0;
-    // time += dt;
-    // if (time >= 1.f / 30.f)
-    // {
+    static float time = 0;
+    time += dt;
+    timer t;
+    if (time >= (1.f / 30.f))
+    {
+        pm->gScene->simulate(1.0f / 30.0f);
+        pm->gScene->fetchResults(true);
+        // Start simulation
+        // t.start();
+        // appendStat("Physics", t.stop());
+        for (auto [_, i] : ComponentRegistry.meta_types)
+        {
+            // logger(i->getName() + "--late_update");
+            if (i->h_fixedUpdate)
+            {
+                t.start();
+                i->fixedUpdate();
+                appendStat("fixed_update--" + i->getName(), t.stop());
+            }
+        }
+        time -= (1.f / 30.f);
+    }
 
     //     componentStorage<collider> *cb = COMPONENT_LIST(collider);
     //     componentStorage<rigidBody> *rb = COMPONENT_LIST(rigidBody);
@@ -215,72 +244,44 @@ void physicsUpdate(float dt)
     // }
 }
 
-_transform getTransform(btRigidBody *rb)
-{
-    // if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
-    // 	return;
-    // glColor3f(1,0,0);
-    // float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
-    btTransform _t;
-    rb->getMotionState()->getWorldTransform(_t); // get the transform
-    mat4 mat;
-    _t.getOpenGLMatrix(glm::value_ptr(mat)); // OpenGL matrix stores the rotation and orientation
+// _transform getTransform(btRigidBody *rb)
+// {
+//     // if(sphere->getCollisionShape()->getShapeType()!=SPHERE_SHAPE_PROXYTYPE)	//only render, if it's a sphere
+//     // 	return;
+//     // glColor3f(1,0,0);
+//     // float r=((btSphereShape*)sphere->getCollisionShape())->getRadius();
+//     btTransform _t;
+//     rb->getMotionState()->getWorldTransform(_t); // get the transform
+//     mat4 mat;
+//     _t.getOpenGLMatrix(glm::value_ptr(mat)); // OpenGL matrix stores the rotation and orientation
 
-    _transform t;
-    glm::vec3 skew;
-    glm::vec4 perspective;
-    glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
-    return t;
-}
-
-struct bullet_rb : component
-{
-
-    btRigidBody *bt = 0;
-    void onStart()
-    {
-        glm::vec3 pos = transform->getPosition();
-        bt = pm->addSphere(1.f, pos.x, pos.y, pos.z, 1);
-    }
-    void update()
-    {
-        _transform t = getTransform(bt);
-        transform->setPosition(t.position);
-        transform->setRotation(t.rotation);
-    }
-    void onDestroy()
-    {
-        if (bt)
-            pm->removeRigidBody(bt);
-    }
-
-    SER_FUNC()
-    {
-    }
-};
-REGISTER_COMPONENT(bullet_rb);
-
+//     _transform t;
+//     glm::vec3 skew;
+//     glm::vec4 perspective;
+//     glm::decompose(mat, t.scale, t.rotation, t.position, skew, perspective);
+//     return t;
+// }
 
 struct bullet_box_rb : component
 {
 
-    btRigidBody *bt = 0;
+    // btRigidBody *bt = 0;
     void onStart()
     {
-        glm::vec3 pos = transform->getPosition();
-        glm::quat rot = transform->getRotation();
-        bt = pm->addBox(glm::vec3(1.f), rot, pos, 1);
+        // glm::vec3 pos = transform->getPosition();
+        // glm::quat rot = transform->getRotation();
+        // bt = pm->addBox(glm::vec3(1.f), rot, pos, 1);
     }
     void update()
     {
-        _transform t = getTransform(bt);
-        transform->setPosition(t.position);
-        transform->setRotation(t.rotation);
+        // _transform t = getTransform(bt);
+        // transform->setPosition(t.position);
+        // transform->setRotation(t.rotation);
     }
     void onDestroy()
     {
-        if (bt)
-            pm->removeRigidBody(bt);
+        // if (bt)
+        //     pm->removeRigidBody(bt);
     }
 
     SER_FUNC()
@@ -289,29 +290,31 @@ struct bullet_box_rb : component
 };
 REGISTER_COMPONENT(bullet_box_rb);
 
-
 struct bullet_ship_rb : component
 {
 
-    btRigidBody *bt = 0;
+    // btRigidBody *bt = 0;
+    PxRigidStatic *pt = 0;
     _model m;
     void onStart()
     {
         glm::vec3 pos = transform->getPosition();
         glm::quat rot = transform->getRotation();
 
-        bt = pm->addTriangleMesh(&m.mesh(), pos, rot, 100);
+        pt = pm->addPxMesh(pos, &m.mesh(), transform->gameObject());
     }
     void update()
     {
-        _transform t = getTransform(bt);
-        transform->setPosition(t.position);
-        transform->setRotation(t.rotation);
+        auto t = pt->getGlobalPose();
+        transform->setPosition(*reinterpret_cast<glm::vec3 *>(&t.p));
+        transform->setRotation(*reinterpret_cast<glm::quat *>(&t.q));
     }
     void onDestroy()
     {
-        if (bt)
-            pm->removeRigidBody(bt);
+        if (pt)
+            pt->release();
+        // if (bt)
+        //     pm->removeRigidBody(bt);
     }
 
     SER_FUNC()
@@ -338,26 +341,12 @@ void updateCameras()
     }
 }
 
-struct logger
-{
-    string name;
-    timer t;
-    logger(string name) : name(name)
-    {
-        t.start();
-    }
-    ~logger()
-    {
-        appendStat(name, t.stop());
-    }
-};
-
 void printStats()
 {
     componentStats.erase("");
     for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
     {
-        cout << i->first << " -- avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << endl;
+        cout << "avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << " " << i->first << endl;
     }
     // cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
     // cout << "entities : " << entities << endl;
@@ -374,43 +363,10 @@ REGISTER_COMPONENT(rigidBody);
 REGISTER_COMPONENT(collider);
 REGISTER_COMPONENT(kinematicBody);
 
-btBoxShape *createBoxShape(const btVector3 &halfExtents)
-{
-    btBoxShape *box = new btBoxShape(halfExtents);
-    return box;
-}
-
 int main(int argc, char **argv)
 {
     pm = new _physicsManager();
     pm->setDebug();
-
-    {
-        btBoxShape *groundShape = createBoxShape(btVector3(btScalar(10.), btScalar(0.1), btScalar(10.)));
-        btTransform groundTransform;
-        groundTransform.setIdentity();
-        groundTransform.setOrigin(btVector3(0, 0, 0));
-        // m_collisionShapes.push_back(groundShape);
-
-        {
-            btScalar mass(0.);
-            // rigidbody is dynamic if and only if mass is non zero, otherwise static
-            bool isDynamic = (mass != 0.f);
-
-            btVector3 localInertia(0, 0, 0);
-
-            btDefaultMotionState *myMotionState = new btDefaultMotionState(groundTransform);
-            btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, groundShape, localInertia);
-            btRigidBody *m_groundBody = new btRigidBody(cInfo);
-
-            m_groundBody->setUserIndex(-1);
-
-            m_groundBody->forceActivationState(DISABLE_DEACTIVATION);
-            m_groundBody->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT | btCollisionObject::CF_STATIC_OBJECT);
-            pm->addBody(m_groundBody);
-        }
-        // m_dynamicsWorld->setInternalTickCallback(kinematicPreTickCallback, m_groundBody, true);
-    }
 
     assetManager asset_manager;
     asset_manager.registerAssetManager({".obj"}, &model_manager);
@@ -422,6 +378,9 @@ int main(int argc, char **argv)
     rc.include.push_back("lighting");
     rc.include.push_back("particles");
     rc.include.push_back("physics");
+    rc.include.push_back("bullet/src");
+    rc.include.push_back("PhysX/physx/include");
+    rc.include.push_back("PhysX/pxshared/include");
 
     physics_manager::collisionGraph[-1] = {};
     physics_manager::collisionGraph[0] = {0};
@@ -512,9 +471,10 @@ int main(int argc, char **argv)
     ed->c.height = 1080;
     ed->position = glm::vec3(0, 0, -10);
     int frameCount{0};
+    timer t;
     while (!glfwWindowShouldClose(window))
     {
-
+        t.start();
         {
             logger("main thread work");
             function<void()> *f;
@@ -562,11 +522,13 @@ int main(int argc, char **argv)
             if (isGameRunning())
             {
                 {
-                    logger("main loop");
+                    // logger("main loop");
+                    t.start();
                     doLoopIteration();
+                    appendStat("main loop", t.stop());
                 }
                 {
-                    logger("physics");
+                    // logger("physics");
                     physicsUpdate(Time.deltaTime);
                 }
             }
@@ -584,41 +546,54 @@ int main(int argc, char **argv)
             }
             parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
             toDestroyGameObjects.clear();
+
+            for(auto& [_,i] : ComponentRegistry.meta_types){
+                i->compress();
+            }
         }
 
         if (!isGameRunning())
             ed->update();
+
         {
             logger("wait for render");
-            waitForRenderJob([&]()
+            auto job = [&]()
                              {
                                  {
-                                     logger("update batches");
+                                    //  logger("update batches");
+                                    t.start();
                                      batchManager::updateBatches();
+                                     appendStat("update batches", t.stop());
                                  }
                                  emitterInits.clear();
                                  for (auto &i : emitter_inits)
                                      emitterInits.push_back(i.second);
                                  emitter_inits.clear();
                                  swapBurstBuffer();
-                                 updateTiming(); });
+                                 updateTiming(); };
+            waitForRenderJob(job);
         }
         if (isGameRunning())
         {
-            logger("update cameras");
+            // logger("update cameras");
+            t.start();
             updateCameras();
+            appendStat("update cameras", t.stop());
         }
         {
-            logger("copy transforms");
+            // logger("copy transforms");
             copyTransforms();
+            appendStat("copy transforms", t.stop());
         }
         {
-            logger("copy renderers");
+            // logger("copy renderers");
             copyRenderers();
+            appendStat("copy renderers", t.stop());
         }
         // ############################################################
         enqueRenderJob([&]()
                        { renderFunc(ed, fps, rc); });
+        // this_thread::sleep_for(((1.f / 60.f) - t.stop() / 1000.f) * 1000 * 1ms);
 
         fps.add(time.stop());
     }
