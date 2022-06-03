@@ -48,12 +48,12 @@ struct transform2
 	void _init();
 	transform2();
 	transform2(int i);
-	void init(int g);
-	void init(transform2 other, int go);
+	void init(game_object* g);
+	void init(transform2 other, game_object* go);
 	void init(transform2 &other);
 
 	_transform getTransform();
-	string& name();
+	string &name();
 	// Transform operator=(const Transform& t);
 	void lookat(glm::vec3 lookatPoint, glm::vec3 up);
 	glm::vec3 forward();
@@ -70,7 +70,7 @@ struct transform2
 	transform2 getParent();
 	void adopt(transform2 transform);
 	game_object *gameObject();
-	void setGameObject(int g);
+	void setGameObject(game_object* g);
 	// size_t operator=(const transform2& t);
 	operator size_t() const { return static_cast<size_t>(id); }
 
@@ -97,7 +97,7 @@ private:
 // OARCHIVE & operator<<(OARCHIVE  &os, const transform2 &t){
 // 	return os << t.id;
 // }
-void setRotationChild(transform2 tc, glm::quat& rot, glm::vec3& pos);
+void setRotationChild(transform2 tc, glm::quat &rot, glm::vec3 &pos);
 
 struct trans_update
 {
@@ -108,7 +108,7 @@ struct trans_update
 
 struct transform_meta
 {
-	atomic<int> gameObject;
+	game_object* gameObject = nullptr;
 	transform2 parent{-1};
 	list<transform2> children;
 	list<transform2>::iterator childId;
@@ -117,99 +117,58 @@ struct transform_meta
 	mutex m;
 };
 
-struct my_spin_lock {
-    
-    std::atomic_flag flag;
+struct my_spin_lock
+{
 
-    void lock() {
-		for(;;){
+	std::atomic_flag flag;
 
-
-			
+	void lock()
+	{
+		for (;;)
+		{
 		}
-        while(!flag.test_and_set(std::memory_order_acquire)){
-
+		while (!flag.test_and_set(std::memory_order_acquire))
+		{
 		}
-    }
-    void unlock() {
-        flag.clear(std::memory_order_release);  ;
-    }
+	}
+	void unlock()
+	{
+		flag.clear(std::memory_order_release);
+		;
+	}
 };
-
 
 struct _Transforms
 {
 
-	std::deque<glm::vec3> positions;
-	std::deque<glm::quat> rotations;
-	std::deque<glm::vec3> scales;
-	std::deque<transform_meta> meta;
-	std::deque<trans_update> updates;
-
-	// deque<glm::vec3> positions;
-	// deque<glm::quat> rotations;
-	// deque<glm::vec3> scales;
-	// deque<transform_meta> meta;
-	// deque<trans_update> transform_updates;
-	// tbb::concurrent_priority_queue<int> avail2;
-	std::priority_queue<int,deque<int>,std::greater<int>> avail;
-	// tbb::concurrent_priority_queue<int,std::greater<int>> avail;
-	// std::queue<int> avail;
-	// tbb::spin_mutex m;
+	tbb::concurrent_vector<glm::vec3> positions;
+	tbb::concurrent_vector<glm::quat> rotations;
+	tbb::concurrent_vector<glm::vec3> scales;
+	tbb::concurrent_vector<transform_meta> meta;
+	tbb::concurrent_vector<trans_update> updates;
+	tbb::concurrent_priority_queue<int,std::greater<int>> avail;
 	mutex m;
 
-
-
-	// transform2 _new(){
-	// 	transform2 t;
-	// 	if(!avail.try_pop(t.id)){
-	// 		m.lock();
-	// 		if(avail.size() == 0){
-	// 			t.id = positions.size();
-	// 			positions.emplace_back();
-	// 			rotations.emplace_back();
-	// 			scales.emplace_back();
-	// 			meta.emplace_back();
-	// 			transform_updates.emplace_back();
-
-	// 			m.unlock();
-	// 		}else{
-	// 			avail.try_pop(t.id);
-	// 			m.unlock();
-	// 		}
-	// 	}
-	// 	positions[t.id] = glm::vec3(0,0,0);
-	// 	rotations[t.id] =  glm::quat(1,0,0,0);
-	// 	scales[t.id] = glm::vec3(1,1,1);
-	// 	new(&meta[t.id]) transform_meta();
-	// 	new(&transform_updates[t.id]) trans_update();
-
-	// 	return t;
-	// }
-	int getCount(){
+	int getCount()
+	{
 		return meta.size() - avail.size();
 	}
-	void clear(){
+
+	void clear()
+	{
 		positions.clear();
 		rotations.clear();
 		scales.clear();
 		meta.clear();
 		updates.clear();
-
-		// positions.resize(1);
-		// rotations.resize(1);
-		// scales.resize(1);
-		// meta.resize(1);
-		// updates.resize(1);
-		while(!avail.empty())
-			avail.pop();
+		avail.clear();
 	}
+
 	transform2 _new()
 	{
 		transform2 t;
-		m.lock();
-		if (avail.size() == 0)
-		{
+		if(!avail.try_pop(t.id)){
+			lock_guard<mutex> lck(m);
 			t.id = positions.size();
 			positions.emplace_back();
 			rotations.emplace_back();
@@ -217,34 +176,26 @@ struct _Transforms
 			meta.emplace_back();
 			updates.emplace_back();
 		}
-		else
-		{
-			t.id = avail.top();
-			// t.id = avail.front();
-			avail.pop();
-		}
-		m.unlock();
 		positions[t.id] = glm::vec3(0, 0, 0);
 		rotations[t.id] = glm::quat(1, 0, 0, 0);
 		scales[t.id] = glm::vec3(1, 1, 1);
 		new (&meta[t.id]) transform_meta();
 		new (&updates[t.id]) trans_update();
-		// transform_updates[t.id].pos = true;
-		// transform_updates[t.id].rot = true;
-		// transform_updates[t.id].scl = true;
-
 		return t;
 	}
 
 	void _delete(transform2 t)
 	{
-		meta[t.id].parent = -1;
-		meta[t.id].gameObject = 0;
-		meta[t.id].children.clear();
-		meta[t.id].childId = list<transform2>::iterator();
-		m.lock();
+		// lock_guard<mutex> lck(m);
+		meta[t.id].~transform_meta();
+		// meta[t.id].parent = -1;
+		// meta[t.id].gameObject = (game_object*)-1;
+		// meta[t.id].children.clear();
+		// meta[t.id].childId = list<transform2>::iterator();
+		// avail[avail_id.fetch_add(1)] = t.id;
+		// m.lock();
 		avail.push(t.id);
-		m.unlock();
+		// m.unlock();
 	}
 
 	int size()
@@ -269,7 +220,7 @@ void initTransform();
 
 int switchAH(int index);
 extern unsigned int transforms_enabled;
-void renderEdit(const char* name, transform2& t);
+void renderEdit(const char *name, transform2 &t);
 // void saveTransforms(OARCHIVE &oa);
 // void loadTransforms(IARCHIVE &ia);
 
@@ -277,7 +228,7 @@ extern transform2 root2;
 bool operator<(const transform2 &l, const transform2 &r);
 bool operator==(const transform2 &l, const transform2 &r);
 
-extern unordered_map<int,int> transform_map;
+extern unordered_map<int, int> transform_map;
 
 namespace YAML
 {

@@ -11,6 +11,7 @@ inspectable *inspector = 0;
 ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow; // | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 transform2 selected_transform = -1;
 static unordered_set<int> selected_transforms;
+Profiler profiler;
 
 void StartComponents(componentStorageBase *cl)
 {
@@ -462,7 +463,7 @@ mutex transformLock;
 
 void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 {
-
+        
 	static double nextFPS = 0;
 	static float fps;
 	if (nextFPS < Time.unscaledTime)
@@ -506,7 +507,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 			if (ImGui::MenuItem("build", NULL))
 			{
 				// string game_engine_a = "release/libgame_engine.a";
-				string build_str = "g++ -fpermissive -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type -o _game release/libgame_engine.a";
+				string build_str = "g++ -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -Werror=return-type -o _game release/libgame_engine.a";
 				// Check if a file was created or modified
 				for (auto &file : std::filesystem::recursive_directory_iterator("test_project/runtime"))
 				{
@@ -889,6 +890,12 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 			}
 			ImGui::End();
 		}
+		if(ImGui::Begin("Profiler Window")){
+
+            auto& entry = profiler._entries[profiler.GetCurrentEntryIndex()];
+            ImGuiWidgetFlameGraph::PlotFlame("CPU", &ProfilerValueGetter, &entry, entry._stages.size(), 0, "Main Thread", FLT_MAX, FLT_MAX, ImVec2(400, 0));
+            ImGui::End();
+		}
 
 		if (ImGui::IsMouseClicked(0) && !editor_hov && !using_gizmo)
 		{
@@ -921,6 +928,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 	}
 	else
 	{
+
 		if (ImGui::Begin("info"))
 		{
 			ImGui::Text(string{"fps: " + to_string(fps)}.c_str());
@@ -939,6 +947,7 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 		}
 		if (ImGui::Begin("console"))
 		{
+			
 			if (ImGui::Button("clear"))
 			{
 				console::logs.clear();
@@ -956,6 +965,12 @@ void editorLayer(GLFWwindow *window, editor *m_editor, bool compiling)
 				ImGui::Separator();
 			}
 			ImGui::End();
+		}
+		if(ImGui::Begin("Profiler Window")){
+
+            auto& entry = profiler._entries[profiler.GetCurrentEntryIndex()];
+            ImGuiWidgetFlameGraph::PlotFlame("CPU", &ProfilerValueGetter, &entry, entry._stages.size(), 0, "Main Thread", FLT_MAX, FLT_MAX, ImVec2(400, 0));
+            ImGui::End();
 		}
 	}
 }

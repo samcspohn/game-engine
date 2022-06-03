@@ -118,6 +118,7 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 		transform_map.clear();
 	}
 	int ref = game_object_cache._new();
+	game_object_cache.get(ref).id = ref;
 	game_object *g = &game_object_cache.get(ref);
 
 	g->transform = Transforms._new();
@@ -135,7 +136,7 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 
 	transform_map[game_object_node["transform"]["id"].as<int>()] = g->transform;
 
-	Transforms.meta[g->transform.id].gameObject = ref;
+	Transforms.meta[g->transform.id].gameObject = g;
 	if (parent_id != -1)
 		transform2(parent_id).adopt(g->transform);
 
@@ -193,9 +194,10 @@ void newGameObject(transform2 t)
 {
 	// new game_object(t);
 	int ref = game_object_cache._new();
+	game_object_cache.get(ref).id = ref;
 	game_object_cache.get(ref).transform = t;
 	// ref->transform = t;
-	t->setGameObject(ref);
+	t->setGameObject(&game_object_cache.get(ref));
 }
 
 void rebuildGameObject(componentStorageBase *base, int i)
@@ -227,13 +229,14 @@ void _child_instatiate(game_object &g, transform2 parent)
 {
 	// gameLock.lock();
 	int ref = game_object_cache._new();
+	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
 	// this->transform = new Transform(*g.transform, this);
 	// g.transform->getParent()->Adopt(this->transform);
 
 	ret->transform = Transforms._new(); // new Transform(this);
-	ret->transform->init(g.transform, ref);
+	ret->transform->init(g.transform, ret);
 	parent.adopt(ret->transform);
 	for (transform2 t : g.transform->getChildren())
 	{
@@ -243,7 +246,7 @@ void _child_instatiate(game_object &g, transform2 parent)
 	// g.transform.getParent().adopt(this->transform);
 
 	for (auto &i : g.components)
-	{
+	{ 
 		// game_object::_getComponent(i)->_copy(ret);
 		int comp_ref = ComponentRegistry.meta_types.at(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
@@ -255,17 +258,20 @@ void _child_instatiate(game_object &g, transform2 parent)
 	}
 }
 
+mutex uhh;
 game_object *_instantiate(game_object &g)
 {
 	// game_object *ret = new game_object();
+	uhh.lock();
 	int ref = game_object_cache._new();
+	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
 	// this->transform = new Transform(*g.transform, this);
 	// g.transform->getParent()->Adopt(this->transform);
 
 	ret->transform = Transforms._new(); // new Transform(this);
-	ret->transform->init(g.transform, ref);
+	ret->transform->init(g.transform, ret);
 	g.transform.getParent().adopt(ret->transform);
 	for (transform2 t : g.transform->getChildren())
 	{
@@ -283,6 +289,7 @@ game_object *_instantiate(game_object &g)
 	{
 		game_object::_getComponent(i)->init(i.second);
 	}
+	uhh.unlock();
 	return ret;
 }
 game_object *instantiate(game_object &g)
@@ -299,11 +306,12 @@ game_object *instantiate(game_object &g)
 game_object *_instantiate()
 {
 	int ref = game_object_cache._new();
+	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
 	// this->transform = new Transform(this);
 	ret->transform = Transforms._new();
-	ret->transform->init(ref);
+	ret->transform->init(ret);
 	return ret;
 	// root->Adopt(this->transform);
 }
@@ -312,11 +320,15 @@ game_object *_instantiate(game_object_prototype &g)
 {
 	game_object_proto_ &_g = *game_object_proto_manager.meta.at(g.id);
 	int ref = game_object_cache._new();
+	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
 	// gameLock.lock();
 	ret->transform = Transforms._new(); // new Transform(this);
-	ret->transform->init(ref);
+	if(ref == 0){
+		cout << "0 game_object";
+	}
+	ret->transform->init(ret);
 	// gameLock.unlock();
 	for (auto &i : _g.components)
 	{
@@ -325,8 +337,9 @@ game_object *_instantiate(game_object_prototype &g)
 	}
 	for (auto &i : ret->components)
 	{
-		game_object::_getComponent(i)->transform = ret->transform; // todo // better?
-		game_object::_getComponent(i)->init(i.second);
+		component* c = game_object::_getComponent(i);
+		c->transform = ret->transform; // todo // better?
+		c->init(i.second);
 		// toStart.emplace(i.first);
 		// i.first->onStart();
 	}
@@ -351,10 +364,10 @@ game_object *instantiate()
 
 game_object *transform2::gameObject()
 {
-	return &game_object_cache.get(Transforms.meta[id].gameObject);
+	return Transforms.meta[id].gameObject;
 }
 
-void transform2::setGameObject(int g)
+void transform2::setGameObject(game_object* g)
 {
 	Transforms.meta[id].gameObject = g;
 }
@@ -364,8 +377,9 @@ void game_object::_destroy()
 
 	for (auto i : components)
 	{
-		game_object::_getComponent(i)->onDestroy();
-		game_object::_getComponent(i)->deinit(i.second);
+		component* c = game_object::_getComponent(i);
+		c->onDestroy();
+		c->deinit(i.second);
 	}
 	for (auto &c : components)
 	{
@@ -375,7 +389,7 @@ void game_object::_destroy()
 	{
 		transform->getChildren().front()->gameObject()->_destroy();
 	}
-	game_object_cache._delete(Transforms.meta[transform].gameObject);
+	game_object_cache._delete(id);
 	transform->_destroy();
 }
 

@@ -3,6 +3,7 @@
 #include "runtimeCompiler.h"
 #include "assetManager.h"
 #include "physics/physics_.h"
+// #include <iomanip.h>
 
 using namespace std;
 struct logger
@@ -29,9 +30,11 @@ void doLoopIteration()
         componentStorageBase *cb = i.second;
         if (cb->hasUpdate())
         {
+            profiler.Begin(("update--" + cb->name).c_str());
             stopWatch.start();
             cb->update();
             appendStat("update--" + cb->name, stopWatch.stop());
+            profiler.End(("update--" + cb->name).c_str());
         }
     }
     // LATE //UPDATE
@@ -40,9 +43,11 @@ void doLoopIteration()
         componentStorageBase *cb = i.second;
         if (cb->hasLateUpdate())
         {
+            profiler.Begin(("update_late--" + cb->name).c_str());
             stopWatch.start();
             cb->lateUpdate();
-            appendStat("late_update--" + cb->name, stopWatch.stop());
+            appendStat("update_late--" + cb->name, stopWatch.stop());
+            profiler.End(("update_late--" + cb->name).c_str());
         }
     }
 }
@@ -173,7 +178,7 @@ void physicsUpdate(float dt)
             {
                 t.start();
                 i->fixedUpdate();
-                appendStat("fixed_update--" + i->getName(), t.stop());
+                appendStat("update_fixed--" + i->getName(), t.stop());
             }
         }
         time -= (1.f / 30.f);
@@ -344,9 +349,10 @@ void updateCameras()
 void printStats()
 {
     componentStats.erase("");
+    cout.setf(ios::fixed);
     for (map<string, rolling_buffer>::iterator i = componentStats.begin(); i != componentStats.end(); ++i)
     {
-        cout << "avg: " << i->second.getAverageValue() << " -- stdDev: " << i->second.getStdDeviation() << " " << i->first << endl;
+        cout << "avg: " << setw(8) << setprecision(5) << i->second.getAverageValue() << " -- stdDev: " << setw(8) << setprecision(5) << i->second.getStdDeviation() << " " << i->first << endl;
     }
     // cout << "fps : " << 1.f / Time.unscaledSmoothDeltaTime << endl;
     // cout << "entities : " << entities << endl;
@@ -365,6 +371,7 @@ REGISTER_COMPONENT(kinematicBody);
 
 int main(int argc, char **argv)
 {
+    system("rm -r ./test_project/runtime");
     pm = new _physicsManager();
     pm->setDebug();
 
@@ -378,7 +385,8 @@ int main(int argc, char **argv)
     rc.include.push_back("lighting");
     rc.include.push_back("particles");
     rc.include.push_back("physics");
-    rc.include.push_back("bullet/src");
+    rc.include.push_back("imgui");
+    rc.include.push_back("imgui/imgui-flame-graph");
     rc.include.push_back("PhysX/physx/include");
     rc.include.push_back("PhysX/pxshared/include");
 
@@ -474,6 +482,7 @@ int main(int argc, char **argv)
     timer t;
     while (!glfwWindowShouldClose(window))
     {
+        profiler.Frame();
         t.start();
         {
             logger("main thread work");
@@ -518,6 +527,7 @@ int main(int argc, char **argv)
         // ngetc(c);
         time.start();
         {
+            profiler.Begin("main");
             lock_guard<mutex> lck(transformLock);
             if (isGameRunning())
             {
@@ -544,12 +554,25 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
+            profiler.Begin("deffered destroy");
+            // set<game_object*> g_set;
+            // for(auto& i : toDestroyGameObjects){
+            //     if(g_set.find(i) != g_set.end()){
+            //         cout << "duplicate delete" << endl;
+            //     }
+            //     g_set.emplace(i);
+            // }
+            for(auto& i : toDestroyGameObjects){
+                i->_destroy();
+            }
+            // parallelfor(toDestroyGameObjects.size(), toDestroyGameObjects[i]->_destroy(););
             toDestroyGameObjects.clear();
+            profiler.End("deffered destroy");
 
             for(auto& [_,i] : ComponentRegistry.meta_types){
                 i->compress();
             }
+            profiler.End("main");
         }
 
         if (!isGameRunning())
@@ -557,8 +580,9 @@ int main(int argc, char **argv)
 
         {
             logger("wait for render");
-            auto job = [&]()
-                             {
+            profiler.Begin("wait for render");
+            auto job = [&]() {
+                                profiler.End("wait for render");
                                  {
                                     //  logger("update batches");
                                     t.start();
@@ -576,25 +600,31 @@ int main(int argc, char **argv)
         if (isGameRunning())
         {
             // logger("update cameras");
+            profiler.Begin("update cameras");
             t.start();
             updateCameras();
             appendStat("update cameras", t.stop());
+            profiler.End("update cameras");
         }
         {
             // logger("copy transforms");
+            profiler.Begin("copy transforms");
             copyTransforms();
             appendStat("copy transforms", t.stop());
+            profiler.End("copy transforms");
         }
         {
-            // logger("copy renderers");
+            // logger("copy renderers"); 
+            profiler.Begin("copy renderers");
             copyRenderers();
             appendStat("copy renderers", t.stop());
+            profiler.End("copy renderers");
         }
         // ############################################################
+        
         enqueRenderJob([&]()
                        { renderFunc(ed, fps, rc); });
         // this_thread::sleep_for(((1.f / 60.f) - t.stop() / 1000.f) * 1000 * 1ms);
-
         fps.add(time.stop());
     }
     fw.stop();

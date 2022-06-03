@@ -104,84 +104,11 @@ public:
 	virtual int copy(component *c) = 0;
 };
 
-#include <tbb/concurrent_unordered_map.h>
-#include <tbb/concurrent_priority_queue.h>
-#include <tbb/parallel_for_each.h>
-template <typename t>
-struct tbb_storage
-{
-	tbb::concurrent_unordered_map<int, t> data;
-	tbb::concurrent_priority_queue<int> avail;
-	mutex m;
-	int extent = 0;
-	t &get(int id)
-	{
-		// tbb::concurrent_unordered_map<int,string> d;
-		// string& s = *d.find(id);
-		t &d = data.find(id)->second;
-		return d;
-	}
-	
-
-	bool getv(int id) const
-	{
-		return data.find(id) != data.end();
-	}
-	template <typename... types>
-	int _new(types &&...args)
-	{
-		int id;
-		if (avail.try_pop(id))
-		{
-			data.emplace(id, t{args...});
-		}
-		else
-		{
-			m.lock();
-			id = data.emplace(data.size(), t{args...}).first->first;
-			extent++;
-			m.unlock();
-		}
-		return id;
-	}
-	void _delete(int i)
-	{
-		m.lock();
-		data.unsafe_erase(i);
-		m.unlock();
-		avail.push(i);
-		// data[i / chunk][i % chunk].~t();
-		// {
-		//     lock_guard<mutex> lck(m);
-		//     valid[i] = false;
-		//     avail.push_front(i);
-		// 	++avail_count;
-		// }
-	}
-	int size()
-	{
-		// lock_guard<mutex> lck(m);
-		return extent;
-	}
-	int active()
-	{
-		// lock_guard<mutex> lck(m);
-		return data.size();
-	}
-	void clear()
-	{
-		data.clear();
-		avail.clear();
-	}
-};
-
 template <typename t>
 class componentStorage : public componentStorageBase
 {
 public:
-	// deque_heap<t> data;
 	STORAGE<t> data;
-	// tbb_storage<t> data;
 
 	componentStorage(const char *_name);
 	~componentStorage();
@@ -199,18 +126,21 @@ public:
 
 	t *get(int i)
 	{
-		if (i >= data.size())
+		if (i >= data.size()){
+			cout << "out of bounds: " << getName() << endl;
 			return 0;
+		}
 		else
 		{
 			return &data.get(i);
-			// return &r;
 		}
 	}
 	bool getv(int i)
 	{
-		if (i >= data.size())
+		if (i >= data.size()){
+			cout << "out of bounds: " << getName() << endl;
 			return 0;
+		}
 		else
 			return data.getv(i);
 	}
@@ -230,13 +160,6 @@ public:
 	rolling_buffer _update_t;
 	void update()
 	{
-		// if(h_update){
-		// 	tbb::parallel_for(data.data.range(), [](auto& x) {
-		// 		for(auto& i : x) {
-		// 			i.second.update();
-		// 		}
-		// 	});
-		// }
 		parallelfor(data.size(),
 					{
 						if (data.getv(i))
@@ -248,13 +171,6 @@ public:
 	rolling_buffer _lateupdate_t;
 	void lateUpdate()
 	{
-		// if(h_lateUpdate){
-		// 	tbb::parallel_for(data.data.range(), [](auto& x) {
-		// 		for(auto& i : x) {
-		// 			i.second.lateUpdate();
-		// 		}
-		// 	});
-		// }
 		parallelfor(data.size(),
 					{
 						if (data.getv(i))
@@ -265,13 +181,6 @@ public:
 	}
 	void fixedUpdate()
 	{
-		// if(h_fixedUpdate){
-		// 	tbb::parallel_for(data.data.range(), [](auto& x) {
-		// 		for(auto& i : x) {
-		// 			i.second.fixedUpdate();
-		// 		}
-		// 	});
-		// }
 		parallelfor(data.size(),
 					{
 						if (data.getv(i))
@@ -336,11 +245,12 @@ public:
 	}
 };
 
+#include <tbb/concurrent_unordered_map.h>
 class Registry
 {
 public:
-	std::map<std::string, componentStorageBase *> meta;
-	std::map<size_t, componentStorageBase *> meta_types;
+	tbb::concurrent_unordered_map<std::string, componentStorageBase *> meta;
+	tbb::concurrent_unordered_map<size_t, componentStorageBase *> meta_types;
 	std::mutex lock;
 
 	void clear()
@@ -358,8 +268,8 @@ public:
 	}
 	void deregisterComponentStorage(componentStorageBase *p)
 	{
-		meta.erase(p->name);
-		meta_types.erase(p->hash);
+		meta.unsafe_erase(p->name);
+		meta_types.unsafe_erase(p->hash);
 	}
 	template <typename t>
 	inline componentStorage<t> *registry()
@@ -368,7 +278,7 @@ public:
 	}
 	inline componentStorageBase *registry(size_t hash)
 	{
-		std::map<size_t, componentStorageBase *>::iterator i;
+		tbb::concurrent_unordered_map<size_t, componentStorageBase *>::iterator i;
 		if ((i = meta_types.find(hash)) != meta_types.end())
 			return i->second;
 		return 0;

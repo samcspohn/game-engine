@@ -330,14 +330,22 @@ workingFile: /home/samuel/Documents/game-engine/test_project/bullet_test.yaml
 19emitter_proto_asset:
   path:
     emitter 1.pemt: 27
+    emitter 2 copy.pemt: 44
     emitter 2.pemt: 32
+    emitter 4.pemt: 45
   meta:
     27:
       id: 27
       name: emitter 1.pemt
+    44:
+      id: 44
+      name: emitter 2 copy.pemt
     32:
       id: 32
       name: emitter 2.pemt
+    45:
+      id: 45
+      name: emitter 4.pemt
 18game_object_proto_:
   path:
     prototype_25.gop: 25
@@ -353,7 +361,7 @@ workingFile: /home/samuel/Documents/game-engine/test_project/bullet_test.yaml
     28:
       id: 28
       name: pxbomb.gop
-assetIdGenerator: 39
+assetIdGenerator: 47
 scripts:
   - path: ./test_project/physics_test.cpp
     time: -4793986221350009000

@@ -35,11 +35,12 @@
 // #include "gui.h"
 #include "_rendering/gpu_sort.h"
 #include "renderthread.h"
-
+#include "profiler.h"
 
 
 extern game_object *rootGameObject;
 extern tbb::concurrent_queue<function<void()> *> mainThreadWork;
+extern Profiler profiler;
 
 void save_level(string filename);
 void rebuildGameObject(componentStorageBase *base, int i);

@@ -75,6 +75,10 @@ transform:
             px_bomb: 28
             l_expl:
               id: 32
+            l_expl2:
+              id: 44
+            l_expl_shk_wv:
+              id: 45
     - name: ""
       transform:
         position:

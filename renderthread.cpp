@@ -217,37 +217,6 @@ void updateTransforms()
 
 void copyR(int id, int rnumThreads)
 {
-
-    // int __rendererId = 0;
-    // int __rendererOffset = 0;
-    // typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
-    // for (auto &i : batchManager::batches.back())
-    // {
-    //     for (auto &j : i.second)
-    //     {
-    //         for (auto &k : j.second)
-    //         {
-    //             int step = k.first->ids.size() / concurrency::numThreads;
-    //             typename deque<GLuint>::iterator from = k.first->ids.data.begin() + step * id;
-    //             typename deque<GLuint>::iterator to = from + step;
-    //             __r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
-    //             if (id == concurrency::numThreads - 1)
-    //             {
-    //                 to = k.first->ids.data.end();
-    //             }
-    //             while (from != to)
-    //             {
-    //                 __r->transform = *from;
-    //                 __r->id = __rendererId;
-    //                 ++from;
-    //                 ++__r;
-    //             }
-    //             ++__rendererId;
-    //             __rendererOffset += k.first->ids.size();
-    //         }
-    //     }
-    // }
-
     int __rendererId = 0;
     int count = 0;
     for (auto &i : batchManager::batches.back())

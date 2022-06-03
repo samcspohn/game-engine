@@ -237,18 +237,30 @@ namespace YAML
 }
 
 #include <tbb/concurrent_priority_queue.h>
-#include <tbb/atomic.h>
+#include <tbb/concurrent_vector.h>
 template <typename t>
 class storage
 {
 	mutex m;
-#define chunk 256
- 	vector<t*> data;
-	vector<t*> d1;
-	vector<t*> d2;
-	atomic<vector<t*>*> r;
+#define chunk_size 256
+	// struct _chunk {
+	// 	t* m_data;
+	// 	_chunk() {
+	// 		m_data = (t*)(new char[chunk_size * sizeof(t)]);
+	// 	}
+	// 	~_chunk() {
+	// 		delete[] (char*)m_data;
+	// 	}
+	// 	t& operator[](int i){
+	// 		return m_data[i];
+	// 	}
+	// 	t& at(int i) {
+	// 		return m_data[i];
+	// 	}
+	// };
+ 	tbb::concurrent_vector<t> data;
     tbb::concurrent_priority_queue<int, std::greater<int>> avail;
-    deque<atomic<bool>> valid;
+    tbb::concurrent_vector<atomic<bool>> valid;
 
 	int extent;
 	// atomic<int> _extent;
@@ -257,96 +269,56 @@ public:
 
     t &get(int id)
     {
-        // return data[id];
-        return (*r)[id / chunk][id % chunk];
+        return data[id];
     }
-    bool getv(int id)
+    bool getv(int id) 
     {
         return valid[id];
     };
 	template <typename... types>
 	int _new(types&&... args)
     {
+		// lock_guard<mutex> lck(m);
         int id;
-        // {
-
-		if(avail.try_pop(id)){
-			valid[id] = true;
-			{
+		{
+			if(avail.try_pop(id)){
+				valid[id] = true;
+				{
+					lock_guard<mutex> lck(m);
+					if(id >= extent){
+						extent = id + 1;
+					}
+				}
+			}else {
 				lock_guard<mutex> lck(m);
-				if(id >= extent){
-					extent = id + 1;
-				}
-			}
-		}else {
-			lock_guard<mutex> lck(m);
-			id = valid.size();
-			valid.emplace_back(true);
-			++extent;
-			if (valid.size() >= data.size() * chunk)
-			{
-				data.emplace_back((t*)(new char[chunk * sizeof(t)]));
-				if(r == &d1){
-					d2.emplace_back(data.back());
-					r = &d2;
-					d1.emplace_back(data.back());
-				}else{
-					d1.emplace_back(data.back());
-					r = &d1;
-					d2.emplace_back(data.back());
-				}
+				id = valid.size();
+				valid.emplace_back(true);
+				data.emplace_back();
+				extent = id + 1;
+				// if (valid.size() >= data.size() * chunk_size)
+				// {
+				// 	data.emplace_back(std::make_shared<_chunk>());
+				// }
 			}
 		}
-
-
-            // lock_guard<mutex> lck(m);
-			// if(avail.try_pop(id)){
-			// 	// id = -id;
-            //     valid[id] = true;
-			// 	if(id >= extent){
-			// 		extent = id + 1;
-			// 	}
-				
-            // }
-            // else
-            // {
-            //     id = valid.size();
-            //     valid.emplace_back(true);
-			// 	++extent;
-            //     if (valid.size() >= data.size() * chunk)
-            //     {
-            //         data.emplace_back((t*)(new char[chunk * sizeof(t)]));
-			// 		if(r == &d1){
-			// 			d2.emplace_back(data.back());
-			// 			r = &d2;
-			// 			d1.emplace_back(data.back());
-			// 		}else{
-			// 			d1.emplace_back(data.back());
-			// 			r = &d1;
-			// 			d2.emplace_back(data.back());
-			// 		}
-            //     }
-            // }
-        // }
-        new (&(*r)[id / chunk][id % chunk]) t{args...};
+        new (&data[id]) t{args...};
         return id;
     }
-	void compress(){
+	void compress() {
 			while(extent > 0 && !valid[extent - 1])
 				--extent;
 	}
     void _delete(int i)
     {
-        data[i / chunk][i % chunk].~t();
-        // {
-        //     lock_guard<mutex> lck(m);
-            valid[i] = false;
-            avail.push(i);
-        // }
+        data[i].~t();
+		lock_guard<mutex> lck(m);
+		valid[i] = false;
+		avail.push(i);
+
     }
     int size()
     {
-		// lock_guard<mutex> lck(m);
+		lock_guard<mutex> lck(m);
         return extent;
     }
     int active()
@@ -361,18 +333,9 @@ public:
             {
                 _delete(i);
             }
+			memset(&data[i],0,sizeof(t));
         }
-        // for (int i = 0; i < data.size(); i++)
-        // {
-        //     for (int j = 0; j < chunk; j++)
-        //     {
-        //         memset(&data[i][j], 0, sizeof(t));
-        //     }
-        // }
-		for(auto d : data){
-			delete[] (char*)d;
-		}
-        // data.clear();
+		data.clear();
 		valid.clear();
 		avail.clear();
 	}
@@ -386,79 +349,167 @@ public:
 #undef get
 };
 
-// template <typename t>
-// class storage
-// {
-// #define chunk chunk
-// #define _chunk 0b1111111111
-// #define _get(id) data[id >> 10][(id & _chunk) * sizeof(t)]
-// 	int extent = 0;
-// 	mutex m;
-// 	// const int _size = sizeof(t);
-// 	vector<array<t, chunk>> data;
-// 	vector<array<bool,chunk>> valid;
-// 	vector<int> avail;
-// 	bool& _getv(int id){
-// 		return valid[id >> 10][id & _chunk];
-// 	}
+template <typename t>
+class storage2
+{
+	mutex m;
+#define chunk_size 256
+	// set<int> avail;
+	deque<int> avail;
+	atomic<int> avail_id{0};
+	struct _chunk {
+		int m_id;
+		vector<int> m_avail;
+		t* m_data;
+		_chunk(int id) : m_id{id} {
+			m_data = (t*)(new char[chunk_size * sizeof(t)]); 
+		}
+		~_chunk() {
+			delete[] (char*)m_data;
+		}
+		t& operator[](int i){
+			return m_data[i];
+		}
+		t& at(int i) noexcept {
+			return m_data[i];
+		}
+		void _new_id(int& id, set<int>& avail){
+			id = m_avail.back();
+			m_avail.pop_back();
+			if(m_avail.size() == 0){
+				avail.erase(m_id);
+			}
+		}
+		void _delete_id(int& id, set<int>& avail){
+			m_avail.push_back(id);
+			avail.emplace(this->m_id);
+		}
+	};
+ 	vector<_chunk*> data;
+	vector<_chunk*> d1;
+	vector<_chunk*> d2;
+	atomic<vector<_chunk*>*> r;
+    // tbb::concurrent_priority_queue<int, std::greater<int>> avail;
+    deque<atomic<bool>> valid;
 
-// public:
-// 	t &get(int id)
-// 	{
-// 		// return *reinterpret_cast<t *>(&_get(id));
-// 		return data[id >> 10][id & _chunk];
-// 	}
-// 	bool getv(int id)
-// 	{
-// 		return _getv(id);
-// 	}
-// 	int active()
-// 	{
-// 		return extent - avail.size();
-// 	}
-// 	int size()
-// 	{
-// 		return extent;
-// 	}
-// 	void clear(){
-// 		data.clear();
-// 		valid.clear();
-// 		avail.clear();
-// 	}
+	atomic<int> extent;
+	// atomic<int> _extent;
+	// tbb::atomic<int> _extent;
+public:
 
-// 	template <typename... types>
-// 	int _new(types... args)
-// 	{
-// 		lock_guard lck(m);
-// 		int id;
-// 		if (avail.size() > 0)
-// 		{
-// 			id = avail.back();
-// 			avail.pop_back();
-// 		}
-// 		else
-// 		{
-// 			if (extent >= data.size() * chunk){
-// 				data.emplace_back();
-// 				valid.emplace_back();
-// 			}
-// 			id = extent;
-// 			++extent;
-// 		}
-// 		new (&get(id)) t{args...};
-// 		_getv(id) = true;
-// 		return id;
-// 	}
-// 	void _delete(int id)
-// 	{
-// 		lock_guard lck(m);
-// 		get(id).~t();
-// 		avail.push_back(id);
-// 		_getv(id) = false;
-// 	}
+    t &get(int id)
+    {
+        return (*r)[id / chunk_size]->at(id % chunk_size);
+    }
+    bool getv(int id) 
+    {
+        return valid[id];
+    };
+	template <typename... types>
+	int _new(types&&... args)
+    {
+        int id;
+        {
 
-// #undef chunk
-// #undef get
-// };
+			if(avail_id > 0){
+				int _id = avail_id.fetch_add(-1);
+				if(_id <= 0){
+            		lock_guard<mutex> lck(m);
+					avail_id = 0;
+					id = valid.size();
+					valid.emplace_back(true);
+					avail.emplace_back(0);
+					++extent;
+					if (valid.size() >= data.size() * chunk_size)
+					{
+						data.emplace_back(new _chunk(data.size()
+						));
+						if(r == &d1){
+							d2.emplace_back(data.back());
+							r = &d2;
+							d1.emplace_back(data.back());
+						}else{
+							d1.emplace_back(data.back());
+							r = &d1;
+							d2.emplace_back(data.back());
+						}
+					}
+				}else{
+					id = avail[_id - 1];
+					valid[id] = true;
+				}
+				
+            }
+            else
+            {
+            	lock_guard<mutex> lck(m);
+                id = valid.size();
+                valid.emplace_back(true);
+				avail.emplace_back(0);
+				++extent;
+                if (valid.size() >= data.size() * chunk_size)
+                {
+                    data.emplace_back(new _chunk(data.size()));
+					if(r == &d1){
+						d2.emplace_back(data.back());
+						r = &d2;
+						d1.emplace_back(data.back());
+					}else{
+						d1.emplace_back(data.back());
+						r = &d1;
+						d2.emplace_back(data.back());
+					}
+                }
+            }
+        }
+        new (&(*r)[id / chunk_size]->at(id % chunk_size)) t{args...};
+        return id;
+    }
+	void compress() {
+			// while(extent > 0 && !valid[extent - 1])
+			// 	--extent;
+	}
+    void _delete(int i)
+    {
+        data[i / chunk_size]->at(i % chunk_size).~t();
+		valid[i] = false;
+		avail[avail_id.fetch_add(1)] = i;
+    }
+    int size()
+    {
+        return extent;
+    }
+    int active()
+    {
+        return valid.size() - avail_id;
+    }
+	void clear(){
+		for (int i = 0; i < valid.size(); i++)
+        {
+            if (valid[i])
+            {
+                _delete(i);
+            }
+        }
+		d1.clear();
+		d2.clear();
+		for(auto& i : data){
+			delete i;
+		}
+		data.clear();
+		valid.clear();
+		avail.clear();
+		avail_id = 0;
+	}
+    ~storage2()
+    {
+        clear();
+    }
+	storage2() : m{}, extent{0} { }
+
+#undef chunk
+#undef get
+};
+
 
 #define STORAGE storage

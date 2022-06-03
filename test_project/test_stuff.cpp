@@ -243,10 +243,17 @@ REGISTER_COMPONENT(sphere_rb);
 
 const float fixedStep = 1.f / 30.f;
 emitter_prototype_ pxexpl;
+emitter_prototype_ l_expl2;
+emitter_prototype_ l_expl_shk_wv;
 struct pxBomb : component
 {
 
     glm::vec3 vel;
+    void onStart(){
+        if(transform->gameObject()->transform.id == 0){
+            cout << "0 transform";
+        }
+    }
     void update()
     {
         float step = std::min(Time.deltaTime, (1.f / 30.f));
@@ -260,8 +267,14 @@ struct pxBomb : component
 
         if (hit)
         {
+            if(transform.id == 0){
+                cout << "0 transform";
+            }
             transform->gameObject()->destroy();
-            pxexpl.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 10);
+            pos =  *reinterpret_cast<glm::vec3 *>(&hitb.block.position);
+            pxexpl.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 8);
+            l_expl2.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 5);
+            l_expl_shk_wv.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 5);
 
             // PxVec3 p = hitb.block.position;
             // game_object* g = instantiate(rayHit);
@@ -308,13 +321,17 @@ public:
     game_object_prototype rayHit;
     game_object_prototype px_bomb;
     emitter_prototype_ l_expl;
+    emitter_prototype_ l_expl2;
+    emitter_prototype_ l_expl_shk_wv;
     double lastFire;
     void onStart()
     {
         lastFire = Time.time;
         c = transform.gameObject()->getComponent<_camera>();
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         pxexpl = l_expl;
+        ::l_expl2 = this->l_expl2;
+        ::l_expl_shk_wv = this->l_expl_shk_wv;
         // for( int i = 0; i < concurrency::numThreads; i++){
         //     mt_gun* g = transform->gameObject()->addComponent<mt_gun>();
         //     g->px_bomb = this->px_bomb;
@@ -340,18 +357,26 @@ public:
     // }
     void update()
     {
-        transform.translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
-        transform.translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
-        transform.translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
-        // transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
+        if (Input.getKey(GLFW_KEY_LEFT_CONTROL))
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        else
+        {
+            // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            transform.translate(glm::vec3(1, 0, 0) * (float)(Input.getKey(GLFW_KEY_A) - Input.getKey(GLFW_KEY_D)) * Time.deltaTime * speed);
+            transform.translate(glm::vec3(0, 0, 1) * (float)(Input.getKey(GLFW_KEY_W) - Input.getKey(GLFW_KEY_S)) * Time.deltaTime * speed);
+            transform.translate(glm::vec3(0, 1, 0) * (float)(Input.getKey(GLFW_KEY_SPACE) - Input.getKey(GLFW_KEY_LEFT_SHIFT)) * Time.deltaTime * speed);
+            // transform->rotate(glm::vec3(0, 0, 1), (float)(Input.getKey(GLFW_KEY_Q) - Input.getKey(GLFW_KEY_E)) * -Time.deltaTime);
 
-        transform.rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c->c->fov / glm::radians(80.f) * -0.4f);
-        transform.rotate(glm::vec3(1, 0, 0), -Input.Mouse.getY() * Time.unscaledDeltaTime * c->c->fov / glm::radians(80.f) * -0.4f);
+            transform.rotate(glm::vec3(0, 1, 0), Input.Mouse.getX() * Time.unscaledDeltaTime * c->c->fov / glm::radians(80.f) * -0.4f);
+            transform.rotate(glm::vec3(1, 0, 0), -Input.Mouse.getY() * Time.unscaledDeltaTime * c->c->fov / glm::radians(80.f) * -0.4f);
 
-        transform.setRotation(glm::quatLookAtLH(transform.getRotation() * glm::vec3(0, 0, 1), glm::vec3(0, 1, 0)));
+            transform.setRotation(glm::quatLookAtLH(transform.getRotation() * glm::vec3(0, 0, 1), glm::vec3(0, 1, 0)));
 
-        c->c->fov -= Input.Mouse.getScroll() * glm::radians(1.f);
-        c->c->fov = glm::clamp(c->c->fov, glm::radians(5.f), glm::radians(80.f));
+            c->c->fov -= Input.Mouse.getScroll() * glm::radians(1.f);
+            c->c->fov = glm::clamp(c->c->fov, glm::radians(5.f), glm::radians(80.f));
+        }
 
         if (Input.getKeyDown(GLFW_KEY_R))
         {
@@ -363,6 +388,30 @@ public:
         }
 
         playerPos = transform.getPosition();
+
+        auto bombs = COMPONENT_LIST(pxBomb);
+
+
+        for(int i = 0; i < 170000 * std::min(Time.deltaTime, (1.f/30.f)); i++){
+            if(bombs->active() > 1'000'000)
+                break;
+            glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
+            auto box = instantiate(px_bomb);
+            box->transform->setPosition(start_pos);
+            box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;
+        }
+
+
+        // parallelfor(170000 * std::min(Time.deltaTime, (1.f/30.f)),
+        //             //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
+        //             // glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
+        //             if(bombs->active() > 1'000'000)
+        //                 return;
+        //             glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
+        //             auto box = instantiate(px_bomb);
+        //             box->transform->setPosition(start_pos);
+        //             // box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
+        //             box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;);
 
         if (Input.Mouse.getButtonDown(0))
         {
@@ -426,6 +475,8 @@ public:
         SER(rayHit);
         SER(px_bomb);
         SER(l_expl);
+        SER(l_expl2);
+        SER(l_expl_shk_wv);
     }
 };
 

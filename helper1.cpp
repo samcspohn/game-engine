@@ -256,14 +256,13 @@ void gpuTimer::start()
 }
 float gpuTimer::stop()
 {
-	// return -1;
-	// glFlush();
-	// return t.stop();
+	timer t;
+	float elapsed = 0;
 	glQueryCounter(queryID[1], GL_TIMESTAMP);
-	// wait until the results are available
 	GLint stopTimerAvailable = 0;
-	while (!stopTimerAvailable)
+	while (!stopTimerAvailable && elapsed < 1000)
 	{
+		elapsed = t.stop();
 		glGetQueryObjectiv(queryID[1],
 						   GL_QUERY_RESULT_AVAILABLE,
 						   &stopTimerAvailable);
@@ -278,5 +277,5 @@ float gpuTimer::stop()
 
 string to_string(glm::vec3 v)
 {
-	return to_string(v.x) + "," + to_string(v.y) + "," + to_string(v.z);
+	return "(" + to_string(v.x) + "," + to_string(v.y) + "," + to_string(v.z) + ")";
 }

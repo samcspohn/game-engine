@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 project(game_engine)
 
 include_directories(${CMAKE_SOURCE_DIR}/imgui
+                    ${CMAKE_SOURCE_DIR}/imgui/imgui-flame-graph
                     ${CMAKE_SOURCE_DIR}/_rendering )
 
 include_directories(${CMAKE_SOURCE_DIR}/PhysX/pxshared/include ${CMAKE_SOURCE_DIR}/PhysX/physx/include/)
@@ -31,7 +32,7 @@ set( PHYSX_LIBRARIES
 # include_directories(${PHYSX_INCLUDE_DIRS})
 
 add_compile_options(--no-warn -O3)
-# add_compile_options(--warn-no-unused-but-set-variable --warn-no-unused-variable --warn-no-restrict --warn-no-class-memaccess)
+# add_compile_options(--no-warn -Os)
 
 # add_definitions(-D_DEBUG)
 add_definitions(-DNDEBUG)
@@ -60,6 +61,7 @@ add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW
 file(GLOB SOURCES "*.cpp"
     "imgui/*.cpp"
     "imgui/guizmo/*.cpp"
+    "imgui/imgui-flame-graph/*.cpp"
     "_rendering/*.cpp" 
     "components/*.cpp"
     "physics/*.cpp"
@@ -88,17 +90,6 @@ target_include_directories(game_engine PUBLIC
 set_target_properties(game PROPERTIES ENABLE_EXPORTS 1)
 target_link_libraries(game GL GLU GLEW glfw X11 Xxf86dga Xrandr pthread Xi SOIL assimp alut openal tbb boost_serialization yaml-cpp dl)
 target_link_libraries(game ${PHYSX_LIBRARIES})
-# TARGET_LINK_LIBRARIES(game
-# 	${CMAKE_SOURCE_DIR}/libPhysXExtensions_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libPhysX_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libPhysXPvdSDK_static_64.a 
-#     ${CMAKE_SOURCE_DIR}/libPhysXVehicle_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libPhysXCharacterKinematic_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libPhysXCooking_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libPhysXCommon_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libPhysXFoundation_static_64.a
-#     ${CMAKE_SOURCE_DIR}/libSnippetUtils_static_64.a)
-    
 
 
 target_include_directories(game PUBLIC
@@ -123,6 +114,7 @@ if(BUILD_DEBUG)
     target_compile_options(game PUBLIC -fpermissive  -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type)
     target_compile_options(game_engine PUBLIC -fpermissive  -fPIC -Wreturn-type -g -std=c++17 -ffast-math -Werror=return-type)
 else()
-    target_compile_options(game PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -fno-inline -fno-omit-frame-pointer -Werror=return-type)
-    target_compile_options(game_engine PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -fno-inline -fno-omit-frame-pointer -Werror=return-type)
+    add_definitions(-DRELEASE)
+    target_compile_options(game PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3  -std=c++17 -ffast-math -Werror=return-type)
+    target_compile_options(game_engine PUBLIC -fpermissive -fPIC -Wreturn-type -g -O3 -std=c++17 -ffast-math -Werror=return-type)
 endif()

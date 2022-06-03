@@ -171,9 +171,10 @@ class game_object : public inspectable
 	// mutex lock;
 	// mutex colLock;
 	bool colliding = false;
+	int id;
 
 	multimap<size_t, int> components = {};
-	bool destroyed = false;
+	atomic<bool> destroyed{false};
 	// friend component;
 	friend _renderer;
 	friend void rebuildGameObject(componentStorageBase *, int);
@@ -432,9 +433,14 @@ public:
 	}
 
 	void destroy()
-	{
-		std::lock_guard<std::mutex> lk(toDestroym);
-		toDestroyGameObjects.push_back(this);
+	{	
+		// bool expct = false;
+		// if(destroyed.compare_exchange_weak(expct,true)) {
+			if(transform.id != transform->gameObject()->transform.id)
+				cout << "bad transform" << endl;
+			std::lock_guard<std::mutex> lk(toDestroym);
+			toDestroyGameObjects.push_back(this);
+		// }
 	}
 	transform2 transform;
 	// game_object() = default;

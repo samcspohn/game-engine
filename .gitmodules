@@ -4,3 +4,6 @@
 [submodule "PhysX"]
 	path = PhysX
 	url = https://github.com/NVIDIAGameWorks/PhysX.git
+[submodule "imgui/imgui-flame-graph"]
+	path = imgui/imgui-flame-graph
+	url = https://github.com/bwrsandman/imgui-flame-graph.git
