@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-# set(CMAKE_CXX_COMPILER g++)
-# set(CMAKE_C_COMPILER g)
+set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_COMPILER gcc)
 # set(CXX "g++")
 # set the project name
 project(game_engine)
@@ -106,7 +106,7 @@ add_custom_command(
 
 
 # specify the C++ standard
-add_definitions(-DGLM_FORCE_SWIZZLE -D_DEBUG)
+add_definitions(-DGLM_FORCE_SWIZZLE)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 option(BUILD_DEBUG "build un-optimized with debugger info" ON)

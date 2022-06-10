@@ -249,8 +249,10 @@ struct pxBomb : component
 {
 
     glm::vec3 vel;
-    void onStart(){
-        if(transform->gameObject()->transform.id == 0){
+    void onStart()
+    {
+        if (transform->gameObject()->transform.id == 0)
+        {
             cout << "0 transform";
         }
     }
@@ -267,11 +269,12 @@ struct pxBomb : component
 
         if (hit)
         {
-            if(transform.id == 0){
+            if (transform.id == 0)
+            {
                 cout << "0 transform";
             }
             transform->gameObject()->destroy();
-            pos =  *reinterpret_cast<glm::vec3 *>(&hitb.block.position);
+            pos = *reinterpret_cast<glm::vec3 *>(&hitb.block.position);
             pxexpl.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 8);
             l_expl2.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 5);
             l_expl_shk_wv.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 5);
@@ -391,27 +394,24 @@ public:
 
         auto bombs = COMPONENT_LIST(pxBomb);
 
+        // for (int i = 0; i < 170000 * std::min(Time.deltaTime, (1.f / 30.f)); i++)
+        // {
+        //     if (bombs->size() > 100'000)
+        //         break;
+        //     glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
+        //     auto box = instantiate(px_bomb);
+        //     box->transform->setPosition(start_pos);
+        //     box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;
+        // }
 
-        for(int i = 0; i < 170000 * std::min(Time.deltaTime, (1.f/30.f)); i++){
-            if(bombs->active() > 1'000'000)
-                break;
-            glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
-            auto box = instantiate(px_bomb);
-            box->transform->setPosition(start_pos);
-            box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;
-        }
-
-
-        // parallelfor(170000 * std::min(Time.deltaTime, (1.f/30.f)),
-        //             //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
-        //             // glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
-        //             if(bombs->active() > 1'000'000)
-        //                 return;
-        //             glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
-        //             auto box = instantiate(px_bomb);
-        //             box->transform->setPosition(start_pos);
-        //             // box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
-        //             box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;);
+        parallelfor(170000 * std::min(Time.deltaTime, (1.f/30.f)),
+                    if(bombs->size() > 1'000'000)
+                        return;
+                    glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
+                    auto box = instantiate(px_bomb);
+                    box->transform->setPosition(start_pos);
+                    // box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
+                    box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;);
 
         if (Input.Mouse.getButtonDown(0))
         {
@@ -425,8 +425,9 @@ public:
             //         box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
             //     );
             // }
+
             // rain
-            parallelfor(170000 * Time.deltaTime,
+            parallelfor(170000 * std::min(Time.deltaTime, (1.f/30.f)),
                         //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
                         // glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
                         glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
@@ -434,6 +435,16 @@ public:
                         box->transform->setPosition(start_pos);
                         // box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
                         box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;);
+
+            // for (int i = 0; i < 170000 * std::min(Time.deltaTime, (1.f / 30.f)); i++)
+            // {
+            //     if (bombs->active() > 100'000)
+            //         break;
+            //     glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
+            //     auto box = instantiate(px_bomb);
+            //     box->transform->setPosition(start_pos);
+            //     box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;
+            // }
 
             // raycast
             // glm::vec3 _for = transform->forward();
@@ -460,7 +471,14 @@ public:
         }
         if (Input.Mouse.getButtonDown(1))
         {
-            parallelfor(17000 * Time.deltaTime,
+            // for (int i = 0; i < 17000 * std::min(Time.deltaTime, (1.f / 30.f)); i++)
+            // {
+            //     glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
+            //     auto box = instantiate(px_bomb);
+            //     box->transform->setPosition(start_pos);
+            //     box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
+            // }
+            parallelfor(17000 * std::min(Time.deltaTime, (1.f/30.f)),
                         // for(int i = 0; i < 17000 * Time.deltaTime; i++){
                         //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
                         glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;

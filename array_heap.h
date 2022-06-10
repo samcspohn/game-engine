@@ -262,7 +262,7 @@ class storage
     tbb::concurrent_priority_queue<int, std::greater<int>> avail;
     tbb::concurrent_vector<atomic<bool>> valid;
 
-	int extent;
+	atomic<int> extent;
 	// atomic<int> _extent;
 	// tbb::atomic<int> _extent;
 public:
@@ -291,8 +291,8 @@ public:
 				}
 			}else {
 				lock_guard<mutex> lck(m);
-				id = valid.size();
-				valid.emplace_back(true);
+				// id = valid.size();
+				id = (valid.emplace_back(true) - valid.begin());
 				data.emplace_back();
 				extent = id + 1;
 				// if (valid.size() >= data.size() * chunk_size)
@@ -310,8 +310,8 @@ public:
 	}
     void _delete(int i)
     {
+		// lock_guard<mutex> lck(m);
         data[i].~t();
-		lock_guard<mutex> lck(m);
 		valid[i] = false;
 		avail.push(i);
 

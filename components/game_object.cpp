@@ -258,11 +258,9 @@ void _child_instatiate(game_object &g, transform2 parent)
 	}
 }
 
-mutex uhh;
+
 game_object *_instantiate(game_object &g)
 {
-	// game_object *ret = new game_object();
-	uhh.lock();
 	int ref = game_object_cache._new();
 	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
@@ -289,7 +287,6 @@ game_object *_instantiate(game_object &g)
 	{
 		game_object::_getComponent(i)->init(i.second);
 	}
-	uhh.unlock();
 	return ret;
 }
 game_object *instantiate(game_object &g)
@@ -297,10 +294,6 @@ game_object *instantiate(game_object &g)
 	game_object *ret = _instantiate(g);
 	game_object::startComponents(*ret);
 	return ret;
-	// for (auto &i : ret->components)
-	// {
-	// 	i.first->onStart();
-	// }
 }
 
 game_object *_instantiate()
@@ -309,11 +302,9 @@ game_object *_instantiate()
 	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
-	// this->transform = new Transform(this);
 	ret->transform = Transforms._new();
 	ret->transform->init(ret);
 	return ret;
-	// root->Adopt(this->transform);
 }
 
 game_object *_instantiate(game_object_prototype &g)
@@ -323,16 +314,13 @@ game_object *_instantiate(game_object_prototype &g)
 	game_object_cache.get(ref).id = ref;
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
-	// gameLock.lock();
 	ret->transform = Transforms._new(); // new Transform(this);
 	if(ref == 0){
 		cout << "0 game_object";
 	}
 	ret->transform->init(ret);
-	// gameLock.unlock();
 	for (auto &i : _g.components)
 	{
-		// i.first->_copy(ret);
 		ret->components.emplace(i.second, ComponentRegistry.meta_types.at(i.second)->copy(i.first));
 	}
 	for (auto &i : ret->components)
@@ -340,18 +328,15 @@ game_object *_instantiate(game_object_prototype &g)
 		component* c = game_object::_getComponent(i);
 		c->transform = ret->transform; // todo // better?
 		c->init(i.second);
-		// toStart.emplace(i.first);
-		// i.first->onStart();
 	}
 	return ret;
 }
 game_object *instantiate(game_object_prototype &g)
 {
+	// lock_guard<mutex> lck(gameLock);
 	game_object *ret = _instantiate(g);
 	for (auto &i : ret->components)
 	{
-		// i.first->init();
-		// toStart.emplace(i.first);
 		game_object::_getComponent(i)->onStart();
 	}
 	return ret;

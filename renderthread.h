@@ -37,12 +37,13 @@ extern bool renderRunning;
 // extern std::queue<std::shared_ptr<std::function<void()>>> renderJobs;
 void renderLoop();
 
+// extern mutex render_lock;
 extern _shader _quadShader;
 extern unique_ptr<Shader> matProgram;
 void updateTiming();
 void initGL();
 void initiliazeStuff();
 void copyTransforms();
-void copyRenderers();
+void copyRenderers(shared_ptr<map<_shader, map<texArray, map<renderingMeta *, Mesh *>>>>& batch);
 void updateTransforms();
 void updateRenderers();

@@ -246,137 +246,137 @@ workingFile: /home/samuel/Documents/game-engine/test_project/bullet_test.yaml
     28:
       id: 28
       name: pxbomb.gop
-assetIdGenerator: 59
+assetIdGenerator: 63
 file_meta:
-  - path: ./test_project/runtime/test_stuff.cpp.so
-    time: -4783373173453853293
-  - path: ./test_project/models/nanosuit/glass_ddn.png
-    time: -4805553740639358000
-  - path: ./test_project/assests2.yaml
-    time: -4783893173433945671
-  - path: ./test_project/models/Spruce_obj/Spruce branches.png
-    time: -4805553740655359000
-  - path: ./test_project/models/Spruce_obj
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/leg_dif.png
-    time: -4805553740623358000
-  - path: ./test_project/models/Spruce_obj/Spruce.mtl
-    time: -4805553740655359000
-  - path: ./test_project/runtime/particle_test.cpp.so
-    time: -4783373180541944422
-  - path: ./test_project/test_stuff.cpp
-    time: -4783469546901093999
-  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
-    time: -4805553740643358000
-  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
-    time: -4805553740631358000
-  - path: ./test_project/models/nanosuit/glass_dif.png
-    time: -4805553740639358000
-  - path: ./test_project/models/Crate/Crate1.3ds
-    time: -4805553740663359000
-  - path: ./test_project/models/nanosuit/arm_dif.png
-    time: -4805553740651359000
-  - path: ./test_project/models/Spruce_obj/Spruce trunk.jpeg
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
-    time: -4805553740635358000
-  - path: ./test_project/runtime/physics_test.cpp.o
-    time: -4783373184477995045
-  - path: ./test_project/models/ship1/3guns.mtl
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/nanosuit.blend
-    time: -4805553740615358000
-  - path: ./test_project/models/nanosuit/LICENSE.txt
-    time: -4805553740655359000
-  - path: ./test_project/models/Spruce_obj/Spruce.obj
-    time: -4805553740655359000
-  - path: ./test_project/models/Crate/CrateImage1.JPG
-    time: -4805553740655359000
   - path: ./test_project/models/nanosuit/nanosuit.mtl
     time: -4805553740615358000
-  - path: ./test_project/models/Crate
-    time: -4805553740655359000
-  - path: ./test_project/models
-    time: -4805553740607358000
-  - path: ./test_project/models/nanosuit/body_showroom_spec.png
-    time: -4805553740639358000
-  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
-    time: -4805553740615358000
+  - path: ./test_project/models/nanosuit/helmet_showroom_ddn.png
+    time: -4805553740631358000
+  - path: ./test_project/bullet_test.yaml
+    time: -4783181604231103832
+  - path: ./test_project/runtime/particle_test.cpp.o
+    time: -4783007661586811479
+  - path: ./test_project/models/nanosuit/arm_showroom_spec.png
+    time: -4805553740647359000
+  - path: ./test_project/particle_test.cpp
+    time: -4795391698443521000
+  - path: ./test_project/runtime
+    time: -4783007654678594699
   - path: ./test_project/models/nanosuit/nanosuit.obj
     time: -4805553740607358000
-  - path: ./test_project/models/ship1
+  - path: ./test_project/models/nanosuit/helmet_diff.png
+    time: -4805553740631358000
+  - path: ./test_project/physics_test.yaml
+    time: -4793986240113342000
+  - path: ./test_project/models/ship1/3guns.obj
+    time: -4805553740607358000
+  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
+    time: -4805553740631358000
+  - path: ./test_project/models/Crate/crate_1.jpg
+    time: -4805553740655359000
+  - path: ./test_project/models/nanosuit/hand_dif.png
+    time: -4805553740639358000
+  - path: ./test_project/physics_test2.yaml
+    time: -4789601367096753000
+  - path: ./test_project/physics_test.cpp
+    time: -4793986221350009000
+  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
+    time: -4805553740651359000
+  - path: ./test_project/models/nanosuit/hand_showroom_ddn.png
+    time: -4805553740635358000
+  - path: ./test_project/models/Crate/Crate1.mtl
+    time: -4805553740655359000
+  - path: ./test_project/models/nanosuit/body_dif.png
+    time: -4805553740647359000
+  - path: ./test_project/models/nanosuit
+    time: -4805553740615358000
+  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
+    time: -4805553740623358000
+  - path: ./test_project/models/ship1/ship.obj
     time: -4805553740607358000
   - path: ./test_project/models/ship1/maingun.mtl
     time: -4805553740607358000
   - path: ./test_project/models/ship1/ship.mtl
     time: -4805553740607358000
-  - path: ./test_project/models/nanosuit
-    time: -4805553740615358000
-  - path: ./test_project/models/ship1/ship.obj
-    time: -4805553740607358000
-  - path: ./test_project/models/Crate/Crate1.mtl
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/body_dif.png
-    time: -4805553740647359000
-  - path: ./test_project/models/nanosuit/helmet_showroom_spec.png
-    time: -4805553740623358000
   - path: ./test_project/runtime/test_stuff.cpp.o
-    time: -4783373173621855453
-  - path: ./test_project/file.txt
-    time: -4805553740663359000
-  - path: ./test_project/runtime/physics_test.cpp.so
-    time: -4783373184397994016
-  - path: ./test_project/models/Crate/Crate1.blend
+    time: -4783007668243020090
+  - path: ./test_project/models/ship1/3guns.mtl
+    time: -4805553740607358000
+  - path: ./test_project/models/ship1
+    time: -4805553740607358000
+  - path: ./test_project/models/Spruce_obj/Spruce branches.png
     time: -4805553740655359000
   - path: ./test_project/models/ship1/maingun.obj
     time: -4805553740607358000
+  - path: ./test_project/models/Crate/Crate1.blend
+    time: -4805553740655359000
+  - path: ./test_project/models/Spruce_obj/Spruce.mtl
+    time: -4805553740655359000
+  - path: ./test_project/runtime/test_stuff.cpp.so
+    time: -4783007668087015204
+  - path: ./test_project/models/nanosuit/glass_ddn.png
+    time: -4805553740639358000
+  - path: ./test_project/assests2.yaml
+    time: -4783893173433945671
+  - path: ./test_project/models/Spruce_obj
+    time: -4805553740655359000
+  - path: ./test_project/models/nanosuit/leg_dif.png
+    time: -4805553740623358000
+  - path: ./test_project/models/nanosuit/glass_dif.png
+    time: -4805553740639358000
+  - path: ./test_project/models/Spruce_obj/Spruce trunk.jpeg
+    time: -4805553740655359000
+  - path: ./test_project/test_stuff.cpp
+    time: -4783098167899011018
+  - path: ./test_project/runtime/particle_test.cpp.so
+    time: -4783007661522809472
   - path: ./test_project/models/nanosuit/leg_showroom_ddn.png
     time: -4805553740623358000
-  - path: ./test_project/physics_test.cpp
-    time: -4793986221350009000
-  - path: ./test_project/models/nanosuit/arm_showroom_ddn.png
+  - path: ./test_project/models/nanosuit/leg_showroom_spec.png
+    time: -4805553740615358000
+  - path: ./test_project/models/Crate/Crate1.3ds
+    time: -4805553740663359000
+  - path: ./test_project/models/nanosuit/arm_dif.png
     time: -4805553740651359000
-  - path: ./test_project/physics_test2.yaml
-    time: -4789601367096753000
+  - path: ./test_project/models/nanosuit/nanosuit.blend
+    time: -4805553740615358000
+  - path: ./test_project/models/nanosuit/LICENSE.txt
+    time: -4805553740655359000
+  - path: ./test_project/models/nanosuit/body_showroom_ddn.png
+    time: -4805553740643358000
+  - path: ./test_project/file.txt
+    time: -4805553740663359000
+  - path: ./test_project/runtime/physics_test.cpp.so
+    time: -4783007654622592940
   - path: ./test_project/models/Crate/CrateImage2.JPG
     time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/hand_dif.png
+  - path: ./test_project/models/nanosuit/body_showroom_spec.png
     time: -4805553740639358000
-  - path: ./test_project/models/Crate/crate_1.jpg
-    time: -4805553740655359000
-  - path: ./test_project/models/nanosuit/hand_showroom_spec.png
-    time: -4805553740631358000
-  - path: ./test_project/models/ship1/3guns.obj
+  - path: ./test_project/models
     time: -4805553740607358000
-  - path: ./test_project/physics_test.yaml
-    time: -4793986240113342000
-  - path: ./test_project/models/nanosuit/helmet_diff.png
-    time: -4805553740631358000
-  - path: ./test_project/runtime
-    time: -4783373173605855248
-  - path: ./test_project/particle_test.cpp
-    time: -4795391698443521000
-  - path: ./test_project/models/nanosuit/arm_showroom_spec.png
-    time: -4805553740647359000
-  - path: ./test_project/runtime/particle_test.cpp.o
-    time: -4783373180609945297
-  - path: ./test_project/bullet_test.yaml
-    time: -4783397592591849765
-scripts:
-  - path: ./test_project/runtime/test_stuff.cpp.o
-    time: -4783394821711669914
+  - path: ./test_project/models/Crate
+    time: -4805553740655359000
+  - path: ./test_project/models/Crate/CrateImage1.JPG
+    time: -4805553740655359000
+  - path: ./test_project/models/Spruce_obj/Spruce.obj
+    time: -4805553740655359000
   - path: ./test_project/runtime/physics_test.cpp.o
-    time: -4783394813163557746
+    time: -4783007654690595076
+scripts:
+  - path: ./test_project/runtime/physics_test.cpp.o
+    time: -4783007654690595076
+  - path: ./test_project/runtime/test_stuff.cpp.o
+    time: -4783007668243020090
   - path: ./test_project/runtime/particle_test.cpp.so
-    time: -4783394817595615904
+    time: -4783007661522809472
   - path: ./test_project/runtime/particle_test.cpp.o
-    time: -4783394817663616796
+    time: -4783007661586811479
   - path: ./test_project/runtime/physics_test.cpp.so
-    time: -4783394813087556749
+    time: -4783007654622592940
   - path: ./test_project/runtime/test_stuff.cpp.so
-    time: -4783394821563667971
+    time: -4783007668087015204
   - path: ./test_project/test_stuff.cpp
-    time: -4783469546901093999
+    time: -4783098167899011018
   - path: ./test_project/particle_test.cpp
     time: -4795391698443521000
   - path: ./test_project/physics_test.cpp

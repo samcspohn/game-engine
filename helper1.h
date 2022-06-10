@@ -40,27 +40,19 @@ std::string FormatWithCommas(T value)
 	return ss.str();
 }
 
-class Barrier
+class barrier
 {
-private:
-	std::mutex m_mutex;
-	std::condition_variable m_cv;
-
-	size_t m_count;
-	const size_t m_initial;
-
-	enum State : unsigned char
-	{
-		Up,
-		Down
-	};
-	State m_state;
 
 public:
-	explicit Barrier(std::size_t count);
+    barrier(int count);
+    void wait();
 
-	/// Blocks until all N threads reach here
-	void Wait();
+private:
+    std::mutex m;
+    std::condition_variable cv;
+    int counter;
+    int waiting;
+    int thread_count;
 };
 struct rolling_buffer
 {

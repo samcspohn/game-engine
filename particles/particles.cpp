@@ -348,8 +348,10 @@ struct d{\
         output.close();
     }
 
-    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen)
+    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen, barrier& b)
     {
+        b.wait();
+
         timer t1;
         particleSortProgram->use();
 
@@ -379,10 +381,12 @@ struct d{\
         GPU_TRANSFORMS->bindData(10);
 
         gt.start();
-        particleSortProgram->use();
+        // particleSortProgram->use();
 
         particleSortProgram->setInt("stage", -1);
         particleSortProgram->setUint("count", actualParticles);
+
+
         glDispatchCompute(actualParticles / 256 + 1, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         uint numParticles;

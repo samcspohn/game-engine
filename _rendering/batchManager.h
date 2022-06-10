@@ -12,10 +12,10 @@ namespace batchManager
 {
 	extern mutex m;
 	// shader id, textureArray hash, mesh id
-	extern queue<map<_shader, map<texArray, map<renderingMeta *, Mesh *>>>> batches;
+	extern queue< shared_ptr<map<_shader, map<texArray, map<renderingMeta *, Mesh *>>>>>  batches;
 	// extern map<_shader, map<texArray, batch>> batches2;
 	// extern map<_shader,map<texArray,batch>> batches2;
 
-	map<_shader, map<texArray, map<renderingMeta *, Mesh *>>> &updateBatches();
+	shared_ptr<map<_shader, map<texArray, map<renderingMeta *, Mesh *>>>> updateBatches();
 }; // namespace batchManager
 

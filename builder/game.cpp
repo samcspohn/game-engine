@@ -55,7 +55,8 @@ void prepCameras()
     {
         if (cameras->getv(i))
         {
-            cameras->get(i)->c->prepRender(*matProgram.get(), window);
+            barrier b(1);
+            cameras->get(i)->c->prepRender(*matProgram.get(), window, b);
         }
     }
 }
@@ -409,18 +410,17 @@ int main(int argc, char **argv)
             logger("wait for render");
             waitForRenderJob([&]()
                              {
-                                 {
-                                     logger("update batches");
-                                     batchManager::updateBatches();
-                                 }
-                                 emitterInits.clear();
-                                 for (auto &i : emitter_inits)
-                                     emitterInits.push_back(i.second);
-                                 emitter_inits.clear();
-                                 swapBurstBuffer();
                                  updateTiming();
                              });
         }
+
+
+
+        emitterInits.clear();
+        for (auto &i : emitter_inits)
+            emitterInits.push_back(i.second);
+        emitter_inits.clear();
+        swapBurstBuffer();
         // if (isGameRunning())
         {
             logger("update cameras");
@@ -431,8 +431,9 @@ int main(int argc, char **argv)
             copyTransforms();
         }
         {
+            auto batch = batchManager::updateBatches();
             logger("copy renderers");
-            copyRenderers();
+            copyRenderers(batch);
         }
         // ############################################################
         enqueRenderJob([&]()

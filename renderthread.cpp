@@ -61,6 +61,7 @@ vector<vector<glm::vec3>> positionsToBuffer;
 vector<vector<glm::quat>> rotationsToBuffer;
 vector<vector<glm::vec3>> scalesToBuffer;
 unordered_map<int, vector<vector<__renderer>>> rendererThreadCache;
+// mutex render_lock;
 
 void initiliazeStuff()
 {
@@ -215,11 +216,11 @@ void updateTransforms()
     }
 }
 
-void copyR(int id, int rnumThreads)
+void copyR(int id, int rnumThreads, shared_ptr<map<_shader, map<texArray, map<renderingMeta *, Mesh *>>>>& batch)
 {
     int __rendererId = 0;
     int count = 0;
-    for (auto &i : batchManager::batches.back())
+    for (auto &i : (*batch))
     {
         rendererThreadCache[count][id].clear();
         for (auto &j : i.second)
@@ -246,78 +247,9 @@ void copyR(int id, int rnumThreads)
         }
         ++count;
     }
-
-    // int __rendererId = 0;
-    // // int __rendererOffset = 0;
-    // // typename vector<__renderer>::iterator __r = __RENDERERS_in->storage->begin();
-
-    // int count = 0;
-    // for (auto &i : renderingManager::shader_model_vector)
-    // {
-    //     rendererThreadCache[count][id].clear();
-    //     for (auto &j : i.second)
-    //     {
-    //         int step = j.second->ids.size() / rnumThreads;
-    //         int itr = step * id;
-    //         // typename deque<GLuint>::iterator itr = j.second->ids.data.begin() + step * id;
-    //         // typename deque<bool>::iterator v = j.second->ids.valid.begin() + step * id;
-    //         int to = itr + step;
-    //         // typename deque<GLuint>::iterator to = itr + step;
-    //         // __r = __RENDERERS_in->storage->begin() + __rendererOffset + step * id;
-    //         if (id == rnumThreads - 1)
-    //         {
-    //             to = j.second->ids.size();
-    //             // to = j.second->ids.data.end();
-    //         }
-    //         while (itr != to)
-    //         {
-    //             // if (*v)
-    //             // {
-    //             // __r->transform = *itr;
-    //             if (j.second->ids.getv(itr))
-    //             {
-    //                 rendererThreadCache[count][id].emplace_back(j.second->ids.get(itr), __rendererId);
-    //             }
-    //             // }
-    //             ++itr;
-    //             // ++v;
-    //         }
-    //         ++__rendererId;
-    //         // __rendererOffset += j.second->ids.size();
-    //     }
-    //     ++count;
-    // }
 }
 
-// void _updateBatches()
-// {
-//     int __renderersSize = 0;
-//     // int __rendererOffsetsSize = 0;
-//     __renderer_offsets->storage->clear();
-//     __rendererMetas->storage->clear();
-//     __renderMeta rm;
-//     // rm.min = 0;
-//     // rm.max = 1e32f;
-//     for (auto &i : batchManager::batches.back())
-//     {
-//         for (auto &j : i.second)
-//         {
-//             for (auto &k : j.second)
-//             {
-//                 __renderer_offsets->storage->push_back(__renderersSize);
-//                 rm.radius = k.first->m.meta()->radius;
-//                 rm.isBillboard = k.first->isBillboard;
-//                 rm.min = k.first->minRadius;
-//                 rm.max = k.first->maxRadius;
-//                 __rendererMetas->storage->push_back(rm);
-//                 __renderersSize += k.first->ids.size();
-//             }
-//         }
-//     }
-//     __RENDERERS_in->storage->resize(__renderersSize);
-// }
-
-void copyRenderers()
+void copyRenderers(shared_ptr<map<_shader, map<texArray, map<renderingMeta *, Mesh *>>>>& batch)
 {
     int __renderersSize = 0;
     // int __rendererOffsetsSize = 0;
@@ -328,23 +260,7 @@ void copyRenderers()
     // rm.max = 1e32f;
 
     int count = 0;
-    // for (auto &i : renderingManager::shader_model_vector)
-    // {
-    //     rendererThreadCache[count].resize(concurrency::numThreads);
-    //     ++count;
-    //     for (auto &j : i.second)
-    //     {
-    //         __renderer_offsets->storage->push_back(__renderersSize);
-    //         rm.radius = j.second->m.meta()->radius;
-    //         rm.isBillboard = j.second->isBillboard;
-    //         rm.min = j.second->minRadius;
-    //         rm.max = j.second->maxRadius;
-    //         __rendererMetas->storage->push_back(rm);
-    //         __renderersSize += j.second->ids.active();
-    //     }
-    // }
-
-    for (auto &i : batchManager::batches.back())
+    for (auto &i : (*batch))
     {
         rendererThreadCache[count].resize(concurrency::numThreads);
         ++count;
@@ -368,22 +284,8 @@ void copyRenderers()
     static rolling_buffer dur = 0;
     timer t;
     t.start();
-    if (true) //dur.getAverageValue() > 1.f)
-    {
-        // tbb::parallel_for(
-        //     tbb::blocked_range<unsigned int>(0, rnumThreads, 1), [&](auto &r) {
-        //         for (int id = r.begin(); id < r.end(); ++id)
-        // concurrency::_parallelfor.doWork(rnumThreads, [&](int id) {
-        parallelfor(rnumThreads,
-                    copyR(i, rnumThreads););
-    }
-    else
-    {
-        for (int id = 0; id < rnumThreads; ++id)
-        {
-            copyR(id, rnumThreads);
-        }
-    }
+    parallelfor(rnumThreads,
+                copyR(i, rnumThreads, batch););
     dur.add(t.stop());
 }
 void updateRenderers()

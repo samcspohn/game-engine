@@ -46,7 +46,7 @@ struct runtimeCompiler
             includes += " -I" + fw.path_to_watch + "/../" + i;
         }
         std::cout << includes << std::endl;
-        string compile = "g++ -DNDEBUG -fPIC -fpermissive " + string(opt_level) + includes + " -g -c -o " + path + ".o " + path_to_watch;
+        string compile = "g++ -DNDEBUG -fPIC -fpermissive -std=c++17 " + string(opt_level) + includes + " -g -c -o " + path + ".o " + path_to_watch;
         std::cout << compile << std::endl;
         int cppSuccess = system(compile.c_str());
         if (cppSuccess == 0)

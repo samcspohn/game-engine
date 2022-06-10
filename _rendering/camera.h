@@ -52,7 +52,7 @@ struct camera
 	glm::vec3 clearColor;
 
 	glm::vec2 getScreen();
-	void prepRender(Shader &matProgram, GLFWwindow *window);
+	void prepRender(Shader &matProgram, GLFWwindow *window, barrier& b);
 	void render(GLFWwindow *window);
 	void update(glm::vec3 position, glm::quat rotation);
 	glm::mat4 getRotationMatrix();

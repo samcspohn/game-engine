@@ -140,12 +140,13 @@ struct my_spin_lock
 
 struct _Transforms
 {
-
-	tbb::concurrent_vector<glm::vec3> positions;
-	tbb::concurrent_vector<glm::quat> rotations;
-	tbb::concurrent_vector<glm::vec3> scales;
-	tbb::concurrent_vector<transform_meta> meta;
-	tbb::concurrent_vector<trans_update> updates;
+	#define tfm_strg std::deque
+	// #define tfm_strg tbb::concurrent_vector
+	tfm_strg<glm::vec3> positions;
+	tfm_strg<glm::quat> rotations;
+	tfm_strg<glm::vec3> scales;
+	tfm_strg<transform_meta> meta;
+	tfm_strg<trans_update> updates;
 	tbb::concurrent_priority_queue<int,std::greater<int>> avail;
 	mutex m;
 
@@ -170,6 +171,7 @@ struct _Transforms
 		if(!avail.try_pop(t.id)){
 			lock_guard<mutex> lck(m);
 			t.id = positions.size();
+			// t.id = meta.emplace_back();
 			positions.emplace_back();
 			rotations.emplace_back();
 			scales.emplace_back();
@@ -188,6 +190,7 @@ struct _Transforms
 	{
 		// lock_guard<mutex> lck(m);
 		meta[t.id].~transform_meta();
+		updates[t.id].~trans_update();
 		// meta[t.id].parent = -1;
 		// meta[t.id].gameObject = (game_object*)-1;
 		// meta[t.id].children.clear();
@@ -212,6 +215,7 @@ struct _Transforms
 		return meta.size() - avail.size();
 	}
 	friend void loadTransforms();
+	#undef tfm_strg
 };
 
 void newGameObject(transform2 t);

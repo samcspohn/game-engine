@@ -6,6 +6,8 @@ vector<emitterInit> emitterInits;
 vector<emitterInit> emitterInitsdb;
 unordered_map<uint, emitterInit> emitter_inits;
 
+tbb::concurrent_unordered_map<uint,emitterInit> emitter_inits2;
+tbb::concurrent_unordered_map<uint,emitterInit> emitter_deinits;
 
 
 mutex particle_emitter::lock;

@@ -59,7 +59,7 @@ struct sorter
         
 
         /////////////////////////////////
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
         // gpuTimer gt2;
         shader.use();
 

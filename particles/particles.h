@@ -31,7 +31,7 @@ namespace particle_renderer
 
     void end();
 
-    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen);
+    void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen, barrier& b);
 
     void drawParticles(mat4 view, mat4 rot, mat4 proj, glm::vec3 camPos, float farplane, float scr_height, float scr_width);
 }; // namespace particle_renderer

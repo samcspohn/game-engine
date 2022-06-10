@@ -20,8 +20,8 @@ data:
   lifetime: 0.1
   rotation_rate: 0
   dispersion: 3.14159
-  minSpeed: 50
-  maxSpeed: 70
+  minSpeed: 70
+  maxSpeed: 100
   lifetime2: 0.1
   live: 0
   scale:

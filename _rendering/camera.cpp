@@ -116,14 +116,14 @@ void camera::update(glm::vec3 position, glm::quat rotation)
 		this->cullpos = this->pos;
 	}
 }
-void camera::prepRender(Shader &matProgram, GLFWwindow *window)
+void camera::prepRender(Shader &matProgram, GLFWwindow *window, barrier& b)
 {
 	gpuTimer gt_;
 	timer cpuTimer;
 	gt_.start();
 	cpuTimer.start();
 
-	_rendererOffsets = *(__renderer_offsets->storage);
+	this->_rendererOffsets = *(__renderer_offsets->storage);
 
 	GPU_MATRIXES->tryRealloc(__RENDERERS_in_size);
 	GPU_TRANSFORMS->bindData(0);
@@ -153,13 +153,15 @@ void camera::prepRender(Shader &matProgram, GLFWwindow *window)
 	appendStat("matrix compute cpu", cpuTimer.stop());
 	appendStat("matrix compute", gt_.stop());
 
+
 	// sort particles
 	timer t;
 	t.start();
 	if (!lockFrustum)
 		particle_renderer::setCamCull(camInv, cullpos);
-	particle_renderer::sortParticles(proj * rot * view, rot * view, pos, dir, up, screen);
+	particle_renderer::sortParticles(proj * rot * view, rot * view, pos, dir, up, screen, b);
 	appendStat("particles sort", t.stop());
+	// b.wait();
 }
 
 void renderOpaque(camera &c)
@@ -175,7 +177,12 @@ void renderOpaque(camera &c)
 
 	int counter = 0;
 	GPU_MATRIXES->bindData(3);
-	for (auto &i : batchManager::batches.front())
+	batchManager::m.lock();
+	auto batch = batchManager::batches.front();
+	batchManager::batches.pop();
+	batchManager::m.unlock();
+
+	for (auto &i : (*batch))
 	{
 		// for (auto &i : renderingManager::shader_model_vector)
 		// {
@@ -188,31 +195,7 @@ void renderOpaque(camera &c)
 		currShader->setFloat("screenWidth", (float)c.width);
 		glm::mat4 vp = c.proj * c.rot;
 		currShader->setMat4("vp", vp);
-
-		// for (auto &j : i.second)
-		// {
-		// 	Model *mod = modelManager::models_id[j.first]->model.get();
-		// 	if (counter >= c._rendererOffsets.size())
-		// 		return;6
-		// 	for (auto &mesh : mod->meshes)
-		// 	{
-		// 		texArray ta = mesh->textures;
-		// 		currShader->bindTextures(ta);
-		// 		int count = __renderer_offsets->storage->at(counter) - c._rendererOffsets[counter];
-		// 		if (count > 0)
-		// 		{
-		// 			currShader->setUint("matrixOffset", c._rendererOffsets[counter]);
-		// 			glBindVertexArray(mesh->VAO);
-		// 			glDrawElementsInstanced(currShader->primitiveType, mesh->indices.size(), GL_UNSIGNED_INT, 0, count);
-
-		// 			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		// 			glBindVertexArray(0);
-		// 		}
-		// 		ta.unbind();
-		// 	}
-		// 	// todo remove with batching
-		// 	++counter;
-		// }
+		
 		for (auto &j : i.second)
 		{
 			texArray ta = j.first;
@@ -234,7 +217,6 @@ void renderOpaque(camera &c)
 			ta.unbind();
 		}
 	}
-	batchManager::batches.pop();
 	// appendStat("render cam", t.stop());
 }
 void directionalLighting(camera &c)
