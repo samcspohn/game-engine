@@ -30,7 +30,7 @@ struct editor
     void update();
 };
 
-void renderFunc(camera& c, GLFWwindow* window);
+void renderFunc(camera& c, GLFWwindow* window,barrier& b);
 
 extern GLFWwindow* window;
 extern bool renderRunning;

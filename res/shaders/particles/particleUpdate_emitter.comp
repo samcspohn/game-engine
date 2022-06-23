@@ -34,23 +34,7 @@ uniform vec3 floatingOrigin;
 //     atomicOr(particleLifes[x / 32], 1 << (x % 32));
 // }
 
-void initEmitters(uint id){
-    emitterInit ei = emittersInits[id];
-    emitter e = emitters[ei.id];
-    if(e.frame > 0 && e.last != -1){
-        particles[e.last].next = -1;
-        // particles[e.last].position2 = transforms[e.transform].position;
-        // set(particles[e.last].velocity2,vec3(0));
-    }
-    e.emitter_prototype = ei.emitterProtoID;
-    e.transform = ei.transformID;
-    e.live = ei.live;
-    e.frame = 0;
-    e.emission = 1;//prototypes[e.emitter_prototype].emission_rate * deltaTime;
-    e.last = -1;
-    emitters[ei.id] = e;
-    emitters[ei.id].prevPos = transforms[e.transform].position;
-}
+
 
 
 void emit(uint thread_id){
@@ -116,6 +100,26 @@ void emit(uint thread_id){
     }
     emitters[thread_id] = e;
 
+}
+
+void initEmitters(uint id){
+    emitterInit ei = emittersInits[id];
+    emitter e = emitters[ei.id];
+    if(e.frame > 0 && e.last != -1){
+        emit(ei.id);
+        emitter e = emitters[ei.id];
+        particles[e.last].next = -1;
+        // particles[e.last].position2 = transforms[e.transform].position;
+        // set(particles[e.last].velocity2,vec3(0));
+    }
+    e.emitter_prototype = ei.emitterProtoID;
+    e.transform = ei.transformID;
+    e.live = ei.live;
+    e.frame = 0;
+    e.emission = 1;//prototypes[e.emitter_prototype].emission_rate * deltaTime;
+    e.last = -1;
+    emitters[ei.id] = e;
+    emitters[ei.id].prevPos = transforms[e.transform].position;
 }
 
 layout( local_size_x = 128,  local_size_y = 1, local_size_z = 1) in;

@@ -68,10 +68,10 @@ void main () {
         switch(stage){
             case 4:
                 atomicMin(atomicCounters[liveParticles],max_particles);
-                break;
-            case 5:
                 atomicCounters[2] = 0;
                 break;
+            // case 5:
+            //     break;
             case 6:
                 countParticles(gid);
                 break;

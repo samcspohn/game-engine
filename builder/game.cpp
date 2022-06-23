@@ -37,12 +37,13 @@ mutex renderLock;
 
 void renderCameras()
 {
+    barrier b(1);
     auto cameras = COMPONENT_LIST(_camera);
     for (int i = 0; i < cameras->size(); i++)
     {
         if (cameras->getv(i))
         {
-            renderFunc(*cameras->get(i)->c, window);
+            renderFunc(*cameras->get(i)->c, window, b);
             lineRendererRender(*cameras->get(i)->c);
         }
     }

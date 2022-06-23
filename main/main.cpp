@@ -122,16 +122,20 @@ void doLoopIteration()
 }
 
 mutex renderLock;
+barrier sync_point(2);
+mutex crit;
 
 void renderCameras()
 {
+    // sync_point.wait();
     auto cameras = COMPONENT_LIST(_camera);
     for (int i = 0; i < cameras->size(); i++)
     {
         if (cameras->getv(i))
         {
-            renderFunc(*cameras->get(i)->c, window);
-            lineRendererRender(*cameras->get(i)->c);
+            // renderFunc(*cameras->get(i)->c, window,sync_point);
+            cameras->get(i)->c->render(window,sync_point);
+            // lineRendererRender(*cameras->get(i)->c);
         }
     }
 }
@@ -148,8 +152,6 @@ void prepCameras(barrier& b)
     }
 }
 
-barrier sync_point(2);
-mutex crit;
 
 void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
 {
@@ -177,7 +179,7 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
         rc.fw.pause = true;
         
         prepCameras(sync_point);
-        
+        // sync_point.wait();
         renderCameras();
     }
     else
@@ -191,7 +193,8 @@ void renderFunc(editor *ed, rolling_buffer &fps, runtimeCompiler &rc)
         ed->c.width = float(w);
         ed->c.height = float(h);
         ed->c.prepRender(*matProgram.get(), window, sync_point);
-        renderFunc(ed->c, window);
+        // sync_point.wait();
+        renderFunc(ed->c, window, sync_point);
         lineRendererRender(ed->c);
     }
     // sync_point.wait();
@@ -427,6 +430,7 @@ int main(int argc, char **argv)
     bool first_frame = true;
     while (!glfwWindowShouldClose(window))
     {
+        bool sync_hit_early = false;
         profiler.Frame();
         {
 
@@ -444,6 +448,8 @@ int main(int argc, char **argv)
                 // lock_guard<mutex> lck(transformLock);
                 if (rc.getCompilationComplete() && rc.getCompilationSuccess())
                 {
+                    // sync_point.wait();
+                    // sync_hit_early = true;
                     waitForRenderJob([&]()
                                      {
                                      YAML::Node root_game_object_node;
@@ -524,16 +530,7 @@ int main(int argc, char **argv)
             if (!isGameRunning())
                 ed->update();
         }
-        // crit.lock();
-        if (first_frame)
-        {
-            first_frame = false;
-        }
-        else
-        {
-            sync_point.wait();
-        }
-        // if (first_frame)
+        // if (first_frame || sync_hit_early)
         // {
         //     first_frame = false;
         // }
@@ -541,7 +538,6 @@ int main(int argc, char **argv)
         // {
         //     sync_point.wait();
         // }
-        // crit.unlock();
         {
             logger("wait for render");
             profiler.Begin("wait for render");
@@ -593,7 +589,7 @@ int main(int argc, char **argv)
         }
         // ############################################################
 
-        // profiler.Begin("render func");
+        // profiler.Begin("render func");waitForRenderJob   enqueRenderJob
         enqueRenderJob([&]()
                        { renderFunc(ed, fps, rc); });
         // sync_point.wait();
@@ -603,7 +599,7 @@ int main(int argc, char **argv)
         fps.add(time.stop());
     }
 
-    sync_point.wait();
+    // sync_point.wait();
 
     fw.stop();
     saveAssets();

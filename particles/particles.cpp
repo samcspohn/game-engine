@@ -224,10 +224,10 @@ void updateParticles(vec3 floatingOrigin, uint emitterInitCount)
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-    glUniform1ui(glGetUniformLocation(particleProgram->Program, "count"), 1); // reset particle counter
-    glUniform1ui(glGetUniformLocation(particleProgram->Program, "stage"), 5);
-    glDispatchCompute(1, 1, 1);
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    // glUniform1ui(glGetUniformLocation(particleProgram->Program, "count"), 1); // reset particle counter
+    // glUniform1ui(glGetUniformLocation(particleProgram->Program, "stage"), 5);
+    // glDispatchCompute(1, 1, 1);
+    // glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     glUniform1ui(glGetUniformLocation(particleProgram->Program, "count"), MAX_PARTICLES); // count particles
     glUniform1ui(glGetUniformLocation(particleProgram->Program, "stage"), 6);
@@ -350,7 +350,6 @@ struct d{\
 
     void sortParticles(mat4 vp, mat4 view, vec3 camPos, vec3 camForw, vec3 camup, vec2 screen, barrier& b)
     {
-        b.wait();
 
         timer t1;
         particleSortProgram->use();
@@ -393,6 +392,7 @@ struct d{\
         atomics->retrieveData();
         numParticles = atomics->storage->at(0);
         appendStat("particle list create", gt.stop());
+        // b.wait();
 
         gt.start();
         p_sort->sort(numParticles, _input, _output);

@@ -79,7 +79,7 @@ camera::camera()
 
 camera::~camera()
 {
-	waitForRenderJob([&]() {
+	enqueRenderJob([=]() {
 		gBuffer.destroy();
 	});
 }
@@ -260,30 +260,6 @@ void defferedLighting(camera &c)
 	static lightVolume lv;
 	if (lv.VAO == 0)
 	{
-		// lv.indices = {
-		// 	0, 1, 2,
-		// 	0, 2, 3,
-		// 	4, 7, 6,
-		// 	4, 7, 5,
-		// 	0, 4, 5,
-		// 	0, 5, 1,
-		// 	1, 5, 6,
-		// 	1, 6, 2,
-		// 	2, 6, 7,
-		// 	2, 7, 3,
-		// 	4, 0, 3,
-		// 	4, 3, 7};
-		// lv.vertices = {
-		// 	vec3(1.f, -1.f, -1.f),
-		// 	vec3(1.f, -1.f, 1.f),
-		// 	vec3(-1.f, -1.f, 1.f),
-		// 	vec3(-1.f, -1.f, -1.f),
-		// 	vec3(1.f, 1.f, -1.f),
-		// 	vec3(1.f, 1.f, 1.f),
-		// 	vec3(-1.f, 1.f, 1.f),
-		// 	vec3(-1.f, 1.f, -1.f)};
-		// lv.setupMesh();
-
 		_model lightVolumeModel("res/models/cube/cube.obj");
 		model_manager.meta[lightVolumeModel.id]->model->loadModel();
 		// lightVolumeModel.m->loadModel();
@@ -360,8 +336,10 @@ void renderParticles(camera &c)
 	// appendStat("render particles", gt_.stop());
 	appendStat("render particles", t.stop());
 }
-void camera::render(GLFWwindow *window)
+void camera::render(GLFWwindow *window, barrier& b)
 {
+	// b.wait();
+
 	if (!inited)
 		return;
 	// width = 1920;
@@ -375,6 +353,7 @@ void camera::render(GLFWwindow *window)
 	gBuffer.use();
 	gBuffer.resize(width, height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// b.wait();
 
 	renderOpaque(*this);
 
@@ -391,8 +370,10 @@ void camera::render(GLFWwindow *window)
 
 	defferedLighting(*this);
 	// glDepthMask(GL_TRUE);
+
 	renderParticles(*this);
 	glDepthMask(GL_TRUE);
+
 }
 
 glm::mat4 camera::getRotationMatrix()

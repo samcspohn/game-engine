@@ -62,6 +62,7 @@ public:
 		glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		inited = true;
 	}
@@ -80,6 +81,7 @@ public:
 	void retrieveData(){
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
     	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * size(), storage->data());
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
@@ -110,6 +112,7 @@ public:
 		lock.unlock();
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * storage->size(), storage->data());//buffer data
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
@@ -146,6 +149,7 @@ private:
 		// glGenBuffers(1, &bufferId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
@@ -180,6 +184,7 @@ public:
 		}
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		GLenum err = glGetError();
 		if(err)
@@ -223,17 +228,20 @@ public:
 		lock.unlock();
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * data.size(), data.data());//buffer data
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 	void bufferData(vector<t>& data, GLuint offset,GLuint size){
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * offset, sizeof(t) * size, data.data());//buffer data
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
 	void bufferData(t* data, GLuint offset,GLuint size){
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * offset, sizeof(t) * size, data);//buffer data
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
@@ -241,12 +249,14 @@ public:
 		storage.resize(maxSize);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
     	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * maxSize, storage.data());
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 	void retrieveData(vector<t>& storage, int _size){
 		storage.resize(_size);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
     	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(t) * _size, storage.data());
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 	void grow(size_t size){
@@ -293,6 +303,7 @@ private:
 		glGetError();
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 		GLenum err = glGetError();
@@ -305,13 +316,15 @@ private:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, newId);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(t) * maxSize, 0, usage);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		
 		glBindBuffer(GL_COPY_READ_BUFFER,bufferId);
 		glBindBuffer(GL_COPY_WRITE_BUFFER,newId);
 		glCopyBufferSubData(GL_COPY_READ_BUFFER,GL_COPY_WRITE_BUFFER,0,0,sizeof(t)*oldSize);
 
 		glDeleteBuffers(1, &bufferId);
 		this->bufferId = newId;
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	}

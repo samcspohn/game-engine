@@ -11,13 +11,13 @@
 #include "batchManager.h"
 #include "lighting/lighting.h"
 
-void renderFunc(camera &c, GLFWwindow *window)
+void renderFunc(camera &c, GLFWwindow *window,barrier& b)
 {
-    float ratio;
-    int width, height;
+    // float ratio;
+    // int width, height;
     // mat4x4 m, p, mvp;
 
-    c.render(window);
+    c.render(window, b);
     // glfwGetFramebufferSize(window, &width, &height);
     // ratio = width / (float)height;
 
