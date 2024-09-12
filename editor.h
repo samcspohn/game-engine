@@ -88,9 +88,9 @@ namespace assets
 
 template<typename t>
 void AssetRenderEdit(const char* name, assets::asset_instance<t> * a){
-    if (a->id == -1) // uninitialized
+    if (a->id == -1 || a->meta() == nullptr) // uninitialized
 		ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
-	else
+	else 
 		ImGui::InputText(name, (char *)a->meta()->name.c_str(), a->meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
 }
 

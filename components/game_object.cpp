@@ -8,7 +8,7 @@ void placeholder::ser_edit(ser_mode x, YAML::Node &n)
 	{
 
 		ImGui::Text("place holder");
-		if(ImGui::Button("replace"))
+		if (ImGui::Button("replace"))
 			ImGui::OpenPopup("replace_component_context");
 		if (ImGui::BeginPopup("replace_component_context"))
 		{
@@ -38,7 +38,6 @@ void placeholder::ser_edit(ser_mode x, YAML::Node &n)
 		break;
 	}
 }
-
 
 std::mutex toDestroym;
 // std::deque<game_object *> toDestroyGameObjects;
@@ -169,8 +168,7 @@ void game_object::decode(YAML::Node &game_object_node, int parent_id, list<funct
 												  placeholder *p = g->_addComponent<placeholder>();
 												  p->data = component_node;
 											  }
-										  }
-									  });
+										  } });
 
 	YAML::Node transform_children = game_object_node["transform"]["children"];
 	for (int i = 0; i < transform_children.size(); i++)
@@ -246,7 +244,7 @@ void _child_instatiate(game_object &g, transform2 parent)
 	// g.transform.getParent().adopt(this->transform);
 
 	for (auto &i : g.components)
-	{ 
+	{
 		// game_object::_getComponent(i)->_copy(ret);
 		int comp_ref = ComponentRegistry.meta_types.at(i.first)->copy(i.second);
 		ComponentRegistry.registry(i.first)->get(comp_ref)->transform = ret->transform;
@@ -257,7 +255,6 @@ void _child_instatiate(game_object &g, transform2 parent)
 		game_object::_getComponent(i)->init(i.second);
 	}
 }
-
 
 game_object *_instantiate(game_object &g)
 {
@@ -315,7 +312,8 @@ game_object *_instantiate(game_object_prototype &g)
 	game_object *ret = &game_object_cache.get(ref);
 	ret->destroyed = false;
 	ret->transform = Transforms._new(); // new Transform(this);
-	if(ref == 0){
+	if (ref == 0)
+	{
 		cout << "0 game_object";
 	}
 	ret->transform->init(ret);
@@ -325,7 +323,7 @@ game_object *_instantiate(game_object_prototype &g)
 	}
 	for (auto &i : ret->components)
 	{
-		component* c = game_object::_getComponent(i);
+		component *c = game_object::_getComponent(i);
 		c->transform = ret->transform; // todo // better?
 		c->init(i.second);
 	}
@@ -352,7 +350,7 @@ game_object *transform2::gameObject()
 	return Transforms.meta[id].gameObject;
 }
 
-void transform2::setGameObject(game_object* g)
+void transform2::setGameObject(game_object *g)
 {
 	Transforms.meta[id].gameObject = g;
 }
@@ -362,7 +360,7 @@ void game_object::_destroy()
 
 	for (auto i : components)
 	{
-		component* c = game_object::_getComponent(i);
+		component *c = game_object::_getComponent(i);
 		c->onDestroy();
 		c->deinit(i.second);
 	}
@@ -380,7 +378,14 @@ void game_object::_destroy()
 
 game_object_proto_ *game_object_prototype::meta() const
 {
-	return game_object_proto_manager.meta.at(id).get();
+	try
+	{
+		return game_object_proto_manager.meta.at(id).get();
+	}
+	catch (...)
+	{
+		return nullptr;
+	}
 }
 
 void renderEdit(const char *name, game_object_prototype &g)

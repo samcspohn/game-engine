@@ -175,7 +175,12 @@ void _model::makeProcedural()
 }
 _modelMeta *_model::meta() const
 {
+	try {
+
 	return model_manager.meta[id].get();
+	} catch(...){
+		return nullptr;
+	}
 }
 void _modelMeta::getBounds()
 {

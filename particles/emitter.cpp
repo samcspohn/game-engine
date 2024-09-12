@@ -48,7 +48,11 @@ void particle_emitter::onEdit()
     // RENDER(prototype);
 }
 emitter_proto_asset* emitter_prototype_::meta() const{
+    try {
     return emitter_manager.meta.at(e).get();
+    } catch(...){
+        return nullptr;
+    }
 }
 void particle_emitter::init(int id)
 {

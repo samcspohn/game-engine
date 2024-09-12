@@ -404,9 +404,8 @@ public:
         //     box->getComponent<pxBomb>()->vel = glm::vec3(0.f, 100.f, 0.f) + randomSphere() * 40.f;
         // }
 
-        parallelfor(170000 * std::min(Time.deltaTime, (1.f/30.f)),
-                    if(bombs->size() > 1'000'000)
-                        return;
+        parallelfor(170000 * std::min(Time.deltaTime, (1.f / 30.f)),
+                    if (bombs->size() > 1'000'000) return;
                     glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
                     auto box = instantiate(px_bomb);
                     box->transform->setPosition(start_pos);
@@ -427,7 +426,7 @@ public:
             // }
 
             // rain
-            parallelfor(170000 * std::min(Time.deltaTime, (1.f/30.f)),
+            parallelfor(170000 * std::min(Time.deltaTime, (1.f / 30.f)),
                         //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
                         // glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
                         glm::vec3 start_pos = glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f);
@@ -478,7 +477,7 @@ public:
             //     box->transform->setPosition(start_pos);
             //     box->getComponent<pxBomb>()->vel = transform->forward() * 100.f + randomSphere() * 40.f;
             // }
-            parallelfor(17000 * std::min(Time.deltaTime, (1.f/30.f)),
+            parallelfor(17000 * std::min(Time.deltaTime, (1.f / 30.f)),
                         // for(int i = 0; i < 17000 * Time.deltaTime; i++){
                         //  glm::vec3(randf() * 2000.f - 1000.f, randf() * 100.f + 100.f, randf() * 2000.f - 1000.f); //
                         glm::vec3 start_pos = transform->getPosition() - transform->up() * 10.f + transform->forward() * 15.f;
@@ -546,31 +545,57 @@ public:
     // }
     void update()
     {
+        float step = std::min(Time.deltaTime, (1.f / 30.f));
+        glm::vec3 pos = transform->getPosition();
+        float vel_len = glm::length(vel);
+        glm::vec3 velnormal = vel / vel_len;
+        vel_len *= step;
+        PxRaycastBuffer hitb;
+        PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+        bool hit = pm->gScene->raycast(PxVec3(pos.x, pos.y, pos.z), PxVec3(velnormal.x, velnormal.y, velnormal.z), vel_len, hitb);
+
+        if (hit)
+        {
+            if (transform.id == 0)
+            {
+                cout << "0 transform";
+            }
+            transform->gameObject()->destroy();
+            exp.burst(transform.getPosition(), *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), transform->getScale() * explosion_size, 15);
+            // pos = *reinterpret_cast<glm::vec3 *>(&hitb.block.position);
+            // pxexpl.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 8);
+            // l_expl2.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 5);
+            // l_expl_shk_wv.burst(pos, *reinterpret_cast<glm::vec3 *>(&hitb.block.normal), 5);
+
+            // PxVec3 p = hitb.block.position;
+            // game_object* g = instantiate(rayHit);
+            // g->transform->setPosition(*reinterpret_cast<glm::vec3*>(&p));
+        }
 
         transform->move(vel * Time.deltaTime);
         vel += vec3(0, -9.81, 0) * Time.deltaTime;
     }
-    void onCollision(collision &col)
-    {
-        glm::vec3 normal = col.normal;
-        if (length(normal) == 0)
-            normal = randomSphere();
-        exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 15);
-        transform->gameObject()->destroy();
+    // void onCollision(collision &col)
+    // {
+    //     glm::vec3 normal = col.normal;
+    //     if (length(normal) == 0)
+    //         normal = randomSphere();
+    //     exp.burst(transform.getPosition(), normal, transform->getScale() * explosion_size, 15);
+    //     transform->gameObject()->destroy();
 
-        // transform->setPosition(col.point + glm::vec3(0,0.5,0));
-        // transform->gameObject()->getComponent<collider>()->p.pos1 = transform->getPosition();
-        // if(vel.y < 0)
-        //     vel = glm::reflect(vel,col.normal);
+    //     // transform->setPosition(col.point + glm::vec3(0,0.5,0));
+    //     // transform->gameObject()->getComponent<collider>()->p.pos1 = transform->getPosition();
+    //     // if(vel.y < 0)
+    //     //     vel = glm::reflect(vel,col.normal);
 
-        // b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
-        if (playSound)
-            explosionSound.play(transform->getPosition(), 0.5, 0.05);
-        // getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
-        // getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
-        // hit = true;
-        // }
-    }
+    //     // b.primaryexplosion.burst(transform->getPosition(),normal,transform->getScale(),10);
+    //     if (playSound)
+    //         explosionSound.play(transform->getPosition(), 0.5, 0.05);
+    //     // getEmitterPrototypeByName("shockWave").burst(transform->getPosition(),normal,transform->getScale(),25);
+    //     // getEmitterPrototypeByName("debris").burst(transform->getPosition(),normal,transform->getScale(),7);
+    //     // hit = true;
+    //     // }
+    // }
     SER_FUNC()
     {
         SER(vel);
@@ -840,56 +865,58 @@ public:
         /////////////////////////////////////////////// turn turret
         vec3 targetPos = inverse(toMat3(transform->getRotation())) * (target->getPosition() - transform->getPosition());
         targetPos = normalize(vec3(targetPos.x, 0, targetPos.z));
-        float angle = acos(targetPos.z);
+        float angle = abs(acos(targetPos.z));
         float turn_angle = std::min(turret_speed * Time.deltaTime, angle) * (targetPos.x > 0 ? 1 : -1);
         angle *= (targetPos.x > 0 ? 1 : -1);
 
-        if ((turret_angle + angle > 0 && turret_angle + angle - _pi > 0) || (turret_angle + angle < 0 && turret_angle + angle + _pi < 0))
-        {
-            turn_angle = turret_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
-        }
-        if (turret_angle + turn_angle > t_angles[2])
-        { // left max angle
-            turn_angle = t_angles[2] - turret_angle;
-        }
-        else if (turret_angle + turn_angle < t_angles[0])
-        { // right max angle
-            turn_angle = t_angles[0] - turret_angle;
-        }
+        // if ((turret_angle + angle > 0 && turret_angle + angle - _pi > 0) || (turret_angle + angle < 0 && turret_angle + angle + _pi < 0))
+        // {
+        //     turn_angle = turret_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
+        // }
+        // if (turret_angle + turn_angle > t_angles[2])
+        // { // left max angle
+        //     turn_angle = t_angles[2] - turret_angle;
+        // }
+        // else if (turret_angle + turn_angle < t_angles[0])
+        // { // right max angle
+        //     turn_angle = t_angles[0] - turret_angle;
+        // }
 
         canFire = abs(angle) < 0.01; // turret_speed * Time.deltaTime;
         turret_angle += turn_angle;
         float turret_turn_angle = turn_angle - angle;
-        transform->rotate(vec3(0, 1, 0), angle);
+        float angle2 = std::max(std::min(turn_angle, turret_speed * Time.deltaTime), -turret_speed * Time.deltaTime);
+        transform->rotate(vec3(0, 1, 0), angle2);
 
-        /////////////////////////////////////////////// turn guns
-        targetPos = inverse(toMat3(guns->getRotation())) * (target->getPosition() - transform->getPosition());
+        // /////////////////////////////////////////////// turn guns
+        targetPos = inverse(toMat3(guns->getRotation())) * (target->getPosition() - guns->getPosition());
         targetPos = normalize(vec3(0, targetPos.y, targetPos.z));
-        angle = acos(targetPos.z);
+        angle = abs(acos(targetPos.z));
         turn_angle = std::min(gun_speed * Time.deltaTime, angle) * (targetPos.y > 0 ? -1 : 1);
         angle *= (targetPos.y > 0 ? 1 : -1);
 
-        int index = (turret_angle > 0 ? 2 : 0);
-        float ratio = abs(turret_angle / t_angles[index]);
-        float guns_angles[2] = {g_angles[index][0] * ratio + g_angles[1][0] * (1 - ratio),
-                                g_angles[index][1] * ratio + g_angles[1][1] * (1 - ratio)};
+        // int index = (turret_angle > 0 ? 2 : 0);
+        // float ratio = abs(turret_angle / t_angles[index]);
+        // float guns_angles[2] = {g_angles[index][0] * ratio + g_angles[1][0] * (1 - ratio),
+        //                         g_angles[index][1] * ratio + g_angles[1][1] * (1 - ratio)};
 
-        // if((guns_angle + angle > 0 && guns_angle + angle - pi > 0) || (guns_angle + angle < 0 && guns_angle + angle + pi < 0)){
-        // 	turn_angle = gun_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
+        // // if((guns_angle + angle > 0 && guns_angle + angle - pi > 0) || (guns_angle + angle < 0 && guns_angle + angle + pi < 0)){
+        // // 	turn_angle = gun_speed * Time.deltaTime * (targetPos.x > 0 ? -1 : 1);
+        // // }
+        // if (guns_angle + turn_angle > guns_angles[1])
+        // { // up max angle
+        //     turn_angle = guns_angles[1] - guns_angle;
         // }
-        if (guns_angle + turn_angle > guns_angles[1])
-        { // up max angle
-            turn_angle = guns_angles[1] - guns_angle;
-        }
-        else if (guns_angle + turn_angle < guns_angles[0])
-        { // down max angle
-            turn_angle = guns_angles[0] - guns_angle;
-        }
+        // else if (guns_angle + turn_angle < guns_angles[0])
+        // { // down max angle
+        //     turn_angle = guns_angles[0] - guns_angle;
+        // }
 
-        guns_angle += turn_angle;
-        guns->rotate(vec3(1, 0, 0), turn_angle);
+        // guns_angle += turn_angle;
+        angle2 = std::max(std::min(turn_angle, gun_speed * Time.deltaTime), -gun_speed * Time.deltaTime);
+        guns->rotate(vec3(1, 0, 0), angle2);
 
-        transform->rotate(vec3(0, 1, 0), turret_turn_angle);
+        // transform->rotate(vec3(0, 1, 0), turret_turn_angle);
 
         canFire = canFire && abs(angle) < 0.01; // gun_speed * Time.deltaTime;
                                                 //  if(canFire && Input.Mouse.getButton(GLFW_MOUSE_BUTTON_LEFT)){

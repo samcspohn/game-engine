@@ -74,12 +74,12 @@ void shaderManager::init()
 
 shaderManager shader_manager;
 
-_shader::_shader() { id = 0;}
-#define FIND_SHADER_META(_meta)                 \
+_shader::_shader() { id = 0; }
+#define FIND_SHADER_META(_meta)                \
 	auto ms = shader_manager.path.find(key);   \
 	if (ms == shader_manager.path.end())       \
 	{                                          \
-		auto sm = _meta;                        \
+		auto sm = _meta;                       \
 		shader_manager.meta[sm->genID()] = sm; \
 		shader_manager.path[key] = sm->id;     \
 		ms = shader_manager.path.find(key);    \
@@ -119,7 +119,14 @@ Shader &_shader::ref()
 }
 _shaderMeta *_shader::meta() const
 {
-	return shader_manager.meta[id].get();
+	try
+	{
+		return shader_manager.meta[id].get();
+	}
+	catch (...)
+	{
+		return nullptr;
+	}
 }
 bool _shaderMeta::onEdit()
 {

@@ -73,16 +73,19 @@ namespace modelManager
 	}
 }; // namespace modelManager
 
-_model::_model(){
+_model::_model() {
 	// this->makeUnique();
 };
 
 set<int> toDestroy_models;
-_model::~_model(){
+_model::~_model()
+{
 }
 
-void _model::destroy(){
-	if(this->meta() && this->meta()->unique){
+void _model::destroy()
+{
+	if (this->meta() && this->meta()->unique)
+	{
 		toDestroy_models.emplace(this->m);
 	}
 }
@@ -104,7 +107,7 @@ _model::_model(string fileName)
 	}
 }
 
-vector<Mesh*> &_model::meshes()
+vector<Mesh *> &_model::meshes()
 {
 	return modelManager::models_id[m]->model->meshes;
 }
@@ -131,10 +134,17 @@ void _model::makeProcedural()
 }
 _modelMeta *_model::meta() const
 {
-	return modelManager::models_id[m];
+	try
+	{
+		return modelManager::models_id[m];
+	}
+	catch (const std::out_of_range &oor)
+	{
+		return nullptr;
+	}
 }
 
-//shader data
+// shader data
 
 _shaderMeta::_shaderMeta() {}
 _shaderMeta::_shaderMeta(string compute)
@@ -174,7 +184,7 @@ namespace shaderManager
 			shaders.erase(shaders.begin());
 		}
 	}
-	
+
 }; // namespace shaderManager
 
 _shader::_shader() {}
@@ -299,7 +309,8 @@ void _modelMeta::getBounds()
 	}
 	else
 	{
-		enqueRenderJob([&]() { getBounds(); });
+		enqueRenderJob([&]()
+					   { getBounds(); });
 	}
 }
 void _modelMeta::inspect()
@@ -462,16 +473,18 @@ namespace batchManager
 		// 		j.second.elements.clear();
 		// 	}
 		// }
-		for(auto &m : toDestroy_models){
+		for (auto &m : toDestroy_models)
+		{
 			delete modelManager::models_id.at(m);
-            modelManager::models_id.at(m) = 0;
+			modelManager::models_id.at(m) = 0;
 		}
 		toDestroy_models.clear();
 		for (auto i : renderingManager::shader_model_vector)
 		{
 			for (auto j : i.second)
 			{
-				if(j.second->m.meta() == 0){
+				if (j.second->m.meta() == 0)
+				{
 					delete renderingManager::shader_model_vector[i.first][j.first];
 					renderingManager::shader_model_vector[i.first].erase(j.first);
 				}
@@ -694,7 +707,6 @@ void _renderer::onEdit()
 }
 REGISTER_COMPONENT(_renderer)
 
-
 bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float &dist, glm::mat4 &model)
 {
 
@@ -711,7 +723,7 @@ bool intersectRayMesh(glm::vec3 &p, glm::vec3 &d, Mesh *m, glm::vec3 &q, float &
 		// float t;
 		// if(glm::intersectRayTriangle(p,d,p1,p2,p3, bp, t))
 		// if (glm::intersectLineTriangle(p, d, p1, p2, p3, q))
-		if(_intersectRayTriangle(p,d,p1,p2,p3,q))
+		if (_intersectRayTriangle(p, d, p1, p2, p3, q))
 		{
 			dist = glm::length(p - q);
 			// float dist = t;
@@ -766,52 +778,51 @@ transform2 renderRaycast(glm::vec3 p, glm::vec3 dir)
 	float closest = numeric_limits<float>().max();
 	transform2 ret;
 	mutex lock;
-	parallelfor(renderers->size(), 
-	// for (uint32_t i = 0; i < renderers->size(); ++i)
-	{
-	
-		glm::vec3 q;
-		_renderer *_rend;
-		if (renderers->getv(i) && (_rend = renderers->get(i))->getModel().meta())
-		{
-			if (_rend->transform->gameObject()->getComponent<terrain>() != 0)
-				continue;
-			// _renderer *_rend = renderers->get(i);
-			float rad = _rend->getModel().meta()->radius;
-			float sc = glm::length(_rend->transform->getScale());
-			rad *= sc;
-			// if (glm::intere(p,dir,sphere(_rend->transform->getPosition(),rad),t,q))
-			float t;
-			if (glm::intersectRaySphere(p, dir, _rend->transform->getPosition(), rad * rad, t))
-			{
-				string name = renderers->get(i)->transform->name();
-				if (name == "")
+	parallelfor(renderers->size(),
+				// for (uint32_t i = 0; i < renderers->size(); ++i)
 				{
-					name = "game object " + to_string(_rend->transform.id);
-				}
-				glm::mat4 model = _rend->transform->getModel();
-				glm::mat4 rot = glm::toMat4(_rend->transform->getRotation());
-				if (intersectRayModel(p, dir, _rend->getModel().meta()->model, q, t, model, rot))
-				{
-					cout << name + ": hit -- " + to_string(t) + "\n";
-					// float dist = t;
-					float dist = glm::length(p - q);
+					glm::vec3 q;
+					_renderer *_rend;
+					if (renderers->getv(i) && (_rend = renderers->get(i))->getModel().meta())
 					{
-						scoped_lock l(lock);
-						if (dist < closest)
+						if (_rend->transform->gameObject()->getComponent<terrain>() != 0)
+							continue;
+						// _renderer *_rend = renderers->get(i);
+						float rad = _rend->getModel().meta()->radius;
+						float sc = glm::length(_rend->transform->getScale());
+						rad *= sc;
+						// if (glm::intere(p,dir,sphere(_rend->transform->getPosition(),rad),t,q))
+						float t;
+						if (glm::intersectRaySphere(p, dir, _rend->transform->getPosition(), rad * rad, t))
 						{
-							closest = dist;
-							ret = _rend->transform;
+							string name = renderers->get(i)->transform->name();
+							if (name == "")
+							{
+								name = "game object " + to_string(_rend->transform.id);
+							}
+							glm::mat4 model = _rend->transform->getModel();
+							glm::mat4 rot = glm::toMat4(_rend->transform->getRotation());
+							if (intersectRayModel(p, dir, _rend->getModel().meta()->model, q, t, model, rot))
+							{
+								cout << name + ": hit -- " + to_string(t) + "\n";
+								// float dist = t;
+								float dist = glm::length(p - q);
+								{
+									scoped_lock l(lock);
+									if (dist < closest)
+									{
+										closest = dist;
+										ret = _rend->transform;
+									}
+								}
+							}
+							else
+							{
+								cout << name + ": miss\n";
+							}
 						}
 					}
-				}
-				else
-				{
-					cout << name + ": miss\n";
-				}
-			}
-		}
-	})
-	// }
-	return ret;
+				})
+		// }
+		return ret;
 }

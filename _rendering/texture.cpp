@@ -16,11 +16,10 @@
 
 using namespace std;
 
-
 // namespace textureManager
 // {
-    // map<string, int> textures;
-    // unordered_map<int, shared_ptr<TextureMeta>> textures_ids;
+// map<string, int> textures;
+// unordered_map<int, shared_ptr<TextureMeta>> textures_ids;
 //     void textureManager::encode(YAML::Node &node)
 //     {
 //         YAML::Node textures_ids_node;
@@ -52,7 +51,8 @@ using namespace std;
 //     }
 // } // namespace textureManager
 
-textureManager texture_manager __attribute__ ((init_priority (2000)));;
+textureManager texture_manager __attribute__((init_priority(2000)));
+;
 
 void _texture::load(string path)
 {
@@ -71,10 +71,17 @@ void _texture::load(string path)
 }
 TextureMeta *_texture::meta() const
 {
-    if(textureID != -1)
-        return texture_manager.meta.at(textureID).get();
-    else
-    return 0;
+    try
+    {
+        if (textureID != -1)
+            return texture_manager.meta.at(textureID).get();
+        else
+            return 0;
+    }
+    catch (...)
+    {
+        return 0;
+    }
 }
 
 // void _texture::namedTexture(string name)
@@ -109,20 +116,23 @@ _texture::_texture(string path)
 {
     this->load(path);
 }
-void _texture::_new(){
- 
-        auto texMet = make_shared<TextureMeta>();
-        texMet->genID();
-        texture_manager.meta.emplace(texMet->id, texMet);
-        // textureManager::textures.emplace(path, texMet->id);
-        // texMet->load(path);
+void _texture::_new()
+{
+
+    auto texMet = make_shared<TextureMeta>();
+    texMet->genID();
+    texture_manager.meta.emplace(texMet->id, texMet);
+    // textureManager::textures.emplace(path, texMet->id);
+    // texMet->load(path);
     textureID = texMet->id;
 }
 
-string TextureMeta::type(){
+string TextureMeta::type()
+{
     return "TEXTURE";
 }
-bool TextureMeta::onEdit(){
+bool TextureMeta::onEdit()
+{
     bool b = false;
     ImGui::Checkbox("uhh", &b);
     return true;
@@ -130,7 +140,8 @@ bool TextureMeta::onEdit(){
 
 TextureMeta::TextureMeta() {}
 
-TextureMeta::TextureMeta(string path){
+TextureMeta::TextureMeta(string path)
+{
     // Generate texture ID and load texture data
 
     unsigned char *image = SOIL_load_image(path.c_str(), &dims.x, &dims.y, 0, SOIL_LOAD_RGBA);
@@ -153,8 +164,8 @@ TextureMeta::TextureMeta(string path){
 }
 
 TextureMeta::TextureMeta(string path, string type)
-{   
-    new(this) TextureMeta(path);
+{
+    new (this) TextureMeta(path);
     this->_type = type;
 }
 void TextureMeta::load(string path)

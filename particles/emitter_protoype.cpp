@@ -192,10 +192,10 @@ void emitter_proto_asset::inspect()
 
 void renderEdit(const char *name, emitter_prototype_ &ep)
 {
-    if (ep.e != -1)
-        ImGui::InputText(name, (char *)ep.meta()->name.c_str(), ep.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
-    else
+    if (ep.e == -1 || ep.meta() == nullptr)
         ImGui::InputText(name, "", 1, ImGuiInputTextFlags_ReadOnly);
+    else
+        ImGui::InputText(name, (char *)ep.meta()->name.c_str(), ep.meta()->name.size() + 1, ImGuiInputTextFlags_ReadOnly);
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("EMITTER_PROTOTYPE_DRAG_AND_DROP"))

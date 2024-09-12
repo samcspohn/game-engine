@@ -130,7 +130,11 @@ audioManager audio_manager;
 audio::audio() {}
 audioMeta *audio::meta() const
 {
+    try {
     return audio_manager.meta[a].get();
+    } catch(...){
+        return nullptr;
+    }
 }
 audio::audio(string file)
 {

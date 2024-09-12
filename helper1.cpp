@@ -33,7 +33,6 @@ void barrier::wait()
 	lk.unlock();
 }
 
-
 rolling_buffer::rolling_buffer()
 {
 	size = 100;
@@ -94,7 +93,7 @@ void waitFor(atomic<bool> &cond)
 static unsigned long x = 123456789, y = 362436069, z = 521288629;
 
 unsigned long xorshf96(void)
-{ //period 2^96-1
+{ // period 2^96-1
 	unsigned long t;
 	x ^= x << 16;
 	x ^= x >> 5;
@@ -178,10 +177,17 @@ void _enqueRenderJob(std::function<void()> *work)
 	// rj->type = renderNum::doFunc;
 	// rj->work = [work]() { work(); };
 	// rj->completed = -1;
-	auto job = std::shared_ptr<std::function<void()>>(work);
-	rdr_lck.lock();
-	renderJobs.push(job);
-	rdr_lck.unlock();
+	if (renderThreadID == this_thread::get_id())
+	{
+		(*work)();
+	}
+	else
+	{
+		auto job = std::shared_ptr<std::function<void()>>(work);
+		rdr_lck.lock();
+		renderJobs.push(job);
+		rdr_lck.unlock();
+	}
 }
 
 void _waitForRenderJob(std::function<void()> *work)
